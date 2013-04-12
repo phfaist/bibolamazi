@@ -1,0 +1,319 @@
+Version 0.16
+------------
+(released on March 17, 2012)
+
+- BibTeX ``.bib`` and ``.bst`` parsers were completely rewritten. They are now
+  much faster and more BibTeX-compatible.
+
+- Syntax errors and undefined strings in ``.bib`` files now result in warnings
+  instead of errors, like in BibTeX.
+
+- Unused entries in ``.bib`` files are now skipped, like in BibTeX.
+
+- The case of entry keys is now preserved (in previous versions they were
+  converted to lowercase).
+
+- Pythonic style engine now supports sorting.
+
+- Pythonic style engine: fixed nested optional() blocks.
+
+- Fixed parsing of some names with a Last part but no von part.
+
+- Fixed processing of brace-level-one "special characters" in ``purify$`` BibTeX
+  built-in function.
+
+- Added proper error messages on encoding errors in .bib files.
+
+- The default encoding is now UTF-8 on all platforms.
+
+- ``pybtex-convert`` now preserves the order of entries in BibTeX and BibTeXML
+  files.
+
+
+The following changes were contributed by Matthias C. M. Troffaes:
+
+- Fixed first_of behavior when non-empty child is followed by a child that has a
+  missing field.
+
+- Fixed crossref lookups when key is not lower case.
+
+- Completed unsrt and plain python styles: they now contain all entry types.
+
+- Added doctree backend for rendering into a tree of docutils nodes.
+
+- Added support for non-string backends.
+
+
+
+Version 0.15
+------------
+(released on February 1, 2011)
+
+- Changed license from GPL-3 to MIT.
+
+- Added support for `setuptools plugins <plugins.txt>`_.
+
+- BibTeX parser: fixed whitespace normalization in concatenated strings.
+
+- BibTeX parser: when parsing multiple BibTeX files, macros defined in
+  earlier files are now available to all subsequent files, like in BibTeX.
+
+- BibTeX ``.bst`` interpreter now prints warnings on missing entries, like
+  BibTeX, instead of raising a ``KeyError``.
+
+- ``call.type$`` BibTeX built-in function now uses ``default.entry`` for
+  unknown entry types, like in BibTeX.
+
+- ``substring$`` now accepts start=0 and returns an empty string.
+
+- ``change.case$``: fixed incorrect formatting of strings starting with special
+  characters with "t" format.
+
+- Fixed abbreviation of names starting with special characters or
+  non-alphabetic characters.
+
+- Fixed incorrect entry order and duplicated entries with ``\nocite{*}``.
+
+- Added more detailed error messages for already defined variables in ``.bst``
+  files.
+
+
+Version 0.14.1
+--------------
+(released on September 30, 2010)
+
+- Added missing custom_fixers directory to the tarball - needed only for
+  converting the sources to Python 3.
+
+
+Version 0.14
+------------
+(released on September 20, 2010)
+
+- BibTeX writer: fixed quoting ``"`` (double quote) characters.
+
+- BibTeX parser now produces human-readable error messages on unread macros.
+
+- Added error messages on missing data in .aux files.
+
+- Improved performance on very long name lists.
+
+- Added support for Python 3.
+
+
+Version 0.13.2
+--------------
+(released on February 26, 2010)
+
+- BibTeX parser: fixed a bug with parsing strings containing braces, like "Error in {DNA}".
+
+
+Version 0.13.1
+--------------
+(released on February 18, 2010)
+
+- Fixed ``ImportError: No module named kpathsea`` errors. One of the source files
+  was missing from ``pybtex-0.13.tar.bz2`` for some strange reason. Sorry about that. ;)
+
+
+Version 0.13
+------------
+(released on February 14, 2010)
+
+- Implemented `--min-crossrefs` option.
+
+- All command line options of the original BibTeX are not supported.
+
+- Pybtex now respects `BSTINPUTS`, `BIBINPUTS` and `TEXMFOUTPUT` environment
+  variables.
+
+- BibTeX bibliography parser now strips excessive whitespace from fields, like
+  BibTeX does.
+
+
+Version 0.12
+------------
+(released on November 21, 2009)
+
+- Pybtex now works correctly with ``\input{filename}`` in LaTeX files.
+
+- Added a proper ``change.case$`` BibTeX function instead of a stub.
+
+- Added ``-e``/``--encoding`` command line option.
+
+- Fixed non-working ``--bibtex-encoding`` option.
+
+- Added proper error messages on missing plugins, file IO errors, some BibTeX
+  interpreter errors, etc.
+
+- Fallback to backslash-encoding when printing messages to the console - to
+  make them printable regardless of the locale.
+
+
+Version 0.11
+------------
+(released on September 7, 2009)
+
+- Made ``text.lentgh$`` and ``text.prefix$`` BibTeX built-in functions treat
+  braces and TeX special characters properly (like the original BibTeX
+  functions do).
+
+- Changed ``purify$`` to replace ties and hyphens by spaces.
+
+- Fixed a bug in ``substring$`` with negative start values.
+
+- Fixed .bst file grammar to allow underscores in identifiers.
+
+- BibTeX name parser: ties are now treated as whitespace when splitting name
+  parts.
+
+- Implemented BibTeX-like text wrapping - the resulting .bbl output should now
+  be byte-for-byte identical to that of BibTeX in most cases.
+
+
+Version 0.10
+------------
+(released on August 24, 2009)
+
+- Added support for multiple bibliography databases.
+
+- Pythonic bibliography formatter: added helper functions to simplify writing
+  BibTeX-like name formatting styles in Python. Added a tool for automatic
+  conversion of BibTeX ``{ll}{, ff}``-like patterns into Python.
+
+- BibTeX parser: added missing characters to the caracter set of the valid
+  identifiers.
+
+- BibTeX parser: a comma is now allowed between the last field and the closing
+  brace.
+
+- BibTeX name parser: when splitting name parts into words, whitespace at brace
+  level > 0 is now ignored.
+
+- BibTeX name parser: fixed parsing of single-word lowercase names and complex
+  von names, like in "Andrea de Leeuw van Weenen".
+
+- Fixed broken ``--label-style`` and ``--name-style`` options.
+
+- Added (autogenerated) manpages.
+
+- Added this changelog.
+
+
+Version 0.9
+-----------
+(released on August 17, 2009)
+
+- Implemented ``\citation{*}``.  
+
+- Implemented crossrefs.
+
+- BibTeX .bib parser now supports newlines inside strings.
+
+- Fixed: .bib filename from .aux file was ignored.
+
+- Fixed incorrect argument passing to codecs.open().
+
+- Fixed incorrect whitespace handling in the name parsing code.
+
+
+Version 20090402
+----------------
+(released on February 04, 2009)
+
+- Fixed yet more encoding-related bugs.
+
+- Cleaned up some old nasty code, updated the documentation, added more tests.
+
+
+Version 20080918
+----------------
+(released on September 18, 2008)
+
+- Added HTML backend. The pythonic bibliography formatter can now produce LaTeX,
+  HTML, and plaintext.
+
+- BibTeXML writer now indents the resulting XML.
+
+- Removed the dependency on external elementtree.
+
+- Improved the interface of the ``pybtex-convert`` script. It is just
+  ``convert foo.bib foo.yaml`` now.
+
+- Fixed several bugs in the BibTeX interpreter.
+
+- Fixed several encoding-related bugs.
+
+
+Version 20070513
+----------------
+(released on May 13, 2007)
+
+- Added an interpreter for the BibTeX stack language. Pybtex now supports
+  BibTeX style files.
+
+- Added a YAML bibliography format (both input and output).
+
+- Improved processing of names with {braces}.
+
+- Added support for ``@preamble`` to both BibTeX parser and writer.
+
+- Introduced an experimental pythonic template language to make bibliography
+  formatting easier with a more functional-oriented approach.
+
+- Added support for incollection entries to the experimentl pythonic bibliography
+  style.
+
+- cElementTree is now used for BibTeXML parsing, if present.
+
+- Added some documentation files (finally).
+
+
+Version 20060416
+----------------
+(released on April 16, 2006)
+
+- Added BibTeX and BibTeXML formatters for bibliography databases. Added a
+  database conversion tool.
+
+- Improved name splitting in the BibTeX parser.
+
+- Locale encoding is now used by default.
+
+- Added ``richtext.Check`` class to simplify formatting of optional bibliography
+  fields.
+
+- Added support for booklet and inbook entry types to the experimentl pythonic
+  bibliography style.
+
+
+Version 20060402
+----------------
+(released on April 2, 2006)
+
+- Added initial Unicode support and input/output encodings.
+
+- Introduced output backends to make bibliography styles markup-independent.
+  Added LaTeX and Plaintext backends.
+
+- Improved BibTeXML parser, add support for pre-parsed names (``<bibtex:first>``,
+  ``<bibtex:middle>`` and so on).
+
+- Added default macros for month names to the BibTeX parser.
+
+- Added an experimental ``richtext.Phrase`` (former ``Pack`` class (former
+  ``Packer`` class)) class to make creating sentences and delimited lists
+  easier.
+
+- Added experimental support for pluggable name and label styles to the
+  pythonic bibliogrphy formatter.
+
+- Made Pybtex work on Windows by renaming aux.py to auxfile.py. Duh.
+
+
+Version 0.1
+-----------
+(released on March 4, 2006)
+
+Initial release. This version already has a basic BibTeX .bib parser, BibTeXML
+parser and a proof-of-concept pythonic bibliography formatter.

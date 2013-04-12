@@ -1,0 +1,9 @@
+@import url(master.css);
+
+a {
+	text-decoration: none;
+}
+
+div#buttons {
+	display: none;
+}

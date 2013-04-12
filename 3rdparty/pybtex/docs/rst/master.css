@@ -1,0 +1,117 @@
+body {
+    font-family:sans-serif;
+    color: black;
+    background-color: white;
+}
+
+a {
+    color: #884400;
+    background-color: white;
+}
+
+a:hover {
+    color: #BB8811;
+    background-color: white;
+}
+
+p {
+    margin-top: 0.5em;
+    text-align: justify;
+}
+
+img {
+    border: none;
+}
+
+h1, h2, h3 {
+    border-bottom-style: solid;
+    border-bottom-color: #884400;
+    border-bottom-width: 0.08em;
+    padding-bottom: 0.2ex;
+}
+
+h1, h2, h3, h2 a, h3 a {
+    color: #BB8811;
+    background-color: white;
+}
+
+h2, h3 {
+    margin-top: 1em;
+    margin-bottom:0px;
+}
+
+h1.title {
+    font-size: 800%;
+}
+
+h1 .tail {
+    font-size: 50%;
+}
+
+h1 {
+    margin-top: 0px;
+    margin-bottom: 0.2em;
+    font-size: 300%;
+}
+
+h2 {
+    font-size: 200%;
+    width: 90%;
+}
+
+h3 {
+    width: 80%;
+}
+
+div.sourcecode {
+    border-left-style: solid;
+    border-left-color: #B81;
+    border-left-width: 0.08em;
+    padding-left: 1em;
+}
+
+#toc h2 {
+    font-size: 100%;
+    width: 85%;
+}
+
+div#toc {
+    margin-left: 3em;
+}
+
+hr {
+    border-top: 0.08em solid #840;
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 0;
+}
+
+div#footer {
+    margin-top: 3em;
+    font-size: 80%;
+    color: #555;
+}
+
+div#footer-left {
+    float: left;
+    width: 45%;
+}
+
+div#footer-right p {
+    text-align: right;
+}
+
+div#footer-right {
+    float: right;
+    width: 45%;
+}
+
+.pull-quote {
+    font-size: 120%;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: -2ex;
+    margin-bottom: 3ex;
+    width: 100%;
+    text-align: right;
+}

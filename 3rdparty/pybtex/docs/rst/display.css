@@ -1,0 +1,9 @@
+@import url(master.css);
+
+div#main {
+	margin-left: 10%;
+	width: 70%;
+	max-width: 540pt;
+	min-width: 220pt;
+}
+

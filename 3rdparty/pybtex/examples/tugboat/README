@@ -1,0 +1,3 @@
+One of the largest .bib files from the TeXLive distribution.
+
+No .tex file provided, just run pybtex tugboat and examine tugboat.bbl.

@@ -1,0 +1,14 @@
+To generate HTML documentation and man pages, run:
+
+$ ./generate.py
+
+It requires:
+- Python 2.5
+- Docutils (tested with 0.4 and 0.5)
+- Jinja2 (tested with 2.1.1)
+- Pygments (tested with versions from 0.7.1 to 1.0)
+
+For the curious: the site at http://pybtex.sourceforge.net/ is generated and
+updated as follows:
+
+$ ./generate.py site

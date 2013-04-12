@@ -1,0 +1,9 @@
+A sample project with two Pybtex plugins: a bibliography parser and a
+bibliography writer, which parse/write bibliography data as plain Python code.
+
+Usage:
+$ python setup.py develop
+$ pybtex --help (python plugins is now listed as a possible choice for the --bibliography-format option.
+$ pybtex-convert --help (see the help for -f and -t options)
+$ pybtex-convert foo.bib foo.py
+$ pybtex-convert foo.py foo.bib
