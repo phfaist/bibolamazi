@@ -1,0 +1,9 @@
+
+%%%-BIBFILTER-BEGIN-%%%
+% src: input.bib
+% src: add additional sources here; inexisting files are ignored.
+%
+% filter: arxiv
+%
+%%%-BIBFILTER-END-%%%
+
