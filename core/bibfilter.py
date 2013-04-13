@@ -1,11 +1,21 @@
 
 
+
+class BibFilterError(Exception):
+    def __init__(self, filtername, errorstr):
+        if (not isinstance(filtername, basestring)):
+            filtername = '<unknown>'
+        Exception.__init__(self, "filter `"+filtername+"': "+errorstr);
+
+
+
+
 class BibFilter:
 
     # constants
     BIB_FILTER_SINGLE_ENTRY = 1;
-    BIB_FILTER_ENTRY_LIST = 2;
-    BIB_FILTER_FILE = 3;
+    BIB_FILTER_BIBLIOGRAPHYDATA = 2;
+    BIB_FILTER_BIBFILTERFILE = 3;
 
     
     def __init__(self, *pargs, **kwargs):
@@ -19,13 +29,13 @@ class BibFilter:
 
 
     def filter_bibentry(self, x):
-        return x;
+        raise BibFilterError(self.name(), 'filter_bibentry() not implemented !')
 
-    def filter_bibentry_list(self, x):
-        return x;
+    def filter_bibliographydata(self, x):
+        raise BibFilterError(self.name(), 'filter_bibliographydata() not implemented !')
 
     def filter_bibfilterfile(self, x):
-        return x;
+        raise BibFilterError(self.name(), 'filter_bibfilterfile() not implemented !')
 
 
     

@@ -3,13 +3,17 @@ import importlib;
 import re;
 import shlex;
 import inspect;
+import argparse;
+import pdb;
 
+from core.butils import store_key_val
 from core.blogger import logger;
 
 
 # list all filters here.
-__all__ = [ 'arxiv'
-            ]
+__all__ = ( 'arxiv',
+            'duplicates',
+            )
 
 
 # some exception classes.
@@ -53,7 +57,11 @@ def make_filter(name, optionstring):
     pargs = [];
     kwargs = {};
     if (hasattr(fmodule, 'parse_args')):
-        kwargs = fmodule.parse_args(optionstring);
+        x = fmodule.parse_args(optionstring);
+        try:
+            (pargs, kwargs) = x;
+        except TypeError, ValueError:
+            kwargs = x;
     else:
         (pargs, kwargs) = _default_parse_optionstring(name, fclass, optionstring);
 
@@ -63,36 +71,49 @@ def make_filter(name, optionstring):
 
 
 
-# a basic, default option parser. Simply maps the options in the form key=value to
-# the filter constructor's function argument names; unrecognized chunks are positional
-# arguments.
+# a basic, default option parser. Simply constructs an argparse object with the function's argument
+# names mapped to options.
 def _default_parse_optionstring(name, fclass, optionstring):
 
     logger.debug("_default_parse_optionstring: name: "+name+"; fclass="+repr(fclass)
                  +"; optionstring="+optionstring);
 
+    (fargs, varargs, keywords, defaults) = inspect.getargspec(fclass.__init__);
+    
+    p = argparse.ArgumentParser(prog=(u'bibolamazi:'+name), description=(name+u' bibolamazi filter'));
+
+    for farg in fargs:
+        # normalize name
+        fopt = re.sub('_', '-', farg);
+        p.add_argument('--'+fopt, action='store');
+
+    if keywords:
+        # a la ghostscript: -sOutputFile=blahblah -sKey=Value
+        p.add_argument('-s', action=store_key_val, dest='');
+
+    if varargs:
+        p.add_argument('args', nargs=argparse.REMAINDER, dest='_args');
+
+    parts = shlex.split(optionstring);
+    args = p.parse_args(parts);
+
+    # parse and collect arguments now
+
+    dargs = vars(args);
     pargs = [];
     kwargs = {};
 
-    (fargs, varargs, keywords, defaults) = inspect.getargspec(flcass.__init__)[0];
-    
-    parts = shlex.split(optionstring);
-    for x in parts:
-        m = re.match(r'/(\w+)=(.*)/', x);
-        if (not m):
-            logger.debug("positional argument: "+x);
-            pargs.append(x);
+    for (arg, argval) in dargs.iteritems():
+        if (arg == '_args'):
+            pargs = argval;
             continue
-
-        arg = m.group(1);
-        val = m.group(2);
-        if (arg not in fargs):
-            if (keywords is None):
-                raise FilterOptionsParseError(name, "Bad option key: `"+arg+"'");
-            # otherwise, this arg will be captured by the constructor's **kwargs
-
-        # store this arg as a keyword argument.
-        kwargs[arg] = val;
+        if (arg == 'self'):
+            continue
+        if (argval is None):
+            continue
+        kwargs[arg] = argval;
+    
+    #pdb.set_trace()
 
     return (pargs, kwargs);
         

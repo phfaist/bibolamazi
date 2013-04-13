@@ -16,3 +16,14 @@ ch.setFormatter(formatter);
 # add the handlers to the logger
 logger.addHandler(ch);
 
+
+
+def _set_verbosity(value):
+    if (value == 0):
+        logger.setLevel(logging.ERROR);
+    if (value == 1):
+        logger.setLevel(logging.INFO);
+    if (value >= 2):
+        logger.setLevel(logging.DEBUG);
+
+logger.setVerbosity = _set_verbosity;

@@ -18,14 +18,21 @@ class BibFilterInfoParseError(Exception):
     pass
 
 
+CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%';
+CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
+
+
 encoding = 'utf-8';
 
 
 class BibFilterFile:
     def __init__(self, fname):
+        logger.debug("opening file "+repr(fname));
         self._fname = fname;
         self._dir = os.path.dirname(os.path.realpath(fname));
+
         with codecs.open(fname, 'r', encoding) as f:
+            logger.debug("File "+repr(fname)+" opened.");
             self._parse_stream(f);
 
     def rawheader(self):
@@ -46,8 +53,8 @@ class BibFilterFile:
     def filters(self):
         return self._filters;
 
-    def bibentries(self):
-        return self._bibentries;
+    def bibliographydata(self):
+        return self._bibliographydata;
     
 
     def _parse_stream(self, stream):
@@ -59,34 +66,50 @@ class BibFilterFile:
         state = ST_HEADER;
 
         content = {
-            ST_HEADER: "",
-            ST_CONFIG: "",
-            ST_REST: ""
+            ST_HEADER: u"",
+            ST_CONFIG: u"",
+            ST_REST: u""
             };
+        config_data = u"";
 
         for line in stream:
             
-            if (state == ST_HEADER and line.startswith("%%%-BIBFILTER-BEGIN-%%%")):
+            if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
                 state = ST_CONFIG;
+                content[ST_CONFIG] += line;
                 continue
 
-            if (state == ST_CONFIG and line.startswith("%%%-BIBFILTER-END-%%%")):
+            if (state == ST_CONFIG and line.startswith(CONFIG_END_TAG)):
+                content[ST_CONFIG] += line;
                 state = ST_REST;
                 continue
 
             if (state == ST_CONFIG):
                 # remove leading % signs
-                line = re.sub(r'^%', '', line);
+                #logger.debug("adding line to config_data: "+line);
+                config_data += re.sub(r'^%', '', line);
 
             content[state] += line;
 
         # save the splitted data into these data structures.
         self._header = content[ST_HEADER];
         self._config = content[ST_CONFIG];
+        self._config_data = config_data;
         self._rest = content[ST_REST];
+        
+        logger.debug(("Parsed general bibfilterfile structure: len(header)=%d"+
+                      "; len(config)=%d; len(config_data)=%d; len(rest)=%d") %
+                     ( len(self._header),
+                       len(self._config),
+                       len(self._config_data),
+                       len(self._rest) ) );
+
+
+        logger.debug("config block is"+ "\n--------------------------------\n"
+                     +self._config_data+"\n--------------------------------\n");
 
         # now, parse the configuration.
-        configstream = io.StringIO(unicode(self._config));
+        configstream = io.StringIO(unicode(self._config_data));
         cmds = [];
         emptycmd = [None, "", {}];
         latestcmd = emptycmd;
@@ -95,7 +118,11 @@ class BibFilterFile:
                 cmds.append(latestcmd);
 
         for cline in configstream:
-            if ((latestcmd[0] != "filter") and re.match('^\s*$', cline)):
+            if (re.match(r'^\s*%%', cline)):
+                # ignore comments
+                continue
+            
+            if ((latestcmd[0] != "filter") and re.match(r'^\s*$', cline)):
                 # ignore empty lines except for adding to 'filter' commands.
                 continue
 
@@ -104,7 +131,7 @@ class BibFilterFile:
             if (not mcmd):
                 if (latestcmd[0] is None):
                     # no command
-                    raise BibFilterInfoParseError("Expected a bibclean command: `"+cline+"'");
+                    raise BibFilterInfoParseError("Expected a bibolamazi command: `"+cline+"'");
                 # simply continue current cmd
                 latestcmd[1] += cline;
                 continue
@@ -139,18 +166,23 @@ class BibFilterFile:
         self._filters = [];
         for cmd in cmds:
             if (cmd[0] == "src"):
-                self._sources.append(cmd[1].strip());
+                thesrc = cmd[1].strip();
+                self._sources.append(thesrc);
+                logger.debug("Added source `"+thesrc+"'");
                 continue
             if (cmd[0] == "filter"):
-                self._filters.append(filters.make_filter(cmd[2]['filtername'], cmd[1]));
+                filname = cmd[2]['filtername'];
+                filoptions = cmd[1];
+                self._filters.append(filters.make_filter(filname, filoptions));
+                logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 
             raise BibFilterInfoParseError("Unknown command: "+repr(cmd)+"");
 
 
-        self._bibentries = None;
+        self._bibliographydata = None;
 
-        # now, populate all bibentries.
+        # now, populate all bibliographydata.
         for src in self._sources:
             self._populate_from_src(src);
 
@@ -170,33 +202,38 @@ class BibFilterFile:
             # ignore file
             return None;
 
-        if (self._bibentries is None):
+        if (self._bibliographydata is None):
             # initialize bibliography data
-            self._bibentries = pybtex.database.BibliographyData();
+            self._bibliographydata = pybtex.database.BibliographyData();
 
-        self._bibentries.add_entries(bib_data.entries.iteritems());
-
-
+        self._bibliographydata.add_entries(bib_data.entries.iteritems());
 
 
-    def setentries(self, entries):
-        self._bibentries = pybtex.database.BibliographyData();
-        self._bibentries.add_entries(entries.iteritems());
 
+
+    def setBibliographyData(self, bibliographydata):
+        self._bibliographydata = bibliographydata;
+
+    def setEntries(self, bibentries):
+        self._bibliographydata = pybtex.database.BibliographyData();
+        self._bibliographydata.add_entries(bibentries);
 
 
 
     def save_to_file(self):
         with codecs.open(self._fname, 'w', encoding) as f:
             f.write(self._header);
-            f.write('%%%-BIBFILTER-BEGIN-%%%\n');
-            for line in io.StringIO(unicode(self._config)):
-                f.write('%'+line);
-            f.write('%%%-BIBFILTER-END-%%%\n');
-            f.write('\n\n\n\n');
+            f.write(self._config);
+            f.write(u'\n\n\n\n'+
+                    u'% THIS FILE WAS AUTOMATICALLY GENERATED BY bibolamazi WITH THE ABOVE CONFIGURATION.\n'+
+                    u'% ALL CHANGES BEYOND THIS POINT WILL BE LOST.\n'+
+                    u'\n\n\n\n'
+                    );
 
             w = outputbibtex.Writer();
-            w.write_stream(self._bibentries, f);
+            w.write_stream(self._bibliographydata, f);
+            
+            logger.debug("Updated output file `"+self._fname+"'");
         
         
         
