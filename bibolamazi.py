@@ -18,6 +18,9 @@ if __name__ == "__main__":
         # run main program
         import core.main
         
+    except SystemExit:
+        raise
+    
     except:
         
         print

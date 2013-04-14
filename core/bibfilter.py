@@ -17,6 +17,9 @@ class BibFilter:
     BIB_FILTER_BIBLIOGRAPHYDATA = 2;
     BIB_FILTER_BIBFILTERFILE = 3;
 
+    # subclasses should provide meaningful help texts
+    helptext = "";
+    
     
     def __init__(self, *pargs, **kwargs):
         pass

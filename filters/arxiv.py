@@ -7,6 +7,48 @@ import re
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
+
+HELPTEXT = '''
+ArXiv clean-up filter: normalizes the way each biblographic entry refers to arXiv IDs.
+
+There are two common ways to include arXiv IDs in bib files:
+    @unpublished{Key,
+      authors = ...
+      ...
+      note = {arXiv:XXXX.YYYY}
+    }
+and
+    @article{Key,
+      ...
+      journal = {ArXiv e-prints},
+      ...
+      arxivid = {XXXX.YYYY}
+          OR
+      eprint = {XXXX.YYYY}
+    }
+
+And of course, each bibtex style handles maybe one but not the other, and then they appear
+differently, and so on. In addition, if you want to add an arXiv ID to published articles,
+it may also appear either in the note={} or in the eprint={} tag.
+
+THIS FILTER will detect the various ways of declaring arXiv information and extract it for
+each entry. Then this information is reproduced in each entry using a single of the above
+conventions, depending on the provided options. Entries with no arxiv information are left
+untouched. Different behaviors can be set independently for published articles and
+unpublished with arxiv IDs:
+    "strip"   -- remove the arxiv information completely.
+    "unpublished-note"  -- set the entry type to "unpublished", and add or append to the note
+                 the string "arXiv:XXXX.YYYY"
+    "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
+                 set to the detected arXiv ID, as well as a tag "primaryclass" set to the
+                 primary archive (e.g. "quant-ph") if that information was detected.
+
+
+'''
+
+
+
+
 MODE_UNPUBLISHED_NOTE = 1;
 MODE_EPRINT = 2;
 MODE_STRIP = 3;
@@ -56,7 +98,14 @@ def getArXivInfo(entry):
 
 class ArxivNormalizeFilter(BibFilter):
     
+    helptext = HELPTEXT;
+
     def __init__(self, mode=MODE_EPRINT, unpublished_mode=None):
+        """
+        *mode: the behavior to adopt for published articles which also have an arxiv ID
+        *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv ID
+        """
+        
         BibFilter.__init__(self);
 
         self.mode = self._parse_mode(mode);
