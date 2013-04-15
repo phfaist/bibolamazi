@@ -35,6 +35,9 @@ class FilterOptionsParseError(Exception):
 filter_modules = {};
 
 def get_module(name):
+    if not re.match(r'^[.\w]+$', name):
+        raise ValueError("Filter name may only contain alphanum chars and dots")
+
     # already open
     if (name in filter_modules):
         return filter_modules[name];
@@ -123,6 +126,8 @@ def _default_option_parser(name, fclass):
         x = re.sub(r'([a-z])([A-Z])', lambda mo: mo.group(1)+"_"+mo.group(2).lower(), x);
         return x
 
+    if (defaults is None):
+        defaults = [];
     def fmtarg(k, fargs, defaults):
         s = fargs[k];
         off = len(fargs)-len(defaults);

@@ -2,6 +2,7 @@
 import re
 import argparse
 
+from blogger import logger
 import filters
 
 
@@ -137,5 +138,9 @@ class opt_action_help(argparse.Action):
 
         thefilter = values
 
-        filters.print_filter_help(thefilter);
-        parser.exit();
+        try:
+            filters.print_filter_help(thefilter);
+            parser.exit();
+        except filters.NoSuchFilter:
+            logger.error("No Such Filter: `"+thefilter+"'");
+            parser.exit();

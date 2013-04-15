@@ -27,13 +27,13 @@ parser = argparse.ArgumentParser(description='Collect bibliographic entries from
                                  ' apply rules or filters to them.',
                                  prog='bibolamazi',
                                  add_help=False);
-parser.add_argument('-I', '--interactive', action='store_true',
-                    help='Create a new bibfilter configuration, or modify current one interactively.');
+#parser.add_argument('-I', '--interactive', action='store_true',
+#                    help='Create a new bibfilter configuration, or modify current one interactively.');
 parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', default=1,
                     help='Increase or set verbosity (0=quiet,1=info,2=verbose)')
 parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0);
 parser.add_argument('-h', '--help', action=opt_action_help, nargs='?', metavar='filter',
-                    help='Show this help message and exit. If fitler is given, shows information and '+
+                    help='Show this help message and exit. If filter is given, shows information and '+
                     'help text for that filter. Available filters are: '+", ".join(filters.__all__))
 parser.add_argument('outputbibfile',
                     help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI configuration tags.');
