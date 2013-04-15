@@ -33,11 +33,21 @@ class store_or_count(argparse.Action):
 
 
     def __call__(self, parser, namespace, values, option_string):
-
+                
         try:
             val = getattr(namespace, self.dest);
         except AttributeError:
             val = 0;
+
+        # count -vv as -v -v
+        if (isinstance(values, basestring) and not option_string.startswith('--') and len(option_string) > 1):
+            optstr = option_string[1:]
+            while values.startswith(optstr):
+                # add an additional count for each additional specification of the option.
+                val += 1;
+                values = values[len(optstr):] # strip that from the values
+            if not values:
+                values = None
 
         if (values is not None):
             # value provided
@@ -121,7 +131,7 @@ class store_key_const(argparse.Action):
 class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
-        if (not values):
+        if (not values or values == "elp"): # in case of -help
             parser.print_help()
             parser.exit()
 

@@ -14,6 +14,7 @@ from core.blogger import logger;
 __all__ = ( 'arxiv',
             'duplicates',
             'url',
+            'nameinitials',
             )
 
 
