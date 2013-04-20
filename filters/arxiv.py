@@ -68,10 +68,15 @@ def getArXivInfo(entry):
            };
     
     if (entry.type == u'unpublished'):
-        d['published'] = False;
+        d['published'] = False
 
+    # if journal is the arXiv, it's not published.
     if ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
-        d['published'] = False;
+        d['published'] = False
+
+    # if there's no journal, it's the arxiv.
+    if ('journal' not in fields or fields['journal'] == ""):
+        d['published'] = False
         
 
     if ('eprint' in fields):
@@ -189,6 +194,10 @@ class ArxivNormalizeFilter(BibFilter):
             return entry
 
         if (mode == MODE_EPRINT):
+            if (arxivinfo['published'] == False):
+                entry.fields['journal'] = "ArXiv e-prints";
+                entry.fields.pop('pages','');
+                
             entry.fields['arxivid'] = arxivinfo['arxivid'];
             entry.fields['eprint'] = arxivinfo['arxivid'];
             if (arxivinfo['primaryclass']):
