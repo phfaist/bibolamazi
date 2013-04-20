@@ -43,6 +43,8 @@ class UrlNormalizeFilter(BibFilter):
         if (self.strip and 'url' in entry.fields):
             del entry.fields['url'];
 
+        #logger.debug("Stripped 'url' entry from field=%r", entry.fields);
+
         arxivinfo = arxiv.getArXivInfo(entry);
 
         if ('url' in entry.fields):
@@ -67,12 +69,16 @@ class UrlNormalizeFilter(BibFilter):
             for url in urls:
                 if re.match(r'^http://arxiv.org/abs/', url):
                     urls.remove(url);
-            entry.fields['url'] = " ".join(urls);
+            if (len(urls)):
+                entry.fields['url'] = " ".join(urls);
+            else:
+                entry.fields.pop('url', None)
 
         if (self.urlfromdoi):
             if ('doi' in entry.fields):
                 urls.append("http://dx.doi.org/"+entry.fields['doi']);
                 entry.fields['url'] = " ".join(urls);
+
         if (self.urlfromarxiv):
             if (arxivinfo is not None):
                 urls.append("http://arxiv.org/abs/"+arxivinfo['arxivid']);

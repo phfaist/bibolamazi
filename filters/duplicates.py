@@ -93,7 +93,12 @@ class DuplicatesFilter(BibFilter):
             return False
 
         def getlast(pers):
-            return " ".join(pers.last());
+            # join last names
+            last = pers.last()[-1].upper();
+            # additionally, remove any special LaTeX chars which may be written differently.
+            last = re.sub(r'\\([a-zA-Z]+|.)', '', last);
+            last = re.sub(r'(\{|\})', '', last);
+            return last;
 
         for k in range(len(apers)):
             if (not (getlast(apers[k]) == getlast(bpers[k]))):

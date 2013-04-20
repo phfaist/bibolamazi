@@ -2,8 +2,18 @@
 import re
 import argparse
 
-import filters
+import version
 
+def get_version():
+    return version.version_str;
+
+_theversionsplit = None
+
+def get_version_split():
+    if (_theversionsplit is None):
+        m = re.match(r'^(\d+)(?:\.(\d+)(?:\.(\d+)(.+)?)?)?', version.version_str);
+        _theversionsplit = (m.group(1), m.group(2), m.group(3), m.group(4));
+    return _theversionsplit;
 
 
 def getbool(x):
@@ -19,7 +29,22 @@ def getbool(x):
         if m:
             return False
     raise ValueError("Can't parse boolean value: %r" % x);
-            
+
+
+
+
+def guess_encoding_decode(dat, encoding=None):
+    if encoding:
+        return dat.decode(encoding);
+
+    try:
+        return dat.decode('utf-8');
+    except UnicodeDecodeError:
+        pass
+
+    # this should always succeed
+    return dat.decode('latin1');
+
 
 
 
@@ -122,6 +147,8 @@ class store_key_const(argparse.Action):
         else:
             try:
                 d = getattr(namespace, self.dest);
+                if d is None:
+                    d = [];
             except AttributeError:
                 d = [];
             d.append(key);
@@ -131,11 +158,13 @@ class store_key_const(argparse.Action):
 class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
-        if (not values or values == "elp"): # in case of -help
+        if (not values or values == "elp"): # in case of -help: seen as -h elp
             parser.print_help()
             parser.exit()
 
         thefilter = values
 
+        import filters
         filters.print_filter_help(thefilter);
         parser.exit();
+

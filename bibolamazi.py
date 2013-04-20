@@ -1,10 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import os.path
 import sys
 
 
+if sys.hexversion < 0x02070000:
+    print "FATAL ERROR: Python 2.7 or later is required."
+    exit(254);
+
+    
 # setup python path correctly first.
 # ----------------------------------
 thisdir = os.path.dirname(os.path.realpath(__file__));
