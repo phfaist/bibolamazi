@@ -3,6 +3,7 @@ import re
 import argparse
 
 from blogger import logger
+import version
 
 
 def get_version():
