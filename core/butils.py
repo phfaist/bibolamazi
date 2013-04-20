@@ -2,7 +2,8 @@
 import re
 import argparse
 
-import version
+from blogger import logger
+
 
 def get_version():
     return version.version_str;
@@ -164,7 +165,10 @@ class opt_action_help(argparse.Action):
 
         thefilter = values
 
-        import filters
-        filters.print_filter_help(thefilter);
-        parser.exit();
-
+        import filters;
+        try:
+            filters.print_filter_help(thefilter);
+            parser.exit();
+        except filters.NoSuchFilter:
+            logger.error("No Such Filter: `"+thefilter+"'");
+            parser.exit();

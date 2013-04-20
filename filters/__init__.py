@@ -35,6 +35,9 @@ class FilterOptionsParseError(Exception):
 filter_modules = {};
 
 def get_module(name):
+    if not re.match(r'^[.\w]+$', name):
+        raise ValueError("Filter name may only contain alphanum chars and dots")
+
     # already open
     if (name in filter_modules):
         return filter_modules[name];
@@ -75,6 +78,16 @@ def make_filter(name, optionstring):
 
 
 
+_add_epilog="""
+Note:
+You may use either the `--key value' syntax for passing options, or the -sKey=Value syntax. Use
+-dSwitch to set that option to True. When using -s or -d options, the key names are camel-cased,
+i.e. the option `--add-description arxiv' can be specified as `-sAddDescription=arxiv' and
+`--preserve-ids True' can provided as `-dPreserveIds'
+
+Have a lot of fun!
+"""
+
 _rxargdoc = re.compile(r'\n?\s*\*(\w+):\s*', re.S);
 
 #
@@ -93,8 +106,11 @@ def _default_option_parser(name, fclass):
     for m in re.finditer(_rxargdoc, doc):
         pos.append(m);
     argdocs = {};
+    begindoc = None;
     for k in range(len(pos)):
         m = pos[k]
+        if (begindoc is None):
+            begindoc = doc[:m.start()];
         thisend = (pos[k+1].start() if k < len(pos)-1 else len(doc));
         argdocs[m.group(1)] = doc[m.end():thisend];
 
@@ -109,10 +125,24 @@ def _default_option_parser(name, fclass):
         x = re.sub(r'^[A-Z]', lambda mo: mo.group(0).lower(), x);
         x = re.sub(r'([a-z])([A-Z])', lambda mo: mo.group(1)+"_"+mo.group(2).lower(), x);
         return x
+
+    if (defaults is None):
+        defaults = [];
+    def fmtarg(k, fargs, defaults):
+        s = fargs[k];
+        off = len(fargs)-len(defaults);
+        if (k-off > 0):
+            s += "="+repr(defaults[k-off]);
+        return s
+    fclasssyntaxdesc = fclass.__name__+("(" + (", ".join([fmtarg(k, fargs, defaults) for k in range(len(fargs)) if fargs[k] != "self"]))
+                                        + (" ..." if (varargs or keywords) else "") + ")");
     
-    p = argparse.ArgumentParser(prog=(u'bibolamazi:'+name),
-                                description=fclass.helptext,
+
+    p = argparse.ArgumentParser(prog=name,
+                                description=fclass.helpdescription,
+                                epilog="Filter Syntax: "+fclasssyntaxdesc+"\n\n"+fclass.helptext+"\n"+_add_epilog,
                                 add_help=False,
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                 );
 
     # a la ghostscript: -sOutputFile=blahblah -sKey=Value
@@ -122,7 +152,8 @@ def _default_option_parser(name, fclass):
                    help='-dKey sets parameter Key to True');
 
     # allow also to give arguments without the keywords.
-    p.add_argument('_args', nargs='*', metavar='<arg>');
+    p.add_argument('_args', nargs='*', metavar='<arg>',
+                   help='Additional arguments will be passed as is to the filter--see documentation below');
 
     p.add_argument_group('filter parameters');
 

@@ -216,7 +216,11 @@ class BibFilterFile:
             if (cmd[0] == "filter"):
                 filname = cmd[2]['filtername'];
                 filoptions = cmd[1];
-                self._filters.append(filters.make_filter(filname, filoptions));
+                try:
+                    self._filters.append(filters.make_filter(filname, filoptions));
+                except filters.NoSuchFilter:
+                    logger.critical("No such filter: `"+filname+"'! Stop.");
+                    exit(255);
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 

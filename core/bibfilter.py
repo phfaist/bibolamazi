@@ -18,6 +18,7 @@ class BibFilter:
     BIB_FILTER_BIBFILTERFILE = 3;
 
     # subclasses should provide meaningful help texts
+    helpdescription = "Some filter that filters some entries";
     helptext = "";
     
     

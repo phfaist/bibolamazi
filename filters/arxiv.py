@@ -7,10 +7,11 @@ import re
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
-
-HELPTEXT = '''
+HELPDESC = u"""
 ArXiv clean-up filter: normalizes the way each biblographic entry refers to arXiv IDs.
+"""
 
+HELPTEXT = u"""
 There are two common ways to include arXiv IDs in bib files:
     @unpublished{Key,
       authors = ...
@@ -36,19 +37,21 @@ each entry. Then this information is reproduced in each entry using a single of 
 conventions, depending on the provided options. Entries with no arxiv information are left
 untouched. Different behaviors can be set independently for published articles and
 unpublished with arxiv IDs:
+    "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
     "strip"   -- remove the arxiv information completely.
-    "unpublished-note"  -- set the entry type to "unpublished", and add or append to the note
-                 the string "arXiv:XXXX.YYYY"
+    "unpublished-note"  -- set the entry type to "unpublished", add or append to the note={}
+                 the string "arXiv:XXXX.YYYY" and set journal={ArXiv e-prints}
     "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
                  set to the detected arXiv ID, as well as a tag "primaryclass" set to the
                  primary archive (e.g. "quant-ph") if that information was detected.
 
 
-'''
+"""
 
 
 
 
+MODE_NONE = 0;
 MODE_UNPUBLISHED_NOTE = 1;
 MODE_EPRINT = 2;
 MODE_STRIP = 3;
@@ -98,10 +101,13 @@ def getArXivInfo(entry):
 
 class ArxivNormalizeFilter(BibFilter):
     
+    helpdescription = HELPDESC;
     helptext = HELPTEXT;
 
     def __init__(self, mode=MODE_EPRINT, unpublished_mode=None):
         """
+        Constructor method for ArxivNormalizeFilter
+        
         *mode: the behavior to adopt for published articles which also have an arxiv ID
         *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv ID
         """
@@ -115,6 +121,8 @@ class ArxivNormalizeFilter(BibFilter):
         logger.debug('arxiv filter constructor: mode=%d; unpublished_mode=%d' % (self.mode, self.unpublished_mode));
 
     def _parse_mode(self, mode):
+        if (mode == "none" or mode is None):
+            return MODE_NONE;
         if (mode == "unpublished-note"):
             return MODE_UNPUBLISHED_NOTE;
         elif (mode == "eprint"):
@@ -144,6 +152,15 @@ class ArxivNormalizeFilter(BibFilter):
             # no arxiv info--don't do anything
             return entry
 
+        mode = self.mode
+        if (not arxivinfo['published']):
+            #logger.debug('entry not published : %r' % entry);
+            mode = self.unpublished_mode
+
+        if (mode == MODE_NONE):
+            # don't change the entry, return it as is.
+            return entry;
+
         # start by stripping all arxiv info.
         entry.fields.pop('archiveprefix', None);
         entry.fields.pop('arxivid', None);
@@ -154,11 +171,6 @@ class ArxivNormalizeFilter(BibFilter):
             entry.fields['note'] = rxarxivinnote.sub('', entry.fields['note']);
         if (entry.type == u'unpublished'):
             entry.type = u'article';
-
-        mode = self.mode
-        if (not arxivinfo['published']):
-            #logger.debug('entry not published : %r' % entry);
-            mode = self.unpublished_mode
             
         if (mode == MODE_STRIP):
             # directly return stripped entry.
