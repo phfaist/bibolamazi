@@ -10,13 +10,35 @@ from core.blogger import logger;
 import arxiv;
 
 
+HELP_TEXT = """
+
+This filter removes URLs from entries according to if the entry also has a DOI entry doi={} or an
+arXiv ID detected (via eprint={}, arxivid={}, or in a note={}). See the relevant options.
+
+"""
+
 
 class UrlNormalizeFilter(BibFilter):
     
-    helptext = "";
+    helpdescription = "Remove or add URLs from entries according to whether DOI or ArXiv ID is given"
+    helptext = HELP_TEXT;
 
     def __init__(self, Strip=True, StripAllIfDoiOrArxiv=True, StripDoiUrl=True, StripArxivUrl=True,
                  UrlFromDoi=False, UrlFromArxiv=False):
+        """UrlNormalizeFilter constructor.
+
+        *Strip: Removes all URLs from the entry. Maybe add URLs according to the other options.
+        *StripAllIfDoiOrArxiv: Removes all URLs from the entry, but only if a DOI identifier or an ArXiv ID
+                               is present.
+        *StripDoiUrl: Remove any URL that is in fact a DOI lookup, i.e. of the form
+                      http://dx.doi.org/<DOI>
+        *StripArxivUrl: Remove any URL that looks like an arxiv lookup, i.e. of the
+                        form http://arxiv.org/abs/<ID>
+        *UrlFromDoi: If the entry has a DOI identifier, then add an explicit URL that is a DOI lookup,
+                     i.e. http://dx.doi.org/<DOI>
+        *UrlFromArxiv: If the entry has an ArXiv identifier, then add an explicit URL that links to the
+                       arXiv page, i.e. http://arxiv.org/abs/<ARXIV-ID>
+        """
         BibFilter.__init__(self);
 
         self.strip = getbool(Strip);

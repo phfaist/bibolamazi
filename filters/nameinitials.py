@@ -12,10 +12,28 @@ from core.blogger import logger;
 import arxiv;
 
 
+HELP_TEXT = """
+
+In all entries, turn the first and middle names of people into initials.
+
+This filter does not take any options. Any additional arguments given are interpreted
+as roles to consider (see pybtex API), one or more among ['author', 'editor'] (WARNING:
+EXPERIMENTAL), e.g.
+
+  %% only process author fields
+  nameinitials
+  nameinitials author
+  
+  %% process author and editor fields
+  nameinitials author editor
+
+"""
+
 
 class NameInitialsFilter(BibFilter):
-    
-    helptext = "";
+
+    helpdescription = "Name Initials filter: Turn full first names into initials only in all entries."
+    helptext = HELP_TEXT;
 
     def __init__(self, *roles):
         BibFilter.__init__(self);

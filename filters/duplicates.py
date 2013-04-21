@@ -70,7 +70,31 @@ BIBALIAS_HEADER = ur"""
 """
 
 
+
+HELP_TEXT = """
+
+This filter works by writing a LaTeX file to a specified location (via the `dupfile' option) which
+contains the needed commands to define the bibtex aliases.
+
+Note that the dupfile option is mandatory. You need to specify a file to write to. You may do this
+with `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
+
+In your main LaTeX document, you need to add the following command in the preamble:
+
+  \input{yourdupfile.tex}
+
+where of couse yourdupfile.tex is the file that you specified to this filter.
+
+"""
+
+
+
 class DuplicatesFilter(BibFilter):
+
+    helpdescription = "Filter that detects duplicate entries and makes one entry an alias of the other."
+
+    helptext = HELP_TEXT
+    
     
     def __init__(self, dupfile):
         BibFilter.__init__(self);
