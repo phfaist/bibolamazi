@@ -5,6 +5,8 @@ import sys;
 import os;
 import os.path;
 import codecs;
+import shlex;
+import urllib;
 from datetime import datetime;
 
 import pybtex.database;
@@ -92,6 +94,9 @@ class BibFilterFile:
 
     def sources(self):
         return self._sources;
+
+    def source_lists(self):
+        return self._source_lists;
 
     def filters(self):
         return self._filters;
@@ -206,12 +211,14 @@ class BibFilterFile:
 
         # parse commands
         self._sources = [];
+        self._source_lists = [];
         self._filters = [];
         for cmd in cmds:
             if (cmd[0] == "src"):
-                thesrc = cmd[1].strip();
-                self._sources.append(thesrc);
-                logger.debug("Added source `"+thesrc+"'");
+                thesrc_list = shlex.split(cmd[1]);
+                self._source_lists.append(thesrc_list);
+                self._sources.append('');
+                logger.debug("Added source list %r" % (thesrc_list));
                 continue
             if (cmd[0] == "filter"):
                 filname = cmd[2]['filtername'];
@@ -230,26 +237,50 @@ class BibFilterFile:
         self._bibliographydata = None;
 
         # now, populate all bibliographydata.
-        for src in self._sources:
-            self._populate_from_src(src);
+        for k in range(len(self._source_lists)):
+            srclist = self._source_lists[k];
+            src = self._populate_from_srclist(srclist);
+            self._sources[k] = src;
 
         logger.debug('done with init!');
 
 
+    def _populate_from_srclist(self, srclist):
+        for src in srclist:
+            # try to populate from this source
+            ok = self._populate_from_src(src);
+            if ok:
+                return src
+        logger.info("Ignoring inexisting source list: "+", ".join(srclist));
+        return None
+
     def _populate_from_src(self, src):
         bib_data = None;
-        if (not os.path.isabs(src)):
+
+        is_url = False
+        if (re.match('^[A-Za-z0-9+_-]+://.*', src)):
+            is_url = True
+        
+        if (not is_url and not os.path.isabs(src)):
             src = os.path.join(self._dir, src);
 
         # read data, decode it in the right charset
         data = None;
-        try:
-            with open(src, 'r') as f:
-                data = butils.guess_encoding_decode(f.read());
-        except IOError:
-            logger.info("Ignoring inexistant file "+src);
-            # ignore file
-            return None;
+        if is_url:
+            logger.debug("Opening URL %r", src);
+            f = urllib.urlopen(src);
+            if (f is None):
+                return None
+            data = butils.guess_encoding_decode(f.read());
+            logger.debug(" ... successfully read %d chars from URL resouce." % len(data));
+            f.close();
+        else:
+            try:
+                with open(src, 'r') as f:
+                    data = butils.guess_encoding_decode(f.read());
+            except IOError:
+                # ignore source, will have to try next in list
+                return None;
 
         # parse bibtex
         parser = inputbibtex.Parser();
@@ -263,6 +294,7 @@ class BibFilterFile:
 
         self._bibliographydata.add_entries(bib_data.entries.iteritems());
 
+        return True
 
 
 

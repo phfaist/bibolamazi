@@ -77,6 +77,6 @@ class FixesFilter(BibFilter):
         return entry;
     
 
-def getclass():
+def get_class():
     return FixesFilter;
 

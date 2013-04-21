@@ -12,7 +12,7 @@ import argparse
 from core.bibfilterfile import BibFilterFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
-from core.butils import store_or_count, opt_action_help
+from core.butils import store_or_count, opt_list_filters, opt_action_help
 
 # for list of filters
 import filters
@@ -31,9 +31,12 @@ parser = argparse.ArgumentParser(description='Collect bibliographic entries from
 #                    help='Create a new bibfilter configuration, or modify current one interactively.');
 parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', default=1,
                     help='Increase or set verbosity (0=quiet,1=info,2=verbose)')
-parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0);
+parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0,
+                    help="Don't display any messages. Same as `-v 0'");
+parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
+                    help="Show a list of available filters along with their description, and exit.");
 parser.add_argument('-h', '--help', action=opt_action_help, nargs='?', metavar='filter',
-                    help='Show this help message and exit. If filter is given, shows information and '+
+                    help='Show this help message and exit. If filter is given, show information and '+
                     'help text for that filter. Available filters are: '+", ".join(filters.__all__))
 parser.add_argument('outputbibfile',
                     help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI configuration tags.');
@@ -42,6 +45,7 @@ args = parser.parse_args();
 
 logger.setVerbosity(args.verbosity);
 logger.debug('Set verbosity to level '+repr(args.verbosity));
+
 
 
 # open the bibfilterfile, which is the output bibtex file

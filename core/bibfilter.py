@@ -20,8 +20,8 @@ class BibFilter:
     # subclasses should provide meaningful help texts
     helpdescription = "Some filter that filters some entries";
     helptext = "";
-    
-    
+
+   
     def __init__(self, *pargs, **kwargs):
         pass
 
@@ -42,4 +42,14 @@ class BibFilter:
         raise BibFilterError(self.name(), 'filter_bibfilterfile() not implemented !')
 
 
+
+    # convenience functions, no need to override
+    @classmethod
+    def getHelpDescription(cls):
+        return cls.helpdescription.strip();
+
+    @classmethod
+    def getHelpText(cls):
+        return cls.helptext.strip();
     
+

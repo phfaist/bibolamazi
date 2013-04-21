@@ -173,6 +173,6 @@ class DuplicatesFilter(BibFilter):
         return
 
 
-def getclass():
+def get_class():
     return DuplicatesFilter;
 

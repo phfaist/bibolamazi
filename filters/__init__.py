@@ -52,13 +52,20 @@ def get_module(name):
 
     # and return it
     return filter_modules[name];
+
+
+def get_filter_class(name):
     
+    fmodule = get_module(name);
+
+    return fmodule.get_class();
+
 
 def make_filter(name, optionstring):
 
     fmodule = get_module(name);
 
-    fclass = fmodule.getclass();
+    fclass = fmodule.get_class();
 
     pargs = [];
     kwargs = {};
@@ -140,8 +147,8 @@ def _default_option_parser(name, fclass):
     
 
     p = argparse.ArgumentParser(prog=name,
-                                description=fclass.helpdescription,
-                                epilog="Filter Syntax: "+fclasssyntaxdesc+"\n\n"+fclass.helptext+"\n"+_add_epilog,
+                                description=fclass.getHelpDescription(),
+                                epilog="Filter Syntax: "+fclasssyntaxdesc+"\n\n"+fclass.getHelpText()+"\n"+_add_epilog,
                                 add_help=False,
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
                                 );
@@ -219,14 +226,29 @@ def _default_parse_optionstring(name, fclass, optionstring):
 
 
 
-def print_filter_help(name):
+def format_filter_help(name):
     #
-    # First, get the filter help text.
+    # Get the parser via the filter, and use its format_help()
     #
 
     fmodule = get_module(name);
 
-    fclass = fmodule.getclass();
+    fclass = fmodule.get_class();
+
+    (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
+
+    return p.format_help();
+    
+
+
+def print_filter_help(name):
+    #
+    # Get the parser via the filter, and use its print_help()
+    #
+
+    fmodule = get_module(name);
+
+    fclass = fmodule.get_class();
 
     (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
 

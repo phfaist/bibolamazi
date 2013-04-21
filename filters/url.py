@@ -87,6 +87,6 @@ class UrlNormalizeFilter(BibFilter):
         return entry
 
 
-def getclass():
+def get_class():
     return UrlNormalizeFilter;
 

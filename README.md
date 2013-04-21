@@ -41,7 +41,7 @@ Writing new filters
 -------------------
 
 Writing filters is straightforward. Look inside the filters/ directory at the existing
-filters `arxiv.py`, `duplicates.py` and `url.py`. They should be simple to understand.
+filters, e.g. `arxiv.py`, `duplicates.py` or `url.py`. They should be simple to understand.
 
 A filter can either act on individual entries (e.g. the `arxiv.py` filter), or on the
 whole database (e.g. `duplicates.py`).

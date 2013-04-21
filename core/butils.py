@@ -2,6 +2,11 @@
 import re
 import argparse
 
+# pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
+# it should automatically.
+import pydoc
+
+
 from blogger import logger
 import version
 
@@ -161,15 +166,48 @@ class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
         if (not values or values == "elp"): # in case of -help: seen as -h elp
-            parser.print_help()
+            pydoc.pager(parser.format_help())
             parser.exit()
 
         thefilter = values
 
         import filters;
         try:
-            filters.print_filter_help(thefilter);
+            pydoc.pager(filters.format_filter_help(thefilter));
             parser.exit();
         except filters.NoSuchFilter:
             logger.error("No Such Filter: `"+thefilter+"'");
             parser.exit();
+
+
+FILTERS_HELP = """
+List of available filters:
+--------------------------
+%(filter_list)s
+--------------------------
+
+Use  bibolamazi --help <filter>  for more information about each filter.
+
+"""
+
+class opt_list_filters(argparse.Action):
+    def __init__(self, nargs=0, **kwargs):
+        argparse.Action.__init__(self, nargs=0, **kwargs);
+        
+    def __call__(self, parser, namespace, values, option_string):
+
+        import filters;
+
+        filter_list = [
+            "%-16s %s" % (f+': ', filters.get_filter_class(f).getHelpDescription())
+            for f in filters.__all__
+            ]
+
+        all_text = FILTERS_HELP % {'filter_list': "\n".join(filter_list)};
+
+        pydoc.pager(all_text);
+        parser.exit();
+
+
+
+
