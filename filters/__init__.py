@@ -90,7 +90,7 @@ _add_epilog="""
 Note:
 You may use either the `--key value' syntax for passing options, or the -sKey=Value syntax. Use
 -dSwitch to set that option to True. When using -s or -d options, the key names are camel-cased,
-i.e. the option `--add-description arxiv' can be specified as `-sAddDescription=arxiv' and
+i.e. an option like `--add-description arxiv' can be specified as `-sAddDescription=arxiv' and
 `--preserve-ids True' can provided as `-dPreserveIds'
 
 Have a lot of fun!
@@ -139,7 +139,7 @@ def _default_option_parser(name, fclass):
     def fmtarg(k, fargs, defaults):
         s = fargs[k];
         off = len(fargs)-len(defaults);
-        if (k-off > 0):
+        if (k-off >= 0):
             s += "="+repr(defaults[k-off]);
         return s
     fclasssyntaxdesc = fclass.__name__+("(" + (", ".join([fmtarg(k, fargs, defaults) for k in range(len(fargs)) if fargs[k] != "self"]))
@@ -155,9 +155,9 @@ def _default_option_parser(name, fclass):
 
     # a la ghostscript: -sOutputFile=blahblah -sKey=Value
     p.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
-                   help='-sKey=Value sets parameter values');
+                   help="-sKey=Value sets parameter values");
     p.add_argument('-d', action=store_key_const, const=True, dest='_d_args', metavar='Switch',
-                   help='-dKey sets parameter Key to True');
+                   help="-dSwitch sets parameter `Switch' to True");
 
     # allow also to give arguments without the keywords.
     p.add_argument('_args', nargs='*', metavar='<arg>',
