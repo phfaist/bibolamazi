@@ -100,6 +100,10 @@ def getArXivInfo(entry):
     if (d['arxivid'] is None):
         # no arXiv info.
         return None
+
+    # FIX: if archive-ID is old style, and does not contain the primary class, add it as "quant-ph/XXXXXXX"
+    if (re.match(r'^\d{7}$', d['arxivid']) and len(d['primaryclass']) > 0):
+        d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
     
     return d
 

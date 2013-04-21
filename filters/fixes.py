@@ -1,10 +1,11 @@
 
 import re
 
+from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError;
-from core.blogger import logger;
-from core import butils;
+from core.bibfilter import BibFilter, BibFilterError
+from core.blogger import logger
+from core import butils
 
 
 HELPDESC = u"""
@@ -53,10 +54,25 @@ class FixesFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        # ### BUG: perform substitution in persons, too!!!
+        def thefilter(x):
+            if (self.fix_swedish_a):
+                x = re.sub(r'\\AA\s+', r'\AA{}', x);
+            return x
+
+        def filter_person(p):
+            return Person(string=thefilter(unicode(p)));
+            # does not work this way because of the way Person() splits at spaces:
+            #parts = {}
+            #for typ in ['first', 'middle', 'prelast', 'last', 'lineage']:
+            #    parts[typ] = thefilter(u" ".join(p.get_part(typ)));
+            #return Person(**parts);
+
+        for (role,perslist) in entry.persons.iteritems():
+            for k in range(len(perslist)):
+                entry.persons[role][k] = filter_person(perslist[k]);
         
         for (k,v) in entry.fields.iteritems():
-            entry.fields[k] = re.sub(r'\\AA\s+', r'\AA{}', v);
+            entry.fields[k] = thefilter(v);
 
         return entry;
     
