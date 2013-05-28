@@ -140,7 +140,8 @@ class ArxivNormalizeFilter(BibFilter):
         
         *mode: the behavior to adopt for published articles which also have an arxiv ID
         *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv ID
-        *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to
+        *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
+                             unpublished entries
         """
         
         BibFilter.__init__(self);
@@ -222,6 +223,8 @@ class ArxivNormalizeFilter(BibFilter):
 
         if (mode == MODE_EPRINT):
             if (arxivinfo['published'] == False):
+                # if the entry is unpublished, set the journal name to
+                # "arXiv e-prints" (or whatever was specified by filter option)
                 entry.fields['journal'] = self.arxiv_journal_name;
                 entry.fields.pop('pages','');
                 
