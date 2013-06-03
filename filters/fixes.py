@@ -29,25 +29,31 @@ from core.blogger import logger
 from core import butils
 
 
-HELPDESC = u"""
+HELP_AUTHOR = u"""\
+Fixes filter by Philippe Faist, (C) 2013, GPL 3+
+"""
+
+HELP_DESC = u"""\
 Fixes filter: perform some various known fixes for bibtex entries
 """
 
-HELPTEXT = u"""
+HELP_TEXT = u"""
 Perform some various fixes for bibtex entries.
 
 For now, the only implemented fix is
   -dFixSwedishA
-that changes "\\AA berg" to "\\AA{}berg" to prevent revtex from inserting a blank after the "\\AA".
-
+that changes "\\AA berg" to "\\AA{}berg" to prevent revtex from inserting a
+blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
+Mendeley generates)
 """
 
 
 
 class FixesFilter(BibFilter):
     
-    helpdescription = HELPDESC;
-    helptext = HELPTEXT;
+    helpauthor = HELP_AUTHOR
+    helpdescription = HELP_DESC
+    helptext = HELP_TEXT
 
     def __init__(self, fix_swedish_a=False):
         """

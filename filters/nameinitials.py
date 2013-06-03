@@ -32,8 +32,15 @@ from core.blogger import logger;
 import arxiv;
 
 
-HELP_TEXT = """
+HELP_AUTHOR = u"""\
+Name Initials filter by Philippe Faist, (C) 2013, GPL 3+
+"""
 
+HELP_DESC = u"""
+Name Initials filter: Turn full first names into only initials for all entries.
+"""
+
+HELP_TEXT = u"""
 In all entries, turn the first and middle names of people into initials.
 
 This filter does not take any options. Any additional arguments given are interpreted
@@ -46,14 +53,14 @@ EXPERIMENTAL), e.g.
   
   %% process author and editor fields
   nameinitials author editor
-
 """
 
 
 class NameInitialsFilter(BibFilter):
 
-    helpdescription = "Name Initials filter: Turn full first names into initials only in all entries."
-    helptext = HELP_TEXT;
+    helpauthor = HELP_AUTHOR
+    helpdescription = HELP_DESC
+    helptext = HELP_TEXT
 
     def __init__(self, *roles):
         BibFilter.__init__(self);

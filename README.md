@@ -1,7 +1,7 @@
 bibolamazi
 ==========
 
-![bibolamazi logo](https://github.com/phfaist/bibolamazi/raw/master/bibolamazi.png)
+![bibolamazi](https://github.com/phfaist/bibolamazi/raw/master/bibolamazi.png)
 
 Collect bibliographic entries from BibTeX files and apply rules or filters to them
 
@@ -35,6 +35,15 @@ NOTE: bibolamazi requires Python 2.7 being installed.
           > bibolamazi
  
   whereever you are.
+
+* To get a list of all available filters along with their description, run
+
+           > bibolamazi.py --list-filters
+
+  To get information about a specific filter, simply use the command
+
+           > bibolamazi.py --help <filter>
+
 
 
 Writing new filters

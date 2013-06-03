@@ -11,12 +11,15 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
 
-HELP_DESC = """\
+HELP_AUTHOR = u"""\
+Order entries filter by Philippe Faist, (C) 2013, GPL 3+
+"""
+
+HELP_DESC = u"""\
 Order bibliographic entries in bibtex file
 """
 
-HELP_TEXT = """
-
+HELP_TEXT = u"""
 This filter orders the entries in the bibtex file, alphabetically according to
 citation key.
 
@@ -32,6 +35,7 @@ ORDER_CITATION_KEY_ALPHA = 1
 
 class OrderEntriesFilter(BibFilter):
 
+    helpauthor = HELP_AUTHOR
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
     

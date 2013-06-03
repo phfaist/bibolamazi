@@ -21,66 +21,35 @@
 
 
 import re
-#import shlex
-#import argparse
-
 
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
-HELPDESC = u"""
-ArXiv clean-up filter: normalizes the way each biblographic entry refers to arXiv IDs.
-"""
-
-HELPTEXT = u"""
-There are two common ways to include arXiv IDs in bib files:
-    @unpublished{Key,
-      authors = ...
-      ...
-      note = {arXiv:XXXX.YYYY}
-    }
-and
-    @article{Key,
-      ...
-      journal = {ArXiv e-prints},
-      ...
-      arxivid = {XXXX.YYYY}
-          OR
-      eprint = {XXXX.YYYY}
-    }
-
-And of course, each bibtex style handles maybe one but not the other, and then they appear
-differently, and so on. In addition, if you want to add an arXiv ID to published articles,
-it may also appear either in the note={} or in the eprint={} tag.
-
-THIS FILTER will detect the various ways of declaring arXiv information and extract it for
-each entry. Then this information is reproduced in each entry using a single of the above
-conventions, depending on the provided options. Entries with no arxiv information are left
-untouched. Different behaviors can be set independently for published articles and
-unpublished with arxiv IDs:
-    "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
-    "strip"   -- remove the arxiv information completely.
-    "unpublished-note"  -- set the entry type to "unpublished", add or append to the note={}
-                 the string "arXiv:XXXX.YYYY" and set journal={ArXiv e-prints}
-    "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
-                 set to the detected arXiv ID, as well as a tag "primaryclass" set to the
-                 primary archive (e.g. "quant-ph") if that information was detected.
 
 
-"""
-
-
-
-
+# possible modes in which to operate
 MODE_NONE = 0;
 MODE_UNPUBLISHED_NOTE = 1;
 MODE_EPRINT = 2;
 MODE_STRIP = 3;
 
-
+# a regex that we will need often
 rxarxivinnote = re.compile(r'(\b|^)arXiv:(?:(?:([-a-zA-Z]+)/)?([0-9.]+))(\s|$)', re.IGNORECASE);
 
+# extract arXiv info from an entry
 def getArXivInfo(entry):
+    """
+    Extract arXiv information from a pybtex.database.Entry bibliographic entry.
+
+    Returns upon success a dictionary of the form
+        { 'primaryclass': <primary class, if available>,
+          'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
+          'published': True/False <whether this entry was published in a journal other than arxiv>
+        }
+
+    If no arXiv information was detected, then this function returns None.
+    """
+    
     fields = entry.fields;
 
     d =  { 'primaryclass': None ,
@@ -129,10 +98,60 @@ def getArXivInfo(entry):
     return d
 
 
+HELP_AUTHOR = u"""\
+ArXiv clean-up filter by Philippe Faist, (C) 2013, GPL 3+
+"""
+
+HELP_DESC = u"""\
+ArXiv clean-up filter: normalizes the way each biblographic entry refers to arXiv IDs.
+"""
+
+HELP_TEXT = u"""
+There are two common ways to include arXiv IDs in bib files:
+    @unpublished{Key,
+      authors = ...
+      ...
+      note = {arXiv:XXXX.YYYY}
+    }
+and
+    @article{Key,
+      ...
+      journal = {ArXiv e-prints},
+      ...
+      arxivid = {XXXX.YYYY}
+          OR
+      eprint = {XXXX.YYYY}
+    }
+
+And of course, each bibtex style handles maybe one but not the other, and then they appear
+differently, and so on. In addition, if you want to add an arXiv ID to published articles,
+it may also appear either in the note={} or in the eprint={} tag.
+
+THIS FILTER will detect the various ways of declaring arXiv information and extract it for
+each entry. Then this information is reproduced in each entry using a single of the above
+conventions, depending on the provided options. Entries with no arxiv information are left
+untouched. Different behaviors can be set independently for published articles and
+unpublished with arxiv IDs:
+    "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
+    "strip"   -- remove the arxiv information completely.
+    "unpublished-note"  -- set the entry type to "unpublished", and add or append to the
+                 note={} the string "arXiv:XXXX.YYYY"
+    "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
+                 set to the detected arXiv ID, as well as a tag "primaryclass" set to the
+                 primary archive (e.g. "quant-ph") if that information was detected. For
+                 unpublished articles, also set journal={ArXiv e-prints} (or given arxiv
+                 journal name in filter options)
+
+"""
+
+
+# the filter itself
 class ArxivNormalizeFilter(BibFilter):
     
-    helpdescription = HELPDESC;
-    helptext = HELPTEXT;
+    helpauthor = HELP_AUTHOR
+    helpdescription = HELP_DESC
+    helptext = HELP_TEXT
+
 
     def __init__(self, mode=MODE_EPRINT, unpublished_mode=None, arxiv_journal_name="ArXiv e-prints"):
         """
@@ -163,7 +182,10 @@ class ArxivNormalizeFilter(BibFilter):
         elif (mode == "strip"):
             return MODE_STRIP;
 
-        return int(mode);
+        try:
+            return int(mode);
+        except ValueError:
+            raise Exception("Invalid mode: %r" %(mode))
         
 
     def name(self):
@@ -187,7 +209,7 @@ class ArxivNormalizeFilter(BibFilter):
 
         mode = self.mode
         if (not arxivinfo['published']):
-            #logger.debug('entry not published : %r' % entry);
+            #logger.longdebug('entry not published : %r' % entry);
             mode = self.unpublished_mode
 
         if (mode == MODE_NONE):
@@ -237,24 +259,6 @@ class ArxivNormalizeFilter(BibFilter):
         
         raise BibFilterError('arxiv', "Unknown mode: %s" % mode );
 
-
-## def parse_args(optionstring):
-##     #logger.debug("optionstring = "+repr(optionstring));
-##     a = argparse.ArgumentParser('bibclean: ArXiv normalize filter')
-##     a.add_mutually_exclusive_group(required=False)
-##     a.add_argument('--unpublished-note', dest='unpublished_note',
-##                           action='store_true')
-##     a.add_argument('--eprint', action='store_true')
-
-##     args = a.parse_args(shlex.split(optionstring));
-
-##     mode = -1;
-##     if (args.unpublished_note):
-##         mode = MODE_UNPUBLISHED_NOTE;
-##     elif (args.eprint):
-##         mode = MODE_EPRINT;
-
-##     return { 'mode': mode };
 
 
 def get_class():

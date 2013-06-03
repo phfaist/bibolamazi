@@ -20,32 +20,46 @@
 ################################################################################
 
 
+import logging
+from types import MethodType
 
-import logging;
 
+# note: DEBUG=10, INFO=20, WARNING=30 etc.
+LONGDEBUG = 5
+logging.addLevelName(LONGDEBUG, "LONGDEBUG");
 
 # DEBUG/LOGGING
 # create logger
-logger = logging.getLogger('bibfilter');
-logger.setLevel(logging.DEBUG);
+logger = logging.getLogger('bibolamazi');
+def longdebug(l, msg, *args, **kwargs):
+    l.log(LONGDEBUG, msg, *args, **kwargs);
+    
+logger.longdebug = MethodType(longdebug, logger, logging.Logger)
 # create console handler
 ch = logging.StreamHandler();
 ch.setLevel(logging.DEBUG);
 # create formatter and add it to the handlers
 #formatter = logging.Formatter('%(name)s - %(asctime)-15s %(levelname)s: %(message)s');
-formatter = logging.Formatter('%(levelname)s: %(message)s');
+formatter = logging.Formatter('%(message)s');
 ch.setFormatter(formatter);
 # add the handlers to the logger
 logger.addHandler(ch);
 
 
 
-def _set_verbosity(value):
+def _set_verbosity(l, value):
     if (value == 0):
-        logger.setLevel(logging.ERROR);
-    if (value == 1):
-        logger.setLevel(logging.INFO);
-    if (value >= 2):
-        logger.setLevel(logging.DEBUG);
+        l.setLevel(logging.ERROR);
+    elif (value == 1):
+        l.setLevel(logging.INFO);
+    elif (value == 2):
+        l.setLevel(logging.DEBUG);
+    elif (value >= 3):
+        l.setLevel(LONGDEBUG);
+    else:
+        raise ValueError("Bad verbosity level: %r" %(value))
 
-logger.setVerbosity = _set_verbosity;
+    l.longdebug("Set verbosity level to %d" %(value))
+
+
+logger.setVerbosity = MethodType(_set_verbosity, logger, logging.Logger);

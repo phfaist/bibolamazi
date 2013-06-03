@@ -65,7 +65,7 @@ parser.add_argument('outputbibfile',
 args = parser.parse_args();
 
 logger.setVerbosity(args.verbosity);
-logger.debug('Set verbosity to level '+repr(args.verbosity));
+logger.longdebug('Set verbosity: %d' %(args.verbosity));
 
 
 

@@ -30,18 +30,28 @@ from core.blogger import logger;
 import arxiv;
 
 
+HELP_AUTHOR = u"""\
+URLs filter by Philippe Faist, (C) 2013, GPL 3+
+"""
+
+HELP_DESC = u"""\
+Remove or add URLs from entries according to given rules, e.g. whether DOI or ArXiv ID are present
+"""
+
 HELP_TEXT = """
-
-This filter removes URLs from entries according to if the entry also has a DOI entry doi={} or an
-arXiv ID detected (via eprint={}, arxivid={}, or in a note={}). See the relevant options.
-
+This filter removes or adds URLs to/from entries according to certain given
+rules. Please see the documentation for each option above for details about
+what the rule performs. Each rule may be set or removed individually. By
+default, performs the rules Strip, StripAllIfDoiOrArxiv, StripDoiUrl and
+StripArxivUrl.
 """
 
 
 class UrlNormalizeFilter(BibFilter):
     
-    helpdescription = "Remove or add URLs from entries according to whether DOI or ArXiv ID is given"
-    helptext = HELP_TEXT;
+    helpauthor = HELP_AUTHOR
+    helpdescription = HELP_DESC
+    helptext = HELP_TEXT
 
     def __init__(self, Strip=True, StripAllIfDoiOrArxiv=True, StripDoiUrl=True, StripArxivUrl=True,
                  UrlFromDoi=False, UrlFromArxiv=False):

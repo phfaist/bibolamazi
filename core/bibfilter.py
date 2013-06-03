@@ -38,6 +38,7 @@ class BibFilter:
     BIB_FILTER_BIBFILTERFILE = 3;
 
     # subclasses should provide meaningful help texts
+    helpauthor = "";
     helpdescription = "Some filter that filters some entries";
     helptext = "";
 
@@ -64,6 +65,10 @@ class BibFilter:
 
 
     # convenience functions, no need to override
+    @classmethod
+    def getHelpAuthor(cls):
+        return cls.helpauthor.strip();
+
     @classmethod
     def getHelpDescription(cls):
         return cls.helpdescription.strip();

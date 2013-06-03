@@ -27,7 +27,7 @@ import inspect
 import argparse
 import textwrap
 
-from core.butils import store_key_val, store_key_const
+from core.butils import store_key_val, store_key_const, store_key_bool
 from core.blogger import logger
 
 
@@ -47,9 +47,30 @@ class NoSuchFilter(Exception):
     def __init__(self, fname):
         Exception.__init__(self, "No such filter: "+fname);
 
-class FilterOptionsParseError(Exception):
-    def __init__(self, name, errorstr):
-        Exception.__init__(self, "Can't parse options for filter "+name+"': "+errorstr);
+class FilterError(Exception):
+    def __init__(self, errorstr, name=None):
+        self.name = name;
+        self.errorstr = errorstr;
+        Exception.__init__(self, unicode(self));
+
+    def fmt(self, name):
+        return "Filter %s: %s" %(name, self.errorstr)
+
+    def __unicode__(self):
+        name = ( "`%s'" %(self.name) if self.name else "<unknown>" )
+        return self.fmt(name)
+
+    def __str__(self):
+        return self.unicode().encode('ascii')
+    
+
+class FilterOptionsParseError(FilterError):
+    def fmt(self, name):
+        return "Can't parse options for filter %s: %s" %(name, self.errorstr)
+
+class FilterCreateError(FilterError):
+    def fmt(self, name):
+        return "Can't create filter %s: %s" %(name, self.errorstr)
 
 
 
@@ -101,10 +122,17 @@ def make_filter(name, optionstring):
     else:
         (pargs, kwargs) = _default_parse_optionstring(name, fclass, optionstring);
 
+
     # and finally, instantiate the filter.
     logger.debug('calling fclass('+','.join([repr(x) for x in pargs])+', '+
                   ','.join([repr(k)+'='+repr(v) for k,v in kwargs.iteritems()]) + ')');
-    return fclass(*pargs, **kwargs);
+    try:
+        return fclass(*pargs, **kwargs);
+    except Exception as e:
+        msg = unicode(e);
+        if (not isinstance(e, FilterError) and e.__class__ != Exception):
+            msg = e.__class__.__name__ + ": " + msg
+        raise FilterCreateError(msg, name)
 
 
 
@@ -188,17 +216,19 @@ def _default_option_parser(name, fclass):
 
     # a la ghostscript: -sOutputFile=blahblah -sKey=Value
     group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
+                               exception=FilterOptionsParseError,
                                help="-sKey=Value sets parameter values");
-    group_general.add_argument('-d', action=store_key_const, const=True, dest='_d_args', metavar='Switch',
-                               help="-dSwitch sets parameter `Switch' to True");
+    group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args', metavar='Switch[=<value>]',
+                               exception=FilterOptionsParseError,
+                               help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default True. Valid"+
+                               " boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
 
     # allow also to give arguments without the keywords.
     group_general.add_argument('_args', nargs='*', metavar='<arg>',
                                help='Additional arguments will be passed as is to the filter--see documentation below');
 
     p.add_argument_group(u"Python filter syntax",
-                         re.sub('\n', '\n      ', # add indentation to new lines
-                                textwrap.fill(fclasssyntaxdesc, 80)));
+                         textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
 
     p.add_argument_group(u'Note', textwrap.dedent(
         u"""\
@@ -221,7 +251,11 @@ def _default_parse_optionstring(name, fclass, optionstring):
     (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
 
     parts = shlex.split(optionstring);
-    args = p.parse_args(parts);
+    try:
+        args = p.parse_args(parts);
+    except FilterOptionsParseError as e:
+        e.name = name
+        raise
 
     # parse and collect arguments now
 
@@ -235,9 +269,13 @@ def _default_parse_optionstring(name, fclass, optionstring):
             continue
         if (arg == '_d_args' and argval is not None):
             # get all the defined args
-            for key in argval:
-                thekey = getArgNameFromSOpt(key);
-                kwargs[thekey] = True
+            for (thekey, theval) in argval:
+                # store this definition
+                therealkey = getArgNameFromSOpt(thekey);
+                kwargs[therealkey] = theval
+
+                logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
+                
             continue
             
         if (arg == '_s_args' and argval is not None):
@@ -245,6 +283,9 @@ def _default_parse_optionstring(name, fclass, optionstring):
             for (key, v) in argval:
                 thekey = getArgNameFromSOpt(key);
                 kwargs[thekey] = v
+
+                logger.debug("Set option `%s' to `%s'" %(thekey, v))
+                
             continue
 
         if (argval is None):
@@ -268,23 +309,19 @@ def format_filter_help(name):
 
     fmodule = get_module(name);
 
+    if (hasattr(fmodule, 'format_help')):
+        return fmodule.format_help();
+
+    # otherwise, use the help formatter of the default option parser
+
     fclass = fmodule.get_class();
 
     (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
 
-    return p.format_help();
+    prolog = fclass.getHelpAuthor();
+    if (prolog):
+        prolog += "\n\n";
+
+    return prolog + p.format_help();
     
 
-
-def print_filter_help(name):
-    #
-    # Get the parser via the filter, and use its print_help()
-    #
-
-    fmodule = get_module(name);
-
-    fclass = fmodule.get_class();
-
-    (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
-
-    p.print_help();

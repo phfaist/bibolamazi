@@ -39,6 +39,9 @@ sys.path += [thisdir,
              thisdir + '/3rdparty/pybtex'];
 
 
+from core.butils import BibolamaziError
+
+
 if __name__ == "__main__":
     try:
 
@@ -48,17 +51,16 @@ if __name__ == "__main__":
     except SystemExit:
         raise
     
+    except BibolamaziError as e:
+        print "ERROR:", unicode(e)
+
     except:
         
         print
         print " -- ERROR --"
         print
 
-        import traceback
-        traceback.print_exc()
-
         # debugging post-mortem
-        import pdb
-
-        pdb.post_mortem();
+        import traceback; traceback.print_exc()
+        import pdb; pdb.post_mortem();
 

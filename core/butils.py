@@ -43,10 +43,26 @@ def get_version_split():
     return _theversionsplit;
 
 
+
+
+class BibolamaziError(Exception):
+    def __init__(self, msg, where=None):
+        self.where = where;
+        fullmsg = msg
+        if (where is not None):
+            fullmsg += "\n\t@: "+where;
+
+        Exception.__init__(self, fullmsg);
+
+
+
+
+
+
 def getbool(x):
     try:
         return (int(x) != 0)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         pass
     if (isinstance(x, basestring)):
         m = re.match(r'^\s*(t(?:rue)?|1|y(?:es)?|on)\s*$', x, re.IGNORECASE);
@@ -131,10 +147,12 @@ class store_or_count(argparse.Action):
 rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL);
 
 class store_key_val(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=1, **kwargs):
+    def __init__(self, option_strings, dest, nargs=1, exception=ValueError, **kwargs):
         # some checks
         if nargs != 1:
             raise ValueError('nargs for store_key_val actions must be == 1')
+
+        self.exception = exception
 
         super(store_key_val, self).__init__(
             option_strings=option_strings,
@@ -149,7 +167,7 @@ class store_key_val(argparse.Action):
             values = values[0];
         m = rxkeyval.match(values);
         if not m:
-            raise ValueError("cannot parse key=value pair: "+repr(values));
+            raise self.exception("cannot parse key=value pair: "+repr(values));
 
         keyvalpair = (m.group(1), m.group(2),)
 
@@ -165,6 +183,54 @@ class store_key_val(argparse.Action):
                 d = [];
             d.append(keyvalpair);
             setattr(namespace, self.dest, d);
+
+
+class store_key_bool(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=1, const=True,
+                 exception=ValueError, **kwargs):
+        
+        # some checks
+        if nargs != 1:
+            raise ValueError('nargs for store_key_bool actions must be == 1')
+
+        self.exception = exception
+
+        super(store_key_bool, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=bool(const),
+            **kwargs);
+
+
+    def __call__(self, parser, namespace, values, option_string):
+
+        key = values[0]
+
+        storeval = self.const
+
+        eqindex = key.find('=');
+        if (eqindex != -1):
+            try:
+                storeval = getbool(key[eqindex+1:])
+                key = key[:eqindex];
+            except ValueError as e:
+                raise self.exception(unicode(e))
+
+        if (not self.dest):
+            setattr(namespace, key, self.const);
+        else:
+            try:
+                d = getattr(namespace, self.dest);
+                if d is None:
+                    d = [];
+            except AttributeError:
+                d = [];
+            d.append(
+                (key, storeval,)
+                );
+            setattr(namespace, self.dest, d);
+
 
 
 
@@ -227,12 +293,17 @@ Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 
 
 FILTERS_HELP = """
+
 List of available filters:
 --------------------------
+
 %(filter_list)s
+
 --------------------------
 
-Use  bibolamazi --help <filter>  for more information about each filter.
+Use  bibolamazi --help <filter>  for more information about each filter and
+its options.
+
 
 """
 
@@ -242,10 +313,20 @@ class opt_list_filters(argparse.Action):
         
     def __call__(self, parser, namespace, values, option_string):
 
+        import textwrap;
         import filters;
 
+        def fmt_filter_helpline(f):
+            
+            nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
+            return ( "  %-13s " %(f) +
+                     nlindentstr.join(textwrap.wrap(filters.get_filter_class(f).getHelpDescription(),
+                                                    (80-16) # 80 line width, -16 indent chars
+                                                    ))
+                     )
+
         filter_list = [
-            "%-16s %s" % (f+': ', filters.get_filter_class(f).getHelpDescription())
+            fmt_filter_helpline(f)
             for f in filters.__all__
             ]
 

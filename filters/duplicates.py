@@ -94,33 +94,6 @@ BIBALIAS_HEADER = ur"""
 
 
 
-HELP_TEXT = """
-
-This filter works by writing a LaTeX file to a specified location (via the
-`dupfile' option) which contains the needed commands to define the bibtex
-aliases.
-
-Note that the dupfile option is mandatory in order to create the file with
-duplicate definitions. You need to specify a file to write to. You may do this
-with `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
-
-In your main LaTeX document, you need to add the following command in the
-preamble:
-
-  \input{yourdupfile.tex}
-
-where of couse yourdupfile.tex is the file that you specified to this filter.
-
-Alternatively, if you just set the warn flag on, then a duplicate file is not
-created (unless the dupfile option is given), and a warning is displayed for
-each duplicate found.
-
-"""
-
-
-
-
-
 DUPL_WARN_TOP = """
 
     DUPLICATE ENTRIES WARNING
@@ -140,10 +113,40 @@ DUPL_WARN_BOTTOM = """
 
 
 
+HELP_AUTHOR = u"""\
+Duplicates filter by Philippe Faist, (C) 2013, GPL 3+
+"""
+
+HELP_DESC = u"""\
+Filter that detects duplicate entries and produces rules to make one entry an alias of the other.
+"""
+
+HELP_TEXT = u"""
+This filter works by writing a LaTeX file to a specified location (via the
+`dupfile' option) which contains the needed commands to define the bibtex
+aliases.
+
+Note that the dupfile option is mandatory in order to create the file with
+duplicate definitions. You need to specify a file to write to. You may do this
+with `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
+
+In your main LaTeX document, you need to add the following command in the
+preamble:
+
+  \input{yourdupfile.tex}
+
+where of couse yourdupfile.tex is the file that you specified to this filter.
+
+Alternatively, if you just set the warn flag on, then a duplicate file is not
+created (unless the dupfile option is given), and a warning is displayed for
+each duplicate found.
+"""
+
+
 class DuplicatesFilter(BibFilter):
 
-    helpdescription = "Filter that detects duplicate entries and makes one entry an alias of the other."
-
+    helpauthor = HELP_AUTHOR
+    helpdescription = HELP_DESC
     helptext = HELP_TEXT
     
     
