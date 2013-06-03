@@ -1,3 +1,24 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
+
 
 import os
 import os.path
@@ -9,6 +30,8 @@ from pybtex.database import BibliographyData;
 
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
+
+import arxiv # getArXivInfo()
 
 
 
@@ -73,19 +96,47 @@ BIBALIAS_HEADER = ur"""
 
 HELP_TEXT = """
 
-This filter works by writing a LaTeX file to a specified location (via the `dupfile' option) which
-contains the needed commands to define the bibtex aliases.
+This filter works by writing a LaTeX file to a specified location (via the
+`dupfile' option) which contains the needed commands to define the bibtex
+aliases.
 
-Note that the dupfile option is mandatory. You need to specify a file to write to. You may do this
+Note that the dupfile option is mandatory in order to create the file with
+duplicate definitions. You need to specify a file to write to. You may do this
 with `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
 
-In your main LaTeX document, you need to add the following command in the preamble:
+In your main LaTeX document, you need to add the following command in the
+preamble:
 
   \input{yourdupfile.tex}
 
 where of couse yourdupfile.tex is the file that you specified to this filter.
 
+Alternatively, if you just set the warn flag on, then a duplicate file is not
+created (unless the dupfile option is given), and a warning is displayed for
+each duplicate found.
+
 """
+
+
+
+
+
+DUPL_WARN_TOP = """
+
+    DUPLICATE ENTRIES WARNING
+    -------------------------
+
+"""
+
+DUPL_WARN_ENTRY = """
+    %(alias)-25s \tis a duplicate of  %(orig)s
+"""[1:] # remove initial newline
+
+DUPL_WARN_BOTTOM = """
+    -------------------------
+
+"""
+
 
 
 
@@ -96,12 +147,26 @@ class DuplicatesFilter(BibFilter):
     helptext = HELP_TEXT
     
     
-    def __init__(self, dupfile):
+    def __init__(self, dupfile=None, warn=False):
+        """DuplicatesFilter constructor.
+
+        *dupfile: the name of a file to write latex code for defining duplicates to. This file
+                  will be overwritten!!
+        *warn: if this flag is set, dupfile is not mandatory, and a warning is issued for every
+               duplicate entry found in the database.
+        """
+
         BibFilter.__init__(self);
 
         self.dupfile = dupfile
+        self.warn = warn
 
-        logger.debug('duplicates: dupfile=%r' % dupfile);
+        if (not self.dupfile and not self.warn):
+            logger.warning("bibolamazi duplicates filter: no action will be taken as neither -sDupfile or"+
+                           " -dWarn are given!")
+
+        logger.debug('duplicates: dupfile=%r, warn=%r' % (dupfile, warn));
+
 
     def name(self):
         return "duplicates processing"
@@ -135,6 +200,16 @@ class DuplicatesFilter(BibFilter):
         if (compare_neq_fld(a.fields, b.fields, 'year')):
             return False
         if (compare_neq_fld(a.fields, b.fields, 'month')):
+            return False
+
+        if (compare_neq_fld(a.fields, b.fields, 'doi')):
+            return False
+
+        arxiv_a = arxiv.getArXivInfo(a);
+        arxiv_b = arxiv.getArXivInfo(b);
+        if (arxiv_a and arxiv_b and
+            'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
+            arxiv_a['arxivid'] != arxiv_b['arxivid']):
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
@@ -180,16 +255,27 @@ class DuplicatesFilter(BibFilter):
 
         # output duplicates to the duplicates file
 
-        dupstrlist = [];
-        with codecs.open(os.path.join(bibfilterfile.fdir(),self.dupfile), 'w', 'utf-8') as dupf:
-            dupf.write(re.sub(r'####DUP_FILE_NAME####', self.dupfile, BIBALIAS_HEADER, 1));
-            for (dupalias, duporiginal) in duplicates:
-                dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n");
-                dupstrlist.append("\t%s is an alias of %s" % (dupalias,duporiginal)) ;
-            
-            dupf.write('\n\n');
-            
-        logger.debug("DUPLICATES: \n" + "\n".join(dupstrlist));
+        if (self.dupfile):
+            dupstrlist = [];
+            with codecs.open(os.path.join(bibfilterfile.fdir(),self.dupfile), 'w', 'utf-8') as dupf:
+                dupf.write(re.sub(r'####DUP_FILE_NAME####', self.dupfile, BIBALIAS_HEADER, 1));
+                for (dupalias, duporiginal) in duplicates:
+                    dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n");
+                    dupstrlist.append("\t%s is an alias of %s" % (dupalias,duporiginal)) ;
+
+                dupf.write('\n\n');
+
+            # issue debug message
+            logger.debug("wrote duplicates to file: \n" + "\n".join(dupstrlist));
+
+        if (self.warn):
+            logger.warning(DUPL_WARN_TOP  +
+                           "".join([ DUPL_WARN_ENTRY % { 'alias': dupalias,
+                                                         'orig': duporiginal
+                                                         }
+                                     for (dupalias, duporiginal) in duplicates
+                                     ])  +
+                           DUPL_WARN_BOTTOM);
 
 
         bibfilterfile.setBibliographyData(newbibdata);

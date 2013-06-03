@@ -1,13 +1,34 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
 
-import importlib;
-import re;
-import shlex;
-import inspect;
-import argparse;
-import pdb;
+
+import importlib
+import re
+import shlex
+import inspect
+import argparse
+import textwrap
 
 from core.butils import store_key_val, store_key_const
-from core.blogger import logger;
+from core.blogger import logger
 
 
 # list all filters here.
@@ -88,11 +109,6 @@ def make_filter(name, optionstring):
 
 
 _add_epilog="""
-Note:
-You may use either the `--key value' syntax for passing options, or the -sKey=Value syntax. Use
--dSwitch to set that option to True. When using -s or -d options, the key names are camel-cased,
-i.e. an option like `--add-description arxiv' can be specified as `-sAddDescription=arxiv' and
-`--preserve-ids True' can provided as `-dPreserveIds'
 
 Have a lot of fun!
 """
@@ -149,22 +165,14 @@ def _default_option_parser(name, fclass):
 
     p = argparse.ArgumentParser(prog=name,
                                 description=fclass.getHelpDescription(),
-                                epilog="Filter Syntax: "+fclasssyntaxdesc+"\n\n"+fclass.getHelpText()+"\n"+_add_epilog,
+                                epilog=
+                                "------------------------------\n\n"+
+                                fclass.getHelpText()+"\n"+_add_epilog,
                                 add_help=False,
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
                                 );
 
-    # a la ghostscript: -sOutputFile=blahblah -sKey=Value
-    p.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
-                   help="-sKey=Value sets parameter values");
-    p.add_argument('-d', action=store_key_const, const=True, dest='_d_args', metavar='Switch',
-                   help="-dSwitch sets parameter `Switch' to True");
-
-    # allow also to give arguments without the keywords.
-    p.add_argument('_args', nargs='*', metavar='<arg>',
-                   help='Additional arguments will be passed as is to the filter--see documentation below');
-
-    p.add_argument_group('filter parameters');
+    group_filter = p.add_argument_group('Filter Arguments');
 
     for farg in fargs:
         # skip 'self'
@@ -172,8 +180,34 @@ def _default_option_parser(name, fclass):
             continue
         # normalize name
         fopt = re.sub('_', '-', farg);
-        p.add_argument('--'+fopt, action='store', dest=farg,
-                       help=argdocs.get(farg, None));
+        group_filter.add_argument('--'+fopt, action='store', dest=farg,
+                                  help=argdocs.get(farg, None));
+
+
+    group_general = p.add_argument_group('Other Options')
+
+    # a la ghostscript: -sOutputFile=blahblah -sKey=Value
+    group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
+                               help="-sKey=Value sets parameter values");
+    group_general.add_argument('-d', action=store_key_const, const=True, dest='_d_args', metavar='Switch',
+                               help="-dSwitch sets parameter `Switch' to True");
+
+    # allow also to give arguments without the keywords.
+    group_general.add_argument('_args', nargs='*', metavar='<arg>',
+                               help='Additional arguments will be passed as is to the filter--see documentation below');
+
+    p.add_argument_group(u"Python filter syntax",
+                         re.sub('\n', '\n      ', # add indentation to new lines
+                                textwrap.fill(fclasssyntaxdesc, 80)));
+
+    p.add_argument_group(u'Note', textwrap.dedent(
+        u"""\
+        For passing option values, you may use either the `--key value' syntax, or the
+        (ghostscript-like) `-sKey=Value' syntax. For switches, use -dSwitch to set the
+        given option to True. When using the -s or -d syntax, the option names are
+        camel-cased, i.e. an option like `--add-description arxiv' can be specified as
+        `-sAddDescription=arxiv'. Likewise, `--preserve-ids True' can provided as
+        `-dPreserveIds'"""));
 
 
     return (p, getArgNameFromSOpt)
@@ -218,7 +252,7 @@ def _default_parse_optionstring(name, fclass, optionstring):
         
         kwargs[arg] = argval;
     
-    #pdb.set_trace()
+    #import pdb; pdb.set_trace();
 
     return (pargs, kwargs);
         

@@ -1,3 +1,24 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
+
 
 import re
 #import shlex
@@ -119,7 +140,8 @@ class ArxivNormalizeFilter(BibFilter):
         
         *mode: the behavior to adopt for published articles which also have an arxiv ID
         *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv ID
-        *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to
+        *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
+                             unpublished entries
         """
         
         BibFilter.__init__(self);
@@ -201,6 +223,8 @@ class ArxivNormalizeFilter(BibFilter):
 
         if (mode == MODE_EPRINT):
             if (arxivinfo['published'] == False):
+                # if the entry is unpublished, set the journal name to
+                # "arXiv e-prints" (or whatever was specified by filter option)
                 entry.fields['journal'] = self.arxiv_journal_name;
                 entry.fields.pop('pages','');
                 

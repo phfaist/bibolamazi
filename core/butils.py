@@ -1,3 +1,24 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
+
 
 import re
 import argparse
@@ -5,7 +26,6 @@ import argparse
 # pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
 # it should automatically.
 import pydoc
-
 
 from blogger import logger
 import version
@@ -183,18 +203,27 @@ class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
         if (not values or values == "elp"): # in case of -help: seen as -h elp
-            pydoc.pager(parser.format_help())
+            helptext = """
+Bibolamazi Version %(version)s by Philippe Faist (C) 2013
+Licensed under the terms of the GNU Public License GPL, version 3 or higher.
+
+""" % {'version': get_version()}
+            helptext += parser.format_help()
+            pydoc.pager(helptext)
             parser.exit()
 
         thefilter = values
 
         import filters;
         try:
-            pydoc.pager(filters.format_filter_help(thefilter));
+            helptext = filters.format_filter_help(thefilter);
+            pydoc.pager(helptext);
             parser.exit();
         except filters.NoSuchFilter:
             logger.error("No Such Filter: `"+thefilter+"'");
             parser.exit();
+
+
 
 
 FILTERS_HELP = """
