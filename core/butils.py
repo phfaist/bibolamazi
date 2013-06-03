@@ -60,6 +60,9 @@ class store_or_count(argparse.Action):
         # some checks
         if nargs != '?':
             raise ValueError('store_or_const: nargs must be "?"');
+
+        if ('type' in kwargs):
+            raise TypeError("Can't enforce a type on a store_or_count option!");
         
         super(store_or_count, self).__init__(option_strings, dest, nargs=nargs, const=None, **kwargs);
 
@@ -80,6 +83,20 @@ class store_or_count(argparse.Action):
                 values = values[len(optstr):] # strip that from the values
             if not values:
                 values = None
+
+        # Note: I don't know how to fix situations like "prog.py -v some_prog_arg" which is taken
+        # as "-v some_prog_arg" ... we would need to interfere with the option parser to match the
+        # argument not to the option (because of the wrong type), but to the program...
+
+
+        # get the argument of -v (e.g.,  -v2  or  --verbose 2  or  --verbose=2 )
+        if (isinstance(values, basestring)):
+            try:
+                values = int(values);
+            except ValueError:
+                opt_name = ", ".join(self.option_strings)
+                parser.error(u"Invalid argument to %s: `%s' (maybe use %s option at the end of the command?)"
+                             %(opt_name, values, opt_name))
 
         if (values is not None):
             # value provided

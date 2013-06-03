@@ -16,6 +16,7 @@ __all__ = ( 'arxiv',
             'url',
             'nameinitials',
             'fixes',
+            'orderentries',
             )
 
 

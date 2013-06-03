@@ -27,6 +27,7 @@ parser = argparse.ArgumentParser(description='Collect bibliographic entries from
                                  ' apply rules or filters to them.',
                                  prog='bibolamazi',
                                  add_help=False);
+
 #parser.add_argument('-I', '--interactive', action='store_true',
 #                    help='Create a new bibfilter configuration, or modify current one interactively.');
 parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', default=1,
@@ -68,6 +69,8 @@ for filtr in bfile.filters():
     #
     action = filtr.action();
     
+    logger.info("Filter: %s" %(filtr.name()));
+
     #
     # pass the whole bibfilterfile to the filter. the filter can actually do
     # whatever it wants with it (!!)
