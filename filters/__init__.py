@@ -230,14 +230,13 @@ def _default_option_parser(name, fclass):
     p.add_argument_group(u"Python filter syntax",
                          textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
 
-    p.add_argument_group(u'Note', textwrap.dedent(
-        u"""\
+    p.add_argument_group(u'Note', textwrap.dedent(u"""\
         For passing option values, you may use either the `--key value' syntax, or the
         (ghostscript-like) `-sKey=Value' syntax. For switches, use -dSwitch to set the
         given option to True. When using the -s or -d syntax, the option names are
         camel-cased, i.e. an option like `--add-description arxiv' can be specified as
-        `-sAddDescription=arxiv'. Likewise, `--preserve-ids True' can provided as
-        `-dPreserveIds' or `-dPreserveIds=1'."""));
+        `-sAddDescription=arxiv'. Likewise, `--preserve-ids 1' can provided as
+        `-dPreserveIds' or `-dPreserveIds=yes'."""));
 
 
     return (p, getArgNameFromSOpt)
