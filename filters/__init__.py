@@ -237,7 +237,7 @@ def _default_option_parser(name, fclass):
         given option to True. When using the -s or -d syntax, the option names are
         camel-cased, i.e. an option like `--add-description arxiv' can be specified as
         `-sAddDescription=arxiv'. Likewise, `--preserve-ids True' can provided as
-        `-dPreserveIds'"""));
+        `-dPreserveIds' or `-dPreserveIds=1'."""));
 
 
     return (p, getArgNameFromSOpt)

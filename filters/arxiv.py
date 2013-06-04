@@ -30,8 +30,9 @@ from core.blogger import logger;
 # possible modes in which to operate
 MODE_NONE = 0;
 MODE_UNPUBLISHED_NOTE = 1;
-MODE_EPRINT = 2;
-MODE_STRIP = 3;
+MODE_NOTE = 2;
+MODE_EPRINT = 3;
+MODE_STRIP = 4;
 
 # a regex that we will need often
 rxarxivinnote = re.compile(r'(\b|^)arXiv:(?:(?:([-a-zA-Z]+)/)?([0-9.]+))(\s|$)', re.IGNORECASE);
@@ -131,16 +132,24 @@ THIS FILTER will detect the various ways of declaring arXiv information and extr
 each entry. Then this information is reproduced in each entry using a single of the above
 conventions, depending on the provided options. Entries with no arxiv information are left
 untouched. Different behaviors can be set independently for published articles and
-unpublished with arxiv IDs:
+unpublished with arxiv IDs, specified as operating modes.
+
+MODES:
     "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
     "strip"   -- remove the arxiv information completely.
     "unpublished-note"  -- set the entry type to "unpublished", and add or append to the
-                 note={} the string "arXiv:XXXX.YYYY"
+                 note={} the string "arXiv:XXXX.YYYY". Any journal field is stripped.
+    "note"    -- just add or append to the note={} the string "arXiv:XXXX.YYYY". Don't change
+                 the entry type. This mode is appropriate for entries that are published.
     "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
                  set to the detected arXiv ID, as well as a tag "primaryclass" set to the
                  primary archive (e.g. "quant-ph") if that information was detected. For
                  unpublished articles, also set journal={ArXiv e-prints} (or given arxiv
                  journal name in filter options)
+
+ArXiv information is determined by inspecting the fields 'arxivid', 'eprint', 'primaryclass',
+and 'note'. The entry is determined as unpublished if it is of type "unpublished", or if it
+has no journal name, or if the journal name contains "arxiv".
 
 """
 
@@ -153,14 +162,15 @@ class ArxivNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, mode=MODE_EPRINT, unpublished_mode=None, arxiv_journal_name="ArXiv e-prints"):
+    def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints"):
         """
         Constructor method for ArxivNormalizeFilter
         
-        *mode: the behavior to adopt for published articles which also have an arxiv ID
-        *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv ID
+        *mode:  the behavior to adopt for published articles which also have an arxiv ID
+        *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv
+                ID (if None, use the same mode as `mode').
         *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
-                             unpublished entries
+                unpublished entries
         """
         
         BibFilter.__init__(self);
@@ -174,19 +184,21 @@ class ArxivNormalizeFilter(BibFilter):
 
     def _parse_mode(self, mode):
         if (mode == "none" or mode is None):
-            return MODE_NONE;
-        if (mode == "unpublished-note"):
-            return MODE_UNPUBLISHED_NOTE;
+            return MODE_NONE
+        elif (mode == "unpublished-note"):
+            return MODE_UNPUBLISHED_NOTE
+        elif (mode == "note"):
+            return MODE_NOTE
         elif (mode == "eprint"):
-            return MODE_EPRINT;
+            return MODE_EPRINT
         elif (mode == "strip"):
-            return MODE_STRIP;
+            return MODE_STRIP
 
         try:
-            return int(mode);
+            return int(mode)
         except ValueError:
             raise Exception("Invalid mode: %r" %(mode))
-        
+
 
     def name(self):
         return "ArXiv clean-up"
@@ -231,15 +243,30 @@ class ArxivNormalizeFilter(BibFilter):
             # directly return stripped entry.
             return entry
 
-        if (mode == MODE_UNPUBLISHED_NOTE):
-            # save arxiv information in the note={} field, and set type to unpublished
-            entry.type = u'unpublished';
+        def add_note(entry, arxivinfo):
             note = "arXiv:"+arxivinfo['arxivid'];
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
                 entry.fields['note'] += ', '+note;
             else:
                 entry.fields['note'] = note;
+            
+
+        if (mode == MODE_UNPUBLISHED_NOTE):
+            # save arxiv information in the note={} field, and set type to unpublished
+            entry.type = u'unpublished'
+            
+            # 'unpublished' type should not have journal field set.
+            if ('journal' in entry.fields):
+                del entry.fields['journal']
+            
+            add_note(entry, arxivinfo)
+
+            return entry
+
+        if (mode == MODE_NOTE):
+            # save arxiv information in the note={} field, without changing entry type
+            add_note(entry, arxivinfo)
             
             return entry
 
