@@ -1,4 +1,3 @@
-
 ![bibolamazi](https://github.com/phfaist/bibolamazi/raw/master/bibolamazi.png)
 
 Collect bibliographic entries from BibTeX files and apply rules or filters to them
@@ -44,23 +43,25 @@ NOTE: bibolamazi requires Python 2.7 being installed.
            > bibolamazi --help <filter>
 
 
-Bibolamazi Rules
+Using Bibolamazi
 ----------------
 
 ### Bibolamazi Operating Mode
 
 Bibolamazi works by reading a bibtex file (say `main.bib`) with a special bibolamazi
-configuration section at the top. These describe on one hand __sources__, and on the
-other hand __filters__. Bibolamazi first reads all the entries in the given sources
+configuration section at the top. These describe on one hand *sources*, and on the
+other hand *filters*. Bibolamazi first reads all the entries in the given sources
 (say `source1.bib` and `source2.bib`), and then applies the given filters to them.
-Then, the file `main.bib` is updated, such that:
+Then, the main bibtex file (in our example `main.bib`) is updated, such that:
 
-* Any content *before* the configuration section is restored unchanged;
+* Any content that was already present in the main bibtex file *before* the
+  configuration section is restored unchanged;
 
 * The configuration section is restored as it was;
 
-* All the filtered entries are then dumped in the rest of the file, overwriting the
-  output of the previous run of bibolamazi.
+* All the filtered entries (obtained from, e.g., `source1.bib` and `source2.bib`) are
+  then dumped in the rest of the file, overwriting the output of the previous run of
+  bibolamazi.
 
 
 ### The Bibolamazi Configuration Section
