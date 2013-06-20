@@ -28,7 +28,7 @@ import sys
 
 
 if sys.hexversion < 0x02070000:
-    print "FATAL ERROR: Python 2.7 or later is required."
+    sys.stderr.write("FATAL ERROR: Python 2.7 or later is required.\n")
     exit(254);
 
     
