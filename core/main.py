@@ -29,6 +29,7 @@ import argparse
 # import all the parts we need from our own application.
 # ------------------------------------------------------
 
+from core import version
 from core.bibfilterfile import BibFilterFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
@@ -51,7 +52,7 @@ parser = argparse.ArgumentParser(description='Collect bibliographic entries from
 #parser.add_argument('-I', '--interactive', action='store_true',
 #                    help='Create a new bibfilter configuration, or modify current one interactively.');
 parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', default=1,
-                    help='Increase or set verbosity (0=quiet,1=info,2=verbose)')
+                    help='Increase or set verbosity (0=quiet,1=info,2=verbose,3=long debug)')
 parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0,
                     help="Don't display any messages. Same as `-v 0'");
 parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
@@ -67,6 +68,14 @@ args = parser.parse_args();
 logger.setVerbosity(args.verbosity);
 logger.longdebug('Set verbosity: %d' %(args.verbosity));
 
+
+logger.debug("""
+Bibolamazi Version %(ver)s by Philippe Faist (C) 2013
+
+Use option --help for help information.
+"""         %   {
+                 'ver': version.version_str
+                 });
 
 
 # open the bibfilterfile, which is the output bibtex file
@@ -89,7 +98,7 @@ for filtr in bfile.filters():
     #
     action = filtr.action();
     
-    logger.info("Filter: %s" %(filtr.name()));
+    logger.info("Filter: %s" %(filtr.getRunningMessage()));
 
     #
     # pass the whole bibfilterfile to the filter. the filter can actually do

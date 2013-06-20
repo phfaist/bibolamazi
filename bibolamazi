@@ -51,6 +51,9 @@ if __name__ == "__main__":
     except SystemExit:
         raise
     
+    except KeyboardInterrupt:
+        raise
+
     except BibolamaziError as e:
         print "ERROR:", unicode(e)
 

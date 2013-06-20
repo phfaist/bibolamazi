@@ -64,17 +64,42 @@ class BibFilter:
 
 
 
+    def getRunningMessage(self):
+        """
+        Return a nice message to display when invoking the fitler. The default implementation
+        returns `self.name()`. Define this to whatever you want in your subclass.
+        """
+        return self.name();
+
     # convenience functions, no need to override
     @classmethod
     def getHelpAuthor(cls):
+        """
+        Convenience function that returns `helpauthor`, with whitespace stripped. Use this when
+        getting the contents of the helpauthor text.
+
+        There's no need to reimplement this function in your subclass.
+        """
         return cls.helpauthor.strip();
 
     @classmethod
     def getHelpDescription(cls):
+        """
+        Convenience function that returns `helpdescription`, with whitespace stripped. Use this when
+        getting the contents of the helpdescription text.
+
+        There's no need to reimplement this function in your subclass.
+        """
         return cls.helpdescription.strip();
 
     @classmethod
     def getHelpText(cls):
+        """
+        Convenience function that returns `helptext`, with whitespace stripped. Use this when
+        getting the contents of the helptext text.
+
+        There's no need to reimplement this function in your subclass.
+        """
         return cls.helptext.strip();
     
 

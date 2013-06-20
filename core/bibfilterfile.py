@@ -103,9 +103,12 @@ class BibFilterFile:
         self._fname = fname;
         self._dir = os.path.dirname(os.path.realpath(fname));
 
-        with codecs.open(fname, 'r', BIBOLAMAZI_FILE_ENCODING) as f:
-            logger.longdebug("File "+repr(fname)+" opened.");
-            self._parse_stream(f, fname);
+        try:
+            with codecs.open(fname, 'r', BIBOLAMAZI_FILE_ENCODING) as f:
+                logger.longdebug("File "+repr(fname)+" opened.");
+                self._parse_stream(f, fname);
+        except IOError as e:
+            raise butils.BibolamaziError(u"Can't open file `%s': %s" %(fname, unicode(e)));
 
     def fname(self):
         return self._fname;
@@ -301,7 +304,6 @@ class BibFilterFile:
             # try to populate from this source
             ok = self._populate_from_src(src);
             if ok:
-                logger.info("Source: %s" %(src));
                 return src
         logger.info("Ignoring nonexisting source list: %s" %(", ".join(srclist)));
         return None
@@ -334,6 +336,8 @@ class BibFilterFile:
                 # ignore source, will have to try next in list
                 return None;
 
+        logger.info("Found Source: %s" %(src));
+
         # parse bibtex
         parser = inputbibtex.Parser();
         bib_data = None;
@@ -344,7 +348,11 @@ class BibFilterFile:
             # initialize bibliography data
             self._bibliographydata = pybtex.database.BibliographyData();
 
-        self._bibliographydata.add_entries(bib_data.entries.iteritems());
+        for key, entry in bib_data.entries.iteritems():
+            if (key in self._bibliographydata.entries):
+                logger.warn('Repeated bibliography entry: %s. Keeping first encountered entry.', key)
+                continue
+            self._bibliographydata.add_entry(key, entry)
 
         return True
 

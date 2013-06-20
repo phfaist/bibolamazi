@@ -35,7 +35,8 @@ MODE_EPRINT = 3;
 MODE_STRIP = 4;
 
 # a regex that we will need often
-rxarxivinnote = re.compile(r'(\b|^)arXiv:(?:(?:([-a-zA-Z]+)/)?([0-9.]+))(\s|$)', re.IGNORECASE);
+rxarxivinnote = re.compile(r'(([;,]\s+)?|\b|^)arXiv[-.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,]\s*|\s+|$)',
+                           re.IGNORECASE);
 
 # extract arXiv info from an entry
 def getArXivInfo(entry):
@@ -84,9 +85,17 @@ def getArXivInfo(entry):
         m = rxarxivinnote.search(fields['note']);
         if m:
             if (not d['arxivid']):
-                d['arxivid'] = m.group(2);
+                try:
+                    d['arxivid'] = m.group('arxivid');
+                except IndexError:
+                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", fields['note'], m)
+                    pass
             if (not d['primaryclass']):
-                d['primaryclass'] = m.group(1);
+                try:
+                    d['primaryclass'] = m.group('primaryclass');
+                except IndexError:
+                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", fields['note'], m)
+                    pass
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -96,7 +105,17 @@ def getArXivInfo(entry):
     if (re.match(r'^\d{7}$', d['arxivid']) and len(d['primaryclass']) > 0):
         d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
     
+    logger.longdebug("got arXiv information: %r." %(d));
     return d
+
+
+def stripArXivInfoInNote(notestr):
+    """Assumes that notestr is a string in a note={} field of a bibtex entry, and strips any arxiv identifier
+    information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
+    """
+
+    return rxarxivinnote.sub('', notestr)
+    
 
 
 HELP_AUTHOR = u"""\
@@ -235,7 +254,7 @@ class ArxivNormalizeFilter(BibFilter):
         entry.fields.pop('primaryclass', None);
         # possibly remove it from the note={} entry
         if ('note' in entry.fields):
-            entry.fields['note'] = rxarxivinnote.sub('', entry.fields['note']);
+            entry.fields['note'] = stripArXivInfoInNote(entry.fields['note']);
         if (entry.type == u'unpublished'):
             entry.type = u'article';
             

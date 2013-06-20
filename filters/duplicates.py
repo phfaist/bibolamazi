@@ -148,8 +148,8 @@ class DuplicatesFilter(BibFilter):
     helpauthor = HELP_AUTHOR
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
-    
-    
+
+
     def __init__(self, dupfile=None, warn=False):
         """DuplicatesFilter constructor.
 
@@ -174,6 +174,10 @@ class DuplicatesFilter(BibFilter):
     def name(self):
         return "duplicates processing"
 
+    def getRunningMessage(self):
+        return u"processing duplicate entries. Don't forget to insert `\\include{%s}' in your LaTeX file!" %(self.dupfile);
+    
+
     def action(self):
         return BibFilter.BIB_FILTER_BIBFILTERFILE;
 
@@ -196,8 +200,8 @@ class DuplicatesFilter(BibFilter):
             if (not (getlast(apers[k]) == getlast(bpers[k]))):
                 return False
 
-        def compare_neq_fld(x, y, fld):
-            return x.get(fld, y.get(fld)) != y.get(fld, x.get(fld)) ;
+        def compare_neq_fld(x, y, fld, filt=lambda x: x):
+            return filt(x.get(fld, y.get(fld))) != filt(y.get(fld, x.get(fld))) ;
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
@@ -213,6 +217,11 @@ class DuplicatesFilter(BibFilter):
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
+            return False
+
+        # if they have different notes, then they're different entries
+        if ( compare_neq_fld(a.fields, b.fields, 'note',
+                             lambda x: (arxiv.stripArXivInfoInNote(x) if x else "")) ):
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
@@ -241,9 +250,11 @@ class DuplicatesFilter(BibFilter):
             #
             # search the newbibdata object, in case this entry already exists.
             #
+            logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
             for (nkey, nentry) in newbibdata.entries.iteritems():
                 if self.compare_entries_same(entry, nentry):
+                    logger.longdebug('    ... matches existing entry %s!', nkey);
                     is_duplicate_of = nkey;
                     break
 
@@ -259,6 +270,10 @@ class DuplicatesFilter(BibFilter):
         # output duplicates to the duplicates file
 
         if (self.dupfile):
+            ### TODO: do a minimum checks before overwriting:
+            ###       * has a previously-written dupfile header
+            ###       * compare modif. time w/ some reference?
+            ###       * add --force-overwrite flag?
             dupstrlist = [];
             with codecs.open(os.path.join(bibfilterfile.fdir(),self.dupfile), 'w', 'utf-8') as dupf:
                 dupf.write(re.sub(r'####DUP_FILE_NAME####', self.dupfile, BIBALIAS_HEADER, 1));
