@@ -68,7 +68,6 @@ args = parser.parse_args();
 logger.setVerbosity(args.verbosity);
 logger.longdebug('Set verbosity: %d' %(args.verbosity));
 
-
 logger.debug("""
 Bibolamazi Version %(ver)s by Philippe Faist (C) 2013
 

@@ -72,6 +72,10 @@ class FilterCreateError(FilterError):
     def fmt(self, name):
         return "Can't create filter %s: %s" %(name, self.errorstr)
 
+class FilterCreateArgumentError(FilterError):
+    def fmt(self, name):
+        return "Bad arguments provided to filter %s: %s" %(name, self.errorstr)
+
 
 
 # store additional information about the modules.
@@ -122,15 +126,25 @@ def make_filter(name, optionstring):
     else:
         (pargs, kwargs) = _default_parse_optionstring(name, fclass, optionstring);
 
+    # first, validate the arguments to the function call with inspect.getcallargs()
+    try:
+        pargs2 = [None]+pargs; # extra argument for `self` slot
+        inspect.getcallargs(fclass.__init__, *pargs2, **kwargs)
+    except Exception as e:
+        raise FilterCreateArgumentError(unicode(e), name)
 
     # and finally, instantiate the filter.
+
     logger.debug('calling fclass('+','.join([repr(x) for x in pargs])+', '+
                   ','.join([repr(k)+'='+repr(v) for k,v in kwargs.iteritems()]) + ')');
+
+    # exceptions caught here are those thrown from the filter constructor itself.
     try:
         return fclass(*pargs, **kwargs);
     except Exception as e:
         msg = unicode(e);
         if (not isinstance(e, FilterError) and e.__class__ != Exception):
+            # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
             msg = e.__class__.__name__ + ": " + msg
         raise FilterCreateError(msg, name)
 
@@ -171,13 +185,6 @@ def _default_option_parser(name, fclass):
     if (re.search(r'[A-Z]', "".join(fargs))):
         logger.debug("filter "+name+": will not automatically adjust option letter case.");
         use_auto_case = False
-
-    def getArgNameFromSOpt(x):
-        if (not use_auto_case):
-            return x
-        x = re.sub(r'^[A-Z]', lambda mo: mo.group(0).lower(), x);
-        x = re.sub(r'([a-z])([A-Z])', lambda mo: mo.group(1)+"_"+mo.group(2).lower(), x);
-        return x
 
     if (defaults is None):
         defaults = [];
@@ -239,7 +246,13 @@ def _default_option_parser(name, fclass):
         `-dPreserveIds' or `-dPreserveIds=yes'."""));
 
 
-    return (p, getArgNameFromSOpt)
+    return (p, use_auto_case)
+
+def _getArgNameFromSOpt(x, use_auto_case=True):
+    if (not use_auto_case):
+        return x
+    x = re.sub('[A-Z]', lambda mo: ('_' if mo.start() > 0 else '')+mo.group().lower(), x);
+    return x
 
     
 def _default_parse_optionstring(name, fclass, optionstring):
@@ -247,7 +260,7 @@ def _default_parse_optionstring(name, fclass, optionstring):
     logger.debug("_default_parse_optionstring: name: "+name+"; fclass="+repr(fclass)
                  +"; optionstring="+optionstring);
 
-    (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
+    (p, use_auto_case) = _default_option_parser(name, fclass);
 
     parts = shlex.split(optionstring);
     try:
@@ -270,7 +283,7 @@ def _default_parse_optionstring(name, fclass, optionstring):
             # get all the defined args
             for (thekey, theval) in argval:
                 # store this definition
-                therealkey = getArgNameFromSOpt(thekey);
+                therealkey = _getArgNameFromSOpt(thekey, use_auto_case);
                 kwargs[therealkey] = theval
 
                 logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
@@ -280,7 +293,7 @@ def _default_parse_optionstring(name, fclass, optionstring):
         if (arg == '_s_args' and argval is not None):
             # get all the set args
             for (key, v) in argval:
-                thekey = getArgNameFromSOpt(key);
+                thekey = _getArgNameFromSOpt(key, use_auto_case);
                 kwargs[thekey] = v
 
                 logger.debug("Set option `%s' to `%s'" %(thekey, v))
@@ -315,7 +328,7 @@ def format_filter_help(name):
 
     fclass = fmodule.get_class();
 
-    (p, getArgNameFromSOpt) = _default_option_parser(name, fclass);
+    p = _default_option_parser(name, fclass);
 
     prolog = fclass.getHelpAuthor();
     if (prolog):

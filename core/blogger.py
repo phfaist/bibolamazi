@@ -54,7 +54,15 @@ class ConditionalFormatter(logging.Formatter):
         record.message = record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
-        s = fmt % record.__dict__
+
+        msg = record.message;
+        s = []
+        for line in msg.split('\n'):
+            u = dict([(k,v) for k,v in record.__dict__.iteritems()])
+            u['message'] = line
+            s.append(fmt % u)
+        s = '\n'.join(s)
+        
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
@@ -101,7 +109,10 @@ ch.setLevel(logging.NOTSET); # propagate all messages
 # create formatter and add it to the handlers
 
 #formatter = logging.Formatter('%(name)s - %(asctime)-15s %(levelname)s: %(message)s');
-formatter = ConditionalFormatter('%(message)s', LONGDEBUG='LONG DEBUG: %(message)s', WARNING='WARNING: %(message)s');
+formatter = ConditionalFormatter('%(message)s',
+                                 DEBUG='-- %(message)s',
+                                 LONGDEBUG='  -- %(message)s',
+                                 WARNING='WARNING: %(message)s');
 ch.setFormatter(formatter);
 # add the handlers to the logger
 logger.addHandler(ch);

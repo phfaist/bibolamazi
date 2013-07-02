@@ -27,6 +27,7 @@ from pybtex.database import Person
 from core.bibfilter import BibFilter, BibFilterError
 from core.blogger import logger
 from core import butils
+from core import latexencode
 
 
 HELP_AUTHOR = u"""\
@@ -40,11 +41,16 @@ Fixes filter: perform some various known fixes for bibtex entries
 HELP_TEXT = u"""
 Perform some various fixes for bibtex entries.
 
-For now, the only implemented fix is
+For now, the implemented fixes are:
+
   -dFixSwedishA
-that changes "\\AA berg" to "\\AA{}berg" to prevent revtex from inserting a
-blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
-Mendeley generates)
+    Changes "\\AA berg" to "\\AA{}berg" to prevent revtex from inserting a
+    blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
+    Mendeley generates)
+
+  -dEncodeUtf8ToLatex
+    Encodes non-ascii special characters, e.g. accented characters, into LaTeX
+    equivalents. This affects ALL fields of the bibliographic entry.
 """
 
 
@@ -55,19 +61,22 @@ class FixesFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, fix_swedish_a=False):
+    def __init__(self, fix_swedish_a=False, encode_utf8_to_latex=False):
         """
         Constructor method for FixesFilter
         
         *fix_swedish_a: transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
                         automatically); revtex tends to insert a blank after the `\\AA' otherwise.
+        *encode_utf8_to_latex: encode all non-ascii characters into latex escape sequences.
         """
         
         BibFilter.__init__(self);
 
         self.fix_swedish_a = butils.getbool(fix_swedish_a);
+        self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex);
 
-        logger.debug('fixes filter: fix_swedish_a=%r' % (self.fix_swedish_a));
+        logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r'
+                     % (self.fix_swedish_a, self.encode_utf8_to_latex));
         
 
     def name(self):
@@ -81,9 +90,12 @@ class FixesFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
+
         def thefilter(x):
             if (self.fix_swedish_a):
                 x = re.sub(r'\\AA\s+', r'\AA{}', x);
+            if (self.encode_utf8_to_latex):
+                x = latexencode.utf8tolatex(x, non_ascii_only=True);
             return x
 
         def filter_person(p):
