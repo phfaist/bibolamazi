@@ -175,7 +175,10 @@ class DuplicatesFilter(BibFilter):
         return "duplicates processing"
 
     def getRunningMessage(self):
-        return u"processing duplicate entries. Don't forget to insert `\\include{%s}' in your LaTeX file!" %(self.dupfile);
+        if (self.dupfile):
+            return (u"processing duplicate entries. Don't forget to insert `\\include{%s}' in "
+                    "your LaTeX file!" %(self.dupfile) );
+        return u"processing duplicate entries (warning will be generated only)"
     
 
     def action(self):
