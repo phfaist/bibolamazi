@@ -114,408 +114,577 @@ utf82latex={
 253:"\\'y", 	# character ý
 254:'\\th', 	# character þ
 255:'\\"y', 	# character ÿ
-256:'\\={A}', 	# character -DÀ-A
-257:'\\={a}', 	# character -Dà-A
-258:'\\u{A}', 	# character -BÃ-A
-259:'\\u{a}', 	# character -Bã-A
-260:'\\k{A}', 	# character -B¡-A
-261:'\\k{a}', 	# character -B±-A
-262:"\\'C", 	# character -BÆ-A
-263:"\\'c", 	# character -Bæ-A
-264:'\\^{C}', 	# character -CÆ-A
-265:'\\^{c}', 	# character -Cæ-A
-266:'\\.{C}', 	# character -CÅ-A
-267:'\\.{c}', 	# character -Cå-A
-268:'\\v{C}', 	# character -BÈ-A
-269:'\\v{c}', 	# character -Bè-A
-270:'\\v{D}', 	# character -BÏ-A
-271:'\\v{d}', 	# character -Bï-A
-272:'\\DJ', 	# character -BÐ-A
-273:'\\dj', 	# character -Bð-A
-274:'\\={E}', 	# character -Dª-A
-275:'\\={e}', 	# character -Dº-A
-276:'\\u{E}', 	# character ?
-277:'\\u{e}', 	# character ?
-278:'\\.{E}', 	# character -DÌ-A
-279:'\\.{e}', 	# character -Dì-A
-280:'\\k{E}', 	# character -BÊ-A
-281:'\\k{e}', 	# character -Bê-A
-282:'\\v{E}', 	# character -BÌ-A
-283:'\\v{e}', 	# character -Bì-A
-284:'\\^{G}', 	# character -CØ-A
-285:'\\^{g}', 	# character -Cø-A
-286:'\\u{G}', 	# character -C«-A
-287:'\\u{g}', 	# character -C»-A
-288:'\\.{G}', 	# character -CÕ-A
-289:'\\.{g}', 	# character -Cõ-A
-290:'\\c{G}', 	# character -D«-A
-291:'\\c{g}', 	# character -D»-A
-292:'\\^{H}', 	# character -CŠ-A
-293:'\\^{h}', 	# character -C¶-A
-294:'\\={H}', 	# character -C¡-A
-295:'\\={h}', 	# character -C±-A
-296:'\\~{I}', 	# character -D¥-A
-297:'\\~{i}', 	# character -Dµ-A
-298:'\\={I}', 	# character -DÏ-A
-299:'\\={i}', 	# character -Dï-A
-300:'\\u{I}', 	# character ?
-301:'\\u{i}', 	# character ?
-302:'\\k{I}', 	# character -DÇ-A
-303:'\\k{i}', 	# character -Dç-A
-304:'\\.I', 	# character -C©-A
-305:'\\i', 	# character -C¹-A
-306:'\\IJ', 	# character $(D)&(B
-307:'\\ij', 	# character $(D)F(B
-308:'\\^{J}', 	# character -C¬-A
-309:'\\^{j}', 	# character -CŒ-A
-310:'\\c{K}', 	# character -DÓ-A
-311:'\\c{k}', 	# character -Dó-A
-312:'\\textsc\{k\}', 	# character -D¢ LATIN SMALL LETTER KRA, didn't find a good latex replacement.-A
-313:"\\'L", 	# character -BÅ-A
-314:"\\'l", 	# character -Bå-A
-315:'\\c{L}', 	# character -DŠ-A
-316:'\\c{l}', 	# character -D¶-A
-317:'\\v{L}', 	# character -B¥-A
-318:'\\v{l}', 	# character -Bµ-A
-319:'\\.{L}', 	# character $(D))(B
-320:'\\.{l}', 	# character $(D)I(B
-321:'\\L', 	# character -B£-A
-322:'\\l', 	# character -B³-A
-323:"\\'N", 	# character -BÑ-A
-324:"\\'n", 	# character -Bñ-A
-325:'\\c{N}', 	# character -DÑ-A
-326:'\\c{n}', 	# character -Dñ-A
-327:'\\v{N}', 	# character -BÒ-A
-328:'\\v{n}', 	# character -Bò-A
-329:'\\nument{149}', 	# character $(D)J(B
-330:'\\NG', 	# character -Dœ-A
-331:'\\ng', 	# character -D¿-A
-332:'\\={O}', 	# character -DÒ-A
-333:'\\={o}', 	# character -Dò-A
-334:'\\u{O}', 	# character ?
-335:'\\u{o}', 	# character ?
-336:"\\'{O}", 	# character -BÕ-A
-337:"\\'{o}", 	# character -Bõ-A
-338:'\\OE', 	# character -bŒ-A
-339:'\\oe', 	# character -bœ-A
-340:"\\'R", 	# character -BÀ-A
-341:"\\'r", 	# character -Bà-A
-342:'\\c{R}', 	# character -D£-A
-343:'\\c{r}', 	# character -D³-A
-344:'\\v{R}', 	# character -BØ-A
-345:'\\v{r}', 	# character -Bø-A
-346:"\\'S", 	# character -BŠ-A
-347:"\\'s", 	# character -B¶-A
-348:'\\^{S}', 	# character -CÞ-A
-349:'\\^{s}', 	# character -Cþ-A
-350:'\\c{S}', 	# character -Bª-A
-351:'\\c{s}', 	# character -Bº-A
-352:'\\v{S}', 	# character -B©-A
-353:'\\v{s}', 	# character -B¹-A
-354:'\\c{T}', 	# character -BÞ-A
-355:'\\c{t}', 	# character -Bþ-A
-356:'\\v{T}', 	# character -B«-A
-357:'\\v{t}', 	# character -B»-A
-358:'\\={T}', 	# character -D¬-A
-359:'\\={t}', 	# character -DŒ-A
-360:'\\~{U}', 	# character -DÝ-A
-361:'\\~{u}', 	# character -Dý-A
-362:'\\={U}', 	# character -DÞ-A
-363:'\\={u}', 	# character -Dþ-A
-364:'\\u{U}', 	# character -CÝ-A
-365:'\\u{u}', 	# character -Cý-A
-366:'\\r{U}', 	# character -BÙ-A
-367:'\\r{u}', 	# character -Bù-A
-368:"\\'{U}", 	# character -BÛ-A
-369:"\\'{u}", 	# character -Bû-A
-370:'\\k{U}', 	# character -DÙ-A
-371:'\\k{u}', 	# character -Dù-A
-372:'\\^{W}', 	# character -_Ð-A
-373:'\\^{w}', 	# character -_ð-A
-374:'\\^{Y}', 	# character -_Þ-A
-375:'\\^{y}', 	# character -_þ-A
-376:'\\"Y', 	# character -_¯-A
-377:"\\'Z", 	# character -B¬-A
-378:"\\'z", 	# character -BŒ-A
-379:'\\.Z', 	# character -B¯-A
-380:'\\.z', 	# character -B¿-A
-381:'\\v{Z}', 	# character -B®-A
-382:'\\v{z}', 	# character -BŸ-A
-402:'\\textflorin', 	# character ?
-710:'\\textasciicircum', 	# character ?
-711:'\\textasciicaron', 	# character -B·-A
-728:'\\textasciibreve', 	# character -B¢-A
-732:'\\textasciitilde', 	# character ?
-733:'\\textacutedbl', 	# character -Bœ-A
-1024:'\\`\\CYRE', 	# character ?
-1025:'\\CYRYO', 	# character -L¡-A
-1026:'\\CYRDJE', 	# character -L¢-A
-1027:'\\`\\CYRG', 	# character -L£-A
-1028:'\\CYRIE', 	# character -L€-A
-1029:'\\CYRDZE', 	# character -L¥-A
-1030:'\\CYRII', 	# character -LŠ-A
-1031:'\\CYRYI', 	# character -L§-A
-1032:'\\CYRJE', 	# character -Lš-A
-1033:'\\CYRLJE', 	# character -L©-A
-1034:'\\CYRNJE', 	# character -Lª-A
-1035:'\\CYRTSHE', 	# character -L«-A
-1036:'\\`\\CYRK', 	# character -L¬-A
-1037:'\\`\\CYRI', 	# character ?
-1038:'\\CYRUSHRT', 	# character -L®-A
-1039:'\\CYRDZHE', 	# character -L¯-A
-1040:'\\CYRA', 	# character -L°-A
-1041:'\\CYRB', 	# character -L±-A
-1042:'\\CYRV', 	# character -L²-A
-1043:'\\CYRG', 	# character -L³-A
-1044:'\\CYRD', 	# character -LŽ-A
-1045:'\\CYRE', 	# character -Lµ-A
-1046:'\\CYRZH', 	# character -L¶-A
-1047:'\\CYRZ', 	# character -L·-A
-1048:'\\CYRI', 	# character -Lž-A
-1049:'\\CYRISHRT', 	# character -L¹-A
-1050:'\\CYRK', 	# character -Lº-A
-1051:'\\CYRL', 	# character -L»-A
-1052:'\\CYRM', 	# character -LŒ-A
-1053:'\\CYRN', 	# character -Lœ-A
-1054:'\\CYRO', 	# character -LŸ-A
-1055:'\\CYRP', 	# character -L¿-A
-1056:'\\CYRR', 	# character -LÀ-A
-1057:'\\CYRS', 	# character -LÁ-A
-1058:'\\CYRT', 	# character -LÂ-A
-1059:'\\CYRU', 	# character -LÃ-A
-1060:'\\CYRF', 	# character -LÄ-A
-1061:'\\CYRH', 	# character -LÅ-A
-1062:'\\CYRC', 	# character -LÆ-A
-1063:'\\CYRCH', 	# character -LÇ-A
-1064:'\\CYRSH', 	# character -LÈ-A
-1065:'\\CYRSHCH', 	# character -LÉ-A
-1066:'\\CYRHRDSN', 	# character -LÊ-A
-1067:'\\CYRERY', 	# character -LË-A
-1068:'\\CYRSFTSN', 	# character -LÌ-A
-1069:'\\CYREREV', 	# character -LÍ-A
-1070:'\\CYRYU', 	# character -LÎ-A
-1071:'\\CYRYA', 	# character -LÏ-A
-1072:'\\cyra', 	# character -LÐ-A
-1073:'\\cyrb', 	# character -LÑ-A
-1074:'\\cyrv', 	# character -LÒ-A
-1075:'\\cyrg', 	# character -LÓ-A
-1076:'\\cyrd', 	# character -LÔ-A
-1077:'\\cyre', 	# character -LÕ-A
-1078:'\\cyrzh', 	# character -LÖ-A
-1079:'\\cyrz', 	# character -L×-A
-1080:'\\cyri', 	# character -LØ-A
-1081:'\\cyrishrt', 	# character -LÙ-A
-1082:'\\cyrk', 	# character -LÚ-A
-1083:'\\cyrl', 	# character -LÛ-A
-1084:'\\cyrm', 	# character -LÜ-A
-1085:'\\cyrn', 	# character -LÝ-A
-1086:'\\cyro', 	# character -LÞ-A
-1087:'\\cyrp', 	# character -Lß-A
-1088:'\\cyrr', 	# character -Là-A
-1089:'\\cyrs', 	# character -Lá-A
-1090:'\\cyrt', 	# character -Lâ-A
-1091:'\\cyru', 	# character -Lã-A
-1092:'\\cyrf', 	# character -Lä-A
-1093:'\\cyrh', 	# character -Lå-A
-1094:'\\cyrc', 	# character -Læ-A
-1095:'\\cyrch', 	# character -Lç-A
-1096:'\\cyrsh', 	# character -Lè-A
-1097:'\\cyrshch', 	# character -Lé-A
-1098:'\\cyrhrdsn', 	# character -Lê-A
-1099:'\\cyrery', 	# character -Lë-A
-1100:'\\cyrsftsn', 	# character -Lì-A
-1101:'\\cyrerev', 	# character -Lí-A
-1102:'\\cyryu', 	# character -Lî-A
-1103:'\\cyrya', 	# character -Lï-A
-1104:'\\`\\cyre', 	# character ?
-1105:'\\cyryo', 	# character -Lñ-A
-1106:'\\cyrdje', 	# character -Lò-A
-1107:'\\`\\cyrg', 	# character -Ló-A
-1108:'\\cyrie', 	# character -Lô-A
-1109:'\\cyrdze', 	# character -Lõ-A
-1110:'\\cyrii', 	# character -Lö-A
-1111:'\\cyryi', 	# character -L÷-A
-1112:'\\cyrje', 	# character -Lø-A
-1113:'\\cyrlje', 	# character -Lù-A
-1114:'\\cyrnje', 	# character -Lú-A
-1115:'\\cyrtshe', 	# character -Lû-A
-1116:'\\`\\cyrk', 	# character -Lü-A
-1117:'\\`\\cyri', 	# character ?
-1118:'\\cyrushrt', 	# character -Lþ-A
-1119:'\\cyrdzhe', 	# character -Lÿ-A
-1122:'\\CYRYAT', 	# character ?
-1123:'\\cyryat', 	# character ?
-1130:'\\CYRBYUS', 	# character ?
-1131:'\\cyrbyus', 	# character ?
-1138:'\\CYRFITA', 	# character ?
-1139:'\\cyrfita', 	# character ?
-1140:'\\CYRIZH', 	# character ?
-1141:'\\cyrizh', 	# character ?
-1142:'\\C\\CYRIZH', 	# character ?
-1143:'\\C\\cyrizh', 	# character ?
-1164:'\\CYRSEMISFTSN', 	# character ?
-1165:'\\cyrsemisftsn', 	# character ?
-1166:'\\CYRRTICK', 	# character ?
-1167:'\\cyrrtick', 	# character ?
-1168:'\\CYRGUP', 	# character ?
-1169:'\\cyrgup', 	# character ?
-1170:'\\CYRGHCRS', 	# character ?
-1171:'\\cyrghcrs', 	# character ?
-1172:'\\CYRGHK', 	# character ?
-1173:'\\cyrghk', 	# character ?
-1174:'\\CYRZHDSC', 	# character ?
-1175:'\\cyrzhdsc', 	# character ?
-1176:'\\CYRZDSC', 	# character ?
-1177:'\\cyrzdsc', 	# character ?
-1178:'\\CYRKDSC', 	# character ?
-1179:'\\cyrkdsc', 	# character ?
-1180:'\\CYRKVCRS', 	# character ?
-1181:'\\cyrkvcrs', 	# character ?
-1182:'\\CYRKHCRS', 	# character ?
-1183:'\\cyrkhcrs', 	# character ?
-1184:'\\CYRKBEAK', 	# character ?
-1185:'\\cyrkbeak', 	# character ?
-1186:'\\CYRNDSC', 	# character ?
-1187:'\\cyrndsc', 	# character ?
-1188:'\\CYRNG', 	# character ?
-1189:'\\cyrng', 	# character ?
-1190:'\\CYRPHK', 	# character ?
-1191:'\\cyrphk', 	# character ?
-1192:'\\CYRABHHA', 	# character ?
-1193:'\\cyrabhha', 	# character ?
-1194:'\\CYRSDSC', 	# character ?
-1195:'\\cyrsdsc', 	# character ?
-1196:'\\CYRTDSC', 	# character ?
-1197:'\\cyrtdsc', 	# character ?
-1198:'\\CYRY', 	# character ?
-1199:'\\cyry', 	# character ?
-1200:'\\CYRYHCRS', 	# character ?
-1201:'\\cyryhcrs', 	# character ?
-1202:'\\CYRHDSC', 	# character ?
-1203:'\\cyrhdsc', 	# character ?
-1204:'\\CYRTETSE', 	# character ?
-1205:'\\cyrtetse', 	# character ?
-1206:'\\CYRCHRDSC', 	# character ?
-1207:'\\cyrchrdsc', 	# character ?
-1208:'\\CYRCHVCRS', 	# character ?
-1209:'\\cyrchvcrs', 	# character ?
-1210:'\\CYRSHHA', 	# character ?
-1211:'\\cyrshha', 	# character ?
-1212:'\\CYRABHCH', 	# character ?
-1213:'\\cyrabhch', 	# character ?
-1214:'\\CYRABHCHDSC', 	# character ?
-1215:'\\cyrabhchdsc', 	# character ?
-1216:'\\CYRpalochka', 	# character ?
-1217:'\\U\\CYRZH', 	# character ?
-1218:'\\U\\cyrzh', 	# character ?
-1219:'\\CYRKHK', 	# character ?
-1220:'\\cyrkhk', 	# character ?
-1221:'\\CYRLDSC', 	# character ?
-1222:'\\cyrldsc', 	# character ?
-1223:'\\CYRNHK', 	# character ?
-1224:'\\cyrnhk', 	# character ?
-1227:'\\CYRCHLDSC', 	# character ?
-1228:'\\cyrchldsc', 	# character ?
-1229:'\\CYRMDSC', 	# character ?
-1230:'\\cyrmdsc', 	# character ?
-1232:'\\U\\CYRA', 	# character ?
-1233:'\\U\\cyra', 	# character ?
-1234:'\\"\\CYRA', 	# character ?
-1235:'\\"\\cyra', 	# character ?
-1236:'\\CYRAE', 	# character ?
-1237:'\\cyrae', 	# character ?
-1238:'\\U\\CYRE', 	# character ?
-1239:'\\U\\cyre', 	# character ?
-1240:'\\CYRSCHWA', 	# character ?
-1241:'\\cyrschwa', 	# character ?
-1242:'\\"\\CYRSCHWA', 	# character ?
-1243:'\\"\\cyrschwa', 	# character ?
-1244:'\\"\\CYRZH', 	# character ?
-1245:'\\"\\cyrzh', 	# character ?
-1246:'\\"\\CYRZ', 	# character ?
-1247:'\\"\\cyrz', 	# character ?
-1248:'\\CYRABHDZE', 	# character ?
-1249:'\\cyrabhdze', 	# character ?
-1250:'\\=\\CYRI', 	# character ?
-1251:'\\=\\cyri', 	# character ?
-1252:'\\"\\CYRI', 	# character ?
-1253:'\\"\\cyri', 	# character ?
-1254:'\\"\\CYRO', 	# character ?
-1255:'\\"\\cyro', 	# character ?
-1256:'\\CYROTLD', 	# character ?
-1257:'\\cyrotld', 	# character ?
-1260:'\\"\\CYREREV', 	# character ?
-1261:'\\"\\cyrerev', 	# character ?
-1262:'\\=\\CYRU', 	# character ?
-1263:'\\=\\cyru', 	# character ?
-1264:'\\"\\CYRU', 	# character ?
-1265:'\\"\\cyru', 	# character ?
-1266:'\\H\\CYRU', 	# character ?
-1267:'\\H\\cyru', 	# character ?
-1268:'\\"\\CYRCH', 	# character ?
-1269:'\\"\\cyrch', 	# character ?
-1270:'\\CYRGDSC', 	# character ?
-1271:'\\cyrgdsc', 	# character ?
-1272:'\\"\\CYRERY', 	# character ?
-1273:'\\"\\cyrery', 	# character ?
-1274:'\\CYRGDSCHCRS', 	# character ?
-1275:'\\cyrgdschcrs', 	# character ?
-1276:'\\CYRHHK', 	# character ?
-1277:'\\cyrhhk', 	# character ?
-1278:'\\CYRHHCRS', 	# character ?
-1279:'\\cyrhhcrs', 	# character ?
-3647:'\\textbaht', 	# character -Tß-A
-8204:'\\textcompwordmark', 	# character ?
-8211:'\\textendash', 	# character $(G!9(B
-8212:'\\textemdash', 	# character $(G!7(B
-8214:'\\textbardbl', 	# character $B!B(B
-8216:'\\textquoteleft', 	# character -F¡-A
-8217:'\\textquoteright', 	# character -F¢-A
-8218:'\\quotesinglbase', 	# character ?
-8220:'\\textquotedblleft', 	# character -YŽ-A
-8221:'\\textquotedblright', 	# character -Y¡-A
-8222:'\\quotedblbase', 	# character -Y¥-A
-8224:'\\textdagger', 	# character $B"w(B
-8225:'\\textdaggerdbl', 	# character $B"x(B
-8226:'\\textbullet', 	# character $(0!&(B
-8230:'\\textellipsis', 	# character $B!D(B
-8240:'\\textperthousand', 	# character $B"s(B
-8241:'\\textpertenthousand', 	# character ?
-8249:'\\guilsinglleft', 	# character ?
-8250:'\\guilsinglright', 	# character ?
-8251:'\\textreferencemark', 	# character $B"((B
-8253:'\\textinterrobang', 	# character ?
-8260:'\\textfractionsolidus', 	# character $(G"_(B
-8270:'\\textasteriskcentered', 	# character ?
-8274:'\\textdiscount', 	# character ?
-8353:'\\textcolonmonetary', 	# character ?
-8356:'\\textlira', 	# character ?
-8358:'\\textnaira', 	# character ?
-8361:'\\textwon', 	# character ?
-8363:'\\textdong', 	# character ?
-8364:'\\texteuro', 	# character -b€-A
-8369:'\\textpeso', 	# character ?
-8451:'\\textcelsius', 	# character $B!n(B
-8470:'\\textnumero', 	# character -Lð-A
-8471:'\\textcircledP', 	# character ?
-8478:'\\textrecipe', 	# character ?
-8480:'\\textservicemark', 	# character ?
-8482:'\\texttrademark', 	# character $(D"o(B
-8486:'\\textohm', 	# character -FÙ-A
-8487:'\\textmho', 	# character ?
-8494:'\\textestimated', 	# character ?
-8592:'\\textleftarrow', 	# character $B"+(B
-8593:'\\textuparrow', 	# character $B",(B
-8594:'\\textrightarrow', 	# character $B"*(B
-8595:'\\textdownarrow', 	# character $B"-(B
-9001:'\\textlangle', 	# character $B!R(B
-9002:'\\textrangle', 	# character $B!S(B
-9250:'\\textblank', 	# character ?
-9251:'\\textvisiblespace', 	# character ?
-9702:'\\textopenbullet', 	# character ?
-9711:'\\textbigcircle', 	# character $B"~(B
-9834:'\\textmusicalnote'	# character $B"v(B
+256:'\\={A}',
+257:'\\={a}',
+258:'\\u{A}',
+259:'\\u{a}',
+260:'\\k{A}',
+261:'\\k{a}',
+262:"\\'C",
+263:"\\'c",
+264:'\\^{C}',
+265:'\\^{c}',
+266:'\\.{C}',
+267:'\\.{c}',
+268:'\\v{C}',
+269:'\\v{c}',
+270:'\\v{D}',
+271:'\\v{d}',
+272:'\\DJ',
+273:'\\dj',
+274:'\\={E}',
+275:'\\={e}',
+276:'\\u{E}',
+277:'\\u{e}',
+278:'\\.{E}',
+279:'\\.{e}',
+280:'\\k{E}',
+281:'\\k{e}',
+282:'\\v{E}',
+283:'\\v{e}',
+284:'\\^{G}',
+285:'\\^{g}',
+286:'\\u{G}',
+287:'\\u{g}',
+288:'\\.{G}',
+289:'\\.{g}',
+290:'\\c{G}',
+291:'\\c{g}',
+292:'\\^{H}',
+293:'\\^{h}',
+294:'\\={H}',
+295:'\\={h}',
+296:'\\~{I}',
+297:'\\~{i}',
+298:'\\={I}',
+299:'\\={i}',
+300:'\\u{I}',
+301:'\\u{i}',
+302:'\\k{I}',
+303:'\\k{i}',
+304:'\\.I',
+305:'\\i',
+306:'\\IJ',
+307:'\\ij',
+308:'\\^{J}',
+309:'\\^{j}',
+310:'\\c{K}',
+311:'\\c{k}',
+312:'\\textsc\{k\}',
+313:"\\'L",
+314:"\\'l",
+315:'\\c{L}',
+316:'\\c{l}',
+317:'\\v{L}',
+318:'\\v{l}',
+319:'\\.{L}',
+320:'\\.{l}',
+321:'\\L',
+322:'\\l',
+323:"\\'N",
+324:"\\'n",
+325:'\\c{N}',
+326:'\\c{n}',
+327:'\\v{N}',
+328:'\\v{n}',
+329:'\\nument{149}',
+330:'\\NG',
+331:'\\ng',
+332:'\\={O}',
+333:'\\={o}',
+334:'\\u{O}',
+335:'\\u{o}',
+336:"\\'{O}",
+337:"\\'{o}",
+338:'\\OE',
+339:'\\oe',
+340:"\\'R",
+341:"\\'r",
+342:'\\c{R}',
+343:'\\c{r}',
+344:'\\v{R}',
+345:'\\v{r}',
+346:"\\'S",
+347:"\\'s",
+348:'\\^{S}',
+349:'\\^{s}',
+350:'\\c{S}',
+351:'\\c{s}',
+352:'\\v{S}',
+353:'\\v{s}',
+354:'\\c{T}',
+355:'\\c{t}',
+356:'\\v{T}',
+357:'\\v{t}',
+358:'\\={T}',
+359:'\\={t}',
+360:'\\~{U}',
+361:'\\~{u}',
+362:'\\={U}',
+363:'\\={u}',
+364:'\\u{U}',
+365:'\\u{u}',
+366:'\\r{U}',
+367:'\\r{u}',
+368:"\\'{U}",
+369:"\\'{u}",
+370:'\\k{U}',
+371:'\\k{u}',
+372:'\\^{W}',
+373:'\\^{w}',
+374:'\\^{Y}',
+375:'\\^{y}',
+376:'\\"Y',
+377:"\\'Z",
+378:"\\'z",
+379:'\\.Z',
+380:'\\.z',
+381:'\\v{Z}',
+382:'\\v{z}',
+402:'\\textflorin',
+710:'\\textasciicircum',
+711:'\\textasciicaron',
+728:'\\textasciibreve',
+732:'\\textasciitilde',
+733:'\\textacutedbl',
+1024:'\\`\\CYRE',
+1025:'\\CYRYO',
+1026:'\\CYRDJE',
+1027:'\\`\\CYRG',
+1028:'\\CYRIE',
+1029:'\\CYRDZE',
+1030:'\\CYRII',
+1031:'\\CYRYI',
+1032:'\\CYRJE',
+1033:'\\CYRLJE',
+1034:'\\CYRNJE',
+1035:'\\CYRTSHE',
+1036:'\\`\\CYRK',
+1037:'\\`\\CYRI',
+1038:'\\CYRUSHRT',
+1039:'\\CYRDZHE',
+1040:'\\CYRA',
+1041:'\\CYRB',
+1042:'\\CYRV',
+1043:'\\CYRG',
+1044:'\\CYRD',
+1045:'\\CYRE',
+1046:'\\CYRZH',
+1047:'\\CYRZ',
+1048:'\\CYRI',
+1049:'\\CYRISHRT',
+1050:'\\CYRK',
+1051:'\\CYRL',
+1052:'\\CYRM',
+1053:'\\CYRN',
+1054:'\\CYRO',
+1055:'\\CYRP',
+1056:'\\CYRR',
+1057:'\\CYRS',
+1058:'\\CYRT',
+1059:'\\CYRU',
+1060:'\\CYRF',
+1061:'\\CYRH',
+1062:'\\CYRC',
+1063:'\\CYRCH',
+1064:'\\CYRSH',
+1065:'\\CYRSHCH',
+1066:'\\CYRHRDSN',
+1067:'\\CYRERY',
+1068:'\\CYRSFTSN',
+1069:'\\CYREREV',
+1070:'\\CYRYU',
+1071:'\\CYRYA',
+1072:'\\cyra',
+1073:'\\cyrb',
+1074:'\\cyrv',
+1075:'\\cyrg',
+1076:'\\cyrd',
+1077:'\\cyre',
+1078:'\\cyrzh',
+1079:'\\cyrz',
+1080:'\\cyri',
+1081:'\\cyrishrt',
+1082:'\\cyrk',
+1083:'\\cyrl',
+1084:'\\cyrm',
+1085:'\\cyrn',
+1086:'\\cyro',
+1087:'\\cyrp',
+1088:'\\cyrr',
+1089:'\\cyrs',
+1090:'\\cyrt',
+1091:'\\cyru',
+1092:'\\cyrf',
+1093:'\\cyrh',
+1094:'\\cyrc',
+1095:'\\cyrch',
+1096:'\\cyrsh',
+1097:'\\cyrshch',
+1098:'\\cyrhrdsn',
+1099:'\\cyrery',
+1100:'\\cyrsftsn',
+1101:'\\cyrerev',
+1102:'\\cyryu',
+1103:'\\cyrya',
+1104:'\\`\\cyre',
+1105:'\\cyryo',
+1106:'\\cyrdje',
+1107:'\\`\\cyrg',
+1108:'\\cyrie',
+1109:'\\cyrdze',
+1110:'\\cyrii',
+1111:'\\cyryi',
+1112:'\\cyrje',
+1113:'\\cyrlje',
+1114:'\\cyrnje',
+1115:'\\cyrtshe',
+1116:'\\`\\cyrk',
+1117:'\\`\\cyri',
+1118:'\\cyrushrt',
+1119:'\\cyrdzhe',
+1122:'\\CYRYAT',
+1123:'\\cyryat',
+1130:'\\CYRBYUS',
+1131:'\\cyrbyus',
+1138:'\\CYRFITA',
+1139:'\\cyrfita',
+1140:'\\CYRIZH',
+1141:'\\cyrizh',
+1142:'\\C\\CYRIZH',
+1143:'\\C\\cyrizh',
+1164:'\\CYRSEMISFTSN',
+1165:'\\cyrsemisftsn',
+1166:'\\CYRRTICK',
+1167:'\\cyrrtick',
+1168:'\\CYRGUP',
+1169:'\\cyrgup',
+1170:'\\CYRGHCRS',
+1171:'\\cyrghcrs',
+1172:'\\CYRGHK',
+1173:'\\cyrghk',
+1174:'\\CYRZHDSC',
+1175:'\\cyrzhdsc',
+1176:'\\CYRZDSC',
+1177:'\\cyrzdsc',
+1178:'\\CYRKDSC',
+1179:'\\cyrkdsc',
+1180:'\\CYRKVCRS',
+1181:'\\cyrkvcrs',
+1182:'\\CYRKHCRS',
+1183:'\\cyrkhcrs',
+1184:'\\CYRKBEAK',
+1185:'\\cyrkbeak',
+1186:'\\CYRNDSC',
+1187:'\\cyrndsc',
+1188:'\\CYRNG',
+1189:'\\cyrng',
+1190:'\\CYRPHK',
+1191:'\\cyrphk',
+1192:'\\CYRABHHA',
+1193:'\\cyrabhha',
+1194:'\\CYRSDSC',
+1195:'\\cyrsdsc',
+1196:'\\CYRTDSC',
+1197:'\\cyrtdsc',
+1198:'\\CYRY',
+1199:'\\cyry',
+1200:'\\CYRYHCRS',
+1201:'\\cyryhcrs',
+1202:'\\CYRHDSC',
+1203:'\\cyrhdsc',
+1204:'\\CYRTETSE',
+1205:'\\cyrtetse',
+1206:'\\CYRCHRDSC',
+1207:'\\cyrchrdsc',
+1208:'\\CYRCHVCRS',
+1209:'\\cyrchvcrs',
+1210:'\\CYRSHHA',
+1211:'\\cyrshha',
+1212:'\\CYRABHCH',
+1213:'\\cyrabhch',
+1214:'\\CYRABHCHDSC',
+1215:'\\cyrabhchdsc',
+1216:'\\CYRpalochka',
+1217:'\\U\\CYRZH',
+1218:'\\U\\cyrzh',
+1219:'\\CYRKHK',
+1220:'\\cyrkhk',
+1221:'\\CYRLDSC',
+1222:'\\cyrldsc',
+1223:'\\CYRNHK',
+1224:'\\cyrnhk',
+1227:'\\CYRCHLDSC',
+1228:'\\cyrchldsc',
+1229:'\\CYRMDSC',
+1230:'\\cyrmdsc',
+1232:'\\U\\CYRA',
+1233:'\\U\\cyra',
+1234:'\\"\\CYRA',
+1235:'\\"\\cyra',
+1236:'\\CYRAE',
+1237:'\\cyrae',
+1238:'\\U\\CYRE',
+1239:'\\U\\cyre',
+1240:'\\CYRSCHWA',
+1241:'\\cyrschwa',
+1242:'\\"\\CYRSCHWA',
+1243:'\\"\\cyrschwa',
+1244:'\\"\\CYRZH',
+1245:'\\"\\cyrzh',
+1246:'\\"\\CYRZ',
+1247:'\\"\\cyrz',
+1248:'\\CYRABHDZE',
+1249:'\\cyrabhdze',
+1250:'\\=\\CYRI',
+1251:'\\=\\cyri',
+1252:'\\"\\CYRI',
+1253:'\\"\\cyri',
+1254:'\\"\\CYRO',
+1255:'\\"\\cyro',
+1256:'\\CYROTLD',
+1257:'\\cyrotld',
+1260:'\\"\\CYREREV',
+1261:'\\"\\cyrerev',
+1262:'\\=\\CYRU',
+1263:'\\=\\cyru',
+1264:'\\"\\CYRU',
+1265:'\\"\\cyru',
+1266:'\\H\\CYRU',
+1267:'\\H\\cyru',
+1268:'\\"\\CYRCH',
+1269:'\\"\\cyrch',
+1270:'\\CYRGDSC',
+1271:'\\cyrgdsc',
+1272:'\\"\\CYRERY',
+1273:'\\"\\cyrery',
+1274:'\\CYRGDSCHCRS',
+1275:'\\cyrgdschcrs',
+1276:'\\CYRHHK',
+1277:'\\cyrhhk',
+1278:'\\CYRHHCRS',
+1279:'\\cyrhhcrs',
+3647:'\\textbaht',
+8204:'\\textcompwordmark',
+8211:'\\textendash',
+8212:'\\textemdash',
+8214:'\\textbardbl',
+8216:'\\textquoteleft',
+8217:'\\textquoteright',
+8218:'\\quotesinglbase',
+8220:'\\textquotedblleft',
+8221:'\\textquotedblright',
+8222:'\\quotedblbase',
+8224:'\\textdagger',
+8225:'\\textdaggerdbl',
+8226:'\\textbullet',
+8230:'\\textellipsis',
+8240:'\\textperthousand',
+8241:'\\textpertenthousand',
+8249:'\\guilsinglleft',
+8250:'\\guilsinglright',
+8251:'\\textreferencemark',
+8253:'\\textinterrobang',
+8260:'\\textfractionsolidus',
+8270:'\\textasteriskcentered',
+8274:'\\textdiscount',
+8353:'\\textcolonmonetary',
+8356:'\\textlira',
+8358:'\\textnaira',
+8361:'\\textwon',
+8363:'\\textdong',
+8364:'\\texteuro',
+8369:'\\textpeso',
+8451:'\\textcelsius',
+8470:'\\textnumero',
+8471:'\\textcircledP',
+8478:'\\textrecipe',
+8480:'\\textservicemark',
+8482:'\\texttrademark',
+8486:'\\textohm',
+8487:'\\textmho',
+8494:'\\textestimated',
+8592:'\\textleftarrow',
+8593:'\\textuparrow',
+8594:'\\textrightarrow',
+8595:'\\textdownarrow',
+9001:'\\textlangle',
+9002:'\\textrangle',
+9250:'\\textblank',
+9251:'\\textvisiblespace',
+9702:'\\textopenbullet',
+9711:'\\textbigcircle',
+9834:'\\textmusicalnote',
+
+
+# ADDED MANUALLY (PhF):
+# ---------------------
+
+# Combining Diacritical Marks (!!TODO!! smarter)
+0x0307: r'\ensuremath{\dot{}}',
+0x0308: r'\ensuremath{\ddot{}}',
+
+
+#
+0x2010: '-', # HYPHEN
+
+# Math operators and symbols (U+22XX)
+0x2200: r'\ensuremath{\forall}',
+0x2201: r'\ensuremath{\complement}',
+0x2202: r'\ensuremath{\partial}',
+0x2203: r'\ensuremath{\exists}',
+0x2204: r'\ensuremath{\nexists}',
+0x2205: r'\ensuremath{\varnothing}',
+0x2206: r'\ensuremath{\Delta}',
+0x2207: r'\ensuremath{\nabla}',
+0x2208: r'\ensuremath{\in}',
+0x2209: r'\ensuremath{\notin}',
+0x220A: r'\ensuremath{\in}', # alternative
+0x220B: r'\ensuremath{\ni}',
+0x220C: r'\ensuremath{\not\ni}',
+0x220D: r'\ensuremath{\ni}', # alternative
+0x220E: r'\ensuremath{\blacksquare}',
+0x220F: r'\ensuremath{\prod}',
+0x2210: r'\ensuremath{\coprod}',
+0x2211: r'\ensuremath{\sum}',
+0x2212: r'\ensuremath{-}',
+0x2213: r'\ensuremath{\mp}',
+#0x2214: DOT PLUS
+0x2215: r'\ensuremath{/}',
+0x2216: r'\ensuremath{\smallsetminus}',
+0x2217: r'\ensuremath{*}',
+0x2218: r'\ensuremath{\circ}',
+0x2219: r'\ensuremath{\bullet}',
+0x221A: r'\ensuremath{\sqrt{}}',
+0x221B: r'\ensuremath{\sqrt[3]{}}',
+0x221C: r'\ensuremath{\sqrt[4]{}}',
+0x221D: r'\ensuremath{\propto}',
+0x221E: r'\ensuremath{\infty}',
+#0x221F: RIGHT ANGLE
+#0x2220: ANGLE
+#0x2221: MEASURED ANGLE
+#0x2222: SPHERICAL ANGLE
+0x2223: r'\ensuremath{\mid}',
+0x2224: r'\ensuremath{\nmid}',
+0x2225: r'\ensuremath{\parallel}',
+0x2226: r'\ensuremath{\nparallel}',
+0x2227: r'\ensuremath{\wedge}',
+0x2228: r'\ensuremath{\vee}',
+0x2229: r'\ensuremath{\cap}',
+0x222A: r'\ensuremath{\cup}',
+0x222B: r'\ensuremath{\int}',
+0x222C: r'\ensuremath{\iint}',
+0x222D: r'\ensuremath{\iiint}',
+0x222E: r'\ensuremath{\oint}',
+#0x222F: SURFACE INTEGRAL
+#0x2230: VOLUME INTEGRAL
+#0x2231: CLOCKWISE INTEGRAL
+#0x2232: CLOCKWIZSE CONTOUR INTEGRAL
+#0x2233: ANTICLOCKWISE CONTOUR INTEGRAL
+0x2234: r'\ensuremath{\therefore}',
+0x2235: r'\ensuremath{\because}',
+0x2236: r'\ensuremath{:}',
+0x2237: r'\ensuremath{::}',
+#0x2238: DOT MINUS
+#...
+0x223C: r'\ensuremath{\sim}',
+0x223D: r'\ensuremath{\backsim}',
+#
+0x2248: r'\ensuremath{\approx}',
+#
+0x2260: r'\ensuremath{\neq}',
+0x2261: r'\ensuremath{\equiv}',
+0x2262: r'\ensuremath{\not\equiv}',
+#0x2263: STRICTLY EQUIVALENT TO
+0x2264: r'\ensuremath{\leq}',
+0x2265: r'\ensuremath{\geq}',
+0x2266: r'\ensuremath{\leqq}',
+0x2267: r'\ensuremath{\geqq}',
+0x2268: r'\ensuremath{\lneqq}',
+0x2269: r'\ensuremath{\gneqq}',
+0x226A: r'\ensuremath{\ll}',
+0x226B: r'\ensuremath{\gg}',
+#0x226C: BETWEEN
+#0x226D: NOT EQUIVLAENT TO
+0x226E: r'\ensuremath{\nless}',
+0x226F: r'\ensuremath{\ngtr}',
+0x2270: r'\ensuremath{\nleq}',
+0x2271: r'\ensuremath{\ngeq}',
+0x2272: r'\ensuremath{\lesssim}',
+0x2273: r'\ensuremath{\gtrsim}',
+0x2274: r'\ensuremath{\not\lesssim}',
+0x2275: r'\ensuremath{\not\gtrsim}',
+0x2276: r'\ensuremath{\lessgtr}',
+0x2277: r'\ensuremath{\gtrless}',
+#0x2278: NEITHER LESS-THAN NOR GREATER-THAN
+#0x2279: NEITHER GREATER-THAN NOR LESS-THAN
+0x227A: r'\ensuremath{\prec}',
+0x227B: r'\ensuremath{\succ}',
+0x227C: r'\ensuremath{\preceq}',
+0x227D: r'\ensuremath{\succeq}',
+0x227E: r'\ensuremath{\precsim}',
+0x227F: r'\ensuremath{\succsim}',
+0x2280: r'\ensuremath{\nprec}',
+0x2281: r'\ensuremath{\nsucc}',
+0x2282: r'\ensuremath{\subset}',
+0x2283: r'\ensuremath{\supset}',
+0x2284: r'\ensuremath{\not\subset}',
+0x2285: r'\ensuremath{\not\supset}',
+0x2286: r'\ensuremath{\subseteq}',
+0x2287: r'\ensuremath{\supseteq}',
+0x2288: r'\ensuremath{\nsubseteq}',
+0x2289: r'\ensuremath{\nsupseteq}',
+0x228A: r'\ensuremath{\subsetneq}',
+0x228B: r'\ensuremath{\supsetneq}',
+#...
+0x2293: r'\ensuremath{\sqcap}',
+0x2294: r'\ensuremath{\sqcup}',
+0x2295: r'\ensuremath{\oplus}',
+0x2296: r'\ensuremath{\ominus}',
+0x2297: r'\ensuremath{\otimes}',
+0x2298: r'\ensuremath{\oslash}',
+0x2299: r'\ensuremath{\odot}',
+# ...
+0x22C0: r'\ensuremath{\bigwedge}',
+0x22C1: r'\ensuremath{\bigvee}',
+0x22C2: r'\ensuremath{\bigcap}',
+0x22C3: r'\ensuremath{\bigcup}',
+0x22C4: r'\ensuremath{\diamond}',
+0x22C5: r'\ensuremath{\cdot}',
+0x22C6: r'\ensuremath{\star}',
+0x22C7: r'\ensuremath{\divideontimes}',
+0x22C8: r'\ensuremath{\bowtie}',
+0x22C9: r'\ensuremath{\ltimes}',
+0x22CA: r'\ensuremath{\rtimes}',
+0x22CB: r'\ensuremath{\leftthreetimes}',
+0x22CC: r'\ensuremath{\rightthreetimes}',
+# ...
+0x22EE: r'\ensuremath{\vdots}',
+0x22EF: r'\ensuremath{\cdots}',
+0x22F0: r'\ensuremath{\udots}',
+0x22F1: r'\ensuremath{\ddots}',
+# ...
+
+# Supplemental Mathematical Operators U+2AXX
+0x2A7D: r'\ensuremath{\leqslant}',
+0x2A7E: r'\ensuremath{\geqslant}',
+
+# CJK Symbols Punktuation (!) U+3000 : for \langle/\rangle
+0x3008: r'\ensuremath{\langle}',
+0x3009: r'\ensuremath{\rangle}',
+
 }
+
+
+
+
+
+
+# ------------------------------------------------------------------------------------------------
+
+
+
+
 
 
 
@@ -537,7 +706,7 @@ def utf8tolatex(s, non_ascii_only=False, brackets=True, substitute_bad_chars=Fal
                 result += (  '{'+lch+'}' if brackets and lch[0] == '\\' else
                              lch  )
             else:
-                logger.warning("Character cannot be encoded into LaTeX: %s" % (repr(ch)))
+                logger.warning(u"Character cannot be encoded into LaTeX: U+%04X - %s" % (ord(ch), ch))
                 if (substitute_bad_chars):
                     result += r'{\bfseries ?}'
                 else:
@@ -545,5 +714,5 @@ def utf8tolatex(s, non_ascii_only=False, brackets=True, substitute_bad_chars=Fal
                     result += ch
 
     return result
-    
-    
+
+
