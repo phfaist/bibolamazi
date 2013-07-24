@@ -24,15 +24,16 @@ import re
 
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
-
+from core import butils;
 
 
 # possible modes in which to operate
 MODE_NONE = 0;
 MODE_UNPUBLISHED_NOTE = 1;
-MODE_NOTE = 2;
-MODE_EPRINT = 3;
-MODE_STRIP = 4;
+MODE_UNPUBLISHED_NOTE_NOTITLE = 2;
+MODE_NOTE = 3;
+MODE_EPRINT = 4;
+MODE_STRIP = 5;
 
 # a regex that we will need often
 rxarxivinnote = re.compile(r'(([;,]\s+)?|\b|^)arXiv[-.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,]\s*|\s+|$)',
@@ -158,6 +159,8 @@ MODES:
     "strip"   -- remove the arxiv information completely.
     "unpublished-note"  -- set the entry type to "unpublished", and add or append to the
                  note={} the string "arXiv:XXXX.YYYY". Any journal field is stripped.
+    "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally, strip the
+                 `title' field (useful for revtex styles)
     "note"    -- just add or append to the note={} the string "arXiv:XXXX.YYYY". Don't change
                  the entry type. This mode is appropriate for entries that are published.
     "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
@@ -181,7 +184,8 @@ class ArxivNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints"):
+    def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
+                 theses_count_as_published=False):
         """
         Constructor method for ArxivNormalizeFilter
         
@@ -190,6 +194,8 @@ class ArxivNormalizeFilter(BibFilter):
                 ID (if None, use the same mode as `mode').
         *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                 unpublished entries
+        *theses_count_as_published: if True, then entries of type @phdthesis and
+                @mastersthesis count as published entries, otherwise not (the default).
         """
         
         BibFilter.__init__(self);
@@ -198,6 +204,7 @@ class ArxivNormalizeFilter(BibFilter):
         self.unpublished_mode = (self._parse_mode(unpublished_mode) if unpublished_mode
                                  else self.mode);
         self.arxiv_journal_name = arxiv_journal_name;
+        self.theses_count_as_published = butils.getbool(theses_count_as_published);
 
         logger.debug('arxiv filter constructor: mode=%d; unpublished_mode=%d' % (self.mode, self.unpublished_mode));
 
@@ -206,6 +213,8 @@ class ArxivNormalizeFilter(BibFilter):
             return MODE_NONE
         elif (mode == "unpublished-note"):
             return MODE_UNPUBLISHED_NOTE
+        elif (mode == "unpublished-note-notitle"):
+            return MODE_UNPUBLISHED_NOTE_NOTITLE
         elif (mode == "note"):
             return MODE_NOTE
         elif (mode == "eprint"):
@@ -238,10 +247,14 @@ class ArxivNormalizeFilter(BibFilter):
             # no arxiv info--don't do anything
             return entry
 
-        mode = self.mode
-        if (not arxivinfo['published']):
+        if (entry.type == 'phdthesis' or entry.type == 'mastersthesis'):
+            mode = (self.mode  if  self.theses_count_as_published  else  self.unpublished_mode)
+        elif (not arxivinfo['published']):
             #logger.longdebug('entry not published : %r' % entry);
             mode = self.unpublished_mode
+        else:
+            mode = self.mode
+
 
         if (mode == MODE_NONE):
             # don't change the entry, return it as is.
@@ -263,7 +276,7 @@ class ArxivNormalizeFilter(BibFilter):
             return entry
 
         def add_note(entry, arxivinfo):
-            note = "arXiv:"+arxivinfo['arxivid'];
+            note = "{arXiv:"+arxivinfo['arxivid']+"}";
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
                 entry.fields['note'] += ', '+note;
@@ -271,14 +284,19 @@ class ArxivNormalizeFilter(BibFilter):
                 entry.fields['note'] = note;
             
 
-        if (mode == MODE_UNPUBLISHED_NOTE):
-            # save arxiv information in the note={} field, and set type to unpublished
-            entry.type = u'unpublished'
+        if (mode == MODE_UNPUBLISHED_NOTE or mode == MODE_UNPUBLISHED_NOTE_NOTITLE):
+            # save arxiv information in the note={} field, and set type to unpublished if article
+            if (entry.type == u'article'):
+                # make sure we don't change, e.g, theses to "unpublished" !
+                entry.type = u'unpublished'
             
             # 'unpublished' type should not have journal field set.
             if ('journal' in entry.fields):
                 del entry.fields['journal']
             
+            if (mode == MODE_UNPUBLISHED_NOTE_NOTITLE and 'title' in entry.fields):
+                del entry.fields['title']
+
             add_note(entry, arxivinfo)
 
             return entry
