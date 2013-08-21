@@ -64,7 +64,6 @@ CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
 AFTER_CONFIG_TEXT = _repl("""\
 %
 %
-%
 % ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
 %
 
@@ -467,7 +466,6 @@ TEMPLATE_CONFIG = """\
 
 # NOTE: this is ignored, as BibFilterFile will automatically add its own "rest" upon save_to_file()
 ##TEMPLATE_REST = _repl("""\
-##%
 ##%
 ##%
 ##% ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
