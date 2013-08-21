@@ -27,7 +27,7 @@ import inspect
 import argparse
 import textwrap
 
-from core.butils import store_key_val, store_key_const, store_key_bool
+from core.argparseactions import store_key_val, store_key_const, store_key_bool
 from core.blogger import logger
 
 
@@ -328,7 +328,7 @@ def format_filter_help(name):
 
     fclass = fmodule.get_class();
 
-    p = _default_option_parser(name, fclass);
+    (p, use_auto_case) = _default_option_parser(name, fclass);
 
     prolog = fclass.getHelpAuthor();
     if (prolog):

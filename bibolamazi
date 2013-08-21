@@ -55,12 +55,12 @@ if __name__ == "__main__":
         raise
 
     except BibolamaziError as e:
-        print "ERROR:", unicode(e)
+        print "BIBOLAMAZI ERROR:", unicode(e)
 
     except:
         
         print
-        print " -- ERROR --"
+        print " -- EXCEPTION --"
         print
 
         # debugging post-mortem

@@ -33,7 +33,7 @@ from core import version
 from core.bibfilterfile import BibFilterFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
-from core.butils import store_or_count, opt_list_filters, opt_action_help
+from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
 
 # for list of filters
 import filters
@@ -55,11 +55,15 @@ parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', 
                     help='Increase or set verbosity (0=quiet,1=info,2=verbose,3=long debug)')
 parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0,
                     help="Don't display any messages. Same as `-v 0'");
+parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
+                    help="Create a new bibolamazi file with a template configuration.");
 parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
                     help="Show a list of available filters along with their description, and exit.");
 parser.add_argument('-h', '--help', action=opt_action_help, nargs='?', metavar='filter',
                     help='Show this help message and exit. If filter is given, show information and '+
                     'help text for that filter. Available filters are: '+", ".join(filters.__all__))
+parser.add_argument('--version', action=opt_action_version, nargs=0,
+                    help='Show bibolamazi version number and exit.')
 parser.add_argument('outputbibfile',
                     help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI configuration tags.');
 
@@ -84,6 +88,11 @@ Use option --help for help information.
 # and the entries, as well as keep some information on how to re-write to the file.
 bfile = BibFilterFile(args.outputbibfile);
 
+
+bibdata = bfile.bibliographydata();
+if (bibdata is None or not len(bibdata.entries)):
+    logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.");
+    exit(2);
 
 
 # now, run the selected filters in the corresponding order.

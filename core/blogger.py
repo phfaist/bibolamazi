@@ -112,7 +112,9 @@ ch.setLevel(logging.NOTSET); # propagate all messages
 formatter = ConditionalFormatter('%(message)s',
                                  DEBUG='-- %(message)s',
                                  LONGDEBUG='  -- %(message)s',
-                                 WARNING='WARNING: %(message)s');
+                                 WARNING='WARNING: %(message)s',
+                                 ERROR='ERROR: %(message)s',
+                                 CRITICAL='CRITICAL: %(message)s');
 ch.setFormatter(formatter);
 # add the handlers to the logger
 logger.addHandler(ch);

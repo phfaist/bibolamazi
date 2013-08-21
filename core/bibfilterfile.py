@@ -61,8 +61,8 @@ def _repl(s, dic):
 CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%';
 CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
 
-AFTER_CONFIG_TEXT = _repl(
-"""%
+AFTER_CONFIG_TEXT = _repl("""\
+%
 %
 %
 % ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
@@ -98,17 +98,20 @@ BIBOLAMAZI_FILE_ENCODING = 'utf-8';
 
 
 class BibFilterFile:
-    def __init__(self, fname):
+    def __init__(self, fname, create=False):
         logger.longdebug("opening file "+repr(fname));
         self._fname = fname;
         self._dir = os.path.dirname(os.path.realpath(fname));
 
-        try:
-            with codecs.open(fname, 'r', BIBOLAMAZI_FILE_ENCODING) as f:
-                logger.longdebug("File "+repr(fname)+" opened.");
-                self._parse_stream(f, fname);
-        except IOError as e:
-            raise butils.BibolamaziError(u"Can't open file `%s': %s" %(fname, unicode(e)));
+        if (create):
+            self._init_empty_template();
+        else:
+            try:
+                with codecs.open(fname, 'r', BIBOLAMAZI_FILE_ENCODING) as f:
+                    logger.longdebug("File "+repr(fname)+" opened.");
+                    self._parse_stream(f, fname);
+            except IOError as e:
+                raise butils.BibolamaziError(u"Can't open file `%s': %s" %(fname, unicode(e)));
 
     def fname(self):
         return self._fname;
@@ -141,6 +144,39 @@ class BibFilterFile:
         return self._bibliographydata;
     
 
+    def _init_empty_template(self):
+
+        self._header = TEMPLATE_HEADER;
+        self._config = TEMPLATE_CONFIG;
+        self._config_data = self._config_data_from_input(TEMPLATE_CONFIG);
+        self._rest = '';#TEMPLATE_REST;
+
+        # store raw cmds
+        self._cmds = [];
+
+        # parse commands
+        self._sources = [];
+        self._source_lists = [];
+        self._filters = [];
+
+        self._bibliographydata = pybtex.database.BibliographyData();
+
+        logger.longdebug('done with empty template init!');
+
+
+    def _config_data_from_input(self, inputconfigdata):
+        """
+        Simply strips initial %'s on each line of `inputconfigdata`.
+        """
+        
+        inputconfigdatalines = inputconfigdata.split('\n');
+        config_data = '';
+        for line in inputconfigdatalines:
+            config_data += re.sub(r'^%', '', line)+'\n';
+
+        return config_data;
+
+        
     def _parse_stream(self, stream, streamfname=None):
 
         ST_HEADER = 0;
@@ -179,14 +215,14 @@ class BibFilterFile:
             if (state == ST_CONFIG):
                 # remove leading % signs
                 #logger.debug("adding line to config_data: "+line);
-                config_data += re.sub(r'^%', '', line);
+                config_data += line; #re.sub(r'^%', '', line);
 
             content[state] += line;
 
         # save the splitted data into these data structures.
         self._header = content[ST_HEADER];
         self._config = content[ST_CONFIG];
-        self._config_data = config_data;
+        self._config_data = self._config_data_from_input(config_data);
         self._rest = content[ST_REST];
         
         logger.longdebug(("Parsed general bibfilterfile structure: len(header)=%d"+
@@ -267,7 +303,8 @@ class BibFilterFile:
             if (cmd[0] == "src"):
                 thesrc_list = shlex.split(cmd[1]);
                 self._source_lists.append(thesrc_list);
-                self._sources.append('');
+                self._sources.append(''); # this will be set later to which source in the
+                #                           list was actually accessed.
                 logger.debug("Added source list %r" % (thesrc_list));
                 continue
             if (cmd[0] == "filter"):
@@ -290,13 +327,17 @@ class BibFilterFile:
 
         self._bibliographydata = None;
 
+        if (not len(self._source_lists)):
+            logger.warning("File `%s': No source files specified. You need source files to provide bib entries!"
+                           %(self._fname));
+
         # now, populate all bibliographydata.
         for k in range(len(self._source_lists)):
             srclist = self._source_lists[k];
             src = self._populate_from_srclist(srclist);
             self._sources[k] = src;
 
-        logger.longdebug('done with init!');
+        logger.longdebug('done with _parse_stream!');
 
 
     def _populate_from_srclist(self, srclist):
@@ -380,3 +421,74 @@ class BibFilterFile:
         
         
         
+
+
+
+
+TEMPLATE_HEADER = """\
+
+
+
+.. add additionnal stuff here. this will not be overwritten by bibolamazi.
+
+
+
+"""
+
+TEMPLATE_CONFIG = """\
+%%%-BIB-OLA-MAZI-BEGIN-%%%
+%
+% %% BIBOLAMAZI configuration section.
+% %% Additional two leading percent signs indicate comments in the configuration.
+%
+% %% **** SOURCES ****
+%
+% src:   <source file 1> [ <alternate source file 1> ... ]
+% src:   <source file 2> [ ... ]
+% %% add additional sources here; nonexisting files are ignored.
+%
+% %% **** FILTERS ****
+%
+% %% Specify filters here. Specify as many filters as you want, each with a `filter:'
+% %% directive. See also `bibolamazi --list-filters' and `bibolamazi --help <filter>'.
+%
+% filter:   <filter specification>
+%
+% %% Example:
+% filter: arxiv -sMode=strip -sUnpublishedMode=eprint
+%
+% %% Finally, if your file is in a VCS, sort all entries by citation key so that you don't
+% %% get huge file differences for each commit each time bibolamazi is run:
+% filter: orderentries
+%
+%%%-BIB-OLA-MAZI-END-%%%
+"""
+
+
+# NOTE: this is ignored, as BibFilterFile will automatically add its own "rest" upon save_to_file()
+##TEMPLATE_REST = _repl("""\
+##%
+##%
+##%
+##% ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
+##%
+
+
+##%
+##% This template file was generated by BIBOLAMAZI __BIBOLAMAZI_VERSION__
+##%
+##%     https://github.com/phfaist/bibolamazi
+##%
+##% Bibolamazi collects bib entries from the sources listed in the configuration section
+##% above, and merges them all into this file while applying the defined filters with
+##% the given options. Your sources will not be altered.
+##%
+##% Any entries ABOVE the configuration section will be preserved as is, which means that
+##% if you don't want to install bibolamazi or if it not installed, and you want to add
+##% a bibliographic entry to this file, add it AT THE TOP OF THIS FILE.
+##%
+##%
+
+
+##""", {r'__BIBOLAMAZI_VERSION__': butils.get_version(),
+##      });

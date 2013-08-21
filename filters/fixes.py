@@ -49,8 +49,8 @@ For now, the implemented fixes are:
     Mendeley generates)
 
   -dEncodeUtf8ToLatex
-    Encodes non-ascii special characters, e.g. accented characters, into LaTeX
-    equivalents. This affects ALL fields of the bibliographic entry.
+    Encodes known non-ascii special characters, e.g. accented characters, into
+    LaTeX equivalents. This affects ALL fields of the bibliographic entry.
 
   -dRemoveTypeFromPhd
     Removes any `type=' field from @phdthesis{..} bibtex entries if it contains
@@ -67,7 +67,7 @@ For now, the implemented fixes are:
     cause the field to be output as
       @article{...
         title = {Irreversibility and Heat Generation in the Computing Process},
-p        ...
+        ...
       }
     so that the bibtex style can adapt the casing to any bibliography standard.
     If -dRemoveFullBraces is given, then this is applied to all fields except
@@ -76,12 +76,12 @@ p        ...
 
   -sProtectNames=Name1,Name2
     A list of names that should be protected within all fields except people (authors
-    and editors) . Whenever a field contains one of the given names (as full word),
+    and editors). Whenever a field contains one of the given names (as full word),
     then the name is wrapped in braces (e.g. "On Bell Experiments" ->
     "On {Bell} Experiments") in order to protect the possible upper casing.
 
   -dRemoveFileField
-    Removes the field file={...} (that Mendeley introduces) from all entries.
+    Removes the field file={...} (that e.g. Mendeley introduces) from all entries.
 """
 
 
@@ -99,7 +99,7 @@ class FixesFilter(BibFilter):
         
         *fix_swedish_a: transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
                         automatically); revtex tends to insert a blank after the `\\AA' otherwise.
-        *encode_utf8_to_latex: encode all non-ascii characters into latex escape sequences.
+        *encode_utf8_to_latex: encode known non-ascii characters into latex escape sequences.
         *remove_type_from_phd: Removes any `type=' field from @phdthesis{..} bibtex entries.
         *remove_full_braces: removes overprotective global braces in field values.
         *protect_names: list of names to protect from bibtex style casing.

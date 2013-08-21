@@ -25,6 +25,7 @@ import os.path
 import re
 import codecs
 
+
 from pybtex.database import BibliographyData;
 
 
@@ -101,9 +102,9 @@ DUPL_WARN_TOP = """
 
 """
 
-DUPL_WARN_ENTRY = """
+DUPL_WARN_ENTRY = """\
     %(alias)-25s \tis a duplicate of  %(orig)s
-"""[1:] # remove initial newline
+"""
 
 DUPL_WARN_BOTTOM = """
     -------------------------
@@ -123,7 +124,7 @@ Filter that detects duplicate entries and produces rules to make one entry an al
 
 HELP_TEXT = u"""
 This filter works by writing a LaTeX file to a specified location (via the
-`dupfile' option) which contains the needed commands to define the bibtex
+`dupfile' option) which contains the commands needed to define the bibtex
 aliases.
 
 Note that the dupfile option is mandatory in order to create the file with
