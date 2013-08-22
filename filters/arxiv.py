@@ -75,7 +75,7 @@ def getArXivInfo(entry):
     if ('eprint' in fields):
         # this gives the arxiv ID
         d['arxivid'] = fields['eprint'];
-        m = re.match('^([-\w]+)/', d['arxivid']);
+        m = re.match('^([-\w.]+)/', d['arxivid']);
         if (m):
             d['primaryclass'] = m.group(1);
 
