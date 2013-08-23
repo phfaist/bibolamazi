@@ -122,8 +122,11 @@ class FixesFilter(BibFilter):
             self.remove_full_braces = True;
             self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ];
 
-        self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x+r'\b', re.IGNORECASE))
-                                    for x in protect_names.split(',') ]);
+        if protect_names is not None:
+            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x+r'\b', re.IGNORECASE))
+                                        for x in protect_names.split(',') ]);
+        else:
+            self.protect_names = None;
 
         self.remove_file_field = butils.getbool(remove_file_field);
         
