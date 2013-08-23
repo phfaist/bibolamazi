@@ -15,26 +15,31 @@ NOTE: bibolamazi requires Python 2.7 being installed.
            > cd /home/username/bin/
            bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
 
-  or, for example,
+  or, for a system-wide install,
 
            > cd /usr/bin/
-           > ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
+           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
 
 
-* You invoke `bibolamazi` in general as
+* To compile a bibolamazi bibtex file, you should run `bibolamazi` in general as
 
-           > bibolamazi <options> <bibtex file with rules to update>
+           > bibolamazi bibolamazibibtexfile.bib
 
-  For a help message with a list of possible options, run
+* To quickly get started with a new bibolamazi file, the following command will create the
+  given file and produce a usable template which you can edit:
+
+           > bibolamazi --new newfile.bib
+
+* For an example to study, look at the file `test/output.bib` in the source code. To compile
+  it, run
+
+           > bibolamazi test/output.bib
+           
+* For a help message with a list of possible options, run
 
            > bibolamazi --help
 
-* To get started with an example, look at the file `test/output.bib` in the source code. To
-  compile it, run
-
-           > bibolamazi test/output.bib
-
-* To get a list of all available filters along with their description, run
+  To get a list of all available filters along with their description, run
 
            > bibolamazi --list-filters
 
@@ -60,8 +65,8 @@ Then, the main bibtex file (in our example `main.bib`) is updated, such that:
 * The configuration section is restored as it was;
 
 * All the filtered entries (obtained from, e.g., `source1.bib` and `source2.bib`) are
-  then dumped in the rest of the file, overwriting the output of the previous run of
-  bibolamazi.
+  then dumped in the rest of the file, overwriting the rest of `main.bib` (which
+  logically contained output of a previous run of bibolamazi).
 
 
 ### The Bibolamazi Configuration Section
@@ -112,7 +117,7 @@ Once all the entries are collected from the various sources, you may now apply f
 
 A filter is applied using the `filter` command.
 
-    % filter: fitername [options and arguments]
+    % filter: filtername [options and arguments]
 
 Filters usually accept options and arguments in a shell-like fashion, but this may vary in
 principle from filter to filter. For example, one may use the `arxiv` filter to strip away all
@@ -128,6 +133,10 @@ A full list of options can be obtained with
 and more generally, for any filter,
 
     > bibolamazi --help <filtername>
+
+A list of available filters can be obtained by running
+
+    > bibolamazi --list-filters
 
 
 Example Bibolamazi File
@@ -168,7 +177,6 @@ Here is a minimal example of a bibolamazi bibtex file.
     % filter: url -dStrip=False -dStripAllIfDoiOrArxiv=False
     % 
     %%%-BIB-OLA-MAZI-END-%%%
-    %
     %
     %
     % ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
