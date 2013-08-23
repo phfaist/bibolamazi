@@ -44,8 +44,8 @@ Perform some various fixes for bibtex entries.
 For now, the implemented fixes are:
 
   -dFixSwedishA
-    Changes "\\AA berg" to "\\AA{}berg" to prevent revtex from inserting a
-    blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
+    Changes "\\AA berg" to "\\AA{}berg" to prevent bibtex/revtex from inserting
+    a blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
     Mendeley generates)
 
   -dEncodeUtf8ToLatex
@@ -191,8 +191,8 @@ class FixesFilter(BibFilter):
         def filter_entry_remove_full_braces(entry, fieldlist):
             for k,v in entry.fields.iteritems():
                 if (fieldlist is None or k in fieldlist):
-                    val = v.strip()
-                    if (val[0] == '{' and val[-1] == '}'):
+                    val = v.strip();
+                    if (len(val) and val[0] == '{' and val[-1] == '}'):
                         # remove the extra braces.
                         entry.fields[k] = val[1:-1];
 

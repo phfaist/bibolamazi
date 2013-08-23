@@ -38,6 +38,8 @@ MODE_STRIP = 5;
 # a regex that we will need often
 rxarxivinnote = re.compile(r'(([;,]\s+)?|\b|^)arXiv[-.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,]\s*|\s+|$)',
                            re.IGNORECASE);
+rxarxivurl = re.compile(r'(([;,]\s+)?|\b|^)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
+                        re.IGNORECASE);
 
 # extract arXiv info from an entry
 def getArXivInfo(entry):
@@ -60,7 +62,7 @@ def getArXivInfo(entry):
            'published': True ,
            };
     
-    if (entry.type == u'unpublished'):
+    if (entry.type == u'unpublished' or entry.type == u'misc'):
         d['published'] = False
 
     # if journal is the arXiv, it's not published.
@@ -82,21 +84,36 @@ def getArXivInfo(entry):
     if ('primaryclass' in fields):
         d['primaryclass'] = fields['primaryclass'];
 
-    if ('note' in fields):
-        m = rxarxivinnote.search(fields['note']);
+    def processNoteField(notefield, d):
+        m = rxarxivinnote.search(notefield);
         if m:
             if (not d['arxivid']):
                 try:
                     d['arxivid'] = m.group('arxivid');
                 except IndexError:
-                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", fields['note'], m)
+                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
                     pass
             if (not d['primaryclass']):
                 try:
                     d['primaryclass'] = m.group('primaryclass');
                 except IndexError:
-                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", fields['note'], m)
+                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", notefield, m)
                     pass
+        m = rxarxivurl.search(notefield);
+        if m:
+            if (not d['arxivid']):
+                try:
+                    d['arxivid'] = m.group('arxivid');
+                except IndexError:
+                    logger.longdebug("rxarxivurl: indexerror for 'arxivid' group in note=%r, m=%r", notefield, m);
+                    pass
+                
+    if ('note' in fields):
+        processNoteField(fields['note'], d);
+
+    if ('annote' in fields):
+        processNoteField(fields['annote'], d);
+
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -115,7 +132,7 @@ def stripArXivInfoInNote(notestr):
     information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
     """
 
-    return rxarxivinnote.sub('', notestr)
+    return rxarxivurl.sub('', rxarxivinnote.sub('', notestr));
     
 
 
@@ -268,7 +285,14 @@ class ArxivNormalizeFilter(BibFilter):
         # possibly remove it from the note={} entry
         if ('note' in entry.fields):
             entry.fields['note'] = stripArXivInfoInNote(entry.fields['note']);
-        if (entry.type == u'unpublished'):
+            if (not len(entry.fields['note'])):
+                del entry.fields['note'];
+        if ('annote' in entry.fields):
+            entry.fields['annote'] = stripArXivInfoInNote(entry.fields['annote']);
+            if (not len(entry.fields['annote'])):
+                del entry.fields['annote'];
+
+        if (entry.type == u'unpublished' or entry.type == u'misc'):
             entry.type = u'article';
             
         if (mode == MODE_STRIP):
