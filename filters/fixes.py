@@ -27,7 +27,8 @@ from pybtex.database import Person
 from core.bibfilter import BibFilter, BibFilterError
 from core.blogger import logger
 from core import butils
-from core import latexencode
+from core.latex import latexencode
+from core.latex import latex2text
 
 
 HELP_AUTHOR = u"""\
@@ -51,6 +52,10 @@ For now, the implemented fixes are:
   -dEncodeUtf8ToLatex
     Encodes known non-ascii special characters, e.g. accented characters, into
     LaTeX equivalents. This affects ALL fields of the bibliographic entry.
+
+  -dEncodeLatexToUtf8
+    Encodes all LaTeX content, including accents and escape sequences, to unicode
+    text saved as UTF-8. This affects ALL fields of the bibliographic entry.
 
   -dRemoveTypeFromPhd
     Removes any `type=' field from @phdthesis{..} bibtex entries if it contains
@@ -92,14 +97,16 @@ class FixesFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, fix_swedish_a=False, encode_utf8_to_latex=False, remove_type_from_phd=False,
-                 remove_full_braces=False, protect_names=None, remove_file_field=False):
+    def __init__(self, fix_swedish_a=False, encode_utf8_to_latex=False, encode_latex_to_utf8=False,
+                 remove_type_from_phd=False, remove_full_braces=False, protect_names=None,
+                 remove_file_field=False):
         """
         Constructor method for FixesFilter
         
         *fix_swedish_a: transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
                         automatically); revtex tends to insert a blank after the `\\AA' otherwise.
         *encode_utf8_to_latex: encode known non-ascii characters into latex escape sequences.
+        *encode_latex_to_utf8: encode known latex escape sequences to unicode text (utf-8).
         *remove_type_from_phd: Removes any `type=' field from @phdthesis{..} bibtex entries.
         *remove_full_braces: removes overprotective global braces in field values.
         *protect_names: list of names to protect from bibtex style casing.
@@ -111,6 +118,10 @@ class FixesFilter(BibFilter):
         self.fix_swedish_a = butils.getbool(fix_swedish_a);
 
         self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex);
+        self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
+
+        if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
+            raise FilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
 
@@ -131,9 +142,11 @@ class FixesFilter(BibFilter):
         self.remove_file_field = butils.getbool(remove_file_field);
         
 
-        logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; remove_type_from_phd=%r; '
+        logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
+                     'remove_type_from_phd=%r; '
                      'remove_full_braces=%r [fieldlist=%r], protect_names=%r, remove_file_field=%r'
-                     % (self.fix_swedish_a, self.encode_utf8_to_latex, self.remove_type_from_phd,
+                     % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
+                        self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist, self.protect_names,
                         self.remove_file_field));
         
@@ -156,6 +169,8 @@ class FixesFilter(BibFilter):
                 x = re.sub(r'\\AA\s+', r'\AA{}', x);
             if (self.encode_utf8_to_latex):
                 x = latexencode.utf8tolatex(x, non_ascii_only=True);
+            if (self.encode_latex_to_utf8):
+                x = latex2text.latex2text(x);
             return x
 
         def filter_person(p):

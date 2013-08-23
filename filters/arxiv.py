@@ -114,6 +114,9 @@ def getArXivInfo(entry):
     if ('annote' in fields):
         processNoteField(fields['annote'], d);
 
+    if ('url' in fields):
+        processNoteField(fields['url'], d);
+
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -291,6 +294,10 @@ class ArxivNormalizeFilter(BibFilter):
             entry.fields['annote'] = stripArXivInfoInNote(entry.fields['annote']);
             if (not len(entry.fields['annote'])):
                 del entry.fields['annote'];
+        if ('url' in entry.fields):
+            entry.fields['url'] = stripArXivInfoInNote(entry.fields['url']);
+            if (not len(entry.fields['url'])):
+                del entry.fields['url'];
 
         if (entry.type == u'unpublished' or entry.type == u'misc'):
             entry.type = u'article';
