@@ -205,7 +205,18 @@ class DuplicatesFilter(BibFilter):
                 return False
 
         def compare_neq_fld(x, y, fld, filt=lambda x: x):
-            return filt(x.get(fld, y.get(fld))) != filt(y.get(fld, x.get(fld))) ;
+            xval = x.get(fld, y.get(fld));
+            yval = y.get(fld, x.get(fld));
+            try:
+                xval = xval.strip();
+            except AttributeError:
+                pass
+            try:
+                yval = yval.strip();
+            except AttributeError:
+                pass
+
+            return filt(xval) != filt(yval) ;
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
@@ -222,6 +233,10 @@ class DuplicatesFilter(BibFilter):
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
             return False
+        if (arxiv_a and arxiv_b and
+            'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
+            arxiv_a['arxivid'] == arxiv_b['arxivid']):
+            return True
 
         # if they have different notes, then they're different entries
         if ( compare_neq_fld(a.fields, b.fields, 'note',
@@ -232,6 +247,15 @@ class DuplicatesFilter(BibFilter):
         j_abbrev_a = re.sub('[^A-Z]', '', a.fields.get('journal', ''));
         j_abbrev_b = re.sub('[^A-Z]', '', b.fields.get('journal', ''));
         if (j_abbrev_a != j_abbrev_b):
+            return False
+
+        if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
+            return False
+
+        if ( compare_neq_fld(a.fields, b.fields, 'number') ):
+            return False
+
+        if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
             return False
 
         # well at this point the publications are pretty much duplicates
