@@ -24,6 +24,7 @@ import os
 import os.path
 import re
 import codecs
+import unicodedata
 
 
 from pybtex.database import BibliographyData;
@@ -194,7 +195,7 @@ class DuplicatesFilter(BibFilter):
 
         def getlast(pers):
             # join last names
-            last = pers.last()[-1].upper();
+            last = unicodedata.normalize('NFKC', pers.last()[-1].upper());
             # additionally, remove any special LaTeX chars which may be written differently.
             last = re.sub(r'\\([a-zA-Z]+|.)', '', last);
             last = re.sub(r'(\{|\})', '', last);

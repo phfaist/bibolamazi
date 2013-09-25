@@ -528,6 +528,8 @@ utf82latex={
 #
 0x2010: '-', # HYPHEN
 
+0x210F: r'\ensuremath{\hbar}', # h bar
+
 # Math operators and symbols (U+22XX)
 0x2200: r'\ensuremath{\forall}',
 0x2201: r'\ensuremath{\complement}',
