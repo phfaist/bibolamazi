@@ -12,7 +12,7 @@ NOTE: bibolamazi requires Python 2.7 being installed.
   a ZIP file and uncompress it somewhere. Then, link the executable to somewhere in your
   path:
 
-           > cd /home/username/bin/
+           > cd ~/bin/
            bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
 
   or, for a system-wide install,
