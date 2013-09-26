@@ -36,10 +36,10 @@ MODE_EPRINT = 4;
 MODE_STRIP = 5;
 
 # a regex that we will need often
-rxarxivinnote = re.compile(r'(([;,]\s+)?|\b|^)arXiv[-.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,]\s*|\s+|$)',
+rxarxivinnote = re.compile(r'(([;,\{]?\s+)?|\b|^\s*)arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,\}]?\s*|$)',
                            re.IGNORECASE);
-rxarxivurl = re.compile(r'(([;,]\s+)?|\b|^)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
-                        re.IGNORECASE);
+rxarxivurl    = re.compile(r'(([;,\{]?\s+)?|\b|^\s*)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
+                           re.IGNORECASE);
 
 # extract arXiv info from an entry
 def getArXivInfo(entry):
@@ -117,13 +117,12 @@ def getArXivInfo(entry):
     if ('url' in fields):
         processNoteField(fields['url'], d);
 
-
     if (d['arxivid'] is None):
         # no arXiv info.
         return None
 
     # FIX: if archive-ID is old style, and does not contain the primary class, add it as "quant-ph/XXXXXXX"
-    if (re.match(r'^\d{7}$', d['arxivid']) and len(d['primaryclass']) > 0):
+    if (re.match(r'^\d{7}$', d['arxivid']) and d['primaryclass'] and len(d['primaryclass']) > 0):
         d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
     
     logger.longdebug("got arXiv information: %r." %(d));

@@ -27,6 +27,7 @@ from pybtex.database import Person
 from core.butils import getbool;
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
+from core.latex import latex2text;
 
 # for the arxiv info parser tool
 import arxiv;
@@ -88,6 +89,11 @@ class NameInitialsFilter(BibFilter):
                 continue
             for k in range(len(entry.persons[role])):
                 p = entry.persons[role][k];
+                # de-latex the person first
+                pstr = unicode(p);
+                # BUG: FIXME: remove space after any macros
+                pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr); # replace "blah\macro blah" by "blah\macro{}blah"
+                p = Person(latex2text.latex2text(pstr))
                 pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast(True)),
                               " ".join(p.last()), " ".join(p.lineage()));
                 entry.persons[role][k] = pnew

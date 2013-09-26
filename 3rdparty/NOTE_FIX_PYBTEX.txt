@@ -1,0 +1,26 @@
+
+NOTE: PHF: FIXED BUG IN PYBTEX:
+
+diff --git a/3rdparty/pybtex/pybtex/bibtex/utils.py b/3rdparty/pybtex/pybtex/bibtex/utils.py
+index a450da9..53d18f1 100644
+--- a/3rdparty/pybtex/pybtex/bibtex/utils.py
++++ b/3rdparty/pybtex/pybtex/bibtex/utils.py
+@@ -392,7 +392,7 @@ def split_tex_string(string, sep=None, strip=True, filter_empty=False):
+     """
+ 
+     if sep is None:
+-        sep = '[\s~]+'
++        sep = r'(?:\s|(?<!\\)~)+' ### PhF: FIX TO NOT MATCH e.g. Brand\~{a}o
+         filter_empty = True
+     sep_re = re.compile(sep)
+     brace_level = 0
+@@ -406,7 +406,8 @@ def split_tex_string(string, sep=None, strip=True, filter_empty=False):
+         elif char == '}':
+             brace_level -= 1
+         elif brace_level == 0 and pos > 0:
+-            match = sep_re.match(string[pos:])
++            ### PhF: FIX TO NOT TRUNCATE THE STRING, TO ENABLE THE LOOKBEHIND ASSERTION IN REGEX.
++            match = sep_re.match(string, pos=pos)
+             if match:
+                 sep_len = len(match.group())
+                 if pos + sep_len < string_len:

@@ -140,7 +140,7 @@ class FixesFilter(BibFilter):
             self.protect_names = None;
 
         self.remove_file_field = butils.getbool(remove_file_field);
-        
+
 
         logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                      'remove_type_from_phd=%r; '

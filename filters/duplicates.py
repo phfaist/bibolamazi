@@ -32,6 +32,7 @@ from pybtex.database import BibliographyData;
 
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
+from core.latex import latex2text
 
 import arxiv # getArXivInfo()
 
@@ -145,6 +146,7 @@ each duplicate found.
 """
 
 
+
 class DuplicatesFilter(BibFilter):
 
     helpauthor = HELP_AUTHOR
@@ -188,22 +190,35 @@ class DuplicatesFilter(BibFilter):
 
 
     def compare_entries_same(self, a, b):
+
+        # compare author list first
+
         apers = a.persons.get('author',[]);
         bpers = b.persons.get('author',[]);
+
         if (len(apers) != len(bpers)):
             return False
 
         def getlast(pers):
             # join last names
-            last = unicodedata.normalize('NFKC', pers.last()[-1].upper());
-            # additionally, remove any special LaTeX chars which may be written differently.
-            last = re.sub(r'\\([a-zA-Z]+|.)', '', last);
+            last = unicodedata.normalize('NFKD', delatex(" ".join(pers.prelast()+pers.last())).split()[-1].lower());
+            # remove any unicode compositions (accents, etc.)
+            last = re.sub(r'[^\x00-\x7f]', '', last.encode('utf-8')).decode('utf-8')
+            ## additionally, remove any special LaTeX chars which may be written differently.
+            #last = re.sub(r'\\([a-zA-Z]+|.)', '', last);
             last = re.sub(r'(\{|\})', '', last);
-            return last;
+
+            initial = pers.first(True)
+            return (last, initial);
 
         for k in range(len(apers)):
-            if (not (getlast(apers[k]) == getlast(bpers[k]))):
+            (lasta, ina) = getlast(apers[k])
+            (lastb, inb) = getlast(bpers[k])
+            if (lasta != lastb or (ina and inb and ina != inb)):
+                #print "Authors %r and %r differ" %((lasta, ina), (lastb, inb))
                 return False
+
+        #print "Author list matches! %r and %r "%(apers,bpers);
 
         def compare_neq_fld(x, y, fld, filt=lambda x: x):
             xval = x.get(fld, y.get(fld));
@@ -221,23 +236,39 @@ class DuplicatesFilter(BibFilter):
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
-            return False
-        if (compare_neq_fld(a.fields, b.fields, 'month')):
+            ##print "years differ!"
             return False
 
-        if (compare_neq_fld(a.fields, b.fields, 'doi')):
+        if (compare_neq_fld(a.fields, b.fields, 'month')):
+            #print "months differ!"
             return False
+
+        doi_a = a.fields.get('doi')
+        doi_b = b.fields.get('doi')
+        if (doi_a and doi_b and doi_a != doi_b):
+            #print "doi differs!"
+            return False
+        if (doi_a and doi_a == doi_b):
+            logger.debug("entries have same doi: %r, %r" %(a.key, b.key))
+            return True
 
         arxiv_a = arxiv.getArXivInfo(a);
         arxiv_b = arxiv.getArXivInfo(b);
+
+        #print "arxiv_a=%r, arxiv_b=%r" %(arxiv_a, arxiv_b)
+        
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
+            #print "arxivid differs!"
             return False
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] == arxiv_b['arxivid']):
+            #print "same arxivid!"
+            logger.debug("entries have same arXiv id: %r, %r" %(a.key, b.key))
             return True
+
 
         # if they have different notes, then they're different entries
         if ( compare_neq_fld(a.fields, b.fields, 'note',
@@ -245,19 +276,47 @@ class DuplicatesFilter(BibFilter):
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
-        j_abbrev_a = re.sub('[^A-Z]', '', a.fields.get('journal', ''));
-        j_abbrev_b = re.sub('[^A-Z]', '', b.fields.get('journal', ''));
+        j_abbrev_a = re.sub('[^A-Z]', '', a.fields.get('journal', b.fields.get('journal', '')));
+        j_abbrev_b = re.sub('[^A-Z]', '', b.fields.get('journal', a.fields.get('journal', '')));
         if (j_abbrev_a != j_abbrev_b):
+            #print "journals differ!"
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
+            #print "volume differ!"
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
+            #print "number differ!"
             return False
 
-        if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
+        def cleantitle(title):
+            title = unicodedata.normalize('NFKD', delatex(title).lower())
+            # remove any unicode compositions (accents, etc.)
+            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
+            # remove any unusual characters
+            title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
+            # remove any inline math
+            title = re.sub(r'$[^$]+$', '', title)
+            # clean up whitespace
+            title = re.sub(r'\s+', ' ', title)
+            return title.strip()
+
+        titlea = cleantitle(a.fields.get('title', b.fields.get('title', '')))
+        titleb = cleantitle(b.fields.get('title', a.fields.get('title', '')))
+
+        if (titlea != titleb):
+            logger.debug("Titles of entries %r and %r differ." %(a.key, b.key))
             return False
+
+        # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
+        #
+        #if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
+        #    print "pages differ!"
+        #    import pdb; pdb.set_trace()
+        #    return False
+
+        #print "entries match!"
 
         # well at this point the publications are pretty much duplicates
         return True
@@ -333,3 +392,11 @@ class DuplicatesFilter(BibFilter):
 def get_class():
     return DuplicatesFilter;
 
+
+
+
+
+def delatex(s):
+    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
+    s = s.replace(r'\ ', r'\~');
+    return latex2text.latex2text(s);
