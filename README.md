@@ -6,11 +6,12 @@ Collect bibliographic entries from BibTeX files and apply rules or filters to th
 Installing and Getting Started
 ------------------------------
 
-NOTE: bibolamazi requires Python 2.7 being installed.
+Note: bibolamazi requires Python 2.7 being installed (which is there by default on most
+linux and Mac systems).
 
 * To install bibolamazi, simply clone this repository on your computer, or download it as
-  a ZIP file and uncompress it somewhere. Then, link the executable to somewhere in your
-  path:
+  a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
+  easier with `git pull`). Then, link the executable to somewhere in your path:
 
            > cd ~/bin/
            bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
