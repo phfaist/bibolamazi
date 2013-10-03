@@ -30,6 +30,7 @@ import argparse
 import pydoc
 
 import butils;
+from butils import getbool
 from blogger import logger
 
 
