@@ -5,8 +5,8 @@ import sys
 import os
 import os.path
 
-sys.path += [os.path.realpath(os.path.join(os.getcwd(),'..'))]
-import bibolamazi
+sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
+import bibolamazi_init
 
 
 from PyQt4.QtCore import *
