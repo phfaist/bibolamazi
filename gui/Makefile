@@ -3,8 +3,17 @@
 
 QTAUTODIR = qtauto
 
-all: $(QTAUTODIR)/bibolamazi_res_rc.py $(QTAUTODIR)/ui_mainwidget.py $(QTAUTODIR)/ui_openbibfile.py
 
+TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
+	 $(QTAUTODIR)/ui_mainwidget.py \
+	 $(QTAUTODIR)/ui_openbibfile.py \
+	 $(QTAUTODIR)/ui_helpbrowser.py
+
+
+all: $(TARGETS)
+
+clean:
+	rm $(TARGETS)
 
 
 $(QTAUTODIR)/%_rc.py: %.qrc

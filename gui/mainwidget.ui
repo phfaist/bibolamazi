@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>627</width>
-    <height>544</height>
+    <width>491</width>
+    <height>545</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,7 +86,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>Tools</string>
+      <string>Help &amp; Reference</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="spacing">
@@ -96,13 +96,6 @@
        <widget class="QPushButton" name="btnHelp">
         <property name="text">
          <string>Help &amp;&amp; Reference Browser</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnCommandsOutput">
-        <property name="text">
-         <string>Show commands and output ...</string>
         </property>
        </widget>
       </item>

@@ -72,18 +72,6 @@ def main(argv=sys.argv[1:]):
 
     args = parser.parse_args(args=argv);
 
-    logger.setVerbosity(args.verbosity);
-    logger.longdebug('Set verbosity: %d' %(args.verbosity));
-
-    logger.debug(textwrap.dedent("""
-    Bibolamazi Version %(ver)s by Philippe Faist (C) 2013
-
-    Use option --help for help information.
-    """         %   {
-                     'ver': version.version_str
-                     }));
-
-
     return run_bibolamazi_args(args)
 
 
@@ -98,7 +86,20 @@ def run_bibolamazi_args(args):
     #
     # args is supposed to be the parsed arguments from main()
     #
-    
+
+
+    logger.setVerbosity(args.verbosity);
+    logger.longdebug('Set verbosity: %d' %(args.verbosity));
+
+    logger.debug(textwrap.dedent("""
+    Bibolamazi Version %(ver)s by Philippe Faist (C) 2013
+
+    Use option --help for help information.
+    """         %   {
+                     'ver': version.version_str
+                     }));
+
+
 
     # open the bibfilterfile, which is the output bibtex file
     # -------------------------------------------------------
