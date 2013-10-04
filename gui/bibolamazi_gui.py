@@ -38,7 +38,8 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnOpenFile_clicked(self):
-        fname = str(QFileDialog.getOpenFileName(self))
+        fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
+                                                'Bibolamazi Files (*.bib);;All Files (*)'))
         if (fname):
             self.openFile(fname)
         
@@ -49,9 +50,14 @@ class MainWidget(QWidget):
         w.raise_()
         self.openbibfiles.append(w)
 
+
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        newfilename = str(QFileDialog.getSaveFileName(self))
+        newfilename = str(QFileDialog.getSaveFileName(self, 'Open Bibolamazi File', QString(),
+                                                      'Bibolamazi Files (*.bib);;All Files (*)'))
+        if (not newfilename):
+            # cancelled
+            return
 
         if (os.path.exists(newfilename)):
             QMessageBox.critical(self, "File Exists",

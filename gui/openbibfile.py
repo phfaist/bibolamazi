@@ -4,7 +4,7 @@
 import sys
 import logging
 import StringIO
-
+import os.path
 
 import core.main
 from core import blogger
@@ -109,7 +109,7 @@ class OpenBibFile(QWidget):
         self.updateConfigSection()
 
         self.setWindowFilePath(filename)
-        self.setWindowTitle(filename)
+        self.setWindowTitle(os.path.basename(filename))
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
         if (self.bibolamaziFile):
