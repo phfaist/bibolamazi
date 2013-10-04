@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/pic">
+    <file>closehide.png</file>
+    <file>bibolamazi.png</file>
+  </qresource>
+</RCC>
