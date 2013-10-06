@@ -54,7 +54,7 @@ class OrderEntriesFilter(BibFilter):
         logger.debug('orderentries: self.ordermode=%r' % self.ordermode);
 
     def name(self):
-        return "order bibtex entries"
+        return "orderentries"
 
     def action(self):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;

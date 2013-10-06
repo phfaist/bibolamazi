@@ -41,11 +41,7 @@ from core.argparseactions import store_or_count, opt_list_filters, opt_action_he
 import filters
 
 
-
-def main(argv=sys.argv[1:]):
-
-    # parse the command line arguments
-    # --------------------------------
+def get_args_parser():
 
     parser = argparse.ArgumentParser(description='Collect bibliographic entries from BibTeX files and'+
                                      ' apply rules or filters to them.',
@@ -69,6 +65,16 @@ def main(argv=sys.argv[1:]):
                         help='Show bibolamazi version number and exit.')
     parser.add_argument('outputbibfile',
                         help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI configuration tags.');
+
+    return parser
+
+
+def main(argv=sys.argv[1:]):
+
+    # parse the command line arguments
+    # --------------------------------
+
+    parser = get_args_parser()
 
     args = parser.parse_args(args=argv);
 

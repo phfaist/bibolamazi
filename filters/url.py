@@ -82,7 +82,7 @@ class UrlNormalizeFilter(BibFilter):
         
 
     def name(self):
-        return "URL clean-up"
+        return "url"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;

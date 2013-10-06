@@ -55,9 +55,12 @@
        <item>
         <layout class="QVBoxLayout" name="lytHomeButtons">
          <item>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="btnFilterList">
            <property name="text">
             <string>Annotated Filter List</string>
+           </property>
+           <property name="helppath" stdset="0">
+            <string notr="true">general/filter-list</string>
            </property>
           </widget>
          </item>
@@ -69,7 +72,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QWidget" name="widget" native="true">
+          <widget class="QWidget" name="wFilters" native="true">
            <layout class="QVBoxLayout" name="lytHomeFilterButtons"/>
           </widget>
          </item>
@@ -97,16 +100,22 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="btnCmdLineHelp">
            <property name="text">
             <string>Bibolamazi command-line help</string>
+           </property>
+           <property name="helppath" stdset="0">
+            <string notr="true">general/cmdline</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="btnVersion">
            <property name="text">
             <string>Bibolamazi Version</string>
+           </property>
+           <property name="helppath" stdset="0">
+            <string notr="true">general/version</string>
            </property>
           </widget>
          </item>

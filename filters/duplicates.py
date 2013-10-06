@@ -176,7 +176,7 @@ class DuplicatesFilter(BibFilter):
 
 
     def name(self):
-        return "duplicates processing"
+        return "duplicates"
 
     def getRunningMessage(self):
         if (self.dupfile):

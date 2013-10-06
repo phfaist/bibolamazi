@@ -96,21 +96,83 @@ AFTER_CONFIG_TEXT = _repl("""\
 BIBOLAMAZI_FILE_ENCODING = 'utf-8';
 
 
+BIBOLAMAZIFILE_INIT = 0
+BIBOLAMAZIFILE_READ = 1
+BIBOLAMAZIFILE_PARSED = 2
+BIBOLAMAZIFILE_LOADED = 3
+
+
+
+
 class BibolamaziFile:
-    def __init__(self, fname, create=False):
-        logger.longdebug("opening file "+repr(fname));
-        self._fname = fname;
-        self._dir = os.path.dirname(os.path.realpath(fname));
+    def __init__(self, fname=None, create=False):
+        """Create a BibolamaziFile object. If `fname` is provided, the file is fully loaded. If
+        `create` is given and set to `True`, then an empty template is loaded and the internal
+        file name is set to `fname`.
+        """
+        
+        logger.longdebug("opening file %r" %(repr(fname)));
+        self._fname = None
+        self._dir = None
 
         if (create):
             self._init_empty_template();
+            self._fname = fname
+            self._dir = os.path.dirname(os.path.realpath(fname));
+        elif (fname):
+            self.load(fname=fname, to_state=BIBOLAMAZIFILE_LOADED)
         else:
+            logger.debug("No file given. Don't forget to set one with load()")
+
+    def loadstate(self):
+        return self._load_state;
+
+    def reset(self):
+        self.load(fname=None, to_state=BIBOLAMAZIFILE_INIT)
+
+    def load(self, fname=[], to_state=BIBOLAMAZIFILE_LOADED):
+        """Loads the given file.
+
+        If `fname` is `None`, then resets the object to an empty state. If fname is not given or an
+        empty list, then uses any previously loaded fname and its state.
+
+        If `to_state` is given, will only attempt to load the file up to that state. This can be
+        useful, e.g., in a config editor which needs to parse the sections of the file but does not
+        need to worry about syntax errors.
+        """
+        
+        if (fname or not isinstance(fname, list)):
+            # required to replace current file, if one open
+            self._fname = fname;
+            self._dir = os.path.dirname(os.path.realpath(fname));
+            self._load_state = BIBOLAMAZIFILE_INIT
+            self._header = None
+            self._config = None
+            self._config_data = None
+            self._startconfigdatalineno = None
+            self._rest = None
+            self._cmds = None
+            self._sources = None
+            self._source_lists = None
+            self._filters = None
+            self._bibliographydata = None
+            
+        if (to_state >= BIBOLAMAZIFILE_READ  and  self._load_state < BIBOLAMAZIFILE_READ):
             try:
-                with codecs.open(fname, 'r', BIBOLAMAZI_FILE_ENCODING) as f:
-                    logger.longdebug("File "+repr(fname)+" opened.");
-                    self._parse_stream(f, fname);
+                with codecs.open(self._fname, 'r', encoding=BIBOLAMAZI_FILE_ENCODING) as f:
+                    logger.longdebug("File "+repr(self._fname)+" opened.");
+                    self._read_config_stream(f, self._fname);
             except IOError as e:
-                raise butils.BibolamaziError(u"Can't open file `%s': %s" %(fname, unicode(e)));
+                raise butils.BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)));
+
+        if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
+            self._parse_config()
+
+        if (to_state >= BIBOLAMAZIFILE_LOADED  and  self._load_state < BIBOLAMAZIFILE_LOADED):
+            self._load_contents()
+
+        return True
+
 
     def fname(self):
         return self._fname;
@@ -123,6 +185,12 @@ class BibolamaziFile:
 
     def rawconfig(self):
         return self._config;
+
+    def config_data(self):
+        return self._config_data;
+
+    def rawstartconfigdatalineno(self):
+        return self._startconfigdatalineno;
 
     def rawrest(self):
         return self._rest;
@@ -141,7 +209,25 @@ class BibolamaziFile:
 
     def bibliographydata(self):
         return self._bibliographydata;
-    
+
+
+    def setConfigData(self, configdata):
+        # prefix every line by a percent sign.
+        config_block = re.sub(r'^', '% ', configdata, flags=re.MULTILINE)
+        # add start and end bibolamazi config section tags.
+        config_block = CONFIG_BEGIN_TAG + '\n' + config_block + '\n' + CONFIG_END_TAG
+        self.setRawConfig(config_block)
+
+
+    def setRawConfig(self, configblock):
+        if (self._load_state < BIBOLAMAZIFILE_READ):
+            raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
+        
+        self._config = configblock
+        self._config_data = self._config_data_from_input(configblock)
+        # in case we were in a more advanced state, reset to READ state, because config has changed.
+        self._load_state = BIBOLAMAZIFILE_READ
+
 
     def _init_empty_template(self):
 
@@ -158,6 +244,8 @@ class BibolamaziFile:
         self._source_lists = [];
         self._filters = [];
 
+        self._load_state = BIBOLAMAZIFILE_LOADED
+
         self._bibliographydata = pybtex.database.BibliographyData();
 
         logger.longdebug('done with empty template init!');
@@ -171,12 +259,16 @@ class BibolamaziFile:
         inputconfigdatalines = inputconfigdata.split('\n');
         config_data = '';
         for line in inputconfigdatalines:
-            config_data += re.sub(r'^%', '', line)+'\n';
+            config_data += re.sub(r'^%\s?', '', line)+'\n';
 
         return config_data;
 
         
-    def _parse_stream(self, stream, streamfname=None):
+    def _raise_parse_error(self, msg, lineno):
+        raise BibolamaziFileParseError(msg, fname=self._fname, lineno=lineno)
+
+
+    def _read_config_stream(self, stream, streamfname=None):
 
         ST_HEADER = 0;
         ST_CONFIG = 1;
@@ -192,10 +284,7 @@ class BibolamaziFile:
         config_data = u"";
 
         lineno = 0;
-        startconfigdatalineno = None;
-
-        def raise_parse_error(msg, lineno):
-            raise BibolamaziFileParseError(msg, fname=streamfname, lineno=lineno)
+        self._startconfigdatalineno = None;
 
         for line in stream:
             lineno += 1
@@ -203,7 +292,7 @@ class BibolamaziFile:
             if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
                 state = ST_CONFIG;
                 content[ST_CONFIG] += line;
-                startconfigdatalineno = lineno;
+                self._startconfigdatalineno = lineno;
                 continue
 
             if (state == ST_CONFIG and line.startswith(CONFIG_END_TAG)):
@@ -235,6 +324,10 @@ class BibolamaziFile:
         logger.longdebug("config block is"+ "\n--------------------------------\n"
                      +self._config_data+"\n--------------------------------\n");
 
+        self._load_state = BIBOLAMAZIFILE_READ
+        return True
+
+    def _parse_config(self):
         # now, parse the configuration.
         configstream = io.StringIO(unicode(self._config_data));
         cmds = [];
@@ -248,7 +341,7 @@ class BibolamaziFile:
         for cline in configstream:
             configlineno += 1
             
-            thislineno = startconfigdatalineno + configlineno;
+            thislineno = self._startconfigdatalineno + configlineno;
 
             if (re.match(r'^\s*%%', cline)):
                 # ignore comments
@@ -263,7 +356,7 @@ class BibolamaziFile:
             if (not mcmd):
                 if (latestcmd[0] is None):
                     # no command
-                    raise_parse_error("Expected a bibolamazi command",
+                    self._raise_parse_error("Expected a bibolamazi command",
                                       lineno=thislineno);
                 # simply continue current cmd
                 latestcmd[1] += cline;
@@ -280,7 +373,7 @@ class BibolamaziFile:
                 # extract filter name
                 mfiltername = re.match('^\s*(\w+)(\s|$)', rest);
                 if (not mfiltername):
-                    raise_parse_error("Expected filter name", lineno=thislineno);
+                    self._raise_parse_error("Expected filter name", lineno=thislineno);
                 filtername = mfiltername.group(1);
                 rest = rest[mfiltername.end():];
                 info['filtername'] = filtername;
@@ -312,17 +405,24 @@ class BibolamaziFile:
                 try:
                     self._filters.append(filters.make_filter(filname, filoptions));
                 except filters.NoSuchFilter:
-                    raise_parse_error("No such filter: `%s'" %(filname),
-                                      lineno=cmd[2]['lineno']);
+                    self._raise_parse_error("No such filter: `%s'" %(filname),
+                                            lineno=cmd[2]['lineno']);
                 except filters.FilterError as e:
-                    raise_parse_error(unicode(e),
-                                      lineno=cmd[2]['lineno']);
+                    self._raise_parse_error(unicode(e),
+                                            lineno=cmd[2]['lineno']);
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 
-            raise_parse_error("Unknown command: `%s'" %(cmd),
-                              lineno=cmd[2]['lineno'])
+            self._raise_parse_error("Unknown command: `%s'" %(cmd),
+                                    lineno=cmd[2]['lineno'])
 
+        self._load_state = BIBOLAMAZIFILE_PARSED
+
+        logger.longdebug("done with _parse_config()")
+        return True
+
+
+    def _load_contents(self):
 
         self._bibliographydata = None;
 
@@ -336,7 +436,10 @@ class BibolamaziFile:
             src = self._populate_from_srclist(srclist);
             self._sources[k] = src;
 
-        logger.longdebug('done with _parse_stream!');
+        self._load_state = BIBOLAMAZIFILE_LOADED
+
+        logger.longdebug('done with _load_contents!');
+        return True
 
 
     def _populate_from_srclist(self, srclist):
@@ -362,12 +465,16 @@ class BibolamaziFile:
         data = None;
         if is_url:
             logger.debug("Opening URL %r", src);
-            f = urllib.urlopen(src);
-            if (f is None):
+            try:
+                f = urllib.urlopen(src)
+                if (f is None):
+                    return None
+                data = butils.guess_encoding_decode(f.read());
+                logger.longdebug(" ... successfully read %d chars from URL resouce." % len(data));
+                f.close();
+            except IOError:
+                # ignore source, will have to try next in list
                 return None
-            data = butils.guess_encoding_decode(f.read());
-            logger.longdebug(" ... successfully read %d chars from URL resouce." % len(data));
-            f.close();
         else:
             try:
                 with open(src, 'r') as f:
@@ -413,8 +520,9 @@ class BibolamaziFile:
             f.write(self._config);
             f.write(AFTER_CONFIG_TEXT);
 
-            w = outputbibtex.Writer();
-            w.write_stream(self._bibliographydata, f);
+            if (self._bibliographydata):
+                w = outputbibtex.Writer();
+                w.write_stream(self._bibliographydata, f);
             
             logger.info("Updated output file `"+self._fname+"'");
         

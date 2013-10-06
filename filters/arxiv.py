@@ -248,7 +248,7 @@ class ArxivNormalizeFilter(BibFilter):
 
 
     def name(self):
-        return "ArXiv clean-up"
+        return "arxiv"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;

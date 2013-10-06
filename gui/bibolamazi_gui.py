@@ -50,6 +50,8 @@ class MainWidget(QWidget):
         w.raise_()
         self.openbibfiles.append(w)
 
+        w.requestHelpTopic.connect(self.openHelpTopic)
+
 
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
@@ -77,6 +79,11 @@ class MainWidget(QWidget):
         self.helpbrowser.show()
         self.helpbrowser.raise_()
 
+    @pyqtSlot(QString)
+    def openHelpTopic(self, path):
+        self.on_btnHelp_clicked()
+        self.helpbrowser.openHelpTopic(path)
+
 
     def closeEvent(self, event):
         print "Close!!"
@@ -88,6 +95,10 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
+    app.setApplicationName('Bibolamazi')
+    app.setApplicationVersion('0.1')
+    app.setOrganizationDomain('org.bibolamazi')
+    app.setOrganizationName('Bibolamazi Project')
 
     w = MainWidget()
     w.show()

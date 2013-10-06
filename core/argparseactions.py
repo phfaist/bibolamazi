@@ -209,18 +209,23 @@ class store_key_const(argparse.Action):
             setattr(namespace, self.dest, d);
 
 
+def helptext_prolog():
+    return ("""
+Bibolamazi Version %(version)s by Philippe Faist (C) 2013
+Licensed under the terms of the GNU Public License GPL, version 3 or higher.
+
+""" % { 'version': butils.get_version(),
+        } );
+    
+
+
 class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
         if (not values or values == "elp"): # in case of -help: seen as -h elp
-            helptext = """
-Bibolamazi Version %(version)s by Philippe Faist (C) 2013
-Licensed under the terms of the GNU Public License GPL, version 3 or higher.
+            helptext = helptext_prolog()
+            helptext += parser.format_help()
 
-%(help)s
-""" % { 'version': butils.get_version(),
-        'help': parser.format_help()
-}
             pydoc.pager(helptext)
             parser.exit()
 
@@ -268,6 +273,30 @@ its options.
 
 """
 
+
+def help_list_filters():
+
+    import textwrap;
+    import filters;
+
+    def fmt_filter_helpline(f):
+
+        nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
+        return ( "  %-13s " %(f) +
+                 nlindentstr.join(textwrap.wrap(filters.get_filter_class(f).getHelpDescription(),
+                                                (80-16) # 80 line width, -16 indent chars
+                                                ))
+                 )
+
+    filter_list = [
+        fmt_filter_helpline(f)
+        for f in filters.__all__
+        ]
+
+    return FILTERS_HELP % {'filter_list': "\n".join(filter_list)};
+
+
+
 class opt_list_filters(argparse.Action):
     def __init__(self, nargs=0, **kwargs):
         if nargs != 0:
@@ -277,24 +306,7 @@ class opt_list_filters(argparse.Action):
         
     def __call__(self, parser, namespace, values, option_string):
 
-        import textwrap;
-        import filters;
-
-        def fmt_filter_helpline(f):
-            
-            nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
-            return ( "  %-13s " %(f) +
-                     nlindentstr.join(textwrap.wrap(filters.get_filter_class(f).getHelpDescription(),
-                                                    (80-16) # 80 line width, -16 indent chars
-                                                    ))
-                     )
-
-        filter_list = [
-            fmt_filter_helpline(f)
-            for f in filters.__all__
-            ]
-
-        all_text = FILTERS_HELP % {'filter_list': "\n".join(filter_list)};
+        all_text = help_list_filters()
 
         pydoc.pager(all_text);
         parser.exit();

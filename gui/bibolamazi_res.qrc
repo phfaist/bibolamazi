@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/pic">
+    <file>save.png</file>
     <file>file.png</file>
     <file>../bibolamazi_icon.png</file>
     <file>refresh.png</file>

@@ -152,7 +152,7 @@ class FixesFilter(BibFilter):
         
 
     def name(self):
-        return "Fixes filter"
+        return "fixes"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;

@@ -74,7 +74,7 @@ class NameInitialsFilter(BibFilter):
         
 
     def name(self):
-        return "Name to Initials"
+        return "nameinitials"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
