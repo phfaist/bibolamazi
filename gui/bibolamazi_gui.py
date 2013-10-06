@@ -8,7 +8,7 @@ import os.path
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 import bibolamazi_init
 
-from core import bibfilterfile
+from core import bibolamazifile
 
 
 from PyQt4.QtCore import *
@@ -65,7 +65,7 @@ class MainWidget(QWidget):
                                  %(newfilename))
             return
 
-        bfile = bibfilterfile.BibFilterFile(newfilename, create=True);
+        bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
         bfile.save_to_file();
 
         self.openFile(newfilename)

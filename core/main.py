@@ -32,7 +32,7 @@ from collections import namedtuple
 # ------------------------------------------------------
 
 from core import version
-from core.bibfilterfile import BibFilterFile
+from core.bibolamazifile import BibolamaziFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
 from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
@@ -101,12 +101,12 @@ def run_bibolamazi_args(args):
 
 
 
-    # open the bibfilterfile, which is the output bibtex file
+    # open the bibolamazifile, which is the output bibtex file
     # -------------------------------------------------------
 
-    # open the outputbibfile and create the BibFilterFile object. This will parse the rules
+    # open the outputbibfile and create the BibolamaziFile object. This will parse the rules
     # and the entries, as well as keep some information on how to re-write to the file.
-    bfile = BibFilterFile(args.outputbibfile);
+    bfile = BibolamaziFile(args.outputbibfile);
 
 
     bibdata = bfile.bibliographydata();
@@ -120,7 +120,7 @@ def run_bibolamazi_args(args):
 
     for filtr in bfile.filters():
         #
-        # See how the filter acts. It can act on the full bibfilterfile object, it can act on the
+        # See how the filter acts. It can act on the full bibolamazifile object, it can act on the
         # full list of entries (possibly adding/deleting entries etc.), or it can act on a single
         # entry.
         #
@@ -129,13 +129,13 @@ def run_bibolamazi_args(args):
         logger.info("Filter: %s" %(filtr.getRunningMessage()));
 
         #
-        # pass the whole bibfilterfile to the filter. the filter can actually do
+        # pass the whole bibolamazifile to the filter. the filter can actually do
         # whatever it wants with it (!!)
         #
-        if (action == BibFilter.BIB_FILTER_BIBFILTERFILE):
-            filtr.filter_bibfilterfile(bfile);
+        if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
+            filtr.filter_bibolamazifile(bfile);
 
-            logger.debug('filter '+filtr.name()+' filtered the full bibfilterfile.');
+            logger.debug('filter '+filtr.name()+' filtered the full bibolamazifile.');
             continue
 
         #

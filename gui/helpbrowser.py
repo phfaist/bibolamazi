@@ -6,7 +6,6 @@
 import core.main
 from core import blogger
 from core.blogger import logger
-from core import bibfilterfile
 from core import butils
 
 import filters

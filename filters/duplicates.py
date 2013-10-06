@@ -186,7 +186,7 @@ class DuplicatesFilter(BibFilter):
     
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBFILTERFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
     def compare_entries_same(self, a, b):
@@ -323,12 +323,12 @@ class DuplicatesFilter(BibFilter):
         
 
 
-    def filter_bibfilterfile(self, bibfilterfile):
+    def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        bibdata = bibfilterfile.bibliographydata();
+        bibdata = bibolamazifile.bibliographydata();
 
         duplicates = [];
 
@@ -363,7 +363,7 @@ class DuplicatesFilter(BibFilter):
             ###       * compare modif. time w/ some reference?
             ###       * add --force-overwrite flag?
             dupstrlist = [];
-            with codecs.open(os.path.join(bibfilterfile.fdir(),self.dupfile), 'w', 'utf-8') as dupf:
+            with codecs.open(os.path.join(bibolamazifile.fdir(),self.dupfile), 'w', 'utf-8') as dupf:
                 dupf.write(re.sub(r'####DUP_FILE_NAME####', self.dupfile, BIBALIAS_HEADER, 1));
                 for (dupalias, duporiginal) in duplicates:
                     dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n");
@@ -384,7 +384,7 @@ class DuplicatesFilter(BibFilter):
                            DUPL_WARN_BOTTOM);
 
 
-        bibfilterfile.setBibliographyData(newbibdata);
+        bibolamazifile.setBibliographyData(newbibdata);
 
         return
 

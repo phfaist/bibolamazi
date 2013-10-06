@@ -32,9 +32,14 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <widget class="QWidget" name="pageInfo">
+      <attribute name="title">
+       <string>Filters</string>
+      </attribute>
+     </widget>
      <widget class="QWidget" name="pageConfig">
       <attribute name="title">
-       <string>Bibolamazi Confguration</string>
+       <string>Edit Bibolamazi Confguration</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="leftMargin">
@@ -50,7 +55,13 @@
         <number>8</number>
        </property>
        <item>
-        <widget class="QTextBrowser" name="txtConfig"/>
+        <widget class="QTextBrowser" name="txtConfig">
+         <property name="font">
+          <font>
+           <family>Courier 10 Pitch</family>
+          </font>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

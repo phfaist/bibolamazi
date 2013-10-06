@@ -311,7 +311,7 @@ class opt_init_empty_template(argparse.Action):
         
     def __call__(self, parser, namespace, values, option_string):
 
-        import bibfilterfile;
+        import bibolamazifile;
 
         try:
             newfilename = values[0];
@@ -323,7 +323,7 @@ class opt_init_empty_template(argparse.Action):
                          %(newfilename))
             exit(9);
 
-        bfile = bibfilterfile.BibFilterFile(newfilename, create=True);
+        bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
         bfile.save_to_file();
 
         parser.exit();

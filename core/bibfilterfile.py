@@ -96,7 +96,7 @@ AFTER_CONFIG_TEXT = _repl("""\
 BIBOLAMAZI_FILE_ENCODING = 'utf-8';
 
 
-class BibFilterFile:
+class BibolamaziFile:
     def __init__(self, fname, create=False):
         logger.longdebug("opening file "+repr(fname));
         self._fname = fname;
@@ -224,7 +224,7 @@ class BibFilterFile:
         self._config_data = self._config_data_from_input(config_data);
         self._rest = content[ST_REST];
         
-        logger.longdebug(("Parsed general bibfilterfile structure: len(header)=%d"+
+        logger.longdebug(("Parsed general bibolamazifile structure: len(header)=%d"+
                       "; len(config)=%d; len(config_data)=%d; len(rest)=%d") %
                      ( len(self._header),
                        len(self._config),
@@ -464,7 +464,7 @@ TEMPLATE_CONFIG = """\
 """
 
 
-# NOTE: this is ignored, as BibFilterFile will automatically add its own "rest" upon save_to_file()
+# NOTE: this is ignored, as BibolamaziFile will automatically add its own "rest" upon save_to_file()
 ##TEMPLATE_REST = _repl("""\
 ##%
 ##%

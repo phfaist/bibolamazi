@@ -9,7 +9,7 @@ import os.path
 import core.main
 from core import blogger
 from core.blogger import logger
-from core import bibfilterfile
+from core import bibolamazifile
 from core import butils
 
 
@@ -130,7 +130,7 @@ class OpenBibFile(QWidget):
             return
         
         try:
-            bf = bibfilterfile.BibFilterFile(self.bibolamaziFile)
+            bf = bibolamazifile.BibolamaziFile(self.bibolamaziFile)
         except butils.BibolamaziError:
             self.ui.txtConfig.setText("<span style=\"color:rgb(127,0,0)\">parse error in config file.</span>")
             return

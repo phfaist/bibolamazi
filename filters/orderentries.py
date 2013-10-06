@@ -57,15 +57,15 @@ class OrderEntriesFilter(BibFilter):
         return "order bibtex entries"
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBFILTERFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
-    def filter_bibfilterfile(self, bibfilterfile):
+    def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        bibdata = bibfilterfile.bibliographydata();
+        bibdata = bibolamazifile.bibliographydata();
 
         logger.debug("ordering entries according to mode=%r." %(self.ordermode));
 
@@ -83,7 +83,7 @@ class OrderEntriesFilter(BibFilter):
 
         logger.debug("ordered entries as wished.");
 
-        bibfilterfile.setBibliographyData(newbibdata);
+        bibolamazifile.setBibliographyData(newbibdata);
 
         return
 

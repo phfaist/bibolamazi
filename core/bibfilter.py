@@ -35,7 +35,7 @@ class BibFilter:
     # constants
     BIB_FILTER_SINGLE_ENTRY = 1;
     BIB_FILTER_BIBLIOGRAPHYDATA = 2;
-    BIB_FILTER_BIBFILTERFILE = 3;
+    BIB_FILTER_BIBOLAMAZIFILE = 3;
 
     # subclasses should provide meaningful help texts
     helpauthor = "";
@@ -59,8 +59,8 @@ class BibFilter:
     def filter_bibliographydata(self, x):
         raise BibFilterError(self.name(), 'filter_bibliographydata() not implemented !')
 
-    def filter_bibfilterfile(self, x):
-        raise BibFilterError(self.name(), 'filter_bibfilterfile() not implemented !')
+    def filter_bibolamazifile(self, x):
+        raise BibFilterError(self.name(), 'filter_bibolamazifile() not implemented !')
 
 
 
