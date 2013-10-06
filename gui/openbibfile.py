@@ -112,6 +112,8 @@ class OpenBibFile(QWidget):
         self.setWindowTitle(os.path.basename(filename))
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
+        self.ui.tabs.setCurrentWidget(self.ui.pageInfo)
+        
         if (self.bibolamaziFile):
             self.watcher.addPath(self.bibolamaziFile)
 
