@@ -214,8 +214,14 @@ class BibolamaziFile:
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
         config_block = re.sub(r'^', '% ', configdata, flags=re.MULTILINE)
+
+        # force ending in '\n' (but don't duplicate existing '\n')
+        if (not len(config_block) or config_block[-1] != '\n'):
+            config_block += '\n';
+
         # add start and end bibolamazi config section tags.
-        config_block = CONFIG_BEGIN_TAG + '\n' + config_block + '\n' + CONFIG_END_TAG
+        config_block = CONFIG_BEGIN_TAG + '\n' + config_block + CONFIG_END_TAG + '\n'
+        
         self.setRawConfig(config_block)
 
 
@@ -255,13 +261,8 @@ class BibolamaziFile:
         """
         Simply strips initial %'s on each line of `inputconfigdata`.
         """
-        
-        inputconfigdatalines = inputconfigdata.split('\n');
-        config_data = '';
-        for line in inputconfigdatalines:
-            config_data += re.sub(r'^%\s?', '', line)+'\n';
 
-        return config_data;
+        return re.sub(r'^\%[ \t]?', '', inputconfigdata, flags=re.MULTILINE)
 
         
     def _raise_parse_error(self, msg, lineno):
@@ -281,7 +282,7 @@ class BibolamaziFile:
             ST_CONFIG: u"",
             ST_REST: u""
             };
-        config_data = u"";
+        config_data_lines = []
 
         lineno = 0;
         self._startconfigdatalineno = None;
@@ -303,16 +304,21 @@ class BibolamaziFile:
             if (state == ST_CONFIG):
                 # remove leading % signs
                 #logger.debug("adding line to config_data: "+line);
-                config_data += line; #re.sub(r'^%', '', line);
+                cline = line
+                if (len(cline) and cline[-1] == '\n'):
+                    cline = cline[:-1]
+                config_data_lines.append(cline)
 
             content[state] += line;
+
+        config_data = "\n".join(config_data_lines)
 
         # save the splitted data into these data structures.
         self._header = content[ST_HEADER];
         self._config = content[ST_CONFIG];
         self._config_data = self._config_data_from_input(config_data);
         self._rest = content[ST_REST];
-        
+
         logger.longdebug(("Parsed general bibolamazifile structure: len(header)=%d"+
                       "; len(config)=%d; len(config_data)=%d; len(rest)=%d") %
                      ( len(self._header),

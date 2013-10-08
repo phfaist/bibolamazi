@@ -83,6 +83,7 @@ class FilterCreateArgumentError(FilterError):
 filter_modules = {};
 
 def get_module(name):
+    name = str(name)
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots")
 

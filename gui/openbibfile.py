@@ -69,23 +69,40 @@ class LogToTextBrowser:
 
 
 class ContextAttributeSetter:
-    def __init__(self, obj, **kwargs):
-        self.attrib = kwargs
-        self.obj = obj
+    """Give a list of pairs of method and value to set.
+
+    For example:
+
+    >>> with ContextAttributeSetter( (object.isEnabled, object.setEnabled, False), ):
+            ...
+
+    will retreive the current state of if the object is enabled with `object.isEnabled()`, then
+    will disable the object with `object.setEnabled(False)`. Upon exiting the with block, the
+    state is restored to its original state with `object.setEnabled(..)`.
+
+    """
+
+    def __init__(self, *args):
+        """Constructor. Does initializations. The \"enter\" statement is done with __enter__().
+
+        Note: the argument are a list of 3-tuples `(get_method, set_method, set_to_value)`.
+        """
+        self.attribpairs = args
         self.initvals = None
 
     def __enter__(self):
-        self.initvals = {}
-        for k,v in self.attrib.iteritems():
-            self.initvals[k] = getattr(self.obj, k)
-            setattr(self.obj, k, v)
+        self.initvals = []
+        for (getm, setm, v) in self.attribpairs:
+            self.initvals.append(getm())
+            setm(v)
             
         return self
 
     def __exit__(self, type, value, traceback):
         # clean-up
-        for (k,v) in self.initvals.iteritems():
-            setattr(self.obj, k, v)
+        for i in xrange(len(self.attribpairs)):
+            (getm, setm, v) = self.attribpairs[i]
+            setm(self.initvals[i])
 
 
 
@@ -192,15 +209,27 @@ class OpenBibFile(QWidget):
         except BibolamaziError:
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Error reading file.</p>")
             return
-        
+
+        cursorpos = self.ui.txtConfig.textCursor().position()
         self.ui.txtConfig.setPlainText(self.bibolamaziFile.config_data())
+        cur = self.ui.txtConfig.textCursor()
+        cur.setPosition(cursorpos)
+        self.ui.txtConfig.setTextCursor(cur)
 
         # now, try to further parse the config
         try:
             self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
         except BibolamaziError as e:
+            # see if we can parse the error
+            errortxt = unicode(e)
+            errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
+                              lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
+                                  int(m.group('lineno')) - self.bibolamaziFile.rawstartconfigdatalineno() - 1,
+                                  Qt.escape(m.group())
+                                  ),
+                              errortxt)
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>"+
-                                    "<pre>"+Qt.escape(unicode(e))+"</pre>")
+                                    "<pre>"+errortxt+"</pre>")
             return
 
         def srcurl(s):
@@ -218,12 +247,12 @@ class OpenBibFile(QWidget):
             else:
                 srclist = [ srcline ]
 
-            sources.append('''<div class="source">%(srcname)s: %(srclist)s</div>''' % {
+            sources.append('''<div class="source">%(srcname)s: <ul>%(srclist)s</ul></div>''' % {
                 'srcname': ('Source' if len(srclist) == 1 else 'Source List'), 
-                'srclist': ", ".join(
-                    ["<a href=\"%(sourceurl)s\">%(sourcepath)s</a>" % {
-                        'sourcepath': s,
-                        'sourceurl': srcurl(s),
+                'srclist': "".join(
+                    ["<li><a href=\"%(sourceurl)s\">%(sourcepath)s</a></li>" % {
+                        'sourcepath': Qt.escape(s),
+                        'sourceurl': Qt.escape(srcurl(s)),
                         }
                      for s in srclist
                      ]
@@ -257,10 +286,11 @@ class OpenBibFile(QWidget):
                 margin: 0.5em 0px 0px;
                 padding: 0px;
               }
+              ul, li { margin: 0px; }
               p, li { white-space: normal }
               a { text-decoration: none; }
-              .source { margin: 0.2em 0px 0px 0px; }
-              .filter { margin: 0.2em 0px 0px 0px; }
+              .source { margin: 0.5em 0px 0px 0px; }
+              .filter { margin: 0.3em 0px 0px 0px; }
               .filterdescription { font-style: italic; margin-left: 2.5em; }
             </style>
           </head><body><div class="container"><h1>Sources</h1>%(sourceshtml)s<h1>Filters</h1>%(filtershtml)s</div></body></html>''') % {
@@ -274,7 +304,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnGo_clicked(self):
-        with ContextAttributeSetter(self.ui.btnGo, setEnabled=False):
+        with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
             if (not self.bibolamaziFileName):
                 QMessageBox.critical(self, "No open file", "No file selected!")
                 return
@@ -303,6 +333,19 @@ class OpenBibFile(QWidget):
     def on_txtInfo_anchorClicked(self, url):
         if (url.scheme() == "helptopic"):
             self.requestHelpTopic.emit(url.path());
+            return
+
+        if (url.scheme() == "action"):
+            m = re.match(r'/goto-config-line/(?P<lineno>\d+)', url.path())
+            if m:
+                self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+                cur = self.ui.txtConfig.textCursor()
+                cur.setPosition(0)
+                cur.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, int(m.group('lineno')))
+                self.ui.txtConfig.setTextCursor(cur)
+                return
+
+            print "ERROR: Unknown action: %s" %(str(url.toString()))
             return
 
         print "Opening URL %r" %(str(url.toString()))

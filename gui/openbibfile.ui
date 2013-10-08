@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>804</width>
-    <height>555</height>
+    <width>897</width>
+    <height>538</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="lyt">
@@ -22,6 +22,10 @@
      <property name="text">
       <string>Run Bibolamazi !</string>
      </property>
+     <property name="icon">
+      <iconset resource="bibolamazi_res.qrc">
+       <normaloff>:/pic/ok.png</normaloff>:/pic/ok.png</iconset>
+     </property>
     </widget>
    </item>
    <item row="2" column="0">
@@ -30,7 +34,7 @@
       <enum>QTabWidget::South</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="pageInfo">
       <attribute name="title">
@@ -89,11 +93,14 @@ p, li { white-space: pre-wrap; }
         <number>8</number>
        </property>
        <item>
-        <widget class="QPlainTextEdit" name="txtConfig">
+        <widget class="QTextEdit" name="txtConfig">
          <property name="font">
           <font>
            <family>Courier 10 Pitch</family>
           </font>
+         </property>
+         <property name="acceptRichText">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -177,109 +184,75 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="0" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLabel" name="lblFileName">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="midLineWidth">
-        <number>1</number>
-       </property>
-       <property name="text">
-        <string>some text here</string>
-       </property>
-       <property name="textFormat">
-        <enum>Qt::PlainText</enum>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <property name="margin">
-        <number>10</number>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frmEditTools">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="lineWidth">
-        <number>0</number>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <property name="spacing">
-         <number>3</number>
+    <widget class="QWidget" name="wHead" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lblFileName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
         </property>
-        <property name="topMargin">
-         <number>3</number>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
         </property>
-        <property name="rightMargin">
-         <number>0</number>
+        <property name="midLineWidth">
+         <number>1</number>
         </property>
-        <property name="bottomMargin">
-         <number>3</number>
+        <property name="text">
+         <string>some text here</string>
         </property>
-        <item>
-         <widget class="QToolButton" name="btnRefresh">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="icon">
-           <iconset resource="bibolamazi_res.qrc">
-            <normaloff>:/pic/refresh.png</normaloff>:/pic/refresh.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>22</width>
-            <height>22</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolButton" name="btnSave">
-          <property name="icon">
-           <iconset resource="bibolamazi_res.qrc">
-            <normaloff>:/pic/save.png</normaloff>:/pic/save.png</iconset>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>22</width>
-            <height>22</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnRefresh">
+        <property name="icon">
+         <iconset resource="bibolamazi_res.qrc">
+          <normaloff>:/pic/refresh.png</normaloff>:/pic/refresh.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnSave">
+        <property name="icon">
+         <iconset resource="bibolamazi_res.qrc">
+          <normaloff>:/pic/save.png</normaloff>:/pic/save.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

@@ -333,7 +333,7 @@ class opt_init_empty_template(argparse.Action):
         if (os.path.exists(newfilename)):
             logger.error("Cowardly refusing to overwrite existing file `%s'. Remove it first."
                          %(newfilename))
-            exit(9);
+            parser.exit(9);
 
         bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
         bfile.save_to_file();

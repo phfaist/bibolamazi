@@ -51,9 +51,6 @@ class BibolamaziError(Exception):
 
 
 
-
-
-
 def getbool(x):
     try:
         return (int(x) != 0)

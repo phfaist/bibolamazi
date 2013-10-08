@@ -36,9 +36,19 @@ from core.bibolamazifile import BibolamaziFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
 from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
+from core.butils import BibolamaziError
 
 # for list of filters
 import filters
+
+
+
+class BibolamaziNoSourceEntriesError(BibolamaziError):
+    def __init__(self):
+        msg = "Error: No source entries found. Stopping before we overwrite the bibolamazi file.";
+        BibolamaziError.__init__(self, msg);
+
+
 
 
 def get_args_parser():
@@ -118,7 +128,7 @@ def run_bibolamazi_args(args):
     bibdata = bfile.bibliographydata();
     if (bibdata is None or not len(bibdata.entries)):
         logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.");
-        exit(2);
+        raise BibolamaziNoSourceEntriesError()
 
 
     # now, run the selected filters in the corresponding order.
