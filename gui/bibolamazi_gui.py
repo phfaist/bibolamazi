@@ -30,19 +30,35 @@ class MainWidget(QWidget):
 
         self.helpbrowser = None
 
+        self.menubar = None
+        self.shortcuts = []
+        if (True):
+            ### TODO: check if is a mac
+            self.menubar = QMenuBar(None)
+            filemenu = self.menubar.addMenu("File")
+            filemenu.addAction("New", self, SLOT('on_btnNewFile_clicked()'),
+                               QKeySequence("Ctrl+N"))
+            filemenu.addAction("Open", self, SLOT('on_btnOpenFile_clicked()'),
+                               QKeySequence("Ctrl+O"))
+            helpmenu = self.menubar.addMenu("Help")
+            helpmenu.addAction("Open Help Browser", self, SLOT('on_btnHelp_clicked()'),
+                               QKeySequence("Ctrl+R"))
+        else:
+            self.shortcuts += [
+                QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
+                          Qt.ApplicationShortcut),
+                QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
+                          Qt.ApplicationShortcut),
+                QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
+                          Qt.ApplicationShortcut),
+                QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
+                          Qt.ApplicationShortcut),
+                ]
+        
+
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
-        #QObject.connect(self.ui.btnOpenFile, SIGNAL('clicked()'), self.btnOpenFile_clicked)
-        QObject.connect(self.ui.btnQuit, SIGNAL('clicked()'), app.quit)
 
-
-    @pyqtSlot()
-    def on_btnOpenFile_clicked(self):
-        fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
-                                                'Bibolamazi Files (*.bib);;All Files (*)'))
-        if (fname):
-            self.openFile(fname)
-        
     def openFile(self, fname):
         w = openbibfile.OpenBibFile()
         w.setOpenFile(fname)
@@ -53,9 +69,22 @@ class MainWidget(QWidget):
         w.requestHelpTopic.connect(self.openHelpTopic)
 
 
+    @pyqtSlot(QString)
+    def openHelpTopic(self, path):
+        self.on_btnHelp_clicked()
+        self.helpbrowser.openHelpTopic(path)
+
+
+    @pyqtSlot()
+    def on_btnOpenFile_clicked(self):
+        fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
+                                                'Bibolamazi Files (*.bib);;All Files (*)'))
+        if (fname):
+            self.openFile(fname)
+        
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        newfilename = str(QFileDialog.getSaveFileName(self, 'Open Bibolamazi File', QString(),
+        newfilename = str(QFileDialog.getSaveFileName(self, 'Create Bibolamazi File', QString(),
                                                       'Bibolamazi Files (*.bib);;All Files (*)'))
         if (not newfilename):
             # cancelled
@@ -79,10 +108,9 @@ class MainWidget(QWidget):
         self.helpbrowser.show()
         self.helpbrowser.raise_()
 
-    @pyqtSlot(QString)
-    def openHelpTopic(self, path):
-        self.on_btnHelp_clicked()
-        self.helpbrowser.openHelpTopic(path)
+    @pyqtSlot()
+    def on_btnQuit_clicked(self):
+        QApplication.instance().quit()
 
 
     def closeEvent(self, event):

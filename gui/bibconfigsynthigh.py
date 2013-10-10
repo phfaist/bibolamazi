@@ -2,12 +2,34 @@
 # -*- coding: utf-8 -*-
 
 import re
+from collections import namedtuple
 
 # bibolamazi filters
 import filters
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
+
+## class BibConfigParsingCache(QTextBlockUserData):
+
+##     FilterCmdInfo = namedtuple('FilterCmdInfo', ('line', 'filtername', ))
+##     SourceListCmdInfo = namedtuple('SourceListCmdInfo', ('line', ))
+    
+    
+##     def __init__(self):
+##         super(BibConfigParsingCache, self).__init__()
+
+##         self.cmdfilters = []
+##         self.cmdsourcelists = []
+
+##     def add_filter(self, line, filtername):
+##         f = FilterCmdInfo(line=line, filtername=filtername)
+##         self.cmdfilters.append(f)
+
+##     def add_sourcelist(self, line):
+##         s = SourceListCmdInfo(line=line)
+##         self.cmdsourcelists.append(s)
 
 
 rxsrc = re.compile(r'^\s*(?P<src>src:)', re.MULTILINE)
@@ -43,9 +65,14 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
 
 
     def highlightBlock(self, text):
+
+        #pcache = BibConfigParsingCache()
         
+        blockno = self.currentBlock().blockNumber()
+
         for m in rxsrc.finditer(text):
             self.setFormat(m.start('src'), len(m.group('src')), self.fmt_src)
+            #pcache.add_sourcelist(line=blockno)
 
         for m in rxfilter.finditer(text):
             self.setFormat(m.start('filter'), len(m.group('filter')), self.fmt_filter)
@@ -54,6 +81,8 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
                 filtmodule = filters.get_module(m.group('filtername'))
             except filters.NoSuchFilter:
                 fmtname = self.fmt_filtername_nonex
+                
+            #pcache.add_filter(line=blockno, filtername=m.group('filtername'))
                 
             self.setFormat(m.start('filtername'), len(m.group('filtername')), fmtname)
 
@@ -64,3 +93,4 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(m.start(), len(m.group()), self.fmt_comment)
 
         self.setCurrentBlockState(0)
+        #self.setCurrentBlockUserData(pcache)

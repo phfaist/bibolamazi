@@ -58,6 +58,24 @@ def _repl(s, dic):
 
 
 
+class BibolamaziFileCmd:
+    def __init__(self, cmd=None, text="", lineno=-1, linenoend=-1, info={}):
+        self.cmd = cmd
+        self.text = text
+        self.lineno = lineno
+        self.linenoend = linenoend
+        self.info = info
+
+    def __repr__(self):
+        return ("%s(" %(self.__class__.__name__)   +
+                ", ".join([
+                    k+"="+repr(getattr(self,k))
+                    for k in ('cmd','text','lineno','linenoend','info')
+                    ])   +
+                ")"
+                )
+
+
 CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%';
 CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
 
@@ -337,10 +355,10 @@ class BibolamaziFile:
         # now, parse the configuration.
         configstream = io.StringIO(unicode(self._config_data));
         cmds = [];
-        emptycmd = [None, "", {}];
+        emptycmd = BibolamaziFileCmd(cmd=None, text="", lineno=-1, linenoend=-1, info={})
         latestcmd = emptycmd;
         def complete_cmd():
-            if (latestcmd[0] is not None):
+            if (latestcmd.cmd is not None):
                 cmds.append(latestcmd);
 
         configlineno = 0
@@ -353,19 +371,20 @@ class BibolamaziFile:
                 # ignore comments
                 continue
             
-            if ((latestcmd[0] != "filter") and re.match(r'^\s*$', cline)):
+            if ((latestcmd.cmd != "filter") and re.match(r'^\s*$', cline)):
                 # ignore empty lines except for adding to 'filter' commands.
                 continue
 
             # try to match to a new command
             mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline);
             if (not mcmd):
-                if (latestcmd[0] is None):
+                if (latestcmd.cmd is None):
                     # no command
                     self._raise_parse_error("Expected a bibolamazi command",
-                                      lineno=thislineno);
+                                            lineno=thislineno);
                 # simply continue current cmd
-                latestcmd[1] += cline;
+                latestcmd.text += cline;
+                latestcmd.linenoend = thislineno;
                 continue
 
             # we have completed the current cmd
@@ -374,7 +393,7 @@ class BibolamaziFile:
             # start new cmd
             cmd = mcmd.group(1);
             rest = cline[mcmd.end():];
-            info = { 'lineno': thislineno };
+            info = { };
             if (cmd == "filter"):
                 # extract filter name
                 mfiltername = re.match('^\s*(\w+)(\s|$)', rest);
@@ -385,7 +404,7 @@ class BibolamaziFile:
                 info['filtername'] = filtername;
 
             # and start cumulating stuff
-            latestcmd = [cmd, rest, info];
+            latestcmd = BibolamaziFileCmd(cmd=cmd, text=rest, lineno=thislineno, linenoend=thislineno, info=info);
 
         # complete the last cmd
         complete_cmd();
@@ -398,29 +417,29 @@ class BibolamaziFile:
         self._source_lists = [];
         self._filters = [];
         for cmd in cmds:
-            if (cmd[0] == "src"):
-                thesrc_list = shlex.split(cmd[1]);
+            if (cmd.cmd == "src"):
+                thesrc_list = shlex.split(cmd.text);
                 self._source_lists.append(thesrc_list);
                 self._sources.append(''); # this will be set later to which source in the
                 #                           list was actually accessed.
                 logger.debug("Added source list %r" % (thesrc_list));
                 continue
-            if (cmd[0] == "filter"):
-                filname = cmd[2]['filtername'];
-                filoptions = cmd[1];
+            if (cmd.cmd == "filter"):
+                filname = cmd.info['filtername'];
+                filoptions = cmd.text;
                 try:
                     self._filters.append(filters.make_filter(filname, filoptions));
                 except filters.NoSuchFilter:
                     self._raise_parse_error("No such filter: `%s'" %(filname),
-                                            lineno=cmd[2]['lineno']);
+                                            lineno=cmd.lineno);
                 except filters.FilterError as e:
                     self._raise_parse_error(unicode(e),
-                                            lineno=cmd[2]['lineno']);
+                                            lineno=cmd.lineno);
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 
-            self._raise_parse_error("Unknown command: `%s'" %(cmd),
-                                    lineno=cmd[2]['lineno'])
+            self._raise_parse_error("Unknown command: `%s'" %(cmd.cmd),
+                                    lineno=cmd.lineno)
 
         self._load_state = BIBOLAMAZIFILE_PARSED
 

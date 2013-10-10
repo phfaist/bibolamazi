@@ -7,6 +7,7 @@ import StringIO
 import os.path
 import re
 import textwrap
+import shlex
 
 import core.main
 from core import blogger
@@ -19,7 +20,7 @@ from core.butils import BibolamaziError
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-import bibconfigsynthigh
+from bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 
 
 from qtauto.ui_openbibfile import Ui_OpenBibFile
@@ -120,7 +121,7 @@ class OpenBibFile(QWidget):
         self.ui.txtConfig.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
 
-        self.syntHighlighter = bibconfigsynthigh.BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
+        self.syntHighlighter = BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
 
         self.bibolamaziFileName = None
         self.bibolamaziFile = None
@@ -137,6 +138,8 @@ class OpenBibFile(QWidget):
             QShortcut(QKeySequence('Ctrl+W'), self, self.closeFile, self.closeFile),
             QShortcut(QKeySequence('Ctrl+S'), self, self.saveToFile, self.saveToFile),
             ];
+
+        self._ignore_cursor_change = False
 
         
 
@@ -221,11 +224,11 @@ class OpenBibFile(QWidget):
             self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
         except BibolamaziError as e:
             # see if we can parse the error
-            errortxt = unicode(e)
+            errortxt = str(Qt.escape(unicode(e)))
             errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
                               lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
                                   int(m.group('lineno')) - self.bibolamaziFile.rawstartconfigdatalineno() - 1,
-                                  Qt.escape(m.group())
+                                  m.group()
                                   ),
                               errortxt)
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>"+
@@ -351,3 +354,87 @@ class OpenBibFile(QWidget):
         print "Opening URL %r" %(str(url.toString()))
         QDesktopServices.openUrl(url)
         
+
+
+    def _get_current_bibolamazi_cmd(self):
+
+        if (not self.bibolamaziFile):
+            print "No bibolamazi file open"
+            return
+
+        cmds = self.bibolamaziFile.rawcmds();
+        if (cmds is None):
+            # file is not yet parsed
+            return None
+
+        cur = self.ui.txtConfig.textCursor()
+        block = cur.block()
+        thisline = cur.block().blockNumber()
+
+        thisline += self.bibolamaziFile.rawstartconfigdatalineno()+1
+
+        for cmd in cmds:
+            if cmd.lineno <= thisline and cmd.linenoend >= thisline:
+                # got the current cmd
+                print "Got cmd: %r" %(cmd)
+                return cmd
+
+        return None
+    
+
+    @pyqtSlot()
+    def on_txtConfig_cursorPositionChanged(self):
+        print "cursor position changed!"
+        
+        if self._ignore_cursor_change:
+            return
+        
+        cmd = self._get_current_bibolamazi_cmd()
+        if (cmd is None):
+            self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageBase)
+            return
+        
+        if (cmd.cmd == 'src'):
+            self.ui.sourceListEditor.setSourceList(shlex.split(cmd.text), True)
+            self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
+            return
+
+        if (cmd.cmd == "filter"):
+            #self.ui.filterEditor.setFilterDefinition(cmd.info['filtername'], cmd.text)
+            self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
+            return
+
+        print "Unknown command: %r" %(cmd)
+        return
+
+
+    @pyqtSlot(QStringList)
+    def on_sourceListEditor_sourceListChanged(self, sourcelist):
+
+        sourcelist = [str(x) for x in list(sourcelist)]
+        
+        cmd = self._get_current_bibolamazi_cmd()
+
+        print 'Source list changed! on lines=%d--%d, sourcelist=%r' %(cmd.lineno, cmd.linenoend, sourcelist)
+
+        if (cmd.cmd != "src"):
+            print "Not currently in source cmd!!"
+            return
+
+        def doquote(x):
+            if (re.match(r'[-\w./]', x)):
+                # only very sympathetic chars
+                return x
+            return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';
+
+        configlineno = cmd.lineno - self.bibolamaziFile.rawstartconfigdatalineno() - 1
+        configlinenoend = cmd.linenoend - self.bibolamaziFile.rawstartconfigdatalineno() - 1
+
+        self._ignore_cursor_change = True
+        doc = self.ui.txtConfig.document()
+        cursor = QTextCursor(doc.findBlockByNumber(configlineno))
+        cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor, configlinenoend - configlineno + 1)
+        cursor.insertText("src: " + ("\n     ".join([doquote(x) for x in sourcelist])) + "\n")
+        tcursor = QTextCursor(doc.findBlockByNumber(configlineno))
+        self.ui.txtConfig.setTextCursor(tcursor)
+        self._ignore_cursor_change = False

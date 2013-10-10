@@ -42,6 +42,20 @@ class HelpBrowser(QWidget):
         QObject.connect(self.ui.btnFilterList, SIGNAL('clicked()'), self.openHelpTopicBySender)
         QObject.connect(self.ui.btnCmdLineHelp, SIGNAL('clicked()'), self.openHelpTopicBySender)
 
+        self.shortcuts = [
+            QShortcut(QKeySequence('Ctrl+W'), self, self.closeCurrentTab, self.closeCurrentTab),
+            ]
+
+
+    @pyqtSlot()
+    def closeCurrentTab(self):
+        index = self.ui.tabs.currentIndex()
+        if (index == 0):
+            # close help browser
+            self.hide()
+            return
+        
+        self.closeTab(index)
 
     @pyqtSlot(int)
     def closeTab(self, index):
