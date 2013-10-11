@@ -98,6 +98,12 @@ p, li { white-space: pre-wrap; }
           <enum>Qt::Horizontal</enum>
          </property>
          <widget class="QTextEdit" name="txtConfig">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>9</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <family>Courier 10 Pitch</family>
@@ -117,7 +123,7 @@ p, li { white-space: pre-wrap; }
           <property name="currentIndex">
            <number>0</number>
           </property>
-          <widget class="QWidget" name="toolspageBase" native="true">
+          <widget class="QWidget" name="toolspageBase">
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
              <spacer name="verticalSpacer">

@@ -118,6 +118,9 @@ class OpenBibFile(QWidget):
         self.ui = Ui_OpenBibFile()
         self.ui.setupUi(self)
 
+        self.resize(QSize(1200,800))
+        self.ui.splitEditConfig.setSizes([100,1])
+
         self.ui.txtConfig.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
 
@@ -139,7 +142,7 @@ class OpenBibFile(QWidget):
             QShortcut(QKeySequence('Ctrl+S'), self, self.saveToFile, self.saveToFile),
             ];
 
-        self._ignore_cursor_change = False
+        self._ignore_change_for_edittools = False
 
         
 
@@ -342,9 +345,7 @@ class OpenBibFile(QWidget):
             m = re.match(r'/goto-config-line/(?P<lineno>\d+)', url.path())
             if m:
                 self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
-                cur = self.ui.txtConfig.textCursor()
-                cur.setPosition(0)
-                cur.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, int(m.group('lineno')))
+                cur = QTextCursor(self.ui.txtConfig.document().findBlockByNumber(int(m.group('lineno'))-1))
                 self.ui.txtConfig.setTextCursor(cur)
                 return
 
@@ -369,26 +370,41 @@ class OpenBibFile(QWidget):
 
         cur = self.ui.txtConfig.textCursor()
         block = cur.block()
-        thisline = cur.block().blockNumber()
+        thisline = cur.block().blockNumber()+1
 
-        thisline += self.bibolamaziFile.rawstartconfigdatalineno()+1
+        thisline = self.bibolamaziFile.fileLineNo(thisline)
 
+        print "searching for cmd... at file line=%d" %(thisline)
         for cmd in cmds:
+            print "\t -- testing cmd %r" %(cmd)
             if cmd.lineno <= thisline and cmd.linenoend >= thisline:
                 # got the current cmd
-                print "Got cmd: %r" %(cmd)
+                print "\tGot cmd: %r" %(cmd)
                 return cmd
 
         return None
     
 
     @pyqtSlot()
+    def on_txtConfig_textChanged(self):
+        print "text changed!"
+
+        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
+
+        self._do_update_edittools()
+
+    @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):
         print "cursor position changed!"
         
-        if self._ignore_cursor_change:
+        self._do_update_edittools()
+
+
+    def _do_update_edittools(self):
+        if self._ignore_change_for_edittools:
             return
-        
+
         cmd = self._get_current_bibolamazi_cmd()
         if (cmd is None):
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageBase)
@@ -396,6 +412,7 @@ class OpenBibFile(QWidget):
         
         if (cmd.cmd == 'src'):
             self.ui.sourceListEditor.setSourceList(shlex.split(cmd.text), True)
+            self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
             return
 
@@ -422,19 +439,24 @@ class OpenBibFile(QWidget):
             return
 
         def doquote(x):
-            if (re.match(r'[-\w./]', x)):
+            if (re.match(r'^[-\w./:~%#]+$', x)):
                 # only very sympathetic chars
                 return x
             return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';
 
-        configlineno = cmd.lineno - self.bibolamaziFile.rawstartconfigdatalineno() - 1
-        configlinenoend = cmd.linenoend - self.bibolamaziFile.rawstartconfigdatalineno() - 1
+        configlineno = self.bibolamaziFile.configLineNo(cmd.lineno)
+        configlinenoend = self.bibolamaziFile.configLineNo(cmd.linenoend)
 
-        self._ignore_cursor_change = True
+        self._ignore_change_for_edittools = True
         doc = self.ui.txtConfig.document()
-        cursor = QTextCursor(doc.findBlockByNumber(configlineno))
-        cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor, configlinenoend - configlineno + 1)
+        cursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
+        cursorend = QTextCursor(doc.findBlockByNumber((configlinenoend+1)-1))
+        cursor.setPosition(cursorend.position(), QTextCursor.KeepAnchor)
         cursor.insertText("src: " + ("\n     ".join([doquote(x) for x in sourcelist])) + "\n")
-        tcursor = QTextCursor(doc.findBlockByNumber(configlineno))
+        tcursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
         self.ui.txtConfig.setTextCursor(tcursor)
-        self._ignore_cursor_change = False
+        self._ignore_change_for_edittools = False
+
+        # now, reparse the config
+        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)

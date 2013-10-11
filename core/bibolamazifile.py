@@ -208,7 +208,25 @@ class BibolamaziFile:
         return self._config_data;
 
     def rawstartconfigdatalineno(self):
+        """Returns the line number on which the begin config tag `CONFIG_BEGIN_TAG` is located.
+        Line numbers start at 1 at the top of the file like in any reasonable editor.
+        """
         return self._startconfigdatalineno;
+
+    def fileLineNo(self, configlineno):
+        """Returns the line number in the file of the config line `configlineno`. The latter
+        refers to the line number INSIDE the config section, where line number 1 is right after
+        the begin config tag `CONFIG_BEGIN_TAG`.
+        """
+        
+        return configlineno + self._startconfigdatalineno;
+
+    def configLineNo(self, filelineno):
+        """Returns the line number in the config data corresponding to line `filelineno` in the
+        file. Opposite of `fileLineNo()`.
+        """
+        
+        return filelineno - self._startconfigdatalineno;
 
     def rawrest(self):
         return self._rest;
@@ -239,16 +257,16 @@ class BibolamaziFile:
 
         # add start and end bibolamazi config section tags.
         config_block = CONFIG_BEGIN_TAG + '\n' + config_block + CONFIG_END_TAG + '\n'
-        
+
         self.setRawConfig(config_block)
 
 
     def setRawConfig(self, configblock):
         if (self._load_state < BIBOLAMAZIFILE_READ):
             raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
-        
+
         self._config = configblock
-        self._config_data = self._config_data_from_input(configblock)
+        self._config_data = self._config_data_from_block(configblock)
         # in case we were in a more advanced state, reset to READ state, because config has changed.
         self._load_state = BIBOLAMAZIFILE_READ
 
@@ -257,7 +275,7 @@ class BibolamaziFile:
 
         self._header = TEMPLATE_HEADER;
         self._config = TEMPLATE_CONFIG;
-        self._config_data = self._config_data_from_input(TEMPLATE_CONFIG);
+        self._config_data = self._config_data_from_block(TEMPLATE_CONFIG);
         self._rest = '';#TEMPLATE_REST;
 
         # store raw cmds
@@ -275,12 +293,33 @@ class BibolamaziFile:
         logger.longdebug('done with empty template init!');
 
 
-    def _config_data_from_input(self, inputconfigdata):
+    def _config_data_from_input_lines(self, inputconfigdata):
         """
         Simply strips initial %'s on each line of `inputconfigdata`.
         """
 
         return re.sub(r'^\%[ \t]?', '', inputconfigdata, flags=re.MULTILINE)
+
+    def _config_data_from_block(self, inputconfigdata):
+        """
+        Detects and removes starting and ending config tags, and then filters each
+        line through `_config_data_from_input_lines()`.
+        """
+
+        data_lines = []
+        
+        sio = io.StringIO(unicode(inputconfigdata))
+        is_first = True
+        for line in sio:
+            if (is_first):
+                is_first = False
+                if (not line.startswith(CONFIG_BEGIN_TAG)):
+                    logger.warning("Use of _config_data_from_block() *without* BEGIN/END tags !")
+                else:
+                    continue
+            data_lines.append(self._config_data_from_input_lines(line))
+
+        return "".join(data_lines)
 
         
     def _raise_parse_error(self, msg, lineno):
@@ -300,7 +339,7 @@ class BibolamaziFile:
             ST_CONFIG: u"",
             ST_REST: u""
             };
-        config_data_lines = []
+        config_block_lines = []
 
         lineno = 0;
         self._startconfigdatalineno = None;
@@ -321,20 +360,20 @@ class BibolamaziFile:
 
             if (state == ST_CONFIG):
                 # remove leading % signs
-                #logger.debug("adding line to config_data: "+line);
+                #logger.debug("adding line to config_block: "+line);
                 cline = line
                 if (len(cline) and cline[-1] == '\n'):
                     cline = cline[:-1]
-                config_data_lines.append(cline)
+                config_block_lines.append(cline)
 
             content[state] += line;
 
-        config_data = "\n".join(config_data_lines)
+        config_block = "\n".join(config_block_lines)
 
         # save the splitted data into these data structures.
         self._header = content[ST_HEADER];
         self._config = content[ST_CONFIG];
-        self._config_data = self._config_data_from_input(config_data);
+        self._config_data = self._config_data_from_input_lines(config_block);
         self._rest = content[ST_REST];
 
         logger.longdebug(("Parsed general bibolamazifile structure: len(header)=%d"+
@@ -345,7 +384,7 @@ class BibolamaziFile:
                        len(self._rest) ) );
 
 
-        logger.longdebug("config block is"+ "\n--------------------------------\n"
+        logger.longdebug("config data is"+ "\n--------------------------------\n"
                      +self._config_data+"\n--------------------------------\n");
 
         self._load_state = BIBOLAMAZIFILE_READ
@@ -353,6 +392,7 @@ class BibolamaziFile:
 
     def _parse_config(self):
         # now, parse the configuration.
+        self._config_data = self._config_data_from_block(self._config);
         configstream = io.StringIO(unicode(self._config_data));
         cmds = [];
         emptycmd = BibolamaziFileCmd(cmd=None, text="", lineno=-1, linenoend=-1, info={})
@@ -361,11 +401,9 @@ class BibolamaziFile:
             if (latestcmd.cmd is not None):
                 cmds.append(latestcmd);
 
-        configlineno = 0
+        thislineno = self._startconfigdatalineno
         for cline in configstream:
-            configlineno += 1
-            
-            thislineno = self._startconfigdatalineno + configlineno;
+            thislineno += 1
 
             if (re.match(r'^\s*%%', cline)):
                 # ignore comments
@@ -549,7 +587,7 @@ class BibolamaziFile:
                 w = outputbibtex.Writer();
                 w.write_stream(self._bibliographydata, f);
             
-            logger.info("Updated output file `"+self._fname+"'");
+            logger.info("Updated output file `"+self._fname+"'.");
         
         
         

@@ -35,7 +35,7 @@ from PyQt4.QtGui import *
 rxsrc = re.compile(r'^\s*(?P<src>src:)', re.MULTILINE)
 rxfilter = re.compile(r'^\s*(?P<filter>filter:)\s+(?P<filtername>[-\w]+)', re.MULTILINE)
 rxcomment = re.compile(r'^\s*%%.*$', re.MULTILINE)
-rxstring = re.compile(r'\"([^"]|(?<!\\)\")*\"')
+rxstring = re.compile(r'\"([^"\\]|\\\\|\\\")*\"')
 
 
 class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
