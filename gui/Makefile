@@ -8,7 +8,8 @@ TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
 	 $(QTAUTODIR)/ui_mainwidget.py \
 	 $(QTAUTODIR)/ui_openbibfile.py \
 	 $(QTAUTODIR)/ui_helpbrowser.py \
-	 $(QTAUTODIR)/ui_sourcelisteditor.py
+	 $(QTAUTODIR)/ui_sourcelisteditor.py \
+	 $(QTAUTODIR)/ui_filterinstanceeditor.py
 
 
 all: $(TARGETS)

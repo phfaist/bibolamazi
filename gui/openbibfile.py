@@ -15,6 +15,7 @@ from core.blogger import logger
 from core import bibolamazifile
 from core import butils
 from core.butils import BibolamaziError
+import filters
 
 
 from PyQt4.QtCore import *
@@ -411,13 +412,19 @@ class OpenBibFile(QWidget):
             return
         
         if (cmd.cmd == 'src'):
-            self.ui.sourceListEditor.setSourceList(shlex.split(cmd.text), True)
+            self.ui.sourceListEditor.setSourceList(shlex.split(cmd.text), noemit=True)
             self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
             return
 
         if (cmd.cmd == "filter"):
-            #self.ui.filterEditor.setFilterDefinition(cmd.info['filtername'], cmd.text)
+            filtername = cmd.info['filtername']
+            if (filters.filter_uses_default_arg_parser(filtername)):
+                self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, shlex.split(cmd.text),
+                                                                         noemit=True)
+            else:
+                self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, None, no_options=True,
+                                                                         noemit=True)
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
             return
 

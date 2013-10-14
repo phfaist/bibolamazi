@@ -109,6 +109,34 @@ def get_filter_class(name):
     return fmodule.get_class();
 
 
+def filter_uses_default_arg_parser(name):
+
+    fmodule = get_module(name)
+
+    if (hasattr(fmodule, 'parse_args')):
+        return True
+    return False
+
+def filter_arg_parser(name):
+    """If the filter `name` uses the default-based argument parser, then returns
+    a tuple `(p, use_auto_case)`, where `p` is the `ArgumentParser` object and
+    `use_auto_case` is a boolean flag that says if the option names were camel-cased.
+
+    If the filter has its own option parsing mechanism, this returns `None`.
+    """
+    
+    fmodule = get_module(name)
+
+    if (hasattr(fmodule, 'parse_args')):
+        return None
+
+    fclass = fmodule.get_class()
+
+    (p, use_auto_case) = _default_option_parser(name, fclass);
+
+    return (p, use_auto_case)
+
+
 def make_filter(name, optionstring):
 
     fmodule = get_module(name);
@@ -162,7 +190,7 @@ _rxargdoc = re.compile(r'\n?\s*\*(\w+):\s*', re.S);
 # a basic, default option parser. Simply constructs an argparse object with the function's argument
 # names mapped to options, and adds the ability to use the -sKey=Value and -dSwitch options.
 #
-def _default_option_parser(name, fclass):
+def _default_option_parser(name, fclass, formatter_class=argparse.RawDescriptionHelpFormatter):
 
     (fargs, varargs, keywords, defaults) = inspect.getargspec(fclass.__init__);
 
@@ -205,7 +233,7 @@ def _default_option_parser(name, fclass):
                                 "------------------------------\n\n"+
                                 fclass.getHelpText()+"\n"+_add_epilog,
                                 add_help=False,
-                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                formatter_class=formatter_class,#argparse.RawDescriptionHelpFormatter,
                                 );
 
     group_filter = p.add_argument_group('Filter Arguments');
