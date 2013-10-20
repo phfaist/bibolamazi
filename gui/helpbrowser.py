@@ -61,8 +61,8 @@ class HelpBrowser(QWidget):
     def closeTab(self, index):
         if (index == 0):
             return
+        del self.openTabs[index-1]
         self.ui.tabs.removeTab(index)
-
 
     @pyqtSlot()
     def openHelpTopicBySender(self):

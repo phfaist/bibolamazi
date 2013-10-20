@@ -164,7 +164,7 @@ class OpenBibFile(QWidget):
         self.setWindowTitle(os.path.basename(filename))
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
-        self.ui.tabs.setCurrentWidget(self.ui.pageInfo)
+        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
         
         if (self.bibolamaziFileName):
             self.watcher.addPath(self.bibolamaziFileName)
@@ -231,7 +231,7 @@ class OpenBibFile(QWidget):
             errortxt = str(Qt.escape(unicode(e)))
             errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
                               lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
-                                  int(m.group('lineno')) - self.bibolamaziFile.rawstartconfigdatalineno() - 1,
+                                  self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
                                   m.group()
                                   ),
                               errortxt)
@@ -375,12 +375,12 @@ class OpenBibFile(QWidget):
 
         thisline = self.bibolamaziFile.fileLineNo(thisline)
 
-        print "searching for cmd... at file line=%d" %(thisline)
+        #print "searching for cmd... at file line=%d" %(thisline)
         for cmd in cmds:
-            print "\t -- testing cmd %r" %(cmd)
+            #print "\t -- testing cmd %r" %(cmd)
             if cmd.lineno <= thisline and cmd.linenoend >= thisline:
                 # got the current cmd
-                print "\tGot cmd: %r" %(cmd)
+                #print "\tGot cmd: %r" %(cmd)
                 return cmd
 
         return None
@@ -419,12 +419,8 @@ class OpenBibFile(QWidget):
 
         if (cmd.cmd == "filter"):
             filtername = cmd.info['filtername']
-            if (filters.filter_uses_default_arg_parser(filtername)):
-                self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, shlex.split(cmd.text),
-                                                                         noemit=True)
-            else:
-                self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, None, no_options=True,
-                                                                         noemit=True)
+            self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, cmd.text,
+                                                                     noemit=True)
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
             return
 
@@ -432,24 +428,15 @@ class OpenBibFile(QWidget):
         return
 
 
-    @pyqtSlot(QStringList)
-    def on_sourceListEditor_sourceListChanged(self, sourcelist):
-
-        sourcelist = [str(x) for x in list(sourcelist)]
+    def _replace_current_cmd(self, repltext, forcecheckcmd):
         
         cmd = self._get_current_bibolamazi_cmd()
 
-        print 'Source list changed! on lines=%d--%d, sourcelist=%r' %(cmd.lineno, cmd.linenoend, sourcelist)
-
-        if (cmd.cmd != "src"):
-            print "Not currently in source cmd!!"
+        if (cmd is None or cmd.cmd != forcecheckcmd):
+            print "Expected to currently be in cmd %s!!" %(forcecheckcmd)
             return
 
-        def doquote(x):
-            if (re.match(r'^[-\w./:~%#]+$', x)):
-                # only very sympathetic chars
-                return x
-            return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';
+        print 'About to change cmd %s on lines=%d--%d' %(cmd.cmd, cmd.lineno, cmd.linenoend)
 
         configlineno = self.bibolamaziFile.configLineNo(cmd.lineno)
         configlinenoend = self.bibolamaziFile.configLineNo(cmd.linenoend)
@@ -459,7 +446,7 @@ class OpenBibFile(QWidget):
         cursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
         cursorend = QTextCursor(doc.findBlockByNumber((configlinenoend+1)-1))
         cursor.setPosition(cursorend.position(), QTextCursor.KeepAnchor)
-        cursor.insertText("src: " + ("\n     ".join([doquote(x) for x in sourcelist])) + "\n")
+        cursor.insertText(repltext)
         tcursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
         self.ui.txtConfig.setTextCursor(tcursor)
         self._ignore_change_for_edittools = False
@@ -467,3 +454,28 @@ class OpenBibFile(QWidget):
         # now, reparse the config
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
         self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
+        
+
+    @pyqtSlot(QStringList)
+    def on_sourceListEditor_sourceListChanged(self, sourcelist):
+
+        sourcelist = [str(x) for x in list(sourcelist)]
+
+        cmdtext = "src: " + ("\n     ".join([butils.quotearg(x) for x in sourcelist])) + "\n"
+
+        self._replace_current_cmd(cmdtext, 'src')
+
+
+    @pyqtSlot()
+    def on_filterInstanceEditor_filterInstanceDefinitionChanged(self):
+        filtername = self.ui.filterInstanceEditor.filterName()
+        optionstring = self.ui.filterInstanceEditor.optionString()
+
+        cmdtext = "filter: " + filtername + ' ' + optionstring + "\n\n"
+
+        self._replace_current_cmd(cmdtext, 'filter')
+        
+
+    @pyqtSlot(QString)
+    def on_filterInstanceEditor_filterHelpRequested(self, topic):
+        self.requestHelpTopic.emit(str(topic))

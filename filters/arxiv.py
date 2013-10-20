@@ -207,14 +207,16 @@ class ArxivNormalizeFilter(BibFilter):
                  theses_count_as_published=False):
         """
         Constructor method for ArxivNormalizeFilter
-        
-        *mode:  the behavior to adopt for published articles which also have an arxiv ID
-        *unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv
-                ID (if None, use the same mode as `mode').
-        *arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
-                unpublished entries
-        *theses_count_as_published: if True, then entries of type @phdthesis and
-                @mastersthesis count as published entries, otherwise not (the default).
+
+        Arguments:
+          - mode:  the behavior to adopt for published articles which also have an arxiv ID
+          - unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv
+                   ID (if None, use the same mode as `mode').
+          - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
+                   unpublished entries
+          - theses_count_as_published(bool): if True, then entries of type @phdthesis and
+                   @mastersthesis count as published entries, otherwise not (the default).
+
         """
         
         BibFilter.__init__(self);

@@ -21,6 +21,7 @@
 
 
 import re
+import types
 
 from blogger import logger
 import version
@@ -64,6 +65,25 @@ def getbool(x):
         if m:
             return False
     raise ValueError("Can't parse boolean value: %r" % x);
+
+
+
+def resolve_type(typename):
+    if (typename == 'str'):
+        return types.StringType
+    if (typename == 'bool'):
+        return types.BooleanType
+
+    typestypename = (typename.title()+'Type') # e.g. "int" -> "IntType"
+    return types.__dict__.get(typestypename, None)
+
+
+def quotearg(x):
+    if (re.match(r'^[-\w./:~%#]+$', x)):
+        # only very sympathetic chars
+        return x
+    return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';
+
 
 
 

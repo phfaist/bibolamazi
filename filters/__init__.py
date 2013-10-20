@@ -20,12 +20,14 @@
 ################################################################################
 
 
+import sys
 import importlib
 import re
 import shlex
 import inspect
 import argparse
 import textwrap
+from collections import namedtuple
 
 from core.argparseactions import store_key_val, store_key_const, store_key_bool
 from core.blogger import logger
@@ -53,6 +55,9 @@ class FilterError(Exception):
         self.errorstr = errorstr;
         Exception.__init__(self, unicode(self));
 
+    def setName(self, name):
+        self.name = name
+
     def fmt(self, name):
         return "Filter %s: %s" %(name, self.errorstr)
 
@@ -75,6 +80,10 @@ class FilterCreateError(FilterError):
 class FilterCreateArgumentError(FilterError):
     def fmt(self, name):
         return "Bad arguments provided to filter %s: %s" %(name, self.errorstr)
+
+
+
+
 
 
 
@@ -114,13 +123,13 @@ def filter_uses_default_arg_parser(name):
     fmodule = get_module(name)
 
     if (hasattr(fmodule, 'parse_args')):
-        return True
-    return False
+        return False
+    return True
 
 def filter_arg_parser(name):
     """If the filter `name` uses the default-based argument parser, then returns
-    a tuple `(p, use_auto_case)`, where `p` is the `ArgumentParser` object and
-    `use_auto_case` is a boolean flag that says if the option names were camel-cased.
+    a DefaultFilterOptions object that is initialized with the options available
+    for the given filter `name`.
 
     If the filter has its own option parsing mechanism, this returns `None`.
     """
@@ -130,11 +139,8 @@ def filter_arg_parser(name):
     if (hasattr(fmodule, 'parse_args')):
         return None
 
-    fclass = fmodule.get_class()
+    return DefaultFilterOptions(name);
 
-    (p, use_auto_case) = _default_option_parser(name, fclass);
-
-    return (p, use_auto_case)
 
 
 def make_filter(name, optionstring):
@@ -150,10 +156,10 @@ def make_filter(name, optionstring):
         try:
             (pargs, kwargs) = x;
         except TypeError, ValueError:
-            pargs = [];
-            kwargs = x;
+            raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
     else:
-        (pargs, kwargs) = _default_parse_optionstring(name, fclass, optionstring);
+        fopts = DefaultFilterOptions(name, fclass=fclass)
+        (pargs, kwargs) = fopts.parse_optionstring(optionstring);
 
     # first, validate the arguments to the function call with inspect.getcallargs()
     try:
@@ -179,190 +185,244 @@ def make_filter(name, optionstring):
 
 
 
+
+
+
+_ArgDoc = namedtuple('_ArgDoc', ('argname', 'argtypename', 'doc',))
+
+
+class FilterArgumentParser(argparse.ArgumentParser):
+    def __init__(self, filtername, **kwargs):
+        super(FilterArgumentParser, self).__init__(**kwargs)
+        self._filtername = filtername
+
+    def error(self, message):
+        self.exit(2, '%s: error: %s' % (self.prog, message))
+
+    def exit(self, status=0, message=None):
+        if message:
+            msg = message.rstrip()
+        else:
+            msg = 'Filter Arguments Error (code %d)' % (status)
+
+        raise FilterOptionsParseError(msg, self._filtername)
+
+
+_rxargdoc = re.compile(r'^\s*(-\s*|\*)(?P<argname>\w+)\s*(\((?P<argtypename>\w+)\))?\s*:\s*', re.MULTILINE);
+
 _add_epilog="""
 
 Have a lot of fun!
 """
 
-_rxargdoc = re.compile(r'\n?\s*\*(\w+):\s*', re.S);
+class DefaultFilterOptions:
+    def __init__(self, filtername, fclass=None):
+        self._filtername = filtername
 
-#
-# a basic, default option parser. Simply constructs an argparse object with the function's argument
-# names mapped to options, and adds the ability to use the -sKey=Value and -dSwitch options.
-#
-def _default_option_parser(name, fclass, formatter_class=argparse.RawDescriptionHelpFormatter):
+        self._fmodule = get_module(filtername)
 
-    (fargs, varargs, keywords, defaults) = inspect.getargspec(fclass.__init__);
+        if fclass is None:
+            fclass = get_filter_class(filtername)
 
-    # get some doc about the parameters
-    doc = fclass.__init__.__doc__;
-    if (doc is None):
-        doc = ''
-    pos = [];
-    for m in re.finditer(_rxargdoc, doc):
-        pos.append(m);
-    argdocs = {};
-    begindoc = None;
-    for k in range(len(pos)):
-        m = pos[k]
-        if (begindoc is None):
-            begindoc = doc[:m.start()];
-        thisend = (pos[k+1].start() if k < len(pos)-1 else len(doc));
-        argdocs[m.group(1)] = doc[m.end():thisend];
+        self._fclass = fclass
 
-    use_auto_case = True
-    if (re.search(r'[A-Z]', "".join(fargs))):
-        logger.debug("filter "+name+": will not automatically adjust option letter case.");
-        use_auto_case = False
+        # find out what the arguments to the filter constructor are
+        (fargs, varargs, keywords, defaults) = inspect.getargspec(fclass.__init__);
 
-    if (defaults is None):
-        defaults = [];
-    def fmtarg(k, fargs, defaults):
-        s = fargs[k];
-        off = len(fargs)-len(defaults);
-        if (k-off >= 0):
-            s += "="+repr(defaults[k-off]);
-        return s
-    fclasssyntaxdesc = fclass.__name__+("(" + (", ".join([fmtarg(k, fargs, defaults) for k in range(len(fargs)) if fargs[k] != "self"]))
-                                        + (" ..." if (varargs or keywords) else "") + ")");
-    
+        # get some doc about the parameters
+        doc = fclass.__init__.__doc__;
+        if (doc is None):
+            doc = ''
+        argdocspos = [];
+        for m in re.finditer(_rxargdoc, doc):
+            argdocspos.append(m);
+        argdoclist = [];
+        begindoc = None;
+        for k in range(len(argdocspos)):
+            m = argdocspos[k]
+            if (begindoc is None):
+                begindoc = doc[:m.start()];
+            thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc));
+            argdoclist.append(_ArgDoc(argname=m.group('argname'),
+                                      argtypename=m.group('argtypename'),
+                                      doc=doc[m.end():thisend].strip()))
+        argdocs = dict([(x.argname, x) for x in argdoclist])
 
-    p = argparse.ArgumentParser(prog=name,
-                                description=fclass.getHelpDescription(),
-                                epilog=
-                                "------------------------------\n\n"+
-                                fclass.getHelpText()+"\n"+_add_epilog,
-                                add_help=False,
-                                formatter_class=formatter_class,#argparse.RawDescriptionHelpFormatter,
-                                );
+        self._use_auto_case = True
+        if (re.search(r'[A-Z]', "".join(fargs))):
+            logger.debug("filter "+self._filtername+": will not automatically adjust option letter case.");
+            self._use_auto_case = False
 
-    group_filter = p.add_argument_group('Filter Arguments');
+        if (defaults is None):
+            defaults = [];
+        def fmtarg(k, fargs, defaults):
+            s = fargs[k];
+            off = len(fargs)-len(defaults);
+            if (k-off >= 0):
+                s += "="+repr(defaults[k-off]);
+            return s
+        fclasssyntaxdesc = fclass.__name__+("(" + (", ".join([fmtarg(k, fargs, defaults)
+                                                              for k in range(len(fargs))
+                                                              if fargs[k] != "self"]))
+                                            + (" ..." if (varargs or keywords) else "") + ")");
 
-    for farg in fargs:
-        # skip 'self'
-        if (farg == 'self'):
-            continue
-        # normalize name
-        fopt = re.sub('_', '-', farg);
-        group_filter.add_argument('--'+fopt, action='store', dest=farg,
-                                  help=argdocs.get(farg, None));
+        p = FilterArgumentParser(filtername=self._filtername,
+                                 prog=self._filtername,
+                                 description=fclass.getHelpDescription(),
+                                 epilog=
+                                 "------------------------------\n\n"+
+                                 fclass.getHelpText()+"\n"+_add_epilog,
+                                 add_help=False,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 );
+
+        group_filter = p.add_argument_group('Filter Arguments');
+
+        # add option for all arguments
+
+        self._filteroptions = []
+        
+        for farg in fargs:
+            # skip 'self'
+            if (farg == 'self'):
+                continue
+            # normalize name
+            fopt = re.sub('_', '-', farg);
+            argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
+            group_filter.add_argument('--'+fopt, action='store', dest=farg,
+                                      help=argdoc.doc);
+            self._filteroptions.append(argdoc)
+
+        group_general = p.add_argument_group('Other Options')
+
+        # a la ghostscript: -sOutputFile=blahblah -sKey=Value
+        group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
+                                   exception=FilterOptionsParseError,
+                                   help="-sKey=Value sets parameter values");
+        group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args',
+                                   metavar='Switch[=<value>]', exception=FilterOptionsParseError,
+                                   help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default "
+                                   "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
+
+        # allow also to give arguments without the keywords.
+        group_general.add_argument('_args', nargs='*', metavar='<arg>',
+                                   help="Additional arguments will be passed as is to the filter--see "
+                                   "documentation below");
+
+        p.add_argument_group(u"Python filter syntax",
+                             textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
+
+        p.add_argument_group(u'Note', textwrap.dedent(u"""\
+            For passing option values, you may use either the `--key value' syntax, or the
+            (ghostscript-like) `-sKey=Value' syntax. For switches, use -dSwitch to set the
+            given option to True. When using the -s or -d syntax, the option names are
+            camel-cased, i.e. an option like `--add-description arxiv' can be specified as
+            `-sAddDescription=arxiv'. Likewise, `--preserve-ids 1' can provided as
+            `-dPreserveIds' or `-dPreserveIds=yes'."""));
 
 
-    group_general = p.add_argument_group('Other Options')
-
-    # a la ghostscript: -sOutputFile=blahblah -sKey=Value
-    group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
-                               exception=FilterOptionsParseError,
-                               help="-sKey=Value sets parameter values");
-    group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args', metavar='Switch[=<value>]',
-                               exception=FilterOptionsParseError,
-                               help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default True. Valid"+
-                               " boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
-
-    # allow also to give arguments without the keywords.
-    group_general.add_argument('_args', nargs='*', metavar='<arg>',
-                               help='Additional arguments will be passed as is to the filter--see documentation below');
-
-    p.add_argument_group(u"Python filter syntax",
-                         textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
-
-    p.add_argument_group(u'Note', textwrap.dedent(u"""\
-        For passing option values, you may use either the `--key value' syntax, or the
-        (ghostscript-like) `-sKey=Value' syntax. For switches, use -dSwitch to set the
-        given option to True. When using the -s or -d syntax, the option names are
-        camel-cased, i.e. an option like `--add-description arxiv' can be specified as
-        `-sAddDescription=arxiv'. Likewise, `--preserve-ids 1' can provided as
-        `-dPreserveIds' or `-dPreserveIds=yes'."""));
+        self._parser = p
 
 
-    return (p, use_auto_case)
+    def filtername(self):
+        return self._filtername
 
-def _getArgNameFromSOpt(x, use_auto_case=True):
-    if (not use_auto_case):
+    def filteroptions(self):
+        """This gives a list of `_ArgDoc` named tuples."""
+        return self._filteroptions
+
+    def use_auto_case(self):
+        return self._use_auto_case
+
+    def getSOptNameFromArg(self, x):
+        if (not self._use_auto_case):
+            return x
+        x = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), x)
         return x
-    x = re.sub('[A-Z]', lambda mo: ('_' if mo.start() > 0 else '')+mo.group().lower(), x);
-    return x
 
-    
-def _default_parse_optionstring(name, fclass, optionstring):
-
-    logger.debug("_default_parse_optionstring: name: "+name+"; fclass="+repr(fclass)
-                 +"; optionstring="+optionstring);
-
-    (p, use_auto_case) = _default_option_parser(name, fclass);
-
-    parts = shlex.split(optionstring);
-    try:
-        args = p.parse_args(parts);
-    except FilterOptionsParseError as e:
-        e.name = name
-        raise
-
-    # parse and collect arguments now
-
-    dargs = vars(args);
-    pargs = [];
-    kwargs = {};
-
-    for (arg, argval) in dargs.iteritems():
-        if (arg == '_args'):
-            pargs = argval;
-            continue
-        if (arg == '_d_args' and argval is not None):
-            # get all the defined args
-            for (thekey, theval) in argval:
-                # store this definition
-                therealkey = _getArgNameFromSOpt(thekey, use_auto_case);
-                kwargs[therealkey] = theval
-
-                logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
-                
-            continue
-            
-        if (arg == '_s_args' and argval is not None):
-            # get all the set args
-            for (key, v) in argval:
-                thekey = _getArgNameFromSOpt(key, use_auto_case);
-                kwargs[thekey] = v
-
-                logger.debug("Set option `%s' to `%s'" %(thekey, v))
-                
-            continue
-
-        if (argval is None):
-            continue
-        
-        kwargs[arg] = argval;
-    
-    #import pdb; pdb.set_trace();
-
-    return (pargs, kwargs);
-        
+    def getArgNameFromSOpt(self, x):
+        if (not self._use_auto_case):
+            return x
+        x = re.sub(r'[A-Z]', lambda mo: ('_' if mo.start() > 0 else '')+mo.group().lower(), x);
+        return x
 
 
+    def parser(self):
+        return self._parser
 
 
+    def parse_optionstring(self, optionstring):
 
-def format_filter_help(name):
+        logger.debug("parse_optionstring: "+self._filtername+"; fclass="+repr(self._fclass)
+                     +"; optionstring="+optionstring);
+
+        p = self._parser
+
+        parts = shlex.split(optionstring);
+        try:
+            args = p.parse_args(parts);
+        except FilterOptionsParseError as e:
+            e.name = name
+            raise
+
+        # parse and collect arguments now
+
+        dargs = vars(args);
+        pargs = [];
+        kwargs = {};
+
+        for (arg, argval) in dargs.iteritems():
+            if (arg == '_args'):
+                pargs = argval;
+                continue
+            if (arg == '_d_args' and argval is not None):
+                # get all the defined args
+                for (thekey, theval) in argval:
+                    # store this definition
+                    therealkey = self.getArgNameFromSOpt(thekey);
+                    kwargs[therealkey] = theval
+
+                    logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
+
+                continue
+
+            if (arg == '_s_args' and argval is not None):
+                # get all the set args
+                for (key, v) in argval:
+                    thekey = self.getArgNameFromSOpt(key);
+                    kwargs[thekey] = v
+
+                    logger.debug("Set option `%s' to `%s'" %(thekey, v))
+
+                continue
+
+            if (argval is None):
+                continue
+
+            kwargs[arg] = argval;
+
+        return (pargs, kwargs);
+
+
+    def format_filter_help(self):
+        prolog = self._fclass.getHelpAuthor();
+        if (prolog):
+            prolog += "\n\n";
+
+        return prolog + self._parser.format_help();
+
+
+def format_filter_help(filtname):
     #
     # Get the parser via the filter, and use its format_help()
     #
 
-    fmodule = get_module(name);
+    fmodule = get_module(filtname)
 
     if (hasattr(fmodule, 'format_help')):
         return fmodule.format_help();
 
     # otherwise, use the help formatter of the default option parser
-
-    fclass = fmodule.get_class();
-
-    (p, use_auto_case) = _default_option_parser(name, fclass);
-
-    prolog = fclass.getHelpAuthor();
-    if (prolog):
-        prolog += "\n\n";
-
-    return prolog + p.format_help();
+    fopt = DefaultFilterOptions(filtname)
+    return fopt.format_filter_help()
     
-

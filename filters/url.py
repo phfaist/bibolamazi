@@ -57,17 +57,18 @@ class UrlNormalizeFilter(BibFilter):
                  UrlFromDoi=False, UrlFromArxiv=False):
         """UrlNormalizeFilter constructor.
 
-        *Strip: Removes all URLs from the entry. Maybe add URLs according to the other options.
-        *StripAllIfDoiOrArxiv: Removes all URLs from the entry, but only if a DOI identifier or an ArXiv ID
-                               is present.
-        *StripDoiUrl: Remove any URL that is in fact a DOI lookup, i.e. of the form
-                      http://dx.doi.org/<DOI>
-        *StripArxivUrl: Remove any URL that looks like an arxiv lookup, i.e. of the
-                        form http://arxiv.org/abs/<ID>
-        *UrlFromDoi: If the entry has a DOI identifier, then add an explicit URL that is a DOI lookup,
-                     i.e. http://dx.doi.org/<DOI>
-        *UrlFromArxiv: If the entry has an ArXiv identifier, then add an explicit URL that links to the
-                       arXiv page, i.e. http://arxiv.org/abs/<ARXIV-ID>
+        Arguments:
+          - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the other options.
+          - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI identifier or
+                         an ArXiv ID is present.
+          - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, i.e. of the form
+                         http://dx.doi.org/<DOI>
+          - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
+                         form http://arxiv.org/abs/<ID>
+          - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL that is a DOI
+                         lookup, i.e. http://dx.doi.org/<DOI>
+          - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL that links
+                         to the arXiv page, i.e. http://arxiv.org/abs/<ARXIV-ID>
         """
         BibFilter.__init__(self);
 
