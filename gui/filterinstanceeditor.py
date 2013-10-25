@@ -83,6 +83,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._pargs = pargs
         self._kwargs = kwargs
 
+        self._icon_remove = QIcon(":/pic/lstbtnremove.png")
+        self._icon_add = QIcon(":/pic/lstbtnadd.png")
+
         self._emitLayoutChanged()
 
 
@@ -92,8 +95,16 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         return len(self._fopts.filteroptions())
 
     def columnCount(self, parent):
-        return 2
+        return 3
     
+
+    def _make_empty_type(self, arg):
+        if (arg.argtypename is not None):
+            typ = butils.resolve_type(arg.argtypename)
+            return typ()
+        return str('')
+        
+
     def data(self, index, role=Qt.DisplayRole):
         if (self._fopts is None):
             return QVariant()
@@ -112,19 +123,41 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 return QVariant(QString(self._fopts.getSOptNameFromArg(filteroptions[row].argname)))
             return QVariant()
 
+        arg = filteroptions[row]
+        val = self._kwargs.get(arg.argname)
+        
         if (col == 1):
             # argument value
-            arg = filteroptions[row]
-
-            val = self._kwargs.get(arg.argname)
             
             if (arg.argname not in self._kwargs):
+                # request editing of argument for which we have no value yet
+                if (role == Qt.EditRole):
+                    editval = self._make_empty_type(arg)
+                    return QVariant(editval)
                 return QVariant()
+            
             if (role == Qt.DisplayRole):
                 return QVariant(QString(str(val)))
             if (role == Qt.EditRole):
-                return QVariant(val)
+                if (val is None):
+                    return QVariant(self._make_empty_type(arg))
+                return QVariant(editval)
             return QVariant()
+
+        if (col == 2):
+            if (role == Qt.UserRole):
+                # this returns the arg name that the button will refer to
+                return QVariant(QString(arg.argname))
+            if (role == Qt.DecorationRole):
+                if (val is not None):
+                    return QVariant(self._icon_remove)
+                return QVariant(self._icon_add)
+
+            return QVariant()
+
+
+        return QVariant()
+
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if (orientation == Qt.Vertical):
@@ -138,6 +171,11 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (section == 1):
             if (role == Qt.DisplayRole):
                 return QVariant(QString(u"Value"))
+            return QVariant()
+
+        if (section == 2):
+            if (role == Qt.DisplayRole):
+                return QVariant(QString(u""))
             return QVariant()
 
         return QVariant()
@@ -154,7 +192,12 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
         if (col == 1):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        if (col == 2):
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
 
+        print "DefaultFilterOptionsModel.flags(): BAD COLUMN: %d" %(col)
+        return 0
+    
 
     def setData(self, index, value, role=Qt.EditRole):
         
@@ -208,7 +251,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if (v is not None):
                 soptarg = self._fopts.getSOptNameFromArg(arg.argname)
                 if (arg.argtypename == 'bool'):
-                    slist.append('-d'+soptarg+('' if v else '=0'))
+                    slist.append('-d'+soptarg+('' if v else '=False'))
                 else:
                     slist.append('-s'+soptarg+'='+butils.quotearg(str(v)))
                     
@@ -233,6 +276,40 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
 
 
+class DefaultFilterOptionsDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super(DefaultFilterOptionsDelegate, self).__init__(parent)
+
+    removeArgument = pyqtSignal('QString')
+
+
+    def createEditor(self, parent, option, index):
+        if (index.column() != 2):
+            return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
+
+        icon = index.data(Qt.DecorationRole).toPyObject()
+
+        if (icon is None):
+            print "Icon is none!!!"
+            icon = QIcon()
+
+        btn = QToolButton(parent)
+        btn.setProperty('argname', index.data(Qt.UserRole))
+        btn.setIcon(icon)
+        btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        btn.clicked.connect(self._btnclicked)
+        return btn
+
+    def updateEditorGeometry(self, editor, option, index):
+        editor.setGeometry(option.rect)
+
+    @pyqtSlot()
+    def _btnclicked(self):
+        sender = self.sender()
+        argname = str(sender.property('argname').toString())
+        ......
+
+
 
 class FilterInstanceEditor(QWidget):
     def __init__(self, parent):
@@ -247,7 +324,11 @@ class FilterInstanceEditor(QWidget):
         self._is_updating = False
 
         self._filteroptionsmodel = DefaultFilterOptionsModel(filtername=None, parent=self)
+
+        self._filteroptionsdelegate = DefaultFilterOptionsDelegate(parent=self)
+        
         self.ui.lstOptions.setModel(self._filteroptionsmodel)
+        self.ui.lstOptions.setItemDelegate(self._filteroptionsdelegate)
 
         self._filteroptionsmodel.optionStringChanged.connect(self.filterOptionsChanged)
 
@@ -291,6 +372,9 @@ class FilterInstanceEditor(QWidget):
     def setOptionString(self, optionstring, noemit=False, force=False):
         self._filteroptionsmodel.setOptionString(optionstring, force=force, noemit=noemit)
         self.ui.lstOptions.resizeColumnToContents(0)
+        self.ui.lstOptions.setColumnWidth(2, 20)
+        for k in xrange(self._filteroptionsmodel.rowCount(QModelIndex())):
+            self.ui.lstOptions.openPersistentEditor(self._filteroptionsmodel.index(k,2))
 
     def setFilterInstanceDefinition(self, filtername, optionstring, noemit=False):
         self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=False)
