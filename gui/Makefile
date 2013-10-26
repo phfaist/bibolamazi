@@ -9,7 +9,8 @@ TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
 	 $(QTAUTODIR)/ui_openbibfile.py \
 	 $(QTAUTODIR)/ui_helpbrowser.py \
 	 $(QTAUTODIR)/ui_sourcelisteditor.py \
-	 $(QTAUTODIR)/ui_filterinstanceeditor.py
+	 $(QTAUTODIR)/ui_filterinstanceeditor.py \
+	 $(QTAUTODIR)/ui_overlistbuttonwidget.py
 
 
 all: $(TARGETS)

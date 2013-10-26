@@ -362,7 +362,7 @@ class DefaultFilterOptions:
         try:
             args = p.parse_args(parts);
         except FilterOptionsParseError as e:
-            e.name = name
+            e.name = self._filtername
             raise
 
         # parse and collect arguments now
