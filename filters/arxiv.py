@@ -22,7 +22,7 @@
 
 import re
 
-from core.bibfilter import BibFilter, BibFilterError;
+from core.bibfilter import BibFilter, BibFilterError, EnumArgType;
 from core.blogger import logger;
 from core import butils;
 
@@ -195,6 +195,62 @@ has no journal name, or if the journal name contains "arxiv".
 """
 
 
+_modes = [
+    ('none', MODE_NONE),
+    ('unpublished-note', MODE_UNPUBLISHED_NOTE),
+    ('unpublished-note-notitle', MODE_UNPUBLISHED_NOTE_NOTITLE),
+    ('note', MODE_NOTE),
+    ('eprint', MODE_EPRINT),
+    ('strip', MODE_STRIP),
+    ];
+_modes_dict = dict(_modes)
+
+
+class Mode:
+    type_arg_input = EnumArgType([x for (x,v) in _modes])
+    
+    def __init__(self, val=None):
+        if (not val):
+            self.mode = MODE_NONE
+        elif isinstance(val, Mode):
+            self.mode = val.mode
+        else:
+            self.mode = self._parse_mode(val)
+
+    def _parse_mode(self, mode):
+        if (isinstance(mode, int)):
+            return mode
+        
+        if (mode is None):
+            return MODE_NONE
+        if (str(mode) in _modes_dict):
+            return _modes_dict.get(str(mode))
+        try:
+            return int(mode)
+        except ValueError:
+            pass
+
+        raise ValueError("arxiv: Invalid mode: %r" %(mode))
+
+    # so that we can use a Mode object like an int
+    def __eq__(self, other):
+        if (isinstance(other, Mode)):
+            return self.mode == other.mode
+        return self.mode == self._parse_mode(other)
+
+    def __str__(self):
+        ok = [x for (x,v) in _modes if v == self.mode]
+        if (not len(ok)):
+            return str(self.mode) # the integer value directly ..
+        return ok[0]
+
+    def __repr__(self):
+        return "arxiv.Mode('%s')"%(self.__str__())
+
+    def __hash__(self):
+        return hash(self.mode)
+    
+
 # the filter itself
 class ArxivNormalizeFilter(BibFilter):
     
@@ -209,8 +265,8 @@ class ArxivNormalizeFilter(BibFilter):
         Constructor method for ArxivNormalizeFilter
 
         Arguments:
-          - mode:  the behavior to adopt for published articles which also have an arxiv ID
-          - unpublished_mode: the behavior to adopt for unpublished articles who have an arxiv
+          - mode(Mode):  the behavior to adopt for published articles which also have an arxiv ID
+          - unpublished_mode(Mode): the behavior to adopt for unpublished articles who have an arxiv
                    ID (if None, use the same mode as `mode').
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                    unpublished entries
@@ -221,32 +277,13 @@ class ArxivNormalizeFilter(BibFilter):
         
         BibFilter.__init__(self);
 
-        self.mode = self._parse_mode(mode);
-        self.unpublished_mode = (self._parse_mode(unpublished_mode) if unpublished_mode
+        self.mode = Mode(mode);
+        self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode
                                  else self.mode);
         self.arxiv_journal_name = arxiv_journal_name;
         self.theses_count_as_published = butils.getbool(theses_count_as_published);
 
-        logger.debug('arxiv filter constructor: mode=%d; unpublished_mode=%d' % (self.mode, self.unpublished_mode));
-
-    def _parse_mode(self, mode):
-        if (mode == "none" or mode is None):
-            return MODE_NONE
-        elif (mode == "unpublished-note"):
-            return MODE_UNPUBLISHED_NOTE
-        elif (mode == "unpublished-note-notitle"):
-            return MODE_UNPUBLISHED_NOTE_NOTITLE
-        elif (mode == "note"):
-            return MODE_NOTE
-        elif (mode == "eprint"):
-            return MODE_EPRINT
-        elif (mode == "strip"):
-            return MODE_STRIP
-
-        try:
-            return int(mode)
-        except ValueError:
-            raise Exception("Invalid mode: %r" %(mode))
+        logger.debug('arxiv filter constructor: mode=%s; unpublished_mode=%s' % (self.mode, self.unpublished_mode));
 
 
     def name(self):

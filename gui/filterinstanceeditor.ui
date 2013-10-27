@@ -47,24 +47,10 @@
      </item>
     </layout>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="4" column="0" colspan="2">
     <widget class="QPushButton" name="btnFilterHelp">
      <property name="text">
       <string>Help: Filter Reference</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QPushButton" name="btnAddOption">
-     <property name="text">
-      <string>Add Option</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QPushButton" name="btnRemoveOption">
-     <property name="text">
-      <string>Remove option</string>
      </property>
     </widget>
    </item>

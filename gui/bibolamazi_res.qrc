@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/pic">
+    <file>lstbtnedit.png</file>
     <file>lstbtnadd.png</file>
     <file>lstbtnremove.png</file>
     <file>ok.png</file>

@@ -409,8 +409,10 @@ class BibolamaziFile:
                 # ignore comments
                 continue
             
-            if ((latestcmd.cmd != "filter") and re.match(r'^\s*$', cline)):
-                # ignore empty lines except for adding to 'filter' commands.
+            if (re.match(r'^\s*$', cline)):
+                # ignore empty lines
+                # TODO: Maybe they shouldn't be ignored for filters? but then the cmd info stetches over
+                # following comments etc. and in the GUI it behaves wierdly
                 continue
 
             # try to match to a new command
@@ -471,6 +473,8 @@ class BibolamaziFile:
                     self._raise_parse_error("No such filter: `%s'" %(filname),
                                             lineno=cmd.lineno);
                 except filters.FilterError as e:
+                    import traceback
+                    logger.debug("FilterError:\n" + traceback.format_exc())
                     self._raise_parse_error(unicode(e),
                                             lineno=cmd.lineno);
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");

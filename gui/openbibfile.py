@@ -429,6 +429,7 @@ class OpenBibFile(QWidget):
 
 
     def _replace_current_cmd(self, repltext, forcecheckcmd):
+        print '_replace_current_cmd(%r,%r)' %(repltext, forcecheckcmd)
         
         cmd = self._get_current_bibolamazi_cmd()
 
@@ -444,8 +445,12 @@ class OpenBibFile(QWidget):
         self._ignore_change_for_edittools = True
         doc = self.ui.txtConfig.document()
         cursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
-        cursorend = QTextCursor(doc.findBlockByNumber((configlinenoend+1)-1))
-        cursor.setPosition(cursorend.position(), QTextCursor.KeepAnchor)
+        endblock = (configlinenoend+1)-1
+        if (endblock >= doc.blockCount()):
+            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+        else:
+            cursorend = QTextCursor(doc.findBlockByNumber(endblock))
+            cursor.setPosition(cursorend.position(), QTextCursor.KeepAnchor)
         cursor.insertText(repltext)
         tcursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
         self.ui.txtConfig.setTextCursor(tcursor)
@@ -471,7 +476,9 @@ class OpenBibFile(QWidget):
         filtername = self.ui.filterInstanceEditor.filterName()
         optionstring = self.ui.filterInstanceEditor.optionString()
 
-        cmdtext = "filter: " + filtername + ' ' + optionstring + "\n\n"
+        print 'on_filterInstanceEditor_filterInstanceDefinitionChanged() filtername=%r, optionstring=%r' %(filtername, optionstring)
+
+        cmdtext = "filter: " + filtername + ' ' + optionstring + "\n"
 
         self._replace_current_cmd(cmdtext, 'filter')
         

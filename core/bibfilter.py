@@ -103,3 +103,8 @@ class BibFilter:
         return cls.helptext.strip();
     
 
+
+
+class EnumArgType:
+    def __init__(self, listofvalues):
+        self.listofvalues = listofvalues

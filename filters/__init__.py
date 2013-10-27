@@ -31,6 +31,7 @@ from collections import namedtuple
 
 from core.argparseactions import store_key_val, store_key_const, store_key_bool
 from core.blogger import logger
+from core import butils
 
 
 # list all filters here.
@@ -91,7 +92,7 @@ class FilterCreateArgumentError(FilterError):
 
 filter_modules = {};
 
-def get_module(name):
+def get_module(name, raise_nosuchfilter=True):
     name = str(name)
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots")
@@ -105,6 +106,8 @@ def get_module(name):
         mod = importlib.import_module('filters.'+name);
         filter_modules[name] = mod;
     except ImportError:
+        if (not raise_nosuchfilter):
+            return None
         raise NoSuchFilter(name);
 
     # and return it
@@ -166,6 +169,8 @@ def make_filter(name, optionstring):
         pargs2 = [None]+pargs; # extra argument for `self` slot
         inspect.getcallargs(fclass.__init__, *pargs2, **kwargs)
     except Exception as e:
+        import traceback
+        logger.debug("Filter exception:\n" + traceback.format_exc())
         raise FilterCreateArgumentError(unicode(e), name)
 
     # and finally, instantiate the filter.
@@ -177,6 +182,8 @@ def make_filter(name, optionstring):
     try:
         return fclass(*pargs, **kwargs);
     except Exception as e:
+        import traceback
+        logger.debug("Filter exception:\n" + traceback.format_exc())
         msg = unicode(e);
         if (not isinstance(e, FilterError) and e.__class__ != Exception):
             # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
@@ -331,6 +338,12 @@ class DefaultFilterOptions:
         """This gives a list of `_ArgDoc` named tuples."""
         return self._filteroptions
 
+    def optionSpec(self, argname):
+        l = [x for x in self._filteroptions if x.argname == argname]
+        if (not len(l)):
+            return None
+        return l[0]
+
     def use_auto_case(self):
         return self._use_auto_case
 
@@ -371,6 +384,18 @@ class DefaultFilterOptions:
         pargs = [];
         kwargs = {};
 
+        def set_kw_arg(kwargs, argname, argval):
+            # set the type correctly, too.
+            argspec = self.optionSpec(argname)
+            if (argspec is not None):
+                if (argspec.argtypename is not None):
+                    typ = butils.resolve_type(argspec.argtypename, self._fmodule)
+                else:
+                    typ = str
+                kwargs[argname] = typ(argval)
+            else:
+                kwargs[argname] = argval # raw type if we can't figure one out (could be extra kwargs argument)
+
         for (arg, argval) in dargs.iteritems():
             if (arg == '_args'):
                 pargs = argval;
@@ -390,7 +415,7 @@ class DefaultFilterOptions:
                 # get all the set args
                 for (key, v) in argval:
                     thekey = self.getArgNameFromSOpt(key);
-                    kwargs[thekey] = v
+                    set_kw_arg(kwargs, thekey, v)
 
                     logger.debug("Set option `%s' to `%s'" %(thekey, v))
 
@@ -399,7 +424,7 @@ class DefaultFilterOptions:
             if (argval is None):
                 continue
 
-            kwargs[arg] = argval;
+            set_kw_arg(arg, argval)
 
         return (pargs, kwargs);
 

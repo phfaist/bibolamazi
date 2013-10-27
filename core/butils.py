@@ -68,7 +68,12 @@ def getbool(x):
 
 
 
-def resolve_type(typename):
+def resolve_type(typename, in_module=None):
+
+    if (in_module is not None):
+        if (typename in in_module.__dict__):
+            return in_module.__dict__.get(typename)
+
     if (typename == 'str'):
         return types.StringType
     if (typename == 'bool'):

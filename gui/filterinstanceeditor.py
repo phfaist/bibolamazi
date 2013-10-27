@@ -6,6 +6,7 @@ import re
 import filters
 from filters import NoSuchFilter, FilterError
 from core import butils
+from core.bibfilter import EnumArgType
 
 
 from PyQt4.QtCore import *
@@ -15,6 +16,43 @@ from qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 import overlistbuttonwidget
 
+
+class RegisteredArgInputType:
+    def __init__(self, typ, val):
+        self.type_arg_input = typ.type_arg_input
+        self.value = val
+
+    def createWidget(self, parent, option):
+        if (isinstance(self.type_arg_input, EnumArgType)):
+            cbx = QComboBox(parent)
+            for val in self.type_arg_input.listofvalues:
+                cbx.addItem(val)
+
+            return cbx
+
+        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        return None
+
+    def setEditorData(self, editor):
+        if (isinstance(self.type_arg_input, EnumArgType)):
+            for i in xrange(editor.count()):
+                if (str(editor.itemText(i)) == self.value):
+                    editor.setCurrentIndex(i)
+                    return
+            return
+
+        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        return None
+
+    def valueOf(self, editor):
+        if (isinstance(self.type_arg_input, EnumArgType)):
+            val = str(editor.itemText(editor.currentIndex()))
+            print "GOT VALUE: %r" %(val)
+            return val
+
+        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        return None
+    
 
 
 class DefaultFilterOptionsModel(QAbstractTableModel):
@@ -84,9 +122,6 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._pargs = pargs
         self._kwargs = kwargs
 
-        self._icon_remove = QIcon(":/pic/lstbtnremove.png")
-        self._icon_add = QIcon(":/pic/lstbtnadd.png")
-
         self._emitLayoutChanged()
 
 
@@ -118,11 +153,12 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         return 2
     
 
-    def _make_empty_type(self, arg):
-        if (arg.argtypename is not None):
-            typ = butils.resolve_type(arg.argtypename)
-            return typ()
-        return str('')
+    #def _make_empty_type(self, arg):
+    #    if (arg.argtypename is not None):
+    #        fmodule = filters.get_module(self._filtername, False)
+    #        typ = butils.resolve_type(arg.argtypename, fmodule)
+    #        return typ()
+    #    return str('')
         
 
     def data(self, index, role=Qt.DisplayRole):
@@ -157,32 +193,26 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if (role == overlistbuttonwidget.ROLE_ARGNAME):
                 return QVariant(QString(arg.argname))
             
-            if (arg.argname not in self._kwargs):
-                # request editing of argument for which we have no value yet
-                if (role == Qt.EditRole):
-                    editval = self._make_empty_type(arg)
-                    return QVariant(editval)
-                return QVariant()
-            
             if (role == Qt.DisplayRole):
-                return QVariant(QString(str(val)))
-            if (role == Qt.EditRole):
                 if (val is None):
-                    return QVariant(self._make_empty_type(arg))
-                return QVariant(val)
+                    return QVariant()
+                return QVariant(QString(str(val)))
+            
+            # request editing value of argument
+            if (role == Qt.EditRole):
+                if (arg.argtypename is not None):
+                    fmodule = filters.get_module(self._filtername, False)
+                    typ = butils.resolve_type(arg.argtypename, fmodule)
+                else:
+                    typ = str
+                if (hasattr(typ, 'type_arg_input')):
+                    editval = RegisteredArgInputType(typ, val)
+                elif (issubclass(typ, basestring) and val is None):
+                    editval = typ('')
+                else:
+                    editval = typ(val)
+                return QVariant(editval)
             return QVariant()
-
-        if (col == 2):
-            if (role == Qt.UserRole):
-                # this returns the arg name that the button will refer to
-                return QVariant(QString(arg.argname))
-            if (role == Qt.DecorationRole):
-                if (val is not None):
-                    return QVariant(self._icon_remove)
-                return QVariant(self._icon_add)
-
-            return QVariant()
-
 
         return QVariant()
 
@@ -201,11 +231,6 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 return QVariant(QString(u"Value"))
             return QVariant()
 
-        if (section == 2):
-            if (role == Qt.DisplayRole):
-                return QVariant(QString(u""))
-            return QVariant()
-
         return QVariant()
 
 
@@ -219,8 +244,6 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (col == 0):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
         if (col == 1):
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
-        if (col == 2):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
 
         print "DefaultFilterOptionsModel.flags(): BAD COLUMN: %d" %(col)
@@ -238,6 +261,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (self._fopts is None):
             return False
 
+        if (role != Qt.EditRole):
+            return False
+
         filteroptions = self._fopts.filteroptions()
 
         if (row < 0 or row >= len(filteroptions)):
@@ -246,14 +272,19 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         arg = filteroptions[row]
 
         value = value.toPyObject()
+        
+        print "Got value: %r" %(value)
 
         # validate type
+        typ = None
         if (arg.argtypename is not None):
-            typ = butils.resolve_type(arg.argtypename)
-            value = typ(value)
-        else:
-            # by default, type is a string.
-            value = str(value)
+            typ = butils.resolve_type(arg.argtypename, filters.get_module(self._filtername, False))
+        if (typ == None):
+            typ = str
+            
+        value = typ(value)
+
+        print "Got final value: %r ; typ=%r" %(value, typ)
 
         self._kwargs[arg.argname] = value
 
@@ -319,50 +350,48 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
         self._view = parentView
 
 
-##     removeArgument = pyqtSignal('QString')
-
-##     def createEditor(self, parent, option, index):
-##         if (index.column() != 2):
-##             return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
-
-##         icon = index.data(Qt.DecorationRole).toPyObject()
-
-##         if (icon is None):
-##             print "Icon is none!!!"
-##             icon = QIcon()
-
-##         btn = QToolButton(parent)
-##         btn.setProperty('argname', index.data(Qt.UserRole))
-##         btn.setIcon(icon)
-##         btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
-##         btn.clicked.connect(self._btnclicked)
-##         return btn
-
-##     def updateEditorGeometry(self, editor, option, index):
-##         editor.setGeometry(option.rect)
-
-##     @pyqtSlot()
-##     def _btnclicked(self):
-##         sender = self.sender()
-##         argname = str(sender.property('argname').toString())
-
-##         if (argname):
-##             self.removeArgument.emit(QString(argname))
-
-##     @pyqtSlot()
-##     def update_buttons(self):
-##         zemodel = self._view.model()
-##         for k in xrange(zemodel.rowCount(QModelIndex())):
-##             self._view.closePersistentEditor(zemodel.index(k,2))
-##         for k in xrange(zemodel.rowCount(QModelIndex())):
-##             self._view.openPersistentEditor(zemodel.index(k,2))
+    def createEditor(self, parent, option, index):
+        if (index.column() != 1):
+            return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
         
+        data = index.data(Qt.EditRole)
+        if (isinstance(data.toPyObject(), RegisteredArgInputType)):
+            # do our own processing with some custom widgets.
+            rr = data.toPyObject()
+            w = rr.createWidget(parent, option)
+            w.setProperty('_RegisteredArgInputType', data)
+            return w
+        
+        return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
+    
+    def updateEditorGeometry(self, editor, option, index):
+        editor.setGeometry(option.rect)
+    
+    def setEditorData(self, editor, index):
+        rr = editor.property('_RegisteredArgInputType')
+        if (not rr.isValid()):
+            return super(DefaultFilterOptionsDelegate, self).setEditorData(editor, index)
+        
+        rr = rr.toPyObject()
+        rr.setEditorData(editor) # the value is already contained in the rr object
+
+    def setModelData(self, editor, model, index):
+        rr = editor.property('_RegisteredArgInputType')
+        if (not rr.isValid()):
+            return super(DefaultFilterOptionsDelegate, self).setModelData(editor, model, index)
+        
+        rr = rr.toPyObject()
+        model.setData(index, QVariant(rr.valueOf(editor)))
+
+
 
 
 
 class FilterInstanceEditor(QWidget):
     def __init__(self, parent):
         super(FilterInstanceEditor, self).__init__(parent)
+
+        self._is_updating = True
 
         self.ui = Ui_FilterInstanceEditor()
         self.ui.setupUi(self)
@@ -372,8 +401,6 @@ class FilterInstanceEditor(QWidget):
 
         self.filterNameChanged.connect(self.filterInstanceDefinitionChanged)
         self.filterOptionsChanged.connect(self.filterInstanceDefinitionChanged)
-
-        self._is_updating = False
 
         self._filteroptionsmodel = DefaultFilterOptionsModel(filtername=None, parent=self)
 
@@ -388,8 +415,11 @@ class FilterInstanceEditor(QWidget):
         self._filterargbtn = overlistbuttonwidget.OverListButtonWidget(self.ui.lstOptions)
         self._filterargbtn.removeClicked.connect(self._filteroptionsmodel.removeArgument)
         self._filterargbtn.addIndexClicked.connect(self.ui.lstOptions.edit)
+        self._filterargbtn.editIndexClicked.connect(self.ui.lstOptions.edit)
 
         self._filteroptionsmodel.optionStringChanged.connect(self._filterargbtn.updateDisplay)
+
+        self._is_updating = False
         
 
     filterInstanceDefinitionChanged = pyqtSignal()
@@ -434,7 +464,7 @@ class FilterInstanceEditor(QWidget):
         ##self._filteroptionsdelegate.update_buttons()
 
     def setFilterInstanceDefinition(self, filtername, optionstring, noemit=False):
-        self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=False)
+        self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=True)
         self.setOptionString(optionstring, noemit=noemit)
 
     @pyqtSlot()
