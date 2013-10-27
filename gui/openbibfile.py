@@ -419,7 +419,10 @@ class OpenBibFile(QWidget):
 
         if (cmd.cmd == "filter"):
             filtername = cmd.info['filtername']
-            self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, cmd.text,
+            text = cmd.text
+            if (text and text[-1] == '\n'):
+                text = text[:-1]
+            self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, text,
                                                                      noemit=True)
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
             return

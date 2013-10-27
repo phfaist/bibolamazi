@@ -114,10 +114,21 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         try:
             (pargs, kwargs) = self._fopts.parse_optionstring(optionstring)
         except FilterError:
-            self.ui.lstOptions.setEnabled(False)
             return
 
         self._optionstring = optionstring
+
+        # treat pargs as arguments to the function. These are usually declared arguments, simply
+        # provided without the key.
+        i = 0
+        argoptlist = self._fopts.filteroptions()
+        while (len(pargs) and i < len(argoptlist)):
+            # this parg corresponds to a kwarg.
+            arg = argoptlist[i]
+            if (arg.argname in kwargs):
+                print "Warning: argument `%s' already given." %(arg.argname)
+            kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
+            i = i + 1 # next declared argument in argoptlist
 
         self._pargs = pargs
         self._kwargs = kwargs

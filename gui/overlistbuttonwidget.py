@@ -36,7 +36,7 @@ class OverListButtonWidget(QWidget):
         
 
     addClicked = pyqtSignal('QString')
-    editClicked = pyqtSignal('QModelIndex')
+    editClicked = pyqtSignal('QString')
     removeClicked = pyqtSignal('QString')
     addIndexClicked = pyqtSignal('QModelIndex')
     editIndexClicked = pyqtSignal('QModelIndex')
