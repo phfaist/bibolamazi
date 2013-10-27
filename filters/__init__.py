@@ -424,7 +424,7 @@ class DefaultFilterOptions:
             if (argval is None):
                 continue
 
-            set_kw_arg(arg, argval)
+            set_kw_arg(kwargs, arg, argval)
 
         return (pargs, kwargs);
 

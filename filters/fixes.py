@@ -102,15 +102,16 @@ class FixesFilter(BibFilter):
                  remove_file_field=False):
         """
         Constructor method for FixesFilter
-        
-        *fix_swedish_a: transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
+
+        Filter Arguments:
+          - fix_swedish_a(bool): transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
                         automatically); revtex tends to insert a blank after the `\\AA' otherwise.
-        *encode_utf8_to_latex: encode known non-ascii characters into latex escape sequences.
-        *encode_latex_to_utf8: encode known latex escape sequences to unicode text (utf-8).
-        *remove_type_from_phd: Removes any `type=' field from @phdthesis{..} bibtex entries.
-        *remove_full_braces: removes overprotective global braces in field values.
-        *protect_names: list of names to protect from bibtex style casing.
-        *remove_file_field: removes file={...} fields from all entries.
+          - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
+          - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
+          - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
+          - remove_full_braces: removes overprotective global braces in field values.
+          - protect_names: list of names to protect from bibtex style casing.
+          - remove_file_field(bool): removes file={...} fields from all entries.
         """
         
         BibFilter.__init__(self);
