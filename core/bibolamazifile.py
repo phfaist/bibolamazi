@@ -28,6 +28,7 @@ import os.path;
 import codecs;
 import shlex;
 import urllib;
+import cPickle as pickle;
 from datetime import datetime;
 
 import pybtex.database;
@@ -55,6 +56,65 @@ def _repl(s, dic):
     for (k,v) in dic.iteritems():
         s = re.sub(k, v, s);
     return s;
+
+
+
+def _to_bibusercacheobj(obj):
+    if (isinstance(obj, dict)):
+        return BibUserCacheDic(obj)
+    if (isinstance(obj, list)):
+        return BibUserCacheList(obj)
+    return obj
+
+
+class BibUserCacheDic(dict):
+    def __init__(self, *args, **kwargs):
+        self._on_set_bind_to = kwargs.pop('on_set_bind_to', None);
+        
+        super(BibUserCacheDic, self).__init__(*args, **kwargs)
+        
+    def __getitem__(self, key):
+        return self.get(key, BibUserCacheDic({}, on_set_bind_to=(self, key)))
+
+    def __setitem__(self, key, val):
+        super(BibUserCacheDic, self).__setitem__(key, _to_bibusercacheobj(val))
+        if (self._on_set_bind_to is not None):
+            (obj, key) = self._on_set_bind_to
+            obj[key] = self
+
+    def __repr__(self):
+        return 'BibUserCacheDic(%s)' %(super(BibUserCacheDic, self).__repr__())
+
+
+class BibUserCacheList(list):
+    def __init__(self, *args, **kwargs):
+        super(BibUserCacheList, self).__init__(*args, **kwargs)
+
+    def __setitem__(self, key, val):
+        super(BibUserCacheList, self).__setitem__(key, _to_bibusercacheobj(val))
+    
+    def __repr__(self):
+        return 'BibUserCacheList(%s)' %(super(BibUserCacheList, self).__repr__())
+
+
+class BibUserCache(object):
+    def __init__(self):
+        self.cachedic = BibUserCacheDic({})
+
+    def cache_for(self, cachename):
+        if (self.cachedic is None):
+            return None
+
+        return self.cachedic[cachename]
+
+    def has_cache(self):
+        return bool(self.cachedic)
+
+    def load_cache(self, cachefobj):
+        self.cachedic = pickle.load(cachefobj);
+
+    def save_cache(self, cachefobj):
+        pickle.dump(self.cachedic, cachefobj);
 
 
 
@@ -122,7 +182,7 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 
-class BibolamaziFile:
+class BibolamaziFile(object):
     def __init__(self, fname=None, create=False):
         """Create a BibolamaziFile object. If `fname` is provided, the file is fully loaded. If
         `create` is given and set to `True`, then an empty template is loaded and the internal
@@ -174,6 +234,7 @@ class BibolamaziFile:
             self._source_lists = None
             self._filters = None
             self._bibliographydata = None
+            self._user_cache = BibUserCache()
             
         if (to_state >= BIBOLAMAZIFILE_READ  and  self._load_state < BIBOLAMAZIFILE_READ):
             try:
@@ -188,6 +249,16 @@ class BibolamaziFile:
 
         if (to_state >= BIBOLAMAZIFILE_LOADED  and  self._load_state < BIBOLAMAZIFILE_LOADED):
             self._load_contents()
+
+            # then, try to load the cache if possible
+            cachefname = self.cachefname()
+            try:
+                with open(cachefname, 'rb') as f:
+                    logger.longdebug("Reading cache file %s" %(cachefname))
+                    self._user_cache.load_cache(f)
+            except IOError as e:
+                logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
+                pass
 
         return True
 
@@ -246,6 +317,15 @@ class BibolamaziFile:
     def bibliographydata(self):
         return self._bibliographydata;
 
+    def cache_fname(self):
+        """The file name where the cache will be stored. You don't need to access this directly,
+        the cache will be loaded and saved automatically. You should normally only use the
+        function `cache_for()`.
+        """
+        return self._fname + '.bibolamazicache';
+
+    def cache_for(self, namespace):
+        return self._user_cache
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
@@ -592,8 +672,18 @@ class BibolamaziFile:
                 w.write_stream(self._bibliographydata, f);
             
             logger.info("Updated output file `"+self._fname+"'.");
-        
-        
+
+        # if we have cache to save, save it
+        if (self._user_cache.has_cache()):
+            cachefname = self.cachefname()
+            try:
+                with open(cachefname, 'wb') as f:
+                    logger.longdebug("Writing our cache to file %s" %(cachefname))
+                    self._user_cache.load_cache(f)
+            except IOError as e:
+                logger.debug("Couldn't save cache to file `%s'." %(cachefname))
+                pass
+
         
 
 
