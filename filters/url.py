@@ -27,7 +27,7 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
 # for the arxiv info parser tool
-import arxiv;
+import arxivutil
 
 
 HELP_AUTHOR = u"""\
@@ -98,7 +98,7 @@ class UrlNormalizeFilter(BibFilter):
 
         #logger.debug("Stripped 'url' entry from field=%r", entry.fields);
 
-        arxivinfo = arxiv.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry);
+        arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry);
 
         if ('url' in entry.fields):
             urls = entry.fields['url'].split();

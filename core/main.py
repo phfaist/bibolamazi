@@ -74,7 +74,8 @@ def get_args_parser():
     parser.add_argument('--version', action=opt_action_version, nargs=0,
                         help='Show bibolamazi version number and exit.')
     parser.add_argument('outputbibfile',
-                        help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI configuration tags.');
+                        help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI '
+                        'configuration tags.');
 
     return parser
 
@@ -181,7 +182,6 @@ def run_bibolamazi_args(args):
             continue
 
         raise ValueError("Bad value for BFilter.action(): "+repr(action));
-
 
     # and output everything back to the original file.
     bfile.save_to_file();

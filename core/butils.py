@@ -48,7 +48,7 @@ class BibolamaziError(Exception):
         if (where is not None):
             fullmsg += "\n\t@: "+where;
 
-        Exception.__init__(self, fullmsg);
+        super(BibolamaziError, self).__init__(fullmsg);
 
 
 

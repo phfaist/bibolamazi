@@ -20,12 +20,13 @@
 ################################################################################
 
 
+from butils import BibolamaziError
 
-class BibFilterError(Exception):
+class BibFilterError(BibolamaziError):
     def __init__(self, filtername, errorstr):
         if (not isinstance(filtername, basestring)):
             filtername = '<unknown>'
-        Exception.__init__(self, "filter `"+filtername+"': "+errorstr);
+        super(BibFilterError, self).__init__("filter `"+filtername+"': "+errorstr);
 
 
 

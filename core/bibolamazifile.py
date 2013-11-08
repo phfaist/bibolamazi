@@ -83,6 +83,19 @@ class BibUserCacheDic(dict):
 
     def __setitem__(self, key, val):
         super(BibUserCacheDic, self).__setitem__(key, _to_bibusercacheobj(val))
+        self._do_pending_bind()
+
+    def setdefault(self, key, val):
+        super(BibUserCacheDic, self).setdefault(key, _to_bibusercacheobj(val))
+        self._do_pending_bind()
+
+    def update(self, *args, **kwargs):
+        # Problem: we need to make sure each value is filtered with _to_bibusercacheobj(val)
+        raise NotImplementedError("Can't use update() with BibUserCacheDic: not implemented")
+        #super(BibUserCacheDic, self).update(*args, **kwargs)
+        #self._do_pending_bind()
+
+    def _do_pending_bind(self):
         if (hasattr(self, '_on_set_bind_to') and self._on_set_bind_to is not None):
             (obj, key) = self._on_set_bind_to
             obj[key] = self

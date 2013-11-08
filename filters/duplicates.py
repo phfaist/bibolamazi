@@ -34,7 +34,7 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 from core.latex import latex2text
 
-import arxiv # getArXivInfo()
+import arxivutil
 
 
 
@@ -272,7 +272,7 @@ class DuplicatesFilter(BibFilter):
 
         # if they have different notes, then they're different entries
         if ( compare_neq_fld(a.fields, b.fields, 'note',
-                             lambda x: (arxiv.stripArXivInfoInNote(x) if x else "")) ):
+                             lambda x: (arxivutil.stripArXivInfoInNote(x) if x else "")) ):
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
@@ -334,7 +334,7 @@ class DuplicatesFilter(BibFilter):
 
         newbibdata = BibliographyData();
 
-        arxivaccess = arxiv.get_arxiv_cache_access(bibolamazifile)
+        arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
 
         for (key, entry) in bibdata.entries.iteritems():
             #
