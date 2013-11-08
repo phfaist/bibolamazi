@@ -192,7 +192,7 @@ class ArxivCacheAccess:
 def get_arxiv_cache_access(bibolamazifile):
     arxiv_info_cache = bibolamazifile.cache_for('arxiv_info')
 
-    logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))
+    #logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))
 
     arxivaccess = ArxivCacheAccess(arxiv_info_cache['entries'], bibolamazifile);
     

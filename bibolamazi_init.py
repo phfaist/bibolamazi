@@ -12,5 +12,7 @@ if sys.hexversion < 0x02070000:
 # ----------------------------------
 thisdir = os.path.dirname(os.path.realpath(__file__));
 sys.path += [thisdir,
-             thisdir + '/3rdparty/pybtex'];
+             thisdir + '/3rdparty/pybtex',
+             thisdir + '/3rdparty/arxiv2bib',
+             ];
 
