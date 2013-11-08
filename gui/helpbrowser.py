@@ -30,7 +30,7 @@ class HelpBrowser(QWidget):
 
         self.openTabs = []
 
-        for filt in filters.__all__:
+        for filt in filters.detect_filters():
             fbutton = QPushButton('%s' % (filt), self)
             fbutton.setProperty('helppath', 'filters/%s' %(filt))
             fbutton.setToolTip(filters.get_filter_class(filt).getHelpDescription())

@@ -60,6 +60,11 @@ def _repl(s, dic):
 
 
 def _to_bibusercacheobj(obj):
+    if (isinstance(obj, BibUserCacheDic) or isinstance(obj, BibUserCacheList)):
+        # make sure we don't make copies of these objects, but keep references
+        # to the original instance. Especially important for the on_set_bind_to
+        # feature.
+        return obj
     if (isinstance(obj, dict)):
         return BibUserCacheDic(obj)
     if (isinstance(obj, list)):
@@ -81,6 +86,7 @@ class BibUserCacheDic(dict):
         if (self._on_set_bind_to is not None):
             (obj, key) = self._on_set_bind_to
             obj[key] = self
+            self._on_set_bind_to = None
 
     def __repr__(self):
         return 'BibUserCacheDic(%s)' %(super(BibUserCacheDic, self).__repr__())
@@ -114,7 +120,7 @@ class BibUserCache(object):
         self.cachedic = pickle.load(cachefobj);
 
     def save_cache(self, cachefobj):
-        pickle.dump(self.cachedic, cachefobj);
+        pickle.dump(self.cachedic, cachefobj, protocol=2);
 
 
 
@@ -139,7 +145,7 @@ class BibolamaziFileCmd:
 CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%';
 CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
 
-AFTER_CONFIG_TEXT = _repl("""\
+AFTER_CONFIG_TEXT = """\
 %
 %
 % ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
@@ -165,9 +171,7 @@ AFTER_CONFIG_TEXT = _repl("""\
 
 
 
-""", {r'__BIBOLAMAZI_VERSION__': butils.get_version(),
-      r'__DATETIME_NOW__': datetime.now().isoformat()
-      });
+""";
 
                     
 # this is fixed to utf-8. No alternatives, sorry.
@@ -256,7 +260,7 @@ class BibolamaziFile(object):
                 with open(cachefname, 'rb') as f:
                     logger.longdebug("Reading cache file %s" %(cachefname))
                     self._user_cache.load_cache(f)
-            except IOError as e:
+            except (IOError, EOFError,):
                 logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
                 pass
 
@@ -317,7 +321,7 @@ class BibolamaziFile(object):
     def bibliographydata(self):
         return self._bibliographydata;
 
-    def cache_fname(self):
+    def cachefname(self):
         """The file name where the cache will be stored. You don't need to access this directly,
         the cache will be loaded and saved automatically. You should normally only use the
         function `cache_for()`.
@@ -325,7 +329,7 @@ class BibolamaziFile(object):
         return self._fname + '.bibolamazicache';
 
     def cache_for(self, namespace):
-        return self._user_cache
+        return self._user_cache.cache_for(namespace)
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
@@ -548,7 +552,9 @@ class BibolamaziFile(object):
                 filname = cmd.info['filtername'];
                 filoptions = cmd.text;
                 try:
-                    self._filters.append(filters.make_filter(filname, filoptions));
+                    filterinstance = filters.make_filter(filname, filoptions)
+                    filterinstance.setBibolamaziFile(self)
+                    self._filters.append(filterinstance)
                 except filters.NoSuchFilter:
                     self._raise_parse_error("No such filter: `%s'" %(filname),
                                             lineno=cmd.lineno);
@@ -665,7 +671,10 @@ class BibolamaziFile(object):
         with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header);
             f.write(self._config);
-            f.write(AFTER_CONFIG_TEXT);
+            f.write(_repl(AFTER_CONFIG_TEXT, {
+                r'__BIBOLAMAZI_VERSION__': butils.get_version(),
+                r'__DATETIME_NOW__': datetime.now().isoformat()
+                }));
 
             if (self._bibliographydata):
                 w = outputbibtex.Writer();
@@ -679,7 +688,7 @@ class BibolamaziFile(object):
             try:
                 with open(cachefname, 'wb') as f:
                     logger.longdebug("Writing our cache to file %s" %(cachefname))
-                    self._user_cache.load_cache(f)
+                    self._user_cache.save_cache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file `%s'." %(cachefname))
                 pass

@@ -88,6 +88,6 @@ class OrderEntriesFilter(BibFilter):
         return
 
 
-def get_class():
+def bibolamazi_filter_class():
     return OrderEntriesFilter;
 

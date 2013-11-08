@@ -235,6 +235,6 @@ class FixesFilter(BibFilter):
         return entry;
     
 
-def get_class():
+def bibolamazi_filter_class():
     return FixesFilter;
 

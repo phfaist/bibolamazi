@@ -30,7 +30,7 @@ class BibFilterError(Exception):
 
 
 
-class BibFilter:
+class BibFilter(object):
 
     # constants
     BIB_FILTER_SINGLE_ENTRY = 1;
@@ -44,13 +44,14 @@ class BibFilter:
 
    
     def __init__(self, *pargs, **kwargs):
-        pass
+        self._bibolamazifile = None;
+        super(BibFilter, self).__init__()
 
     def name(self):
-        return None;
+        raise BibFilterError('<no name>', 'BibFilter subclasses must reimplement name()!')
 
     def action(self):
-        return -1;
+        raise BibFilterError(self.name(), 'BibFilter subclasses must reimplement action()!')
 
 
     def filter_bibentry(self, x):
@@ -62,6 +63,42 @@ class BibFilter:
     def filter_bibolamazifile(self, x):
         raise BibFilterError(self.name(), 'filter_bibolamazifile() not implemented !')
 
+
+
+    def setBibolamaziFile(self, bibolamazifile):
+        """
+        Remembers `bibolamazifile` as the `BibolamaziFile` object that we will be acting on.
+
+        There's no use overriding this. When writing filters, there's also no need calling this
+        explicitly, it's done in `BibolamaziFile`.
+        """
+        self._bibolamazifile = bibolamazifile;
+
+    def bibolamaziFile(self):
+        """
+        Get the `BibolamaziFile` object that we are acting on. (The one previously set by
+        `setBibolamaziFile()`.)
+
+        There's no use overriding this.
+        """
+        return self._bibolamazifile;
+
+    def cache_for(self, namespace):
+        """
+        Get access to the cache data stored within the namespace `namespace`. This directly
+        queries the cache stored in the `BibolamaziFile` object set with
+        `setBibolamaziFile()`.
+
+        Returns a `BibUserCacheDic` object, or `None` if no bibolamazi file was set (which can
+        only happen if you instantiate the filter explicitly yourself, which is usually not the
+        case).
+
+        When writing your filter, cache works transparently. Just call this function to access
+        a specific cache.
+        """
+        if (self._bibolamazifile is not None):
+            return self._bibolamazifile.cache_for(namespace)
+        return None
 
 
     def getRunningMessage(self):

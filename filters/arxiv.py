@@ -27,115 +27,10 @@ from core.blogger import logger;
 from core import butils;
 
 
-# possible modes in which to operate
-MODE_NONE = 0;
-MODE_UNPUBLISHED_NOTE = 1;
-MODE_UNPUBLISHED_NOTE_NOTITLE = 2;
-MODE_NOTE = 3;
-MODE_EPRINT = 4;
-MODE_STRIP = 5;
-
-# a regex that we will need often
-rxarxivinnote = re.compile(r'(([;,\{]?\s+)?|\b|^\s*)arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))(\s*[;,\}]?\s*|$)',
-                           re.IGNORECASE);
-rxarxivurl    = re.compile(r'(([;,\{]?\s+)?|\b|^\s*)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
-                           re.IGNORECASE);
-
-# extract arXiv info from an entry
-def getArXivInfo(entry):
-    """
-    Extract arXiv information from a pybtex.database.Entry bibliographic entry.
-
-    Returns upon success a dictionary of the form
-        { 'primaryclass': <primary class, if available>,
-          'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
-          'published': True/False <whether this entry was published in a journal other than arxiv>
-        }
-
-    If no arXiv information was detected, then this function returns None.
-    """
-    
-    fields = entry.fields;
-
-    d =  { 'primaryclass': None ,
-           'arxivid': None ,
-           'published': True ,
-           };
-    
-    if (entry.type == u'unpublished' or entry.type == u'misc'):
-        d['published'] = False
-
-    # if journal is the arXiv, it's not published.
-    if ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
-        d['published'] = False
-
-    # if there's no journal, it's the arxiv.
-    if ('journal' not in fields or fields['journal'] == ""):
-        d['published'] = False
-        
-
-    if ('eprint' in fields):
-        # this gives the arxiv ID
-        d['arxivid'] = fields['eprint'];
-        m = re.match('^([-\w.]+)/', d['arxivid']);
-        if (m):
-            d['primaryclass'] = m.group(1);
-
-    if ('primaryclass' in fields):
-        d['primaryclass'] = fields['primaryclass'];
-
-    def processNoteField(notefield, d):
-        m = rxarxivinnote.search(notefield);
-        if m:
-            if (not d['arxivid']):
-                try:
-                    d['arxivid'] = m.group('arxivid');
-                except IndexError:
-                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
-                    pass
-            if (not d['primaryclass']):
-                try:
-                    d['primaryclass'] = m.group('primaryclass');
-                except IndexError:
-                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", notefield, m)
-                    pass
-        m = rxarxivurl.search(notefield);
-        if m:
-            if (not d['arxivid']):
-                try:
-                    d['arxivid'] = m.group('arxivid');
-                except IndexError:
-                    logger.longdebug("rxarxivurl: indexerror for 'arxivid' group in note=%r, m=%r", notefield, m);
-                    pass
-                
-    if ('note' in fields):
-        processNoteField(fields['note'], d);
-
-    if ('annote' in fields):
-        processNoteField(fields['annote'], d);
-
-    if ('url' in fields):
-        processNoteField(fields['url'], d);
-
-    if (d['arxivid'] is None):
-        # no arXiv info.
-        return None
-
-    # FIX: if archive-ID is old style, and does not contain the primary class, add it as "quant-ph/XXXXXXX"
-    if (re.match(r'^\d{7}$', d['arxivid']) and d['primaryclass'] and len(d['primaryclass']) > 0):
-        d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
-    
-    logger.longdebug("got arXiv information: %r." %(d));
-    return d
 
 
-def stripArXivInfoInNote(notestr):
-    """Assumes that notestr is a string in a note={} field of a bibtex entry, and strips any arxiv identifier
-    information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
-    """
+# --- help texts ---
 
-    return rxarxivurl.sub('', rxarxivinnote.sub('', notestr));
-    
 
 
 HELP_AUTHOR = u"""\
@@ -195,6 +90,21 @@ has no journal name, or if the journal name contains "arxiv".
 """
 
 
+
+# --- arxiv info handling modes ---
+
+
+# possible modes in which to operate
+MODE_NONE = 0;
+MODE_UNPUBLISHED_NOTE = 1;
+MODE_UNPUBLISHED_NOTE_NOTITLE = 2;
+MODE_NOTE = 3;
+MODE_EPRINT = 4;
+MODE_STRIP = 5;
+
+
+# All these defs are useful for the GUI
+
 _modes = [
     ('none', MODE_NONE),
     ('unpublished-note', MODE_UNPUBLISHED_NOTE),
@@ -249,9 +159,56 @@ class Mode:
 
     def __hash__(self):
         return hash(self.mode)
-    
 
-# the filter itself
+
+
+# --- the cache mechanism ---
+
+class ArxivCacheAccess:
+    def __init__(self, entrydic, bibolamazifile):
+        self.entrydic = entrydic;
+        self.bibolamazifile = bibolamazifile;
+
+    def rebuild_cache(self):
+        self.entrydic.clear()
+        self.complete_cache()
+
+    def complete_cache(self):
+        bibdata = self.bibolamazifile.bibliographydata()
+        for k,v in bibdata.entries.iteritems():
+            if (k in self.entrydic):
+                continue
+            arinfo = detectEntryArXivInfo(v);
+            self.entrydic[k] = arinfo;
+            logger.longdebug('got arXiv information for `%s'': %r.' %(k, arinfo))
+
+    def getArXivInfo(self, entrykey):
+        if (entrykey not in self.entrydic):
+            self.complete_cache()
+
+        return self.entrydic.get(entrykey, None)
+            
+
+def get_arxiv_cache_access(bibolamazifile):
+    arxiv_info_cache = bibolamazifile.cache_for('arxiv_info')
+
+    logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))
+
+    arxivaccess = ArxivCacheAccess(arxiv_info_cache['entries'], bibolamazifile);
+    
+    if not arxiv_info_cache['cache_built']:
+        arxivaccess.rebuild_cache()
+        arxiv_info_cache['cache_built'] = True
+
+    return arxivaccess
+
+
+
+
+
+# --- the filter object itself ---
+
+
 class ArxivNormalizeFilter(BibFilter):
     
     helpauthor = HELP_AUTHOR
@@ -299,7 +256,7 @@ class ArxivNormalizeFilter(BibFilter):
         
         #import pdb;pdb.set_trace()
 
-        arxivinfo = getArXivInfo(entry);
+        arxivinfo = get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
 
         if (arxivinfo is None):
             # no arxiv info--don't do anything
@@ -394,6 +351,122 @@ class ArxivNormalizeFilter(BibFilter):
 
 
 
-def get_class():
+def bibolamazi_filter_class():
     return ArxivNormalizeFilter;
+
+
+
+
+
+
+
+# --- code to detect arXiv info ---
+
+
+# a regex that we will need often
+rxarxivinnote = re.compile(
+    r'(([;,\{]?\s+)?|\b|^\s*)'+
+    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))'+
+    r'(\s*[;,\}]?\s*|$)',
+    re.IGNORECASE
+    );
+rxarxivurl    = re.compile(
+    r'(([;,\{]?\s+)?|\b|^\s*)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
+    re.IGNORECASE
+    );
+
+
+# extract arXiv info from an entry
+def detectEntryArXivInfo(entry):
+    """
+    Extract arXiv information from a pybtex.database.Entry bibliographic entry.
+
+    Returns upon success a dictionary of the form
+        { 'primaryclass': <primary class, if available>,
+          'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
+          'published': True/False <whether this entry was published in a journal other than arxiv>
+        }
+
+    If no arXiv information was detected, then this function returns None.
+    """
+    
+    fields = entry.fields;
+
+    d =  { 'primaryclass': None ,
+           'arxivid': None ,
+           'published': True ,
+           };
+    
+    if (entry.type == u'unpublished' or entry.type == u'misc'):
+        d['published'] = False
+
+    # if journal is the arXiv, it's not published.
+    if ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
+        d['published'] = False
+
+    # if there's no journal, it's the arxiv.
+    if ('journal' not in fields or fields['journal'] == ""):
+        d['published'] = False
+        
+
+    if ('eprint' in fields):
+        # this gives the arxiv ID
+        d['arxivid'] = fields['eprint'];
+        m = re.match('^([-\w.]+)/', d['arxivid']);
+        if (m):
+            d['primaryclass'] = m.group(1);
+
+    if ('primaryclass' in fields):
+        d['primaryclass'] = fields['primaryclass'];
+
+    def processNoteField(notefield, d):
+        m = rxarxivinnote.search(notefield);
+        if m:
+            if (not d['arxivid']):
+                try:
+                    d['arxivid'] = m.group('arxivid');
+                except IndexError:
+                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
+                    pass
+            if (not d['primaryclass']):
+                try:
+                    d['primaryclass'] = m.group('primaryclass');
+                except IndexError:
+                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", notefield, m)
+                    pass
+        m = rxarxivurl.search(notefield);
+        if m:
+            if (not d['arxivid']):
+                try:
+                    d['arxivid'] = m.group('arxivid');
+                except IndexError:
+                    logger.longdebug("rxarxivurl: indexerror for 'arxivid' group in note=%r, m=%r", notefield, m);
+                    pass
+                
+    if ('note' in fields):
+        processNoteField(fields['note'], d);
+
+    if ('annote' in fields):
+        processNoteField(fields['annote'], d);
+
+    if ('url' in fields):
+        processNoteField(fields['url'], d);
+
+    if (d['arxivid'] is None):
+        # no arXiv info.
+        return None
+
+    # FIX: if archive-ID is old style, and does not contain the primary class, add it as "quant-ph/XXXXXXX"
+    if (re.match(r'^\d{7}$', d['arxivid']) and d['primaryclass'] and len(d['primaryclass']) > 0):
+        d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
+    
+    return d
+
+
+def stripArXivInfoInNote(notestr):
+    """Assumes that notestr is a string in a note={} field of a bibtex entry, and strips any arxiv identifier
+    information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
+    """
+
+    return rxarxivurl.sub('', rxarxivinnote.sub('', notestr));
 

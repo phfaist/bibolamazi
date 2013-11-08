@@ -98,7 +98,7 @@ class UrlNormalizeFilter(BibFilter):
 
         #logger.debug("Stripped 'url' entry from field=%r", entry.fields);
 
-        arxivinfo = arxiv.getArXivInfo(entry);
+        arxivinfo = arxiv.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry);
 
         if ('url' in entry.fields):
             urls = entry.fields['url'].split();
@@ -140,6 +140,6 @@ class UrlNormalizeFilter(BibFilter):
         return entry
 
 
-def get_class():
+def bibolamazi_filter_class():
     return UrlNormalizeFilter;
 

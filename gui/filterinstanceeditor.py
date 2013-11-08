@@ -407,7 +407,7 @@ class FilterInstanceEditor(QWidget):
         self.ui = Ui_FilterInstanceEditor()
         self.ui.setupUi(self)
         
-        for filtername in filters.__all__:
+        for filtername in filters.detect_filters():
             self.ui.cbxFilter.addItem(filtername)
 
         self.filterNameChanged.connect(self.filterInstanceDefinitionChanged)

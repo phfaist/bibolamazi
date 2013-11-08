@@ -267,8 +267,8 @@ List of available filters:
 
 --------------------------
 
-Use  bibolamazi --help <filter>  for more information about each filter and
-its options.
+Use  bibolamazi --help <filter>  for more information about a specific filter
+and its options.
 
 
 """
@@ -290,7 +290,7 @@ def help_list_filters():
 
     filter_list = [
         fmt_filter_helpline(f)
-        for f in filters.__all__
+        for f in filters.detect_filters()
         ]
 
     return FILTERS_HELP % {'filter_list': "\n".join(filter_list)};

@@ -189,7 +189,7 @@ class DuplicatesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
-    def compare_entries_same(self, a, b):
+    def compare_entries_same(self, a, b, arxivaccess):
 
         # compare author list first
 
@@ -252,8 +252,8 @@ class DuplicatesFilter(BibFilter):
             logger.debug("entries have same doi: %r, %r" %(a.key, b.key))
             return True
 
-        arxiv_a = arxiv.getArXivInfo(a);
-        arxiv_b = arxiv.getArXivInfo(b);
+        arxiv_a = arxivaccess.getArXivInfo(a.key);
+        arxiv_b = arxivaccess.getArXivInfo(b.key);
 
         #print "arxiv_a=%r, arxiv_b=%r" %(arxiv_a, arxiv_b)
         
@@ -334,6 +334,8 @@ class DuplicatesFilter(BibFilter):
 
         newbibdata = BibliographyData();
 
+        arxivaccess = arxiv.get_arxiv_cache_access(bibolamazifile)
+
         for (key, entry) in bibdata.entries.iteritems():
             #
             # search the newbibdata object, in case this entry already exists.
@@ -341,7 +343,7 @@ class DuplicatesFilter(BibFilter):
             logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
             for (nkey, nentry) in newbibdata.entries.iteritems():
-                if self.compare_entries_same(entry, nentry):
+                if self.compare_entries_same(entry, nentry, arxivaccess):
                     logger.longdebug('    ... matches existing entry %s!', nkey);
                     is_duplicate_of = nkey;
                     break
@@ -389,7 +391,7 @@ class DuplicatesFilter(BibFilter):
         return
 
 
-def get_class():
+def bibolamazi_filter_class():
     return DuplicatesFilter;
 
 
@@ -397,6 +399,7 @@ def get_class():
 
 
 def delatex(s):
-    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
-    s = s.replace(r'\ ', r'\~');
+    # Fixed: bug in pybtex.
+    #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
+    #    s = s.replace(r'\ ', r'\~');
     return latex2text.latex2text(s);

@@ -70,7 +70,7 @@ def get_args_parser():
                         help="Show a list of available filters along with their description, and exit.");
     parser.add_argument('-h', '--help', action=opt_action_help, nargs='?', metavar='filter',
                         help='Show this help message and exit. If filter is given, show information and '+
-                        'help text for that filter. Available filters are: '+", ".join(filters.__all__))
+                        'help text for that filter. See --list-filters for a list of available filters.')
     parser.add_argument('--version', action=opt_action_version, nargs=0,
                         help='Show bibolamazi version number and exit.')
     parser.add_argument('outputbibfile',

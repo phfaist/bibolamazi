@@ -23,6 +23,8 @@
 import sys
 import importlib
 import re
+import os
+import os.path
 import shlex
 import inspect
 import argparse
@@ -34,14 +36,10 @@ from core.blogger import logger
 from core import butils
 
 
-# list all filters here.
-__all__ = ( 'arxiv',
-            'duplicates',
-            'url',
-            'nameinitials',
-            'fixes',
-            'orderentries',
-            )
+# don't allow the use of "from filters import *" -- it's time consuming to detect all filters; so
+# detect the filters only when needed, when calling `detect_filters()`
+__all__ = []
+
 
 
 # some exception classes.
@@ -90,7 +88,7 @@ class FilterCreateArgumentError(FilterError):
 
 # store additional information about the modules.
 
-filter_modules = {};
+_filter_modules = {};
 
 def get_module(name, raise_nosuchfilter=True):
     name = str(name)
@@ -98,27 +96,102 @@ def get_module(name, raise_nosuchfilter=True):
         raise ValueError("Filter name may only contain alphanum chars and dots")
 
     # already open
-    if (name in filter_modules):
-        return filter_modules[name];
+    if (name in _filter_modules):
+        return _filter_modules[name];
 
     # try to open it
     try:
         mod = importlib.import_module('filters.'+name);
-        filter_modules[name] = mod;
+        _filter_modules[name] = mod;
     except ImportError:
         if (not raise_nosuchfilter):
             return None
         raise NoSuchFilter(name);
 
     # and return it
-    return filter_modules[name];
+    return _filter_modules[name];
+
+
+
+_rxsuffix = re.compile(r'\.pyc?$')
+
+##def _detect_list_of_all_filter_modules(file):
+##    thisdir = os.path.dirname(os.path.realpath(file));
+
+##    for fname in os.listdir(thisdir):
+##        # make sure this is a .py or .pyc file
+##        if (_rxsuffix.search(fname) is None):
+##            continue
+
+##        # deduce the module name relative to here
+##        modname = fname
+##        modname = _rxsuffix.sub('', modname)
+        
+##        # is a filter module?
+##        m = get_module(modname, False)
+##        if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
+##            continue
+
+##    logger.debug('Filters detected.')
+
+##    return sorted(_filter_modules.keys());
+
+_filter_list = None;
+
+def detect_filters(force_redetect=False):
+    global _filter_list
+    
+    if (_filter_list is not None and not force_redetect):
+        return _filter_list;
+    
+    thisdir = os.path.dirname(os.path.realpath(__file__));
+
+    _filter_list = [];
+
+    logger.debug('Detecting filters ...')
+
+    for (root, dirs, files) in os.walk(thisdir):
+        if (not '__init__.py' in files):
+            # skip this directory, not a python module. also skip all subdirectories.
+            dirs[:] = []
+            continue
+
+        for fname in sorted(files):
+            # make sure this is a .py or .pyc file
+            if (_rxsuffix.search(fname) is None):
+                continue
+            if (fname.startswith('__init__.')):
+                continue
+
+            # deduce the module name relative to here
+            modname = os.path.join(os.path.relpath(root, thisdir), fname)
+            modname = _rxsuffix.sub('', modname)
+            if (modname.startswith('./')): modname = modname[2:]
+            modname = modname.replace('/', '.')
+
+            if (modname in _filter_list):
+                # we already have this one
+                continue
+            
+            # is a filter module?
+            m = get_module(modname, False)
+            if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
+                continue
+
+            # yes, _is_ a filter module.
+            _filter_list.append(modname)
+
+    logger.debug('Filters detected.')
+
+    return _filter_list;
+
 
 
 def get_filter_class(name):
     
     fmodule = get_module(name);
 
-    return fmodule.get_class();
+    return fmodule.bibolamazi_filter_class();
 
 
 def filter_uses_default_arg_parser(name):
@@ -150,7 +223,7 @@ def make_filter(name, optionstring):
 
     fmodule = get_module(name);
 
-    fclass = fmodule.get_class();
+    fclass = fmodule.bibolamazi_filter_class();
 
     pargs = [];
     kwargs = {};
