@@ -59,31 +59,38 @@ class OrderEntriesFilter(BibFilter):
     def action(self):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
+    def getRunningMessage(self):
+        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographydata().entries))
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        bibdata = bibolamazifile.bibliographydata();
-
         logger.debug("ordering entries according to mode=%r." %(self.ordermode));
 
         if (self.ordermode == ORDER_CITATION_KEY_ALPHA):
-            newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
+            
+            bibdata = bibolamazifile.bibliographydata();
+
+            #newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
+            entries = bibdata.entries;
+
+            # bibdata.entries is of type pybtex.util.OrderedCaseInsensitiveDict, which has
+            # an attribute `order`, which is a list of keys in the relevant order. So use
+            # list.sort(), which is more efficient.
+            bibdata.entries.order.sort()
+
+            #newbibdata = BibliographyData(entries=newentries);
+            #bibolamazifile.setBibliographyData(newbibdata);
 
         else:
             if (self.ordermode != ORDER_RAW):
                 logger.error("Bad order mode: %r !" %(self.ordermode));
                 
-            newentries = bibdata.entries.iteritems();
+            # don't do anything: natural order.
             
-
-        newbibdata = BibliographyData(entries=newentries);
-
         logger.debug("ordered entries as wished.");
-
-        bibolamazifile.setBibliographyData(newbibdata);
 
         return
 

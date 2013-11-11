@@ -189,16 +189,7 @@ class DuplicatesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
-    def compare_entries_same(self, a, b, arxivaccess):
-
-        # compare author list first
-
-        apers = a.persons.get('author',[]);
-        bpers = b.persons.get('author',[]);
-
-        if (len(apers) != len(bpers)):
-            return False
-
+    def prepare_entry_cache(self, a, cache_a, arxivaccess):
         def getlast(pers):
             # join last names
             last = unicodedata.normalize('NFKD', delatex(" ".join(pers.prelast()+pers.last())).split()[-1].lower());
@@ -211,9 +202,43 @@ class DuplicatesFilter(BibFilter):
             initial = pers.first(True)
             return (last, initial);
 
+        cache_a['pers'] = [ getlast(pers) for pers in a.persons.get('author',[]) ]
+
+        cache_a['arxivinfo'] = arxivaccess.getArXivInfo(a.key)
+
+        note = a.fields.get('note', '')
+        cache_a['note_cleaned'] = (arxivutil.stripArXivInfoInNote(note) if note else "")
+        
+        cache_a['j_abbrev'] = re.sub('[^A-Z]', '', a.fields.get('journal', ''));
+
+        def cleantitle(title):
+            title = unicodedata.normalize('NFKD', unicode(delatex(title).lower()))
+            # remove any unicode compositions (accents, etc.)
+            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
+            # remove any unusual characters
+            title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
+            # remove any inline math
+            title = re.sub(r'$[^$]+$', '', title)
+            # clean up whitespace
+            title = re.sub(r'\s+', ' ', title)
+            return title.strip()
+
+        cache_a['title_clean'] = cleantitle(a.fields.get('title', ''))
+
+
+    def compare_entries_same(self, a, b, cache_a, cache_b):
+
+        # compare author list first
+
+        apers = cache_a['pers']
+        bpers = cache_b['pers']
+
+        if (len(apers) != len(bpers)):
+            return False
+
         for k in range(len(apers)):
-            (lasta, ina) = getlast(apers[k])
-            (lastb, inb) = getlast(bpers[k])
+            (lasta, ina) = apers[k]
+            (lastb, inb) = bpers[k]
             if (lasta != lastb or (ina and inb and ina != inb)):
                 #print "Authors %r and %r differ" %((lasta, ina), (lastb, inb))
                 return False
@@ -221,8 +246,8 @@ class DuplicatesFilter(BibFilter):
         #print "Author list matches! %r and %r "%(apers,bpers);
 
         def compare_neq_fld(x, y, fld, filt=lambda x: x):
-            xval = x.get(fld, y.get(fld));
-            yval = y.get(fld, x.get(fld));
+            xval = x.get(fld, None);
+            yval = y.get(fld, None);
             try:
                 xval = xval.strip();
             except AttributeError:
@@ -232,7 +257,7 @@ class DuplicatesFilter(BibFilter):
             except AttributeError:
                 pass
 
-            return filt(xval) != filt(yval) ;
+            return xval is not None and yval is not None and filt(xval) != filt(yval) ;
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
@@ -252,8 +277,8 @@ class DuplicatesFilter(BibFilter):
             logger.debug("entries have same doi: %r, %r" %(a.key, b.key))
             return True
 
-        arxiv_a = arxivaccess.getArXivInfo(a.key);
-        arxiv_b = arxivaccess.getArXivInfo(b.key);
+        arxiv_a = cache_a['arxivinfo']
+        arxiv_b = cache_b['arxivinfo']
 
         #print "arxiv_a=%r, arxiv_b=%r" %(arxiv_a, arxiv_b)
         
@@ -271,14 +296,15 @@ class DuplicatesFilter(BibFilter):
 
 
         # if they have different notes, then they're different entries
-        if ( compare_neq_fld(a.fields, b.fields, 'note',
-                             lambda x: (arxivutil.stripArXivInfoInNote(x) if x else "")) ):
+        note_cl_a = cache_a['note_cleaned']
+        note_cl_b = cache_b['note_cleaned']
+        if (note_cl_a and note_cl_b and note_cl_a != note_cl_b):
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
-        j_abbrev_a = re.sub('[^A-Z]', '', a.fields.get('journal', b.fields.get('journal', '')));
-        j_abbrev_b = re.sub('[^A-Z]', '', b.fields.get('journal', a.fields.get('journal', '')));
-        if (j_abbrev_a != j_abbrev_b):
+        j_abbrev_a = cache_a['j_abbrev']
+        j_abbrev_b = cache_b['j_abbrev']
+        if (j_abbrev_a and j_abbrev_b and j_abbrev_a != j_abbrev_b):
             #print "journals differ!"
             return False
 
@@ -290,22 +316,10 @@ class DuplicatesFilter(BibFilter):
             #print "number differ!"
             return False
 
-        def cleantitle(title):
-            title = unicodedata.normalize('NFKD', delatex(title).lower())
-            # remove any unicode compositions (accents, etc.)
-            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
-            # remove any unusual characters
-            title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
-            # remove any inline math
-            title = re.sub(r'$[^$]+$', '', title)
-            # clean up whitespace
-            title = re.sub(r'\s+', ' ', title)
-            return title.strip()
+        titlea = cache_a['title_clean']
+        titleb = cache_b['title_clean']
 
-        titlea = cleantitle(a.fields.get('title', b.fields.get('title', '')))
-        titleb = cleantitle(b.fields.get('title', a.fields.get('title', '')))
-
-        if (titlea != titleb):
+        if (titlea and titleb and titlea != titleb):
             logger.debug("Titles of entries %r and %r differ." %(a.key, b.key))
             return False
 
@@ -336,6 +350,23 @@ class DuplicatesFilter(BibFilter):
 
         arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
 
+        # In a future version, we could imagine using the bibolamazi cache, and not recalculating
+        # these values if they are already in the cache. However:
+        #
+        # NOTE: It is important that this cache is UP TO DATE, because otherwise if the user notices
+        #       that two entries are matched falsely as duplicates and modifies one of the entries,
+        #       it has to be picked up in the cache!
+        #
+        # So the simplest is to always recalculate the cache for all entries. It's fast in practice.
+        # We actually don't need to store it in the bibolamazi cache.
+        #
+        #cache_entries = self.cache_for('duplicates_entryinfo_cache')
+        cache_entries = {};
+
+        for (key, entry) in bibdata.entries.iteritems():
+            cache_entries[key] = {}
+            self.prepare_entry_cache(entry, cache_entries[key], arxivaccess)
+
         for (key, entry) in bibdata.entries.iteritems():
             #
             # search the newbibdata object, in case this entry already exists.
@@ -343,7 +374,7 @@ class DuplicatesFilter(BibFilter):
             logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
             for (nkey, nentry) in newbibdata.entries.iteritems():
-                if self.compare_entries_same(entry, nentry, arxivaccess):
+                if self.compare_entries_same(entry, nentry, cache_entries[key], cache_entries[nkey]):
                     logger.longdebug('    ... matches existing entry %s!', nkey);
                     is_duplicate_of = nkey;
                     break
@@ -402,4 +433,4 @@ def delatex(s):
     # Fixed: bug in pybtex.
     #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
     #    s = s.replace(r'\ ', r'\~');
-    return latex2text.latex2text(s);
+    return latex2text.latex2text(unicode(s));

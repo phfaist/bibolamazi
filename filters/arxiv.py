@@ -173,7 +173,7 @@ class ArxivNormalizeFilter(BibFilter):
 
 
     def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
-                 theses_count_as_published=False, warn_journal_ref=False):
+                 theses_count_as_published=False, warn_journal_ref=True):
         """
         Constructor method for ArxivNormalizeFilter
 
@@ -187,7 +187,8 @@ class ArxivNormalizeFilter(BibFilter):
                    @mastersthesis count as published entries, otherwise not (the default).
           - warn_journal_ref(bool): if True, then for all articles that look unpublished in our
                    database, but for which the arXiv.org API reports a published version, we produce
-                   a warning.
+                   a warning (this is the default; set this option to false to suppress these
+                   warnings).
 
         """
         
