@@ -22,9 +22,10 @@
 
 import re
 
-from core.bibfilter import BibFilter, BibFilterError, EnumArgType;
-from core.blogger import logger;
-from core import butils;
+from core import bibfilter
+from core.bibfilter import BibFilter, BibFilterError
+from core.blogger import logger
+from core import butils
 
 import arxivutil
 
@@ -88,6 +89,11 @@ ArXiv information is determined by inspecting the fields 'arxivid', 'eprint', 'p
 and 'note'. The entry is determined as unpublished if it is of type "unpublished", or if it
 has no journal name, or if the journal name contains "arxiv".
 
+Missing information, if an arXiv ID was detected, is queried on the arxiv.org database using
+the arxiv.org API (via the arxiv2bib module, Copyright (c) 2012, Nathan Grigg, New BSD License.
+See the original copyright in the folder '3rdparty/arxiv2bib/' of this project)
+
+
 """
 
 
@@ -114,52 +120,54 @@ _modes = [
     ('eprint', MODE_EPRINT),
     ('strip', MODE_STRIP),
     ];
-_modes_dict = dict(_modes)
+#_modes_dict = dict(_modes)
+
+Mode = bibfilter.enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
 
 
-class Mode:
-    type_arg_input = EnumArgType([x for (x,v) in _modes])
+##class Mode:
+##    type_arg_input = EnumArgType([x for (x,v) in _modes])
     
-    def __init__(self, val=None):
-        if (not val):
-            self.mode = MODE_NONE
-        elif isinstance(val, Mode):
-            self.mode = val.mode
-        else:
-            self.mode = self._parse_mode(val)
+##    def __init__(self, val=None):
+##        if (not val):
+##            self.mode = MODE_NONE
+##        elif isinstance(val, Mode):
+##            self.mode = val.mode
+##        else:
+##            self.mode = self._parse_mode(val)
 
-    def _parse_mode(self, mode):
-        if (isinstance(mode, int)):
-            return mode
+##    def _parse_mode(self, mode):
+##        if (isinstance(mode, int)):
+##            return mode
         
-        if (mode is None):
-            return MODE_NONE
-        if (str(mode) in _modes_dict):
-            return _modes_dict.get(str(mode))
-        try:
-            return int(mode)
-        except ValueError:
-            pass
+##        if (mode is None):
+##            return MODE_NONE
+##        if (str(mode) in _modes_dict):
+##            return _modes_dict.get(str(mode))
+##        try:
+##            return int(mode)
+##        except ValueError:
+##            pass
 
-        raise ValueError("arxiv: Invalid mode: %r" %(mode))
+##        raise ValueError("arxiv: Invalid mode: %r" %(mode))
 
-    # so that we can use a Mode object like an int
-    def __eq__(self, other):
-        if (isinstance(other, Mode)):
-            return self.mode == other.mode
-        return self.mode == self._parse_mode(other)
+##    # so that we can use a Mode object like an int
+##    def __eq__(self, other):
+##        if (isinstance(other, Mode)):
+##            return self.mode == other.mode
+##        return self.mode == self._parse_mode(other)
 
-    def __str__(self):
-        ok = [x for (x,v) in _modes if v == self.mode]
-        if (not len(ok)):
-            return str(self.mode) # the integer value directly ..
-        return ok[0]
+##    def __str__(self):
+##        ok = [x for (x,v) in _modes if v == self.mode]
+##        if (not len(ok)):
+##            return str(self.mode) # the integer value directly ..
+##        return ok[0]
 
-    def __repr__(self):
-        return "arxiv.Mode('%s')"%(self.__str__())
+##    def __repr__(self):
+##        return "arxiv.Mode('%s')"%(self.__str__())
 
-    def __hash__(self):
-        return hash(self.mode)
+##    def __hash__(self):
+##        return hash(self.mode)
 
 
 # --- the filter object itself ---
@@ -195,7 +203,7 @@ class ArxivNormalizeFilter(BibFilter):
         BibFilter.__init__(self);
 
         self.mode = Mode(mode);
-        self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode
+        self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
                                  else self.mode);
         self.arxiv_journal_name = arxiv_journal_name;
         self.theses_count_as_published = butils.getbool(theses_count_as_published);

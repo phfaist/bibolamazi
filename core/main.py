@@ -117,7 +117,6 @@ def run_bibolamazi_args(args):
                      }));
 
 
-
     # open the bibolamazifile, which is the output bibtex file
     # -------------------------------------------------------
 
@@ -181,7 +180,7 @@ def run_bibolamazi_args(args):
             logger.debug('filter '+filtr.name()+' filtered each of the the bibentries one by one.');
             continue
 
-        raise ValueError("Bad value for BFilter.action(): "+repr(action));
+        raise ValueError("Bad value for BibFilter.action(): "+repr(action));
 
     # and output everything back to the original file.
     bfile.save_to_file();

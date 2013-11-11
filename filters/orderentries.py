@@ -7,6 +7,7 @@ import codecs
 from pybtex.database import BibliographyData;
 
 
+from core import bibfilter
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
@@ -20,17 +21,32 @@ Order bibliographic entries in bibtex file
 """
 
 HELP_TEXT = u"""
-This filter orders the entries in the bibtex file, alphabetically according to
-citation key.
+This filter orders the entries in the bibtex file.
+
+Possible ordering modes are:
+
+  - 'raw'
+    doesn't change the ordering--leaves the natural order.
+  
+  - 'alphabetical'
+    Orders all the entries in the bibtex file alphabetically according to the citation key.
+
 
 This is particularly useful for keeping the bibtex file in a VCS (git, svn etc.)
-and getting relevant diffs.
+and getting relevant diffs between different revisions.
 """
 
 
 # modes
 ORDER_RAW = 0
 ORDER_CITATION_KEY_ALPHA = 1
+
+
+OrderMode = bibfilter.enum_class('OrderMode', [('raw', ORDER_RAW),
+                                               ('alphabetical', ORDER_CITATION_KEY_ALPHA)],
+                                 default_value='alphabetical',
+                                 value_attr_name='ordermode')
+
 
 
 class OrderEntriesFilter(BibFilter):
@@ -40,18 +56,17 @@ class OrderEntriesFilter(BibFilter):
     helptext = HELP_TEXT
     
     
-    def __init__(self, citation_key_alpha=None):
+    def __init__(self, order=None):
+        """
+        Arguments:
+          - order(OrderMode): The strategy according to which to order all the entries. Possible
+                values: see below.
+        """
         BibFilter.__init__(self);
 
-        if (citation_key_alpha is None):
-            citation_key_alpha = True
+        self.order = OrderMode(order)
 
-        if (citation_key_alpha):
-            self.ordermode = ORDER_CITATION_KEY_ALPHA
-        else:
-            self.ordermode = ORDER_RAW
-
-        logger.debug('orderentries: self.ordermode=%r' % self.ordermode);
+        logger.debug('orderentries: self.order=%r' % self.order);
 
     def name(self):
         return "orderentries"
@@ -67,9 +82,9 @@ class OrderEntriesFilter(BibFilter):
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        logger.debug("ordering entries according to mode=%r." %(self.ordermode));
+        logger.debug("ordering entries according to mode=%r." %(self.order));
 
-        if (self.ordermode == ORDER_CITATION_KEY_ALPHA):
+        if (self.order == ORDER_CITATION_KEY_ALPHA):
             
             bibdata = bibolamazifile.bibliographydata();
 
@@ -78,17 +93,17 @@ class OrderEntriesFilter(BibFilter):
 
             # bibdata.entries is of type pybtex.util.OrderedCaseInsensitiveDict, which has
             # an attribute `order`, which is a list of keys in the relevant order. So use
-            # list.sort(), which is more efficient.
+            # list.sort(), which is slightly more efficient.
             bibdata.entries.order.sort()
 
             #newbibdata = BibliographyData(entries=newentries);
             #bibolamazifile.setBibliographyData(newbibdata);
 
+        elif (self.order == ORDER_RAW):
+            # natural order mode. don't do anything.
+            pass
         else:
-            if (self.ordermode != ORDER_RAW):
-                logger.error("Bad order mode: %r !" %(self.ordermode));
-                
-            # don't do anything: natural order.
+            raise BibFilterError(self.name(), "Bad order mode: %r !" %(self.order));
             
         logger.debug("ordered entries as wished.");
 
