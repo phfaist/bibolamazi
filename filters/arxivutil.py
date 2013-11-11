@@ -33,7 +33,7 @@ from core.blogger import logger
 # a regex that we will need often
 _rxarxivinnote = re.compile(
     r'(([;,\{]?\s+)?|\b|^\s*)'+
-    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z]+)/)?(?P<arxivid>[0-9.]+))'+
+    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?(?P<arxivid>[0-9.]+))'+
     r'(\s*[;,\}]?\s*|$)',
     re.IGNORECASE
     );
