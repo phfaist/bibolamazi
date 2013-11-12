@@ -179,6 +179,40 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="pageBibEntries">
+      <attribute name="title">
+       <string>Preview Bib Entries</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>8</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QTextBrowser" name="txtBibEntries">
+         <property name="font">
+          <font>
+           <family>Courier 10 Pitch</family>
+          </font>
+         </property>
+         <property name="tabChangesFocus">
+          <bool>true</bool>
+         </property>
+         <property name="openLinks">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="pageLog">
       <attribute name="title">
        <string>Messages</string>

@@ -92,5 +92,5 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
         for m in rxcomment.finditer(text):
             self.setFormat(m.start(), len(m.group()), self.fmt_comment)
 
-        self.setCurrentBlockState(0)
+        #self.setCurrentBlockState(0)
         #self.setCurrentBlockUserData(pcache)

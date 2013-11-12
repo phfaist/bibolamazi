@@ -124,6 +124,7 @@ class OpenBibFile(QWidget):
 
         self.ui.txtConfig.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
+        self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
 
         self.syntHighlighter = BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
 
@@ -134,9 +135,12 @@ class OpenBibFile(QWidget):
         self.updateTimer.setInterval(500)
         self.updateTimer.setSingleShot(True)
         QObject.connect(self.updateTimer, SIGNAL('timeout()'), self.updateFileContents)
+        
+        self._flag_modified_externally = False
 
-        self.watcher = QFileSystemWatcher(self)
-        QObject.connect(self.watcher, SIGNAL('fileChanged(QString)'), self.delayedUpdateFileContents)
+        self.fwatcher = QFileSystemWatcher(self)
+        QObject.connect(self.fwatcher, SIGNAL('fileChanged(QString)'), self.fileModifiedExternally)
+        #self.delayedUpdateFileContents)
 
         self.shortcuts = [
             QShortcut(QKeySequence('Ctrl+W'), self, self.closeFile, self.closeFile),
@@ -144,12 +148,14 @@ class OpenBibFile(QWidget):
             ];
 
         self._ignore_change_for_edittools = False
+        self._needs_update_txtbibentries = False
+        self._set_modified(False)
 
         
 
     def setOpenFile(self, filename):
         if (self.bibolamaziFileName):
-            self.watcher.removePath(self.bibolamaziFileName)
+            self.fwatcher.removePath(self.bibolamaziFileName)
             
         self.bibolamaziFileName = filename
         self.bibolamaziFile = bibolamazifile.BibolamaziFile()
@@ -167,13 +173,13 @@ class OpenBibFile(QWidget):
         self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
         
         if (self.bibolamaziFileName):
-            self.watcher.addPath(self.bibolamaziFileName)
+            self.fwatcher.addPath(self.bibolamaziFileName)
 
 
     @pyqtSlot()
     def closeFile(self):
         if (self.bibolamaziFileName):
-            self.watcher.removePath(self.bibolamaziFileName)
+            self.fwatcher.removePath(self.bibolamaziFileName)
             self.bibolamaziFileName = None
         if (self.bibolamaziFile):
             self.bibolamaziFile = None
@@ -188,14 +194,25 @@ class OpenBibFile(QWidget):
 
         config_data = str(self.ui.txtConfig.toPlainText())
 
+        # ignore changes caused by ourselves
+        self.fwatcher.blockSignals(True)
+        
         # change the config block.
         self.bibolamaziFile.setConfigData(config_data)
         self.bibolamaziFile.save_to_file()
+
+        self._set_modified(False)
 
         # reload file.
         self.delayedUpdateFileContents()
         
 
+
+    @pyqtSlot()
+    def fileModifiedExternally(self):
+        print "File modified externally!!"
+        self._flag_modified_externally = True
+        #self.delayedUpdateFileContents
 
     @pyqtSlot()
     def delayedUpdateFileContents(self):
@@ -207,8 +224,18 @@ class OpenBibFile(QWidget):
     def updateFileContents(self):
         print "updating config section"
 
+        self._flag_modified_externally = False
+
+        self._set_modified(False)
+
+        # we may be sensitive again to external changes again
+        if (self.fwatcher.signalsBlocked()):
+            self.fwatcher.blockSignals(False)
+
+        
         if (not self.bibolamaziFile):
-            self.ui.txtConfig.setPlainText("")
+            with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
+                self.ui.txtConfig.setPlainText("")
             return
 
         try:
@@ -217,11 +244,14 @@ class OpenBibFile(QWidget):
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Error reading file.</p>")
             return
 
-        cursorpos = self.ui.txtConfig.textCursor().position()
-        self.ui.txtConfig.setPlainText(self.bibolamaziFile.config_data())
-        cur = self.ui.txtConfig.textCursor()
-        cur.setPosition(cursorpos)
-        self.ui.txtConfig.setTextCursor(cur)
+        with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
+            cursorpos = self.ui.txtConfig.textCursor().position()
+            self.ui.txtConfig.setPlainText(self.bibolamaziFile.config_data())
+            cur = self.ui.txtConfig.textCursor()
+            cur.setPosition(cursorpos)
+            self.ui.txtConfig.setTextCursor(cur)
+
+        self._needs_update_txtbibentries = True
 
         # now, try to further parse the config
         try:
@@ -306,11 +336,28 @@ class OpenBibFile(QWidget):
             };
 
         self.ui.txtInfo.setHtml(thehtml)
+
+        print "file contents updated!"
         
+
+    @pyqtSlot(int)
+    def on_tabs_currentChanged(self, index):
+        if (self.ui.tabs.widget(index) == self.ui.pageBibEntries):
+            if (self._needs_update_txtbibentries):
+                self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawrest())
 
 
     @pyqtSlot()
     def on_btnGo_clicked(self):
+        if (self._modified):
+            yn = QMessageBox.question(self, "Save Changes?", "Save changes to your config?",
+                                      QMessageBox.Save|QMessageBox.Cancel, QMessageBox.Save)
+            if (yn == QMessageBox.Cancel):
+                return
+
+            # save our config
+            self.saveToFile()
+            
         with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
             if (not self.bibolamaziFileName):
                 QMessageBox.critical(self, "No open file", "No file selected!")
@@ -320,10 +367,14 @@ class OpenBibFile(QWidget):
             with LogToTextBrowser(self.ui.txtLog) as log2txtLog:
                 try:
                     self.ui.tabs.setCurrentWidget(self.ui.pageLog)
+                    # block notifications for file contents updates that we generate ourselves...
+                    self.fwatcher.blockSignals(True)
                     core.main.run_bibolamazi(outputbibfile=self.bibolamaziFileName,
                                              verbosity=self.ui.cbxVerbosity.currentIndex())
                 except butils.BibolamaziError as e:
                     QMessageBox.warning(self, "Bibolamazi error", unicode(e))
+
+        self.delayedUpdateFileContents()
                     
 
 
@@ -384,11 +435,51 @@ class OpenBibFile(QWidget):
                 return cmd
 
         return None
-    
+
+    @pyqtSlot(bool)
+    def _set_modified(self, modif):
+        self._modified = modif
+        self.ui.btnSave.setEnabled(self._modified)
 
     @pyqtSlot()
     def on_txtConfig_textChanged(self):
-        print "text changed!"
+        print "text changed! fwatcher signals blocked=%d" %(self.fwatcher.signalsBlocked())
+
+        if self._flag_modified_externally:
+            print "Modified externally!"
+            
+            revertbtn = None
+            box = None
+            if (not self._modified):
+                # file was modified externally, but we have no local changes.
+                box = QMessageBox(QMessageBox.Warning, "File Modified Externally",
+                                  "The File was modified externally. Revert and reload it?")
+                revertbtn = box.addButton("Revert", QMessageBox.AcceptRole)
+                box.addButton(QMessageBox.Cancel)
+                box.setDefaultButton(revertbtn)
+            else:
+                # file was modified externally, but we have LOCAL UNSAVED CHANGES
+                box = QMessageBox(QMessageBox.Warning, "File Modified Externally",
+                                  "The File was modified externally, but you have unsaved changes. "
+                                  "Keep your changes and ignore the external modification, or "
+                                  "revert it to version on disk?")
+                revertbtn = box.addButton("Revert", QMessageBox.AcceptRole)
+                box.addButton("Keep changes", QMessageBox.RejectRole)
+                box.setDefaultButton(revertbtn)
+
+            box.exec_()
+            clickedbtn = box.clickedButton()
+            if (clickedbtn == revertbtn):
+                print "Reverting!!"
+                # reload the file
+                self.updateFileContents()
+                return
+
+            self._flag_modified_externally = False
+
+
+        self._set_modified(True)
+        print 'modified!!'
 
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
         self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)

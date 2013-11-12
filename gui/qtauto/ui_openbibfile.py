@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-# Created: Tue Oct 22 00:16:18 2013
+# Created: Mon Nov 11 19:38:00 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -107,6 +107,20 @@ class Ui_OpenBibFile(object):
         self.txtInfo.setObjectName(_fromUtf8("txtInfo"))
         self.verticalLayout.addWidget(self.txtInfo)
         self.tabs.addTab(self.pageInfo, _fromUtf8(""))
+        self.pageBibEntries = QtGui.QWidget()
+        self.pageBibEntries.setObjectName(_fromUtf8("pageBibEntries"))
+        self.gridLayout_2 = QtGui.QGridLayout(self.pageBibEntries)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
+        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        self.txtBibEntries = QtGui.QTextBrowser(self.pageBibEntries)
+        font = QtGui.QFont()
+        font.setFamily(_fromUtf8("Courier 10 Pitch"))
+        self.txtBibEntries.setFont(font)
+        self.txtBibEntries.setTabChangesFocus(True)
+        self.txtBibEntries.setOpenLinks(False)
+        self.txtBibEntries.setObjectName(_fromUtf8("txtBibEntries"))
+        self.gridLayout_2.addWidget(self.txtBibEntries, 0, 0, 1, 1)
+        self.tabs.addTab(self.pageBibEntries, _fromUtf8(""))
         self.pageLog = QtGui.QWidget()
         self.pageLog.setObjectName(_fromUtf8("pageLog"))
         self.gridLayout = QtGui.QGridLayout(self.pageLog)
@@ -194,6 +208,7 @@ class Ui_OpenBibFile(object):
 "</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:20px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic; color:#b1311d;\">&lt;no file open&gt;</span></p></body></html>", None))
         self.tabs.setTabText(self.tabs.indexOf(self.pageInfo), _translate("OpenBibFile", "BIbolamazi File Info", None))
+        self.tabs.setTabText(self.tabs.indexOf(self.pageBibEntries), _translate("OpenBibFile", "Preview Bib Entries", None))
         self.lblVerbosity.setText(_translate("OpenBibFile", "Log verbosity level (for next run):", None))
         self.cbxVerbosity.setItemText(0, _translate("OpenBibFile", "Quiet", None))
         self.cbxVerbosity.setItemText(1, _translate("OpenBibFile", "Information", None))

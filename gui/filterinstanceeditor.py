@@ -127,6 +127,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             arg = argoptlist[i]
             if (arg.argname in kwargs):
                 print "Warning: argument `%s' already given." %(arg.argname)
+                # don't pass this argument; stop argument parsing.
+                break
             kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
             i = i + 1 # next declared argument in argoptlist
 
