@@ -32,8 +32,9 @@ class MainWidget(QWidget):
 
         self.menubar = None
         self.shortcuts = []
-        if (True):
-            ### TODO: check if is a mac
+        
+        if (sys.platform == 'darwin'):
+            # Mac OS X
             self.menubar = QMenuBar(None)
             filemenu = self.menubar.addMenu("File")
             filemenu.addAction("New", self, SLOT('on_btnNewFile_clicked()'),
@@ -45,16 +46,28 @@ class MainWidget(QWidget):
                                QKeySequence("Ctrl+R"))
         else:
             self.shortcuts += [
-                QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
-                          Qt.ApplicationShortcut),
-                QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
-                          Qt.ApplicationShortcut),
-                QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
-                          Qt.ApplicationShortcut),
-                QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
-                          Qt.ApplicationShortcut),
+                (QAction("New", self), "Ctrl+N", self.on_btnNewFile_clicked),
+                (QAction("Open", self), "Ctrl+O", self.on_btnOpenFile_clicked),
+                (QAction("Help", self), "Ctrl+R", self.on_btnHelp_clicked),
+                (QAction("Quit", self), "Ctrl+Q", self.on_btnQuit_clicked),
+                #
+                # PyQt Bug: these shortcuts cause segfaults!! workaround: use QAction's instead.
+                #
+                #QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
+                #          Qt.ApplicationShortcut),
+                #QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
+                #          Qt.ApplicationShortcut),
+                #QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
+                #          Qt.ApplicationShortcut),
+                #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
+                #          Qt.ApplicationShortcut),
                 ]
-        
+            for (a, key, slot) in self.shortcuts:
+                print 'adding action with key %s' %(key)
+                a.setShortcut(QKeySequence(key))
+                a.triggered.connect(slot)
+                a.setShortcutContext(Qt.ApplicationShortcut)
+                self.addAction(a)
 
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
@@ -111,7 +124,7 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnQuit_clicked(self):
-        QApplication.instance().quit()
+        self.close()
 
 
     @pyqtSlot()
@@ -133,14 +146,9 @@ class MainWidget(QWidget):
                 event.ignore()
                 return
 
-##         modified_w = []
-##         for w in self.openbibfiles:
-##             if (w.hasUnsavedModifications()):
-##                 modified_w.append( (w, w.fileName()) )
-##         if (len(modified_w)):
-##             ans = QMessageBox.question(self, "Save Changes", "Save  .............
-
         super(MainWidget, self).closeEvent(event)
+
+
 
 
 
