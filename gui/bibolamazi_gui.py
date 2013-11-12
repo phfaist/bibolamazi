@@ -64,6 +64,7 @@ class MainWidget(QWidget):
         w.setOpenFile(fname)
         w.show()
         w.raise_()
+        w.fileClosed.connect(self.bibFileClosed)
         self.openbibfiles.append(w)
 
         w.requestHelpTopic.connect(self.openHelpTopic)
@@ -113,8 +114,32 @@ class MainWidget(QWidget):
         QApplication.instance().quit()
 
 
+    @pyqtSlot()
+    def bibFileClosed(self):
+        sender = self.sender()
+        if (not sender in self.openbibfiles):
+            print "WARNING: Widget sender of fileClosed() not in our openbibfiles list!!"
+            return
+        print "file is closed."
+        self.openbibfiles.remove(sender)
+
     def closeEvent(self, event):
         print "Close!!"
+
+        for w in self.openbibfiles:
+            ans = w.close()
+            if not ans:
+                # if the widget cancels the close, then abort
+                event.ignore()
+                return
+
+##         modified_w = []
+##         for w in self.openbibfiles:
+##             if (w.hasUnsavedModifications()):
+##                 modified_w.append( (w, w.fileName()) )
+##         if (len(modified_w)):
+##             ans = QMessageBox.question(self, "Save Changes", "Save  .............
+
         super(MainWidget, self).closeEvent(event)
 
 

@@ -113,6 +113,9 @@ class OpenBibFile(QWidget):
 
     requestHelpTopic = pyqtSignal('QString')
 
+    fileClosed = pyqtSignal()
+    
+
     def __init__(self):
         super(OpenBibFile, self).__init__()
 
@@ -143,7 +146,7 @@ class OpenBibFile(QWidget):
         #self.delayedUpdateFileContents)
 
         self.shortcuts = [
-            QShortcut(QKeySequence('Ctrl+W'), self, self.closeFile, self.closeFile),
+            QShortcut(QKeySequence('Ctrl+W'), self, self.close, self.close),
             QShortcut(QKeySequence('Ctrl+S'), self, self.saveToFile, self.saveToFile),
             ];
 
@@ -175,19 +178,41 @@ class OpenBibFile(QWidget):
         if (self.bibolamaziFileName):
             self.fwatcher.addPath(self.bibolamaziFileName)
 
+    def hasUnsavedModifications(self):
+        return self._modified;
 
-    @pyqtSlot()
-    def closeFile(self):
+    def fileName(self):
+        return self.bibolamaziFileName
+
+    # use close() to close the widget and file
+    def closeEvent(self, closeEvent):
+        if (self._modified):
+            ans = QMessageBox.question(self, 'Save Changes',
+                                       "Save changes to file `%s'?" %(self.bibolamaziFileName),
+                                       QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,
+                                       QMessageBox.Save)
+            if (ans == QMessageBox.Save):
+                # save first (no need for updating), then proceed with close
+                self.saveToFile(noupdate=True)
+                
+            if (ans == QMessageBox.Cancel):
+                # ignore the event
+                closeEvent.ignore()
+                return
+        
         if (self.bibolamaziFileName):
             self.fwatcher.removePath(self.bibolamaziFileName)
             self.bibolamaziFileName = None
         if (self.bibolamaziFile):
             self.bibolamaziFile = None
-        self.close()
+
+        self.fileClosed.emit()
+        
+        return super(OpenBibFile, self).closeEvent(closeEvent)
 
 
     @pyqtSlot()
-    def saveToFile(self):
+    def saveToFile(self, noupdate=False):
         if (not self.bibolamaziFile):
             QMessageBox.critical(self, "No File!", "No file to save to!")
             return
@@ -204,9 +229,8 @@ class OpenBibFile(QWidget):
         self._set_modified(False)
 
         # reload file.
-        self.delayedUpdateFileContents()
-        
-
+        if (not noupdate):
+            self.delayedUpdateFileContents()
 
     @pyqtSlot()
     def fileModifiedExternally(self):
