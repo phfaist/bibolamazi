@@ -432,34 +432,6 @@ class OpenBibFile(QWidget):
         QDesktopServices.openUrl(url)
         
 
-
-    def _get_current_bibolamazi_cmd(self):
-
-        if (not self.bibolamaziFile):
-            print "No bibolamazi file open"
-            return
-
-        cmds = self.bibolamaziFile.rawcmds();
-        if (cmds is None):
-            # file is not yet parsed
-            return None
-
-        cur = self.ui.txtConfig.textCursor()
-        block = cur.block()
-        thisline = cur.block().blockNumber()+1
-
-        thisline = self.bibolamaziFile.fileLineNo(thisline)
-
-        #print "searching for cmd... at file line=%d" %(thisline)
-        for cmd in cmds:
-            #print "\t -- testing cmd %r" %(cmd)
-            if cmd.lineno <= thisline and cmd.linenoend >= thisline:
-                # got the current cmd
-                #print "\tGot cmd: %r" %(cmd)
-                return cmd
-
-        return None
-
     @pyqtSlot(bool)
     def _set_modified(self, modif):
         self._modified = modif
@@ -516,6 +488,74 @@ class OpenBibFile(QWidget):
         
         self._do_update_edittools()
 
+
+    @pyqtSlot()
+    def on_btnAddFilter_clicked(self):
+        print 'add filter: clicked'
+
+        filter_list = filters.detect_filters()
+
+        (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
+                                              filter_list);
+        if (not ok):
+            # cancelled
+            return
+
+        # insert new filter command
+        self._insert_new_cmd('filter: %s' %(filtname))
+
+    @pyqtSlot()
+    def on_btnAddSourceList_clicked(self):
+        print 'add source list: clicked'
+
+        self._insert_new_cmd('src: ')
+
+    def _insert_new_cmd(self, cmdtext):
+
+        doc = self.ui.txtConfig.document()
+        
+        insertcur = None
+        
+        cmd = self._get_current_bibolamazi_cmd()
+        if (cmd is None):
+            insertcur = QTextCursor(doc.findBlockByNumber(self.ui.txtConfig.textCursor().block().blockNumber()))
+        else:
+            # insert _after_ current cmd (-> +1 for next line, +1 for counting from one and not from zero)
+            insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend+1)+1))
+
+        insertcur.insertText(cmdtext+'\n')
+        # select inserted text without the newline
+        insertcur.movePosition(QTextCursor.Left)
+        insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+        self.ui.txtConfig.setTextCursor(insertcur)
+
+
+    def _get_current_bibolamazi_cmd(self):
+
+        if (not self.bibolamaziFile):
+            print "No bibolamazi file open"
+            return
+
+        cmds = self.bibolamaziFile.rawcmds();
+        if (cmds is None):
+            # file is not yet parsed
+            return None
+
+        cur = self.ui.txtConfig.textCursor()
+        block = cur.block()
+        thisline = cur.block().blockNumber()+1
+
+        thisline = self.bibolamaziFile.fileLineNo(thisline)
+
+        #print "searching for cmd... at file line=%d" %(thisline)
+        for cmd in cmds:
+            #print "\t -- testing cmd %r" %(cmd)
+            if cmd.lineno <= thisline and cmd.linenoend >= thisline:
+                # got the current cmd
+                #print "\tGot cmd: %r" %(cmd)
+                return cmd
+
+        return None
 
     def _do_update_edittools(self):
         if self._ignore_change_for_edittools:

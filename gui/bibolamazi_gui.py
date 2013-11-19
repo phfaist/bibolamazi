@@ -146,6 +146,9 @@ class MainWidget(QWidget):
                 event.ignore()
                 return
 
+        if (self.helpbrowser):
+            self.helpbrowser.close()
+
         super(MainWidget, self).closeEvent(event)
 
 
