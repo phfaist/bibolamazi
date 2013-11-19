@@ -238,8 +238,8 @@ class BibolamaziFile(object):
         
         if (fname or not isinstance(fname, list)):
             # required to replace current file, if one open
-            self._fname = fname;
-            self._dir = os.path.dirname(os.path.realpath(fname));
+            self._fname = fname
+            self._dir = os.path.dirname(os.path.realpath(fname)) if fname is not None else None
             self._load_state = BIBOLAMAZIFILE_INIT
             self._header = None
             self._config = None
@@ -370,6 +370,9 @@ class BibolamaziFile(object):
 
     def _init_empty_template(self):
 
+        # provide us an initialized instance
+        self.load(None, to_state=BIBOLAMAZIFILE_INIT)
+
         self._header = TEMPLATE_HEADER;
         self._config = TEMPLATE_CONFIG;
         self._config_data = self._config_data_from_block(TEMPLATE_CONFIG);
@@ -383,6 +386,7 @@ class BibolamaziFile(object):
         self._source_lists = [];
         self._filters = [];
 
+        # cheat, we've loaded it manually
         self._load_state = BIBOLAMAZIFILE_LOADED
 
         self._bibliographydata = pybtex.database.BibliographyData();
