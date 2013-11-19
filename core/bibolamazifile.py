@@ -718,9 +718,9 @@ class BibolamaziFile(object):
 TEMPLATE_HEADER = """\
 
 
-
-.. add additionnal stuff here. this will not be overwritten by bibolamazi.
-
+.. Additionnal stuff here will not be managed by bibolamazi. It will also not be
+.. overwritten. You can e.g. temporarily add additional references here if you
+.. don't have bibolamazi installed.
 
 
 """
@@ -733,16 +733,20 @@ TEMPLATE_CONFIG = """\
 %
 % %% **** SOURCES ****
 %
+% %% The _first_ accessible file in _each_ source list will be read and filtered.
+%
 % src:   <source file 1> [ <alternate source file 1> ... ]
 % src:   <source file 2> [ ... ]
-% %% add additional sources here; nonexisting files are ignored.
+%
+% %% Add additional sources here. Alternative files are useful, e.g., if the same
+% %% file must be accessed with different paths on different machines.
 %
 % %% **** FILTERS ****
 %
 % %% Specify filters here. Specify as many filters as you want, each with a `filter:'
 % %% directive. See also `bibolamazi --list-filters' and `bibolamazi --help <filter>'.
 %
-% filter:   <filter specification>
+% filter: filter_name  <filter options>
 %
 % %% Example:
 % filter: arxiv -sMode=strip -sUnpublishedMode=eprint
