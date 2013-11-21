@@ -271,10 +271,11 @@ class ArxivNormalizeFilter(BibFilter):
             entry.fields['annote'] = arxivutil.stripArXivInfoInNote(entry.fields['annote']);
             if (not len(entry.fields['annote'])):
                 del entry.fields['annote'];
-        if ('url' in entry.fields):
-            entry.fields['url'] = arxivutil.stripArXivInfoInNote(entry.fields['url']);
-            if (not len(entry.fields['url'])):
-                del entry.fields['url'];
+        # keep arxiv URL. This should be stripped off in the url filter, if needed.
+        #if ('url' in entry.fields):
+        #    #entry.fields['url'] = arxivutil.stripArXivInfoInNote(entry.fields['url']);
+        #    #if (not len(entry.fields['url'])):
+        #    #    del entry.fields['url'];
 
         if (entry.type == u'unpublished' or entry.type == u'misc'):
             entry.type = u'article';

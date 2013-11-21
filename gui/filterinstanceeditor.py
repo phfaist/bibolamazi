@@ -121,7 +121,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # treat pargs as arguments to the function. These are usually declared arguments, simply
         # provided without the key.
         i = 0
-        argoptlist = self._fopts.filteroptions()
+        argoptlist = self._fopts.filterDeclOptions()
         while (len(pargs) and i < len(argoptlist)):
             # this parg corresponds to a kwarg.
             arg = argoptlist[i]
@@ -160,7 +160,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def rowCount(self, parent):
         if (self._fopts is None):
             return 0
-        return len(self._fopts.filteroptions())
+        return len(self._fopts.filterOptions())
 
     def columnCount(self, parent):
         return 2
@@ -178,7 +178,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (self._fopts is None):
             return QVariant()
         
-        filteroptions = self._fopts.filteroptions()
+        filteroptions = self._fopts.filterOptions()
 
         col = index.column()
         row = index.row()
@@ -277,7 +277,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (role != Qt.EditRole):
             return False
 
-        filteroptions = self._fopts.filteroptions()
+        filteroptions = self._fopts.filterOptions()
 
         if (row < 0 or row >= len(filteroptions)):
             return False
@@ -311,7 +311,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         return True
 
     def findArgByName(self, argname):
-        filteroptions = self._fopts.filteroptions()
+        filteroptions = self._fopts.filterOptions()
 
         for row in xrange(len(filteroptions)):
             if (filteroptions[row].argname == argname):
@@ -327,7 +327,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             
         # iterate fopts arguments to preserve that ordering
         done_args = []
-        for arg in self._fopts.filteroptions():
+        for arg in self._fopts.filterOptions():
             v = self._kwargs.get(arg.argname,None)
             if (v is not None):
                 soptarg = self._fopts.getSOptNameFromArg(arg.argname)

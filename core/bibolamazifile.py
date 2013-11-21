@@ -621,6 +621,15 @@ class BibolamaziFile(object):
         logger.info("Ignoring nonexisting source list: %s" %(", ".join(srclist)));
         return None
 
+    def resolveSourcePath(self, path):
+        # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
+        path = os.path.expanduser(path);
+        path = os.path.expandvars(path);
+        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
+        # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
+        return os.path.join(self._dir, path)
+
+
     def _populate_from_src(self, src):
         bib_data = None;
 
@@ -628,13 +637,8 @@ class BibolamaziFile(object):
         if (re.match('^[A-Za-z0-9+_-]+://.*', src)):
             is_url = True
         
-        if (not is_url and not os.path.isabs(src)):
-            # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
-            src = os.path.expanduser(src);
-            src = os.path.expandvars(src);
-            # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
-            # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
-            src = os.path.join(self._dir, src);
+        if (not is_url):
+            src = self.resolveSourcePath(src)
 
         # read data, decode it in the right charset
         data = None;

@@ -341,10 +341,13 @@ class DefaultFilterOptions:
             if (k-off >= 0):
                 s += "="+repr(defaults[k-off]);
             return s
-        fclasssyntaxdesc = fclass.__name__+("(" + (", ".join([fmtarg(k, fargs, defaults)
-                                                              for k in range(len(fargs))
-                                                              if fargs[k] != "self"]))
-                                            + (" ..." if (varargs or keywords) else "") + ")");
+        fclasssyntaxdesc = fclass.__name__+("(" + " ".join([xpart for xpart in [
+            (", ".join([fmtarg(k, fargs, defaults)
+                        for k in range(len(fargs))
+                        if fargs[k] != "self"])),
+            ("[...]" if varargs else ""),
+            ("[..=...]" if keywords else ""),
+            ] if xpart]) + ")");
 
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,
@@ -361,17 +364,35 @@ class DefaultFilterOptions:
         # add option for all arguments
 
         self._filteroptions = []
-        
+        self._filtervaroptions = []
+
+        def make_filter_option(farg):
+            fopt = farg.replace('_', '-');
+            argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
+            group_filter.add_argument('--'+fopt, action='store', dest=farg,
+                                      help=argdoc.doc);
+            return argdoc
+
+
+        argdocs_left = [ x.argname for x in argdoclist ];
         for farg in fargs:
             # skip 'self'
             if (farg == 'self'):
                 continue
             # normalize name
-            fopt = re.sub('_', '-', farg);
-            argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
-            group_filter.add_argument('--'+fopt, action='store', dest=farg,
-                                      help=argdoc.doc);
+            argdoc = make_filter_option(farg)
+            argdocs_left.remove(farg)
             self._filteroptions.append(argdoc)
+
+        # in case user specified more docs than declared arguments, they document additional arguments that
+        # can be given as **kwargs
+        if (not keywords and argdocs_left):
+            raise FilterError("Filter's argument documentation provides additional documentation for "
+                              "non-arguments %r. (Did you forget a **kwargs?)"
+                              %(argdocs_left), name=filtername)
+        for farg in argdocs_left:
+            argdoc = make_filter_option(farg)
+            self._filtervaroptions.append(argdoc)
 
         group_general = p.add_argument_group('Other Options')
 
@@ -407,9 +428,16 @@ class DefaultFilterOptions:
     def filtername(self):
         return self._filtername
 
-    def filteroptions(self):
+    def filterOptions(self):
+        """This gives a list of `_ArgDoc` named tuples."""
+        return self._filteroptions + self._filtervaroptions
+
+    def filterDeclOptions(self):
         """This gives a list of `_ArgDoc` named tuples."""
         return self._filteroptions
+    def filterVarOptions(self):
+        """This gives a list of `_ArgDoc` named tuples."""
+        return self._filtervaroptions
 
     def optionSpec(self, argname):
         l = [x for x in self._filteroptions if x.argname == argname]

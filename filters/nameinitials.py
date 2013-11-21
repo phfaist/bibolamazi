@@ -44,6 +44,9 @@ Name Initials filter: Turn full first names into only initials for all entries.
 HELP_TEXT = u"""
 In all entries, turn the first and middle names of people into initials.
 
+Warning: this filter only works well with the option -dNamesToUtf8, which is by default. If you
+want LaTeX-formatted names, use the filter `fixes' AFTERWARDS with the option -dEncodeUtf8ToLatex.
+
 This filter does not take any options. Any additional arguments given are interpreted
 as roles to consider (see pybtex API), one or more among ['author', 'editor'] (WARNING:
 EXPERIMENTAL), e.g.
@@ -63,12 +66,18 @@ class NameInitialsFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, *roles):
+    def __init__(self, *roles, **kwargs):
+        """
+        Arguments:
+          - names_to_utf8(bool): Convert LaTeX escapes to UTF-8 characters in names in bib file.
+        """
         BibFilter.__init__(self);
 
         self.roles = roles;
         if not self.roles:
             self.roles = ['author'];
+
+        self._names_to_utf8 = getbool(kwargs.pop('names_to_utf8', True))
 
         logger.debug('NameInitialsFilter constructor')
         
@@ -93,7 +102,9 @@ class NameInitialsFilter(BibFilter):
                 pstr = unicode(p);
                 # BUG: FIXME: remove space after any macros
                 pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr); # replace "blah\macro blah" by "blah\macro{}blah"
-                p = Person(latex2text.latex2text(pstr))
+                if (self._names_to_utf8):
+                    pstr = latex2text.latex2text(pstr)
+                p = Person(pstr)
                 pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast(True)),
                               " ".join(p.last()), " ".join(p.lineage()));
                 entry.persons[role][k] = pnew

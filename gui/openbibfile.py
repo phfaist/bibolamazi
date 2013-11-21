@@ -297,8 +297,7 @@ class OpenBibFile(QWidget):
             if (re.match(r'^\w+:/', s)):
                 # already URL
                 return s;
-            if (not os.path.isabs(s)):
-                s = self.bibolamaziFile.fdir() + '/' + s
+            s = self.bibolamaziFile.resolveSourcePath(s)
             return 'file:///'+s;
 
         sources = []
