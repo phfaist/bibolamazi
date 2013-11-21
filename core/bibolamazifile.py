@@ -206,7 +206,7 @@ class BibolamaziFile(object):
         file name is set to `fname`.
         """
         
-        logger.longdebug("opening file %r" %(repr(fname)));
+        logger.debug("Opening bibolamazi file `%s'" %(fname));
         self._fname = None
         self._dir = None
 

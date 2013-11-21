@@ -84,16 +84,42 @@ class FilterCreateArgumentError(FilterError):
 
 
 
+# information about filters and modules etc.
+
+
+_filter_modules = {}
+_filter_list = None
+
+# For pyinstaller: precompiled filter list
+
+_filter_precompiled_load_attempted = False
+_filter_precompiled_loaded = False
+def _load_precompiled_filters():
+    global _filter_precompiled_load_attempted
+    global _filter_precompiled_loaded
+    global _filter_list
+    global _filter_modules
+    
+    _filter_precompiled_load_attempted = True
+    try:
+        import bibolamazi_compiled_filter_list
+        _filter_list = bibolamazi_compiled_filter_list.filter_list
+        for f in _filter_list:
+            _filter_modules[f] = bibolamazi_compiled_filter_list.__dict__[f]
+        _filter_precompiled_loaded = True
+    except ImportError:
+        pass
 
 
 # store additional information about the modules.
-
-_filter_modules = {};
 
 def get_module(name, raise_nosuchfilter=True):
     name = str(name)
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots")
+
+    if (not _filter_precompiled_load_attempted):
+        _load_precompiled_filters()
 
     # already open
     if (name in _filter_modules):
@@ -101,7 +127,7 @@ def get_module(name, raise_nosuchfilter=True):
 
     # try to open it
     try:
-        mod = importlib.import_module('filters.'+name);
+        mod = importlib.import_module('.'+name, package='filters');
         _filter_modules[name] = mod;
     except ImportError:
         if (not raise_nosuchfilter):
@@ -136,13 +162,18 @@ _rxsuffix = re.compile(r'\.pyc?$')
 
 ##    return sorted(_filter_modules.keys());
 
-_filter_list = None;
-
 def detect_filters(force_redetect=False):
     global _filter_list
-    
+
+    if (not _filter_precompiled_load_attempted):
+        _load_precompiled_filters()
+
     if (_filter_list is not None and not force_redetect):
         return _filter_list;
+    
+    if (_filter_precompiled_loaded):
+        # no use going further, if we have a precompiled list it means we can't detect the filters.
+        return _filter_list
     
     thisdir = os.path.dirname(os.path.realpath(__file__));
 

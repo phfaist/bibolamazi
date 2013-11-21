@@ -29,16 +29,22 @@ from core.blogger import logger
 
 # --- code to detect arXiv info ---
 
+_RX_BEFORE = r'(?:\s*([;,\{]?\s*)|\b|\s+|^)'
+_RX_AFTER = r'(?:\s*[;,\}]?\s*|$)'
+
+_RX_ARXIVID = r'(?P<arxivid>[0-9.]+)'
 
 # a regex that we will need often
 _rxarxivinnote = re.compile(
-    r'(([;,\{]?\s+)?|\b|^\s*)'+
-    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?(?P<arxivid>[0-9.]+))'+
-    r'(\s*[;,\}]?\s*|$)',
+    _RX_BEFORE +
+    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?' + _RX_ARXIVID + r')' +
+    _RX_AFTER,
     re.IGNORECASE
     );
 _rxarxivurl    = re.compile(
-    r'(([;,\{]?\s+)?|\b|^\s*)(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)\s*',
+    _RX_BEFORE +
+    r'(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)' + # not quite same <arxivid>: allows '/'
+    _RX_AFTER,
     re.IGNORECASE
     );
 
@@ -135,7 +141,10 @@ def stripArXivInfoInNote(notestr):
     information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
     """
 
-    return _rxarxivurl.sub('', _rxarxivinnote.sub('', notestr));
+    newnotestr = _rxarxivinnote.sub('', _rxarxivurl.sub('', notestr));
+    if (notestr != newnotestr):
+        logger.longdebug("stripArXivInfoInNote: stripped %r to %r", notestr, newnotestr)
+    return newnotestr
 
 
 
