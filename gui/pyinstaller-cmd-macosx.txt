@@ -1,7 +1,0 @@
-
-
-PYINSTALLER=pyinstaller
-#PYINSTALLER="$HOME/divers/downloads/pyinstaller-2.0/pyinstaller.py"
-
-
-PYTHONPATH="$PYTHONPATH:`pwd`/.."  $PYINSTALLER  bibolamazi_gui.spec

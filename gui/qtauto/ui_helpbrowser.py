@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'helpbrowser.ui'
 #
-# Created: Fri Nov 22 21:28:08 2013
+# Created: Fri Nov 22 22:51:19 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -43,6 +43,10 @@ class Ui_HelpBrowser(object):
         self.horizontalLayout.addItem(spacerItem)
         self.lytHomeButtons = QtGui.QVBoxLayout()
         self.lytHomeButtons.setObjectName(_fromUtf8("lytHomeButtons"))
+        self.btnWelcome = QtGui.QPushButton(self.tabHome)
+        self.btnWelcome.setProperty("helppath", _fromUtf8("general/welcome"))
+        self.btnWelcome.setObjectName(_fromUtf8("btnWelcome"))
+        self.lytHomeButtons.addWidget(self.btnWelcome)
         self.btnFilterList = QtGui.QPushButton(self.tabHome)
         self.btnFilterList.setProperty("helppath", _fromUtf8("general/filter-list"))
         self.btnFilterList.setObjectName(_fromUtf8("btnFilterList"))
@@ -59,7 +63,7 @@ class Ui_HelpBrowser(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.wFilters = QtGui.QWidget()
-        self.wFilters.setGeometry(QtCore.QRect(0, 0, 585, 276))
+        self.wFilters.setGeometry(QtCore.QRect(0, 0, 585, 242))
         self.wFilters.setObjectName(_fromUtf8("wFilters"))
         self.lytHomeFilterButtons = QtGui.QVBoxLayout(self.wFilters)
         self.lytHomeFilterButtons.setContentsMargins(50, -1, 50, -1)
@@ -95,6 +99,7 @@ class Ui_HelpBrowser(object):
 
     def retranslateUi(self, HelpBrowser):
         HelpBrowser.setWindowTitle(_translate("HelpBrowser", "Bibolamazi Help & Reference", None))
+        self.btnWelcome.setText(_translate("HelpBrowser", "Welcome - basic Bibolamazi usage", None))
         self.btnFilterList.setText(_translate("HelpBrowser", "Annotated Filter List", None))
         self.btnCmdLineHelp.setText(_translate("HelpBrowser", "Bibolamazi command-line help", None))
         self.btnVersion.setText(_translate("HelpBrowser", "Bibolamazi Version", None))

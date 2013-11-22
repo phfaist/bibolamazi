@@ -12,9 +12,11 @@ if sys.hexversion < 0x02070000:
 third_party = ['pybtex',
                'arxiv2bib']
 
-    
+
+# This base dir of bibolamazi
+base_dir = os.path.dirname(os.path.realpath(__file__));
+
 # setup python path correctly first.
 # ----------------------------------
-thisdir = os.path.dirname(os.path.realpath(__file__));
-sys.path += [thisdir]
-sys.path += [os.path.join(thisdir, '3rdparty', x) for x in third_party]
+sys.path += [base_dir]
+sys.path += [os.path.join(base_dir, '3rdparty', x) for x in third_party]

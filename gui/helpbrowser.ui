@@ -55,6 +55,16 @@
        <item>
         <layout class="QVBoxLayout" name="lytHomeButtons">
          <item>
+          <widget class="QPushButton" name="btnWelcome">
+           <property name="text">
+            <string>Welcome - basic Bibolamazi usage</string>
+           </property>
+           <property name="helppath" stdset="0">
+            <string notr="true">general/welcome</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="btnFilterList">
            <property name="text">
             <string>Annotated Filter List</string>
@@ -91,7 +101,7 @@
               <x>0</x>
               <y>0</y>
               <width>585</width>
-              <height>276</height>
+              <height>242</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="lytHomeFilterButtons">

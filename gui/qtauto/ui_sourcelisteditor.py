@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'sourcelisteditor.ui'
 #
-# Created: Fri Nov 22 21:33:12 2013
+# Created: Fri Nov 22 22:51:19 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -56,7 +56,7 @@ class Ui_SourceListEditor(object):
         self.btnBrowse = QtGui.QPushButton(self.gbxEditSource)
         self.btnBrowse.setObjectName(_fromUtf8("btnBrowse"))
         self.gridLayout_2.addWidget(self.btnBrowse, 0, 1, 1, 1)
-        self.gridLayout.addWidget(self.gbxEditSource, 4, 0, 1, 2)
+        self.gridLayout.addWidget(self.gbxEditSource, 5, 0, 1, 2)
         self.btnAddSource = QtGui.QPushButton(SourceListEditor)
         self.btnAddSource.setObjectName(_fromUtf8("btnAddSource"))
         self.gridLayout.addWidget(self.btnAddSource, 2, 0, 1, 1)
@@ -64,7 +64,10 @@ class Ui_SourceListEditor(object):
         self.btnRemoveSource.setObjectName(_fromUtf8("btnRemoveSource"))
         self.gridLayout.addWidget(self.btnRemoveSource, 2, 1, 1, 1)
         spacerItem = QtGui.QSpacerItem(10, 5, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        self.gridLayout.addItem(spacerItem, 3, 0, 1, 1)
+        self.gridLayout.addItem(spacerItem, 4, 0, 1, 1)
+        self.label_2 = QtGui.QLabel(SourceListEditor)
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.gridLayout.addWidget(self.label_2, 3, 0, 1, 2)
 
         self.retranslateUi(SourceListEditor)
         QtCore.QMetaObject.connectSlotsByName(SourceListEditor)
@@ -76,10 +79,11 @@ class Ui_SourceListEditor(object):
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">List of sources to collect bibliographic entries. Reorder entries by <span style=\" font-weight:600;\">Drag&amp;Drop</span>. Remember that the first existing file of each source list will be read.</p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">List of sources to collect bibliographic entries. Reorder entries by <span style=\" font-weight:600;\">Drag&amp;Drop</span>. Remember that the <em>first</em> existing file of <em>each</em> source list will be read.</p></body></html>", None))
         self.gbxEditSource.setTitle(_translate("SourceListEditor", "Edit this source", None))
         self.lblFile.setText(_translate("SourceListEditor", "File or URL:", None))
         self.btnBrowse.setText(_translate("SourceListEditor", "browse file ...", None))
         self.btnAddSource.setText(_translate("SourceListEditor", "Add Source", None))
         self.btnRemoveSource.setText(_translate("SourceListEditor", "Remove this source", None))
+        self.label_2.setText(_translate("SourceListEditor", "(reorder sources by drag and drop)", None))
 

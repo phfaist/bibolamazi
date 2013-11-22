@@ -38,7 +38,7 @@
         </sizepolicy>
        </property>
        <property name="pixmap">
-        <pixmap resource="../../../../../../programs/qt4/bibolamazi-ui/bibolamazi_res.qrc">:/pic/bibolamazi.png</pixmap>
+        <pixmap resource="bibolamazi_res.qrc">:/pic/bibolamazi.png</pixmap>
        </property>
       </widget>
      </item>
@@ -121,7 +121,7 @@
       <string>Quit</string>
      </property>
      <property name="icon">
-      <iconset resource="../../../../../../programs/qt4/bibolamazi-ui/bibolamazi_res.qrc">
+      <iconset resource="bibolamazi_res.qrc">
        <normaloff>:/pic/closehide.png</normaloff>:/pic/closehide.png</iconset>
      </property>
     </widget>
@@ -129,7 +129,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../../../../programs/qt4/bibolamazi-ui/bibolamazi_res.qrc"/>
+  <include location="bibolamazi_res.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -182,6 +182,11 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
 
     missing_ids = [ aid for aid in idlist if aid not in cache_entrydic ]
     
+    if not missing_ids:
+        logger.longdebug('nothing to fetch: no missing ids')
+        # nothing to fetch
+        return True
+
     logger.longdebug('fetching missing id list %r' %(missing_ids))
     try:
         arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
