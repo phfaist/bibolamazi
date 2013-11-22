@@ -129,6 +129,12 @@ class OpenBibFile(QWidget):
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
 
+        font = self.ui.txtConfig.font() # font given by Qt Designer (e.g. Courier 10 Pitch)
+        font.setStyleHint(QFont.TypeWriter)
+        self.ui.txtConfig.setFont(font)
+        self.ui.txtLog.setFont(font)
+        self.ui.txtBibEntries.setFont(font)
+
         self.syntHighlighter = BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
 
         self.bibolamaziFileName = None
