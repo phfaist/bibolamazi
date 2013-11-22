@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'helpbrowser.ui'
 #
-# Created: Sun Oct  6 17:27:11 2013
+# Created: Fri Nov 22 21:28:08 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -52,12 +52,20 @@ class Ui_HelpBrowser(object):
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName(_fromUtf8("line_2"))
         self.lytHomeButtons.addWidget(self.line_2)
-        self.wFilters = QtGui.QWidget(self.tabHome)
+        self.scrollArea = QtGui.QScrollArea(self.tabHome)
+        self.scrollArea.setFrameShape(QtGui.QFrame.NoFrame)
+        self.scrollArea.setFrameShadow(QtGui.QFrame.Plain)
+        self.scrollArea.setLineWidth(0)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
+        self.wFilters = QtGui.QWidget()
+        self.wFilters.setGeometry(QtCore.QRect(0, 0, 585, 276))
         self.wFilters.setObjectName(_fromUtf8("wFilters"))
         self.lytHomeFilterButtons = QtGui.QVBoxLayout(self.wFilters)
-        self.lytHomeFilterButtons.setMargin(0)
+        self.lytHomeFilterButtons.setContentsMargins(50, -1, 50, -1)
         self.lytHomeFilterButtons.setObjectName(_fromUtf8("lytHomeFilterButtons"))
-        self.lytHomeButtons.addWidget(self.wFilters)
+        self.scrollArea.setWidget(self.wFilters)
+        self.lytHomeButtons.addWidget(self.scrollArea)
         self.line = QtGui.QFrame(self.tabHome)
         self.line.setFrameShape(QtGui.QFrame.HLine)
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
@@ -73,7 +81,7 @@ class Ui_HelpBrowser(object):
         self.btnVersion.setProperty("helppath", _fromUtf8("general/version"))
         self.btnVersion.setObjectName(_fromUtf8("btnVersion"))
         self.lytHomeButtons.addWidget(self.btnVersion)
-        spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
         self.lytHomeButtons.addItem(spacerItem2)
         self.horizontalLayout.addLayout(self.lytHomeButtons)
         spacerItem3 = QtGui.QSpacerItem(120, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)

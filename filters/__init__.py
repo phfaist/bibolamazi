@@ -181,6 +181,13 @@ def detect_filters(force_redetect=False):
 
     logger.debug('Detecting filters ...')
 
+    def tomodname(x):
+        if (os.sep):
+            x = x.replace(os.sep, '.')
+        if (os.altsep):
+            x = x.replace(os.altsep, '.')
+        return x
+
     for (root, dirs, files) in os.walk(thisdir):
         if (not '__init__.py' in files):
             # skip this directory, not a python module. also skip all subdirectories.
@@ -199,7 +206,7 @@ def detect_filters(force_redetect=False):
             modname = _rxsuffix.sub('', modname)
             if (modname.startswith('.'+os.sep) or modname.startswith('.'+os.altsep)):
                 modname = modname[2:]
-            modname = modname.replace(os.sep, '.').replace(os.altsep, '.')
+            modname = tomodname(modname)
 
             if (modname in _filter_list):
                 # we already have this one

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'sourcelisteditor.ui'
 #
-# Created: Sun Oct 13 16:18:44 2013
+# Created: Fri Nov 22 21:33:12 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -45,32 +45,33 @@ class Ui_SourceListEditor(object):
         self.gbxEditSource = QtGui.QGroupBox(SourceListEditor)
         self.gbxEditSource.setObjectName(_fromUtf8("gbxEditSource"))
         self.gridLayout_2 = QtGui.QGridLayout(self.gbxEditSource)
+        self.gridLayout_2.setVerticalSpacing(12)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
         self.lblFile = QtGui.QLabel(self.gbxEditSource)
         self.lblFile.setObjectName(_fromUtf8("lblFile"))
-        self.gridLayout_2.addWidget(self.lblFile, 0, 0, 1, 2)
+        self.gridLayout_2.addWidget(self.lblFile, 0, 0, 1, 1)
         self.txtFile = QtGui.QLineEdit(self.gbxEditSource)
         self.txtFile.setObjectName(_fromUtf8("txtFile"))
         self.gridLayout_2.addWidget(self.txtFile, 1, 0, 1, 2)
-        spacerItem = QtGui.QSpacerItem(229, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_2.addItem(spacerItem, 2, 0, 1, 1)
         self.btnBrowse = QtGui.QPushButton(self.gbxEditSource)
         self.btnBrowse.setObjectName(_fromUtf8("btnBrowse"))
-        self.gridLayout_2.addWidget(self.btnBrowse, 2, 1, 1, 1)
-        self.gridLayout.addWidget(self.gbxEditSource, 3, 0, 1, 2)
+        self.gridLayout_2.addWidget(self.btnBrowse, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.gbxEditSource, 4, 0, 1, 2)
         self.btnAddSource = QtGui.QPushButton(SourceListEditor)
         self.btnAddSource.setObjectName(_fromUtf8("btnAddSource"))
         self.gridLayout.addWidget(self.btnAddSource, 2, 0, 1, 1)
         self.btnRemoveSource = QtGui.QPushButton(SourceListEditor)
         self.btnRemoveSource.setObjectName(_fromUtf8("btnRemoveSource"))
         self.gridLayout.addWidget(self.btnRemoveSource, 2, 1, 1, 1)
+        spacerItem = QtGui.QSpacerItem(10, 5, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        self.gridLayout.addItem(spacerItem, 3, 0, 1, 1)
 
         self.retranslateUi(SourceListEditor)
         QtCore.QMetaObject.connectSlotsByName(SourceListEditor)
 
     def retranslateUi(self, SourceListEditor):
         SourceListEditor.setWindowTitle(_translate("SourceListEditor", "Form", None))
-        self.label.setText(_translate("SourceListEditor", "Source List: (first existing/accessible will be used)", None))
+        self.label.setText(_translate("SourceListEditor", "Source List: (first accessible will be used)", None))
         self.lstSources.setToolTip(_translate("SourceListEditor", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwidget.ui'
 #
-# Created: Fri Oct  4 15:16:39 2013
+# Created: Fri Nov 22 21:26:43 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -33,15 +33,15 @@ class Ui_MainWidget(object):
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
-        self.label_2 = QtGui.QLabel(MainWidget)
+        self.lblMain = QtGui.QLabel(MainWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
-        self.label_2.setSizePolicy(sizePolicy)
-        self.label_2.setPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bibolamazi.png")))
-        self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.horizontalLayout.addWidget(self.label_2)
+        sizePolicy.setHeightForWidth(self.lblMain.sizePolicy().hasHeightForWidth())
+        self.lblMain.setSizePolicy(sizePolicy)
+        self.lblMain.setPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bibolamazi.png")))
+        self.lblMain.setObjectName(_fromUtf8("lblMain"))
+        self.horizontalLayout.addWidget(self.lblMain)
         spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem1)
         self.verticalLayout_3.addLayout(self.horizontalLayout)

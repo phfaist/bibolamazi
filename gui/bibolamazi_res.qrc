@@ -1,14 +1,13 @@
 <RCC>
-  <qresource prefix="/pic">
-    <file>lstbtnedit.png</file>
-    <file>lstbtnadd.png</file>
-    <file>lstbtnremove.png</file>
-    <file>ok.png</file>
-    <file>save.png</file>
-    <file>file.png</file>
-    <file>../bibolamazi_icon.png</file>
-    <file>refresh.png</file>
-    <file>closehide.png</file>
-    <file>bibolamazi.png</file>
+  <qresource prefix="/">
+    <file>pic/bibolamazi.png</file>
+    <file>pic/closehide.png</file>
+    <file>pic/file.png</file>
+    <file>pic/lstbtnadd.png</file>
+    <file>pic/lstbtnedit.png</file>
+    <file>pic/lstbtnremove.png</file>
+    <file>pic/ok.png</file>
+    <file>pic/refresh.png</file>
+    <file>pic/save.png</file>
   </qresource>
 </RCC>

@@ -27,9 +27,12 @@ import filters
 ##
 ## pre-compile filter list
 ##
+precompiled_filters_dir = '_precompiled_filters_build';
 import filters
 filternames = filters.detect_filters()
-with open('bibolamazi_compiled_filter_list.py', 'w') as f:
+if (not os.path.isdir(precompiled_filters_dir)):
+    os.mkdir(precompiled_filters_dir)
+with open(os.path.join(precompiled_filters_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
     f.write("""\
 filter_list = %r
 from filters import %s
@@ -43,6 +46,7 @@ a = Analysis(['bibolamazi_gui.py'],
              pathex=[
                  os.path.join(bibolamazi_path,'gui'),
                  bibolamazi_path,
+                 precompiled_filters_dir,
                  ] + [
                  os.path.join(bibolamazi_path, '3rdparty', x)
                  for x in bibolamazi_init.third_party
