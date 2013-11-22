@@ -106,6 +106,10 @@ class HelpBrowser(QWidget):
             print "No Path specified!"
             return
 
+        font = self.font()
+        font.setFamily("Courier 10 Pitch")
+        font.setStyleHint(QFont.TypeWriter)
+
         if (pathitems[0] == 'filters'):
             if (len(pathitems) < 2):
                 print "No filter specified!!"
@@ -113,8 +117,6 @@ class HelpBrowser(QWidget):
             filtname = pathitems[1]
 
             tb = QTextBrowser(self.ui.tabs)
-            font = self.font()
-            font.setFamily("Courier 10 Pitch")
             tb.setFont(font)
             tb.setText(filters.format_filter_help(filtname))
 
@@ -128,8 +130,6 @@ class HelpBrowser(QWidget):
                 return
 
             tb = QTextBrowser(self.ui.tabs)
-            font = self.font()
-            font.setFamily("Courier 10 Pitch")
             tb.setFont(font)
 
             if pathitems[1] == 'version':

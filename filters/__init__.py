@@ -116,7 +116,7 @@ def _load_precompiled_filters():
 def get_module(name, raise_nosuchfilter=True):
     name = str(name)
     if not re.match(r'^[.\w]+$', name):
-        raise ValueError("Filter name may only contain alphanum chars and dots")
+        raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
 
     if (not _filter_precompiled_load_attempted):
         _load_precompiled_filters()
@@ -197,8 +197,9 @@ def detect_filters(force_redetect=False):
             # deduce the module name relative to here
             modname = os.path.join(os.path.relpath(root, thisdir), fname)
             modname = _rxsuffix.sub('', modname)
-            if (modname.startswith('./')): modname = modname[2:]
-            modname = modname.replace('/', '.')
+            if (modname.startswith('.'+os.sep) or modname.startswith('.'+os.altsep)):
+                modname = modname[2:]
+            modname = modname.replace(os.sep, '.').replace(os.altsep, '.')
 
             if (modname in _filter_list):
                 # we already have this one
