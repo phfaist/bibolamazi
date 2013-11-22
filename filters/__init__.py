@@ -187,6 +187,12 @@ def detect_filters(force_redetect=False):
         if (os.altsep):
             x = x.replace(os.altsep, '.')
         return x
+    def startswithdotslash(x):
+        if (os.sep and x.startswith('.'+os.sep)):
+            return True
+        if (os.altsep and x.startswith('.'+os.altsep)):
+            return True
+        return False
 
     for (root, dirs, files) in os.walk(thisdir):
         if (not '__init__.py' in files):
@@ -204,7 +210,7 @@ def detect_filters(force_redetect=False):
             # deduce the module name relative to here
             modname = os.path.join(os.path.relpath(root, thisdir), fname)
             modname = _rxsuffix.sub('', modname)
-            if (modname.startswith('.'+os.sep) or modname.startswith('.'+os.altsep)):
+            if (startswithdotslash(modname)):
                 modname = modname[2:]
             modname = tomodname(modname)
 
