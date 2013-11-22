@@ -17,11 +17,12 @@ bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 ##
 sys.path += [bibolamazi_path];
 import bibolamazi_init
+import filters
 
 ##
 ## All the python files under 'filters/'
 ##
-filterlist = hookutils.collect_submodules('filters')
+#filterlist = hookutils.collect_submodules('filters')
 
 ##
 ## pre-compile filter list
@@ -46,22 +47,28 @@ a = Analysis(['bibolamazi_gui.py'],
                  os.path.join(bibolamazi_path, '3rdparty', x)
                  for x in bibolamazi_init.third_party
                  ],
-             hiddenimports=['bibolamazi_compiled_filter_list']+filterlist,
-             hookspath=None,
-             runtime_hooks=None)
+             hiddenimports=['bibolamazi_compiled_filter_list'],#+filterlist,
+             hookspath=None)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='bibolamazi_gui',
-          debug=False,
+          name=os.path.join('dist', 'bibolamazi_gui'),
+          debug=True,
           strip=None,
-          upx=True,
+          upx=False,
           console=True )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
                strip=None,
-               upx=True,
-               name='bibolamazi_gui')
+               upx=False,
+               name=os.path.join('dist', 'bibolamazi_gui_x'))
+
+if (sys.platform == 'darwin'):
+    app = BUNDLE(exe,
+                 name=os.path.join('dist', 'bibolamazi_gui.app'),
+                 icon='bibolamazi_icon.icns',
+                 )
+

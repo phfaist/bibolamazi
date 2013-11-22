@@ -9,7 +9,7 @@ sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 import bibolamazi_init
 
 from core import bibolamazifile
-
+import core.version
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -154,13 +154,16 @@ class MainWidget(QWidget):
 
 
 
-
+print "before starting application, in module"
+    
 if __name__ == '__main__':
+
+    print "starting application"
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
     app.setApplicationName('Bibolamazi')
-    app.setApplicationVersion('0.1')
+    app.setApplicationVersion(core.version.version_str)
     app.setOrganizationDomain('org.bibolamazi')
     app.setOrganizationName('Bibolamazi Project')
 
