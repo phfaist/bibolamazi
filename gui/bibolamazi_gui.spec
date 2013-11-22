@@ -54,22 +54,43 @@ if (sys.platform.startswith('darwin')):
     exe = EXE(pyz,
               a.scripts,
               exclude_binaries=True,
-              name=os.path.join('dist', 'bibolamazi_gui'),
+              name=os.path.join('dist', 'bibolamazi_gui_exe'),
               debug=True,
               strip=None,
-              upx=False,
-              console=True )
+              upx=True,
+              console=False,
+              )
     coll = COLLECT(exe,
                    a.binaries,
                    a.zipfiles,
                    a.datas,
                    strip=None,
-                   upx=False,
-                   name=os.path.join('dist', 'bibolamazi_gui'))
-    app = BUNDLE(exe,
+                   upx=True,
+                   name=os.path.join('dist', 'bibolamazi_gui'),
+                   )
+    app = BUNDLE(coll,
                  name=os.path.join('dist', 'Bibolamazi.app'),
                  icon='bibolamazi_icon.icns',
                  )
+##     exe = EXE(pyz,
+##               a.scripts,
+##               exclude_binaries=True,
+##               name=os.path.join('dist', 'bibolamazi_gui_exe'),
+##               debug=True,
+##               strip=None,
+##               upx=False,
+##               console=True )
+##     coll = COLLECT(exe,
+##                    a.binaries,
+##                    a.zipfiles,
+##                    a.datas,
+##                    strip=None,
+##                    upx=False,
+##                    name=os.path.join('dist', 'bibolamazi_gui'))
+##     app = BUNDLE(exe,
+##                  name=os.path.join('dist', 'Bibolamazi.app'),
+##                  icon='bibolamazi_icon.icns',
+##                  )
 else:
     exe = EXE(pyz,
               a.scripts,
@@ -77,7 +98,7 @@ else:
               a.zipfiles,
               a.datas,
               name='bibolamazi_gui',
-              debug=False,
+              debug=True,
               strip=None,
               upx=True,
               console=True )
