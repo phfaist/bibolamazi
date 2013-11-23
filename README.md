@@ -2,6 +2,25 @@
 
 Collect bibliographic entries from BibTeX files and apply rules or filters to them
 
+Command-Line vs Graphical User Interface
+----------------------------------------
+
+There are two flavors of bibolamazi: the command-line version, and the nice windowed
+graphical interface.
+
+Most users might prefer the straightforward-to-install, ready-and-easy-to-use
+graphical interface, in which case you should download the latest stable binary
+release from:
+
+**Download Release:** https://github.com/phfaist/bibolamazi/releases
+
+These binaries don't need any installation, you can just download them, place them
+wherever you want, and run them.
+
+The rest of this document is concerned mostly about downloading, installing and using
+bibolamazi from source. This option is necessary if you want to use the command-line
+or if you want to develop new filters.
+
 
 Installing and Getting Started
 ------------------------------
@@ -9,17 +28,29 @@ Installing and Getting Started
 Note: bibolamazi requires Python 2.7 being installed (which is there by default on most
 linux and Mac systems).
 
+Additionally, the graphical user interface requires
+[PyQt4](http://www.riverbankcomputing.com/software/pyqt/download). If you're on a linux
+distribution, it's most probably in your distribution packages. Note you only need PyQt4
+to run the graphical user interface: the command-line version will happily run without.
+
 * To install bibolamazi, simply clone this repository on your computer, or download it as
   a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
-  easier with `git pull`). Then, link the executable to somewhere in your path:
+  easier with `git pull`).
+
+           > cd somewhere/where/Ill-keep-bibolamazi/
+           ...> git clone https://github.com/phfaist/bibolamazi
+
+  Then, link the executable(s) to somewhere in your path:
 
            > cd ~/bin/
-           bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
+           bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi .
+           bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi_gui .
 
   or, for a system-wide install,
 
-           > cd /usr/bin/
-           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi bibolamazi
+           > cd /usr/local/bin/
+           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi .
+           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi_gui .
 
 
 * To compile a bibolamazi bibtex file, you should run `bibolamazi` in general as
@@ -146,37 +177,40 @@ Example Bibolamazi File
 Here is a minimal example of a bibolamazi bibtex file.
 
     
-    data here will not be overwritten. Place here any additional entries, comments or
-    whatever you want to be left as is.
+    .. Additionnal stuff here will not be managed by bibolamazi. It will also not be
+    .. overwritten. You can e.g. temporarily add additional references here if you
+    .. don't have bibolamazi installed.
+    
     
     %%%-BIB-OLA-MAZI-BEGIN-%%%
+    %
     % %% BIBOLAMAZI configuration section.
     % %% Additional two leading percent signs indicate comments in the configuration.
-    % 
-    % %% **** SOURCES ****
-    % 
-    % %% Specify your bib sources here. These files will not be touched by bibolamazi. If several paths
-    % %% are given in one line, the first path that exists and is readable will be taken. HTTP/FTP URLs
-    % %% can also be specified, and the file being pointed to will be downloaded and used as source.
-    % %% Nonexisting sources will be ignored.
     %
-    % src: "/Users/philippe/path/to/MyLibrary.bib" /home/pfaist/path/to/MyLibrary.bib
-    % src: anothersource.bib
-    % %% add additional sources here
+    % %% **** SOURCES ****
+    %
+    % %% The _first_ accessible file in _each_ source list will be read and filtered.
+    %
+    % src:   <source file 1> [ <alternate source file 1> ... ]
+    % src:   <source file 2> [ ... ]
+    %
+    % %% Add additional sources here. Alternative files are useful, e.g., if the same
+    % %% file must be accessed with different paths on different machines.
     %
     % %% **** FILTERS ****
     %
-    % %% Specify which filters to apply here. Filters are applied in the order they are given. Options
-    % %% are provided in a command-line type syntax. For help about options to a filter, run
-    % %% "bibolamazi --help <thefilter>", e.g. "bibolamazi --help arxiv". For a list of available filters
-    % %% with their description, run "bibolamazi --list-filters".
-    % 
-    % filter: arxiv -sMode=strip -sUnpublishedMode=unpublished-note
-    % %% or, for example: filter: arxiv --mode=eprint
-    % filter: nameinitials
-    % filter: duplicates dupfile.tex
-    % filter: url -dStrip=False -dStripAllIfDoiOrArxiv=False
-    % 
+    % %% Specify filters here. Specify as many filters as you want, each with a `filter:'
+    % %% directive. See also `bibolamazi --list-filters' and `bibolamazi --help <filter>'.
+    %
+    % filter: filter_name  <filter options>
+    %
+    % %% Example:
+    % filter: arxiv -sMode=strip -sUnpublishedMode=eprint
+    %
+    % %% Finally, if your file is in a VCS, sort all entries by citation key so that you don't
+    % %% get huge file differences for each commit each time bibolamazi is run:
+    % filter: orderentries
+    %
     %%%-BIB-OLA-MAZI-END-%%%
     %
     %
@@ -184,7 +218,7 @@ Here is a minimal example of a bibolamazi bibtex file.
     %
     
     ... bibolamazi filtered entries ...
-    
+
     
 
 Available filters
@@ -198,26 +232,28 @@ Run that command to get an up-to-date list. At the time of writing, the list of
 filters is:
 
     > bibolamazi --list-filters
-    
+
     List of available filters:
     --------------------------
     
       arxiv         ArXiv clean-up filter: normalizes the way each biblographic
                     entry refers to arXiv IDs.
+      citearxiv     Filter that fills BibTeX files with relevant entries to cite
+                    with \cite{1211.1037}
       duplicates    Filter that detects duplicate entries and produces rules to make
                     one entry an alias of the other.
-      url           Remove or add URLs from entries according to given rules, e.g.
-                    whether DOI or ArXiv ID are present
-      nameinitials  Name Initials filter: Turn full first names into only initials
-                    for all entries.
       fixes         Fixes filter: perform some various known fixes for bibtex
                     entries
+      nameinitials  Name Initials filter: Turn full first names into only initials
+                    for all entries.
       orderentries  Order bibliographic entries in bibtex file
+      url           Remove or add URLs from entries according to given rules, e.g.
+                    whether DOI or ArXiv ID are present
     
     --------------------------
     
-    Use  bibolamazi --help <filter>  for more information about each filter and
-    its options.
+    Use  bibolamazi --help <filter>  for more information about a specific filter
+    and its options.
     
 
 
