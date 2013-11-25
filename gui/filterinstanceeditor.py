@@ -366,7 +366,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         for (k,v) in self._kwargs.iteritems():
             if (k in done_args):
                 continue
-            slist.append('--' + k + '=' + butils.quotearg(str(v)))
+            slist.append('-s' + k + '=' + butils.quotearg(str(v)))
 
         self._optionstring = " ".join(slist)
 

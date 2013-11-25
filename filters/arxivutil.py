@@ -180,7 +180,9 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
     `[filter/bibolamazifile].cache_for('arxiv_fetched_api_info')['fetched']`
     """
 
-    missing_ids = [ aid for aid in idlist if aid not in cache_entrydic ]
+    missing_ids = [ aid for aid in idlist
+                    if (aid not in cache_entrydic or
+                        isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)) ]
     
     if not missing_ids:
         logger.longdebug('nothing to fetch: no missing ids')
@@ -217,10 +219,11 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
             #                "HTTP Connection Error: {0}".format(error.getcode())
             #                )
 
-    for (k,v) in arxivdict.iteritems():
-        cache_entrydic[k]['reference'] = v;
-        bibtex = v.bibtex();
-        cache_entrydic[k]['bibtex'] = bibtex;
+    for (k,ref) in arxivdict.iteritems():
+        logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
+        cache_entrydic[k]['reference'] = ref
+        bibtex = ref.bibtex()
+        cache_entrydic[k]['bibtex'] = bibtex
 
     return True
 
@@ -251,20 +254,20 @@ class ArxivInfoCacheAccess:
                 continue
             arinfo = detectEntryArXivInfo(v);
             self.entrydic[k] = arinfo;
-            logger.longdebug('got arXiv information for `%s'': %r.' %(k, arinfo))
+            logger.longdebug("got arXiv information for `%s': %r.", k, arinfo)
             
             if (self.entrydic[k] is not None):
-                needs_to_be_completed.append(k)
+                needs_to_be_completed.append( (k, arinfo['arxivid'],) )
 
         # complete the entry arXiv info using fetched info from the arXiv API.
         fetched_api_cache = self.bibolamazifile.cache_for('arxiv_fetched_api_info')['fetched'];
-        fetch_arxiv_api_info(needs_to_be_completed,
+        fetch_arxiv_api_info( (x[1] for x in needs_to_be_completed),
                              fetched_api_cache)
 
-        for aid in needs_to_be_completed:
+        for (k,aid) in needs_to_be_completed:
             api_info = fetched_api_cache.get(aid)
-            self.entrydic[aid]['primaryclass'] = reference_category(api_info['reference'])
-            self.entrydic[aid]['doi'] = reference_doi(api_info['reference']);
+            self.entrydic[k]['primaryclass'] = reference_category(api_info['reference'])
+            self.entrydic[k]['doi'] = reference_doi(api_info['reference']);
     
 
     def getArXivInfo(self, entrykey):
