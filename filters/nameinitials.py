@@ -105,7 +105,7 @@ class NameInitialsFilter(BibFilter):
                 if (self._names_to_utf8):
                     pstr = latex2text.latex2text(pstr)
                 p = Person(pstr)
-                pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast(True)),
+                pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast()),
                               " ".join(p.last()), " ".join(p.lineage()));
                 entry.persons[role][k] = pnew
                 #logger.debug("nameinitials: %r became %r" % (p, pnew));
