@@ -27,7 +27,7 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
 # for the arxiv info parser tool
-import arxivutil
+from .util import arxivutil
 
 
 HELP_AUTHOR = u"""\

@@ -45,8 +45,8 @@ __all__ = []
 # some exception classes.
 
 class NoSuchFilter(Exception):
-    def __init__(self, fname):
-        Exception.__init__(self, "No such filter: "+fname);
+    def __init__(self, fname, errorstr=None):
+        Exception.__init__(self, "No such filter or import error: "+fname+(": "+errorstr if errorstr else ""));
 
 class FilterError(Exception):
     def __init__(self, errorstr, name=None):
@@ -129,10 +129,10 @@ def get_module(name, raise_nosuchfilter=True):
     try:
         mod = importlib.import_module('.'+name, package='filters');
         _filter_modules[name] = mod;
-    except ImportError:
+    except ImportError as e:
         if (not raise_nosuchfilter):
             return None
-        raise NoSuchFilter(name);
+        raise NoSuchFilter(name, e.message);
 
     # and return it
     return _filter_modules[name];

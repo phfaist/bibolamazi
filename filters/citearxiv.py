@@ -32,8 +32,9 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
 import arxiv2bib
-import arxivutil
+from .util import arxivutil
 
+from .util import auxfile
 
 
 HELP_AUTHOR = u"""\
@@ -105,32 +106,20 @@ class CiteArxivFilter(BibFilter):
                                                                    arxiv_fetched_cache))
 
         #
-        # First, find and analyze jobname.aux
+        # find and analyze jobname.aux. Look for \citation{...}'s and collect them.
         #
 
-        allaux = None
-        for maybeauxfile in (os.path.join(bibolamazifile.fdir(), searchdir, self.jobname+'.aux')
-                             for searchdir in self.search_dirs):
-            try:
-                with open(maybeauxfile, 'r') as auxf:
-                    allaux = auxf.read()
-            except IOError:
-                pass
-
-        if (not allaux):
-            raise BibFilterError(self.name(), "Can't analyze citations: can't find `%s.aux'." %(self.jobname))
-
-        #
-        # parse allaux for \citation{...}
-        #
+        def add_to_cite_list(x):
+            if (x not in citearxiv_uselist):
+                citearxiv_uselist.append(x)
+                
+        auxfile.get_all_auxfile_citations(self.jobname, bibolamazifile,
+                                          filtername=self.name(),
+                                          search_dirs=self.search_dirs,
+                                          return_set=False,
+                                          callback=add_to_cite_list,
+                                          )
         
-        for citation in re.finditer(r'\\citation\{(?P<citekey>[^\}]+)\}', allaux):
-            citekey = citation.group('citekey')
-            if (arxiv2bib.NEW_STYLE.match(citekey) or arxiv2bib.OLD_STYLE.match(citekey)):
-                # this is an arxiv citation key
-                if (not citekey in citearxiv_uselist):
-                    citearxiv_uselist.append(citekey)
-
         #
         # Now, fetch all bib entries that we need.
         #

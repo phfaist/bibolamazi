@@ -34,7 +34,7 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 from core.latex import latex2text
 
-import arxivutil
+from .util import arxivutil
 
 ### DON'T CHANGE THIS STRING. IT IS THE STRING THAT IS SEARCHED FOR IN AN EXISTING
 ### DUPFILE TO PREVENT OVERWRITING OF WRONG FILES.

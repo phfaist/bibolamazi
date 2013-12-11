@@ -572,9 +572,8 @@ class BibolamaziFile(object):
                     filterinstance = filters.make_filter(filname, filoptions)
                     filterinstance.setBibolamaziFile(self)
                     self._filters.append(filterinstance)
-                except filters.NoSuchFilter:
-                    self._raise_parse_error("No such filter: `%s'" %(filname),
-                                            lineno=cmd.lineno);
+                except filters.NoSuchFilter as e:
+                    self._raise_parse_error(str(e), lineno=cmd.lineno);
                 except filters.FilterError as e:
                     import traceback
                     logger.debug("FilterError:\n" + traceback.format_exc())

@@ -27,7 +27,7 @@ from core.bibfilter import BibFilter, BibFilterError
 from core.blogger import logger
 from core import butils
 
-import arxivutil
+from .util import arxivutil
 
 
 
