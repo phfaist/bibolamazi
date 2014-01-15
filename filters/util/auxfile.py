@@ -23,8 +23,6 @@ import os
 import os.path
 import re
 
-import arxiv2bib
-
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
@@ -49,7 +47,7 @@ def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=N
             pass
 
     if (not allaux):
-        raise BibFilterError(filtername, "Can't analyze citations: can't find `%s.aux'." %(self.jobname))
+        raise BibFilterError(filtername, "Can't analyze citations: can't find `%s.aux'." %(jobname))
 
     #
     # parse allaux for \citation{...}
@@ -57,12 +55,10 @@ def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=N
     
     for citation in re.finditer(r'\\citation\{(?P<citekey>[^\}]+)\}', allaux):
         citekey = citation.group('citekey')
-        if (arxiv2bib.NEW_STYLE.match(citekey) or arxiv2bib.OLD_STYLE.match(citekey)):
-            # this is an arxiv citation key
-            if (return_set):
-                citations_list.add(citekey)
-            if (callback is not None):
-                callback(citekey)
+        if (return_set):
+            citations_list.add(citekey)
+        if (callback is not None):
+            callback(citekey)
 
     if return_set:
         return citations_list

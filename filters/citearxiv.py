@@ -109,9 +109,16 @@ class CiteArxivFilter(BibFilter):
         # find and analyze jobname.aux. Look for \citation{...}'s and collect them.
         #
 
-        def add_to_cite_list(x):
-            if (x not in citearxiv_uselist):
-                citearxiv_uselist.append(x)
+        def add_to_cite_list(citekey):
+            if (not arxiv2bib.NEW_STYLE.match(citekey) and
+                not arxiv2bib.OLD_STYLE.match(citekey)):
+                # this is not an arxiv citation key
+                return
+
+            # citekey is an arxiv ID
+            arxivid = citekey;
+            if (arxivid not in citearxiv_uselist):
+                citearxiv_uselist.append(arxivid)
                 
         auxfile.get_all_auxfile_citations(self.jobname, bibolamazifile,
                                           filtername=self.name(),
