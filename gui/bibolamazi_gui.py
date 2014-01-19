@@ -54,8 +54,20 @@ class MainWidget(QWidget):
 
         self.menubar = None
         self.shortcuts = []
-        
-        if (sys.platform == 'darwin'):
+
+        self.upd_checkenabled_action = None
+        if (swu_interface is not None):
+            self.upd_checkenabled_action = QAction("Check for Updates", self)
+            self.upd_checkenabled_action.setCheckable(True)
+            self.upd_checkenabled_action.toggled.connect(swu_interface.setCheckForUpdatesEnabled)
+            swu_interface.checkForUpdatesEnabledChanged.connect(self.upd_checkenabled_action.setChecked)
+            self.upd_checkenabled_action.toggled.connect(
+                lambda value:
+                QMessageBox.information(self, 'Software Updates',
+                                        'Software update checks have been turned %s.' %('on' if value else 'off'))
+                )
+
+        if (sys.platform.startswith('darwin')):
             # Mac OS X
             self.menubar = QMenuBar(None)
             filemenu = self.menubar.addMenu("File")
@@ -63,6 +75,9 @@ class MainWidget(QWidget):
                                QKeySequence("Ctrl+N"))
             filemenu.addAction("Open", self, SLOT('on_btnOpenFile_clicked()'),
                                QKeySequence("Ctrl+O"))
+            if (self.upd_checkenabled_action):
+                filemenu.addSeparator()
+                filemenu.addAction(self.upd_checkenabled_action)
             helpmenu = self.menubar.addMenu("Help")
             helpmenu.addAction("Open Help Browser", self, SLOT('on_btnHelp_clicked()'),
                                QKeySequence("Ctrl+R"))
@@ -84,10 +99,16 @@ class MainWidget(QWidget):
                 #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
                 #          Qt.ApplicationShortcut),
                 ]
+            if (self.upd_checkenabled_action):
+                self.shortcuts += [
+                    (self.upd_checkenabled_action, "Ctrl+U", None)
+                    ]
+            # now, setup the shortcuts.
             for (a, key, slot) in self.shortcuts:
                 print 'adding action with key %s' %(key)
                 a.setShortcut(QKeySequence(key))
-                a.triggered.connect(slot)
+                if (slot is not None):
+                    a.triggered.connect(slot)
                 a.setShortcutContext(Qt.ApplicationShortcut)
                 self.addAction(a)
 
@@ -175,6 +196,38 @@ class MainWidget(QWidget):
 
 
 
+swu_updater = None
+swu_interface = None
+swu_source = None
+swu_sourcefilter_devel = None
+
+
+def setup_software_updater():
+        import logging
+        from updater4pyi import upd_core, upd_source, upd_iface, upd_log
+        from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
+        from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
+
+        if (not hasattr(sys, '_MEIPASS')):
+            # not pyinstaller-packaged
+            return
+
+        upd_log.setup_logger(logging.DEBUG)
+
+        #upd_iface.DEFAULT_INIT_CHECK_DELAY = 3 # seconds
+        #upd_iface.DEFAULT_CHECK_INTERVAL = 10 # seconds
+        
+        swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
+
+        swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False);
+        swu_source.add_release_filter(swu_sourcefilter_devel)
+
+        swu_updater = upd_core.Updater(current_version=core.version.version_str, ## '0.9', ## DEBUG!!! 
+                                       update_source=swu_source)
+
+        interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', parent=QApplication.instance())
+        interface.start()
+
 
 def run_main():
 
@@ -186,6 +239,9 @@ def run_main():
     app.setApplicationVersion(core.version.version_str)
     app.setOrganizationDomain('org.bibolamazi')
     app.setOrganizationName('Bibolamazi Project')
+
+    # before main widget, so that main widget can create & connect relevant menu items
+    setup_software_updater()
 
     w = MainWidget()
     w.show()

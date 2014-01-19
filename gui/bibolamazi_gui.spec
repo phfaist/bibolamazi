@@ -51,8 +51,9 @@ a = Analysis(['bibolamazi_gui.py'],
                  os.path.join(bibolamazi_path, '3rdparty', x)
                  for x in bibolamazi_init.third_party
                  ],
-             hiddenimports=['bibolamazi_compiled_filter_list'],#+filterlist,
-             hookspath=None)
+             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],#+filterlist,
+             hookspath=[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
+             )
 
 if (sys.platform.startswith('win')):
     # have this problem of 'File already installed but should not: pyconfig.h'
@@ -106,12 +107,13 @@ if (sys.platform.startswith('darwin')):
 ##                  icon='bibolamazi_icon.icns',
 ##                  )
 else:
-    exename = os.path.join('dist', 'bibolamazi_gui')
-    kwargs = {}
-    
     if (sys.platform.startswith('win')):
-        exename += '.exe'
+        exename = os.path.join('dist', 'bibolamazi-win32.exe')
         kwargs['icon'] = 'bibolamazi_icon.ico'
+    else:
+        exename = os.path.join('dist', 'bibolamazi_gui')
+        kwargs = {}
+    
         
     exe = EXE(pyz,
               a.scripts,
