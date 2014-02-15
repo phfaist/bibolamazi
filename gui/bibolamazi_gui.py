@@ -38,6 +38,7 @@ from PyQt4.QtGui import *
 
 import openbibfile
 import helpbrowser
+import settingswidget
 
 from qtauto.ui_mainwidget import Ui_MainWidget
 
@@ -52,6 +53,8 @@ class MainWidget(QWidget):
 
         self.helpbrowser = None
 
+        self.settingswidget = None
+
         self.menubar = None
         self.shortcuts = []
 
@@ -61,11 +64,11 @@ class MainWidget(QWidget):
             self.upd_checkenabled_action.setCheckable(True)
             self.upd_checkenabled_action.toggled.connect(swu_interface.setCheckForUpdatesEnabled)
             swu_interface.checkForUpdatesEnabledChanged.connect(self.upd_checkenabled_action.setChecked)
-            self.upd_checkenabled_action.toggled.connect(
-                lambda value:
-                QMessageBox.information(self, 'Software Updates',
-                                        'Software update checks have been turned %s.' %('on' if value else 'off'))
-                )
+            #self.upd_checkenabled_action.toggled.connect(
+            #    lambda value:
+            #    QMessageBox.information(self, 'Software Updates',
+            #                            'Software update checks have been turned %s.' %('on' if value else 'off'))
+            #    )
 
         if (sys.platform.startswith('darwin')):
             # Mac OS X
@@ -75,11 +78,12 @@ class MainWidget(QWidget):
                                QKeySequence("Ctrl+N"))
             filemenu.addAction("Open", self, SLOT('on_btnOpenFile_clicked()'),
                                QKeySequence("Ctrl+O"))
+            filemenu.addAction("Settings", self, SLOT('on_btnSettings_clicked()'))
             if (self.upd_checkenabled_action):
                 filemenu.addSeparator()
                 filemenu.addAction(self.upd_checkenabled_action)
             helpmenu = self.menubar.addMenu("Help")
-            helpmenu.addAction("Open Help Browser", self, SLOT('on_btnHelp_clicked()'),
+            helpmenu.addAction("Open Help && Reference Browser", self, SLOT('on_btnHelp_clicked()'),
                                QKeySequence("Ctrl+R"))
         else:
             self.shortcuts += [
@@ -87,6 +91,7 @@ class MainWidget(QWidget):
                 (QAction("Open", self), "Ctrl+O", self.on_btnOpenFile_clicked),
                 (QAction("Help", self), "Ctrl+R", self.on_btnHelp_clicked),
                 (QAction("Quit", self), "Ctrl+Q", self.on_btnQuit_clicked),
+                (QAction("Settings", self), "Ctrl+P", self.on_btnSettings_clicked),
                 #
                 # PyQt Bug: these shortcuts cause segfaults!! workaround: use QAction's instead.
                 #
@@ -160,7 +165,7 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnHelp_clicked(self):
-        if (not self.helpbrowser):
+        if (self.helpbrowser is None):
             self.helpbrowser = helpbrowser.HelpBrowser()
         self.helpbrowser.show()
         self.helpbrowser.raise_()
@@ -169,6 +174,15 @@ class MainWidget(QWidget):
     def on_btnQuit_clicked(self):
         self.close()
 
+
+    @pyqtSlot()
+    def on_btnSettings_clicked(self):
+        if self.settingswidget is None:
+            self.settingswidget = settingswidget.SettingsWidget(swu_interface=swu_interface,
+                                                                swu_sourcefilter_devel=swu_sourcefilter_devel,
+                                                                parent=self)
+        self.settingswidget.show()
+        self.settingswidget.raise_()
 
     @pyqtSlot()
     def bibFileClosed(self):
@@ -203,17 +217,20 @@ swu_sourcefilter_devel = None
 
 
 def setup_software_updater():
+        if (not hasattr(sys, '_MEIPASS')):
+            # not pyinstaller-packaged
+            return
+
+        global swu_updater, swu_interface, swu_source, swu_sourcefilter_devel
+
         import logging
         from updater4pyi import upd_core, upd_source, upd_iface, upd_log
         from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
         from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
 
-        if (not hasattr(sys, '_MEIPASS')):
-            # not pyinstaller-packaged
-            return
-
         upd_log.setup_logger(logging.DEBUG)
 
+        # DEBUG:
         #upd_iface.DEFAULT_INIT_CHECK_DELAY = 3 # seconds
         #upd_iface.DEFAULT_CHECK_INTERVAL = 10 # seconds
         
@@ -222,11 +239,12 @@ def setup_software_updater():
         swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False);
         swu_source.add_release_filter(swu_sourcefilter_devel)
 
-        swu_updater = upd_core.Updater(current_version=core.version.version_str, ## '0.9', ## DEBUG!!! 
+        swu_updater = upd_core.Updater(current_version='0.9',#core.version.version_str, '0.9', ## DEBUG!!! 
                                        update_source=swu_source)
 
-        interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', parent=QApplication.instance())
-        interface.start()
+        swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
+                                             parent=QApplication.instance())
+        swu_interface.start()
 
 
 def run_main():

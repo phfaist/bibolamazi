@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwidget.ui'
 #
-# Created: Fri Nov 22 22:56:38 2013
+# Created: Sat Feb 15 16:07:27 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -62,6 +62,9 @@ class Ui_MainWidget(object):
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.groupBox_2)
         self.verticalLayout_2.setSpacing(20)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
+        self.btnSettings = QtGui.QPushButton(self.groupBox_2)
+        self.btnSettings.setObjectName(_fromUtf8("btnSettings"))
+        self.verticalLayout_2.addWidget(self.btnSettings)
         self.btnHelp = QtGui.QPushButton(self.groupBox_2)
         self.btnHelp.setObjectName(_fromUtf8("btnHelp"))
         self.verticalLayout_2.addWidget(self.btnHelp)
@@ -83,7 +86,8 @@ class Ui_MainWidget(object):
         self.groupBox.setTitle(_translate("MainWidget", "Open bibolamazi file or create new bibolamazi file", None))
         self.btnOpenFile.setText(_translate("MainWidget", "Open Bibolamazi File ...", None))
         self.btnNewFile.setText(_translate("MainWidget", "Create New Bibolamazi File ...", None))
-        self.groupBox_2.setTitle(_translate("MainWidget", "Help & Reference", None))
+        self.groupBox_2.setTitle(_translate("MainWidget", "Settings && Help", None))
+        self.btnSettings.setText(_translate("MainWidget", "Settings", None))
         self.btnHelp.setText(_translate("MainWidget", "Help && Reference Browser", None))
         self.btnQuit.setText(_translate("MainWidget", "Quit", None))
 

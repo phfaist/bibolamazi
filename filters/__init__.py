@@ -367,10 +367,13 @@ class DefaultFilterOptions:
             m = argdocspos[k]
             if (begindoc is None):
                 begindoc = doc[:m.start()];
-            thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc));
+            thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc))
+            # adjust whitespace in docstr
+            docstr = doc[m.end():thisend].strip()
+            docstr = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(docstr)
             argdoclist.append(_ArgDoc(argname=m.group('argname'),
                                       argtypename=m.group('argtypename'),
-                                      doc=doc[m.end():thisend].strip()))
+                                      doc=docstr))
         argdocs = dict([(x.argname, x) for x in argdoclist])
 
         self._use_auto_case = True

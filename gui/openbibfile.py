@@ -423,6 +423,7 @@ class OpenBibFile(QWidget):
                     core.main.run_bibolamazi(outputbibfile=self.bibolamaziFileName,
                                              verbosity=self.ui.cbxVerbosity.currentIndex())
                 except butils.BibolamaziError as e:
+                    logger.error(unicode(e))
                     QMessageBox.warning(self, "Bibolamazi error", unicode(e))
 
         self.delayedUpdateFileContents()
@@ -435,6 +436,15 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnRefresh_clicked(self):
+        if (self._modified):
+            yn = QMessageBox.question(self, "Really revert?", self.tr("You are about to revert the file, but you "
+                                                                      "have unsaved changes. Do you really want "
+                                                                      "to abandon your changes and revert the "
+                                                                      "file to disk?"),
+                                      QMessageBox.Ok|QMessageBox.Cancel, QMessageBox.Cancel)
+            if (yn != QMessageBox.Ok):
+                return
+
         self.updateFileContents()
 
 

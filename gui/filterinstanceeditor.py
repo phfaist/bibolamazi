@@ -30,7 +30,7 @@ import re
 import filters
 from filters import NoSuchFilter, FilterError
 from core import butils
-from core.bibfilter import EnumArgType
+from core.bibfilter import EnumArgType, CommaStrList
 
 
 from PyQt4.QtCore import *
@@ -210,13 +210,21 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (row < 0 or row >= len(filteroptions)):
             return QVariant()
 
+        # the argument specification of the current row (_ArgDoc namedtuple instance)
+        arg = filteroptions[row]
+
         if (col == 0):
             # argument name
             if (role == Qt.DisplayRole):
                 return QVariant(QString(self._fopts.getSOptNameFromArg(filteroptions[row].argname)))
+
+            # tool-tip documentation
+            if (role == Qt.ToolTipRole):
+                return QVariant(QString(arg.doc))
+
             return QVariant()
 
-        arg = filteroptions[row]
+        # the value of the argument of the current row.
         val = self._kwargs.get(arg.argname)
         
         if (col == 1):
@@ -234,7 +242,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 if (val is None):
                     return QVariant()
                 return QVariant(QString(str(val)))
-            
+
             # request editing value of argument
             if (role == Qt.EditRole):
                 if (arg.argtypename is not None):
@@ -246,6 +254,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     editval = RegisteredArgInputType(typ, val)
                 elif (issubclass(typ, basestring) and val is None):
                     editval = typ('')
+                elif (issubclass(typ, CommaStrList)):
+                    editval = unicode(val)
                 else:
                     editval = typ(val)
                 return QVariant(editval)
@@ -310,6 +320,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         value = value.toPyObject()
         
+        if (isinstance(value, QString)):
+            value = unicode(value); # make sure we're dealing with Python strings and not Qt strings
+
         print "Got value: %r" %(value)
 
         # validate type

@@ -19,6 +19,7 @@
 #                                                                              #
 ################################################################################
 
+import re
 
 from butils import BibolamaziError
 
@@ -141,14 +142,15 @@ class BibFilter(object):
         return cls.helptext.strip();
     
 
+# ------------------------------------------------------------------------
+
 
 # for meta-typing. This is particularly used by the graphical interface.
+
 
 class EnumArgType:
     def __init__(self, listofvalues):
         self.listofvalues = listofvalues
-
-
 
 
 def enum_class(class_name, values, default_value=0, value_attr_name='value'):
@@ -240,3 +242,53 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
     setattr(thecls, value_attr_name+'s_dict', thecls._values_dict)
 
     return thecls
+
+
+# -------------------------------
+
+
+class CommaStrListArgType:
+    def __init__(self):
+        pass
+
+_rx_escape = re.compile(r'(\\|,)');
+def _escape(x):
+    return _rx_escape.sub(lambda m: '\\'+m.group(1), x);
+
+_rx_unescape = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
+
+class CommaStrList(list):
+    def __init__(self, iterable=[]):
+        if (isinstance(iterable, basestring)):
+            fullstr = iterable
+            lastpos = 0
+            strlist = []
+            laststr = ""
+            for m in _rx_unescape.finditer(iterable):
+                laststr += fullstr[lastpos:m.start()];
+                if (m.group('sep') == ','):
+                    strlist.append(laststr)
+                    laststr = ""
+                elif (m.group() and m.group()[0] == '\\'):
+                    # escaped char
+                    laststr += m.group('char');
+                else:
+                    raise RuntimeError("Unexpected match!?: %r", m)
+                lastpos = m.end()
+            # include the last bit of string
+            laststr += fullstr[lastpos:];
+            strlist.append(laststr);
+
+            # now we've got our decoded string list.
+            iterable = strlist
+            
+        super(CommaStrList, self).__init__(iterable)
+
+    def __unicode__(self):
+        return u",".join([_escape(unicode(x)) for x in self]);
+
+    def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+
+
