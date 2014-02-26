@@ -54,10 +54,13 @@ class LogToTextBrowserHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.textEdit = textEdit
 
-    def emit(self, record):
-        self.textEdit.append(self.format(record))
+    def addtolog(self, txt):
+        self.textEdit.append(txt)
         self.textEdit.update()
         QApplication.instance().processEvents()
+
+    def emit(self, record):
+        self.addtolog(self.format(record))
 
 
 class LogToTextBrowser:
@@ -76,6 +79,9 @@ class LogToTextBrowser:
 
         self.logger = thelogger
         
+
+    def addtolog(self, txt):
+        self.ch.addtolog(txt)
 
     def __enter__(self):
         # add the handlers to the logger
@@ -422,8 +428,10 @@ class OpenBibFile(QWidget):
                     self.fwatcher.blockSignals(True)
                     core.main.run_bibolamazi(outputbibfile=self.bibolamaziFileName,
                                              verbosity=self.ui.cbxVerbosity.currentIndex())
+                    log2txtLog.addtolog(" --> Finished successfully. <--")
                 except butils.BibolamaziError as e:
                     logger.error(unicode(e))
+                    log2txtLog.addtolog(" --> Finished with errors. <--")
                     QMessageBox.warning(self, "Bibolamazi error", unicode(e))
 
         self.delayedUpdateFileContents()
