@@ -239,7 +239,7 @@ def setup_software_updater():
         swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False);
         swu_source.add_release_filter(swu_sourcefilter_devel)
 
-        swu_updater = upd_core.Updater(current_version='0.9',#core.version.version_str, '0.9', ## DEBUG!!! 
+        swu_updater = upd_core.Updater(current_version=core.version.version_str, #'0.9', ## DEBUG!!! 
                                        update_source=swu_source)
 
         swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
