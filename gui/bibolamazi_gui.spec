@@ -107,13 +107,12 @@ if (sys.platform.startswith('darwin')):
 ##                  icon='bibolamazi_icon.icns',
 ##                  )
 else:
+    kwargs = {}
     if (sys.platform.startswith('win')):
         exename = os.path.join('dist', 'bibolamazi-win32.exe')
         kwargs['icon'] = 'bibolamazi_icon.ico'
     else:
         exename = os.path.join('dist', 'bibolamazi_gui')
-        kwargs = {}
-    
         
     exe = EXE(pyz,
               a.scripts,

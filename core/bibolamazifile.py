@@ -737,31 +737,40 @@ TEMPLATE_HEADER = """\
 TEMPLATE_CONFIG = """\
 %%%-BIB-OLA-MAZI-BEGIN-%%%
 %
-% %% BIBOLAMAZI configuration section.
-% %% Additional two leading percent signs indicate comments in the configuration.
+% %% This bibliography database uses BIBOLAMAZI:
+% %%
+% %%     https://github.com/phfaist/bibolamazi
+% %%
+% %% See comments below this configuration section if you're new to bibolamazi.
+%
+% %% This is the BIBOLAMAZI configuration section. Additional two leading
+% %% percent signs indicate comments within the configuration.
 %
 % %% **** SOURCES ****
 %
-% %% The _first_ accessible file in _each_ source list will be read and filtered.
+% %% The _first_ accessible file in _each_ source list will be read
 %
 % src:   <source file 1> [ <alternate source file 1> ... ]
 % src:   <source file 2> [ ... ]
 %
-% %% Add additional sources here. Alternative files are useful, e.g., if the same
-% %% file must be accessed with different paths on different machines.
+% %% Add additional sources here. Alternative files are useful, e.g., if the
+% %% same file is to be accessed with different paths on different machines.
 %
 % %% **** FILTERS ****
 %
-% %% Specify filters here. Specify as many filters as you want, each with a `filter:'
-% %% directive. See also `bibolamazi --list-filters' and `bibolamazi --help <filter>'.
+% %% Specify filters here. Specify as many filters as you want, each with a
+% %% `filter:' directive. See also `bibolamazi --list-filters' and
+% %% `bibolamazi --help <filter>', or the "Help & Reference" page of the
+% %% graphical interface.
 %
 % filter: filter_name  <filter options>
 %
 % %% Example:
 % filter: arxiv -sMode=strip -sUnpublishedMode=eprint
 %
-% %% Finally, if your file is in a VCS, sort all entries by citation key so that you don't
-% %% get huge file differences for each commit each time bibolamazi is run:
+% %% Finally, if your file is in a VCS, sort all entries by citation key so that
+% %% you don't get huge file differences for each commit each time bibolamazi is
+% %% run:
 % filter: orderentries
 %
 %%%-BIB-OLA-MAZI-END-%%%
