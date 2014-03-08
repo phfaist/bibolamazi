@@ -53,22 +53,25 @@ class UrlNormalizeFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, Strip=True, StripAllIfDoiOrArxiv=True, StripDoiUrl=True, StripArxivUrl=True,
-                 UrlFromDoi=False, UrlFromArxiv=False):
+    def __init__(self, Strip=False, StripAllIfDoiOrArxiv=False, StripDoiUrl=True, StripArxivUrl=True,
+                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False):
         """UrlNormalizeFilter constructor.
 
         Arguments:
           - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the other options.
+                         [default: False]
           - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI identifier or
-                         an ArXiv ID is present.
+                         an ArXiv ID is present. [default: False]
           - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, i.e. of the form
-                         http://dx.doi.org/<DOI>
+                         `http://dx.doi.org/<DOI>`  [default: True]
           - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
-                         form http://arxiv.org/abs/<ID>
+                         form `http://arxiv.org/abs/<ID>`  [default: True]
           - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL that is a DOI
-                         lookup, i.e. http://dx.doi.org/<DOI>
+                         lookup, i.e. `http://dx.doi.org/<DOI>`  [default: False]
           - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL that links
-                         to the arXiv page, i.e. http://arxiv.org/abs/<ARXIV-ID>
+                         to the arXiv page, i.e. `http://arxiv.org/abs/<ARXIV-ID>`  [default: False]
+          - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all the other
+                         stripping rules, keep only the first remaining URL, if any.  [default: False]
         """
         BibFilter.__init__(self);
 
@@ -78,6 +81,7 @@ class UrlNormalizeFilter(BibFilter):
         self.striparxivurl = getbool(StripArxivUrl);
         self.urlfromdoi = getbool(UrlFromDoi);
         self.urlfromarxiv = getbool(UrlFromArxiv);
+        self.keepfirsturlonly = getbool(KeepFirstUrlOnly);
 
         logger.debug('url filter constructor')
         
@@ -92,50 +96,69 @@ class UrlNormalizeFilter(BibFilter):
         #
         # entry is a pybtex.database.Entry object
         #
-        
-        if (self.strip and 'url' in entry.fields):
-            del entry.fields['url'];
-
-        #logger.debug("Stripped 'url' entry from field=%r", entry.fields);
 
         arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry);
 
+        # --- prepare urls[] list ---
         if ('url' in entry.fields):
             urls = entry.fields['url'].split();
         else:
             urls = [];
 
+        #logger.longdebug("%s: Urls is initially %r", entry.key, urls)
+
+        # --- filter the urls[] list ---
+        
+        if (self.strip):
+            urls = []
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
+
         if (self.stripallifdoiorarxiv):
             if ('doi' in entry.fields or arxivinfo is not None):
-                entry.fields.pop('url', None)
+                #entry.fields.pop('url', None)
+                urls = []
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.stripdoiurl):
             for url in urls:
                 if re.match(r'^http://dx.doi.org/', url):
                     urls.remove(url);
-            if (len(urls)):
-                entry.fields['url'] = " ".join(urls);
-            else:
-                entry.fields.pop('url', None)
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.striparxivurl):
             for url in urls:
                 if re.match(r'^http://arxiv.org/abs/', url):
                     urls.remove(url);
-            if (len(urls)):
-                entry.fields['url'] = " ".join(urls);
-            else:
-                entry.fields.pop('url', None)
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromdoi):
             if ('doi' in entry.fields):
                 urls.append("http://dx.doi.org/"+entry.fields['doi']);
-                entry.fields['url'] = " ".join(urls);
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromarxiv):
             if (arxivinfo is not None):
                 urls.append("http://arxiv.org/abs/"+arxivinfo['arxivid']);
-                entry.fields['url'] = " ".join(urls);
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
+
+        if (self.keepfirsturlonly):
+            if (urls):
+                urls[1:] = []
+
+        #logger.longdebug("%s: Urls is now %r", entry.key, urls)
+
+        # --- reformat the entry as needed, according to the modified urls[] list, and return it ---
+
+        if (urls):
+            entry.fields['url'] = " ".join(urls);
+        else:
+            entry.fields.pop('url', None)
 
         return entry
 
