@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2013 by Philippe Faist                                       #
+#   Copyright (C) 2014 by Philippe Faist                                       #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -211,7 +211,7 @@ class store_key_const(argparse.Action):
 
 def helptext_prolog():
     return ("""
-Bibolamazi Version %(version)s by Philippe Faist (C) 2013
+Bibolamazi Version %(version)s by Philippe Faist (C) 2014
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 
 """ % { 'version': butils.get_version(),
@@ -247,7 +247,7 @@ class opt_action_version(argparse.Action):
 
         helptext = """\
 Version: %(version)s
-Bibolamazi by Philippe Faist (C) 2013
+Bibolamazi by Philippe Faist (C) 2014
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 """ % { 'version': butils.get_version(),
 }

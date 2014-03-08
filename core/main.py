@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2013 by Philippe Faist                                       #
+#   Copyright (C) 2014 by Philippe Faist                                       #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -109,7 +109,7 @@ def run_bibolamazi_args(args):
     logger.longdebug('Set verbosity: %d' %(args.verbosity));
 
     logger.debug(textwrap.dedent("""
-    Bibolamazi Version %(ver)s by Philippe Faist (C) 2013
+    Bibolamazi Version %(ver)s by Philippe Faist (C) 2014
 
     Use option --help for help information.
     """         %   {
