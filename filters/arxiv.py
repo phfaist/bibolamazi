@@ -232,6 +232,7 @@ class ArxivNormalizeFilter(BibFilter):
             # no arxiv info--don't do anything
             return entry
 
+        logger.longdebug('Got entry arxiv info: %s (%s): %r', entry.key, entry.type, arxivinfo);
 
         we_are_published = None
         if (entry.type == 'phdthesis' or entry.type == 'mastersthesis'):
@@ -250,8 +251,8 @@ class ArxivNormalizeFilter(BibFilter):
         if (self.warn_journal_ref and not we_are_published and arxivinfo['doi']):
             # we think we are not published but we actually are, as reported by arXiv.org API. This
             # could be because the authors published their paper in the meantime.
-            logger.warning("arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r"
-                           %(entry.key, arxivinfo['doi']))
+            logger.warning("arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
+                           entry.key, arxivinfo['doi'])
 
         if (mode == MODE_NONE):
             # don't change the entry, return it as is.

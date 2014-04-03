@@ -72,14 +72,18 @@ def detectEntryArXivInfo(entry):
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
         d['published'] = False
-
-    # if journal is the arXiv, it's not published.
-    if ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
+    elif ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
+        # if journal is the arXiv, then it's not published.
         d['published'] = False
-
-    # if there's no journal, it's the arxiv.
-    if ('journal' not in fields or fields['journal'] == ""):
+    elif (entry.type == u'inproceedings'):
+        # in conference proceedings -- published
+        d['published'] = True
+    elif ('journal' not in fields or fields['journal'] == ""):
+        # if there's no journal, it's the arxiv.
         d['published'] = False
+    else:
+        logger.longdebug('No decisive information about whether this entry is published: %s (type %s), '
+                         'defaulting to True.', entry.key, entry.type);
         
 
     if ('eprint' in fields):
