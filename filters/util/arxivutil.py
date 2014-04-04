@@ -270,6 +270,10 @@ class ArxivInfoCacheAccess:
 
         for (k,aid) in needs_to_be_completed:
             api_info = fetched_api_cache.get(aid)
+            if (api_info is None):
+                logger.warning("Failed to fetch arXiv information for %s", aid);
+                continue
+            
             self.entrydic[k]['primaryclass'] = reference_category(api_info['reference'])
             self.entrydic[k]['doi'] = reference_doi(api_info['reference']);
     
