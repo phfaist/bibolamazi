@@ -75,6 +75,9 @@ def detectEntryArXivInfo(entry):
     elif ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
         # if journal is the arXiv, then it's not published.
         d['published'] = False
+    elif ('journal' in fields and fields['journal'].strip()):
+        # otherwise, if there is a journal, it's published
+        d['published'] = True
     elif (entry.type == u'inproceedings'):
         # in conference proceedings -- published
         d['published'] = True
@@ -211,10 +214,10 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
                 """))
         else:
             msg = (("%d: %s" %(error.code, error.reason)) if isinstance(error, HTTPError)
-                   else error.reason);
-            logger.warning("HTTP Connection Error: %s. ArXiv API information will not be "
-                           "retreived, and your bibliography might be incomplete."
-                           %(msg))
+                   else error.reason)
+            logger.warning("HTTP Connection Error: %s.", msg)
+            logger.warning("ArXiv API information will not be retreived, and your bibliography "
+                           "might be incomplete.")
             return False
             #
             # Don't raise an error, in case the guy is running bibolamazi on his laptop in the
@@ -269,6 +272,10 @@ class ArxivInfoCacheAccess:
         fetched_api_cache = self.bibolamazifile.cache_for('arxiv_fetched_api_info')['fetched'];
         fetch_arxiv_api_info( (x[1] for x in needs_to_be_completed),
                              fetched_api_cache)
+
+
+        # ### BUG: if a fetch failed once, then we need to remove the cache file before it
+        #     will fetch it again...
 
         for (k,aid) in needs_to_be_completed:
             api_info = fetched_api_cache.get(aid)
