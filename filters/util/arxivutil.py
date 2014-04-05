@@ -21,7 +21,7 @@
 
 import arxiv2bib
 import re
-from urllib2 import HTTPError
+from urllib2 import URLError, HTTPError
 
 from core.blogger import logger
 
@@ -193,9 +193,9 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
     try:
         arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
         logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
-    except HTTPError as error:
+    except URLError as error:
         filtname = filterobj.name() if filterobj else None;
-        if error.getcode() == 403:
+        if isinstance(error, HTTPError) and error.getcode() == 403:
             raise BibFilterError(
                 filtname,
                 textwrap.dedent("""\
@@ -206,9 +206,11 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
                 For more information, see http://arxiv.org/help/robots.
                 """))
         else:
-            logger.warning("HTTP Connection Error: %d: %s. ArXiv API information will not be "
+            msg = (("%d: %s" %(error.code, error.reason)) if isinstance(error, HTTPError)
+                   else error.reason);
+            logger.warning("HTTP Connection Error: %s. ArXiv API information will not be "
                            "retreived, and your bibliography might be incomplete."
-                           %(error.code, error.reason))
+                           %(msg))
             return False
             #
             # Don't raise an error, in case the guy is running bibolamazi on his laptop in the
