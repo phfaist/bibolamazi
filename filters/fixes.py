@@ -83,7 +83,8 @@ For now, the implemented fixes are:
     A list of names that should be protected within all fields except people (authors
     and editors). Whenever a field contains one of the given names (as full word),
     then the name is wrapped in braces (e.g. "On Bell Experiments" ->
-    "On {Bell} Experiments") in order to protect the possible upper casing.
+    "On {Bell} Experiments") in order to protect the possible upper casing. The 'url' and
+    'file' fields of the bibtex entry will not be affected.
 
   -dRemoveFileField
     Removes the field file={...} (that e.g. Mendeley introduces) from all entries.
@@ -218,6 +219,8 @@ class FixesFilter(BibFilter):
 
         def filter_protect_names(entry):
             for key, val in entry.fields.iteritems():
+                if key in ('url', 'file'):
+                    continue
                 newval = val;
                 for n,r in self.protect_names.iteritems():
                     newval = r.sub('{'+n+'}', newval);

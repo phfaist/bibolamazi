@@ -413,7 +413,7 @@ class DuplicatesFilter(BibFilter):
             # issue debug message
             logger.debug("wrote duplicates to file: \n" + "\n".join(dupstrlist));
 
-        if (self.warn):
+        if (self.warn and duplicates):
             logger.warning(DUPL_WARN_TOP  +
                            "".join([ DUPL_WARN_ENTRY % { 'alias': dupalias,
                                                          'orig': duporiginal
