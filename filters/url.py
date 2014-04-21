@@ -54,7 +54,7 @@ class UrlNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, Strip=False, StripAllIfDoiOrArxiv=False, StripDoiUrl=True, StripArxivUrl=True,
-                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False):
+                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False, StripForTypes=None):
         """UrlNormalizeFilter constructor.
 
         Arguments:
@@ -72,6 +72,8 @@ class UrlNormalizeFilter(BibFilter):
                          to the arXiv page, i.e. `http://arxiv.org/abs/<ARXIV-ID>`  [default: False]
           - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all the other
                          stripping rules, keep only the first remaining URL, if any.  [default: False]
+          - StripForTypes: strip all URLs specified for entries among the given list of types. Common
+                         types to strip would be e.g. 'book' or 'phdthesis'.
         """
         BibFilter.__init__(self);
 
@@ -82,6 +84,9 @@ class UrlNormalizeFilter(BibFilter):
         self.urlfromdoi = getbool(UrlFromDoi);
         self.urlfromarxiv = getbool(UrlFromArxiv);
         self.keepfirsturlonly = getbool(KeepFirstUrlOnly);
+        self.stripfortypes = None;
+        if (StripForTypes is not None):
+            self.stripfortypes = [ x.strip()  for x in StripForTypes.split(',') ];
 
         logger.debug('url filter constructor')
         
@@ -110,6 +115,9 @@ class UrlNormalizeFilter(BibFilter):
         # --- filter the urls[] list ---
         
         if (self.strip):
+            urls = []
+
+        if (self.stripfortypes is not None and entry.type in self.stripfortypes):
             urls = []
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)

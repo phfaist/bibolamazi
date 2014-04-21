@@ -136,7 +136,7 @@ class FixesFilter(BibFilter):
             self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ];
 
         if protect_names is not None:
-            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x+r'\b', re.IGNORECASE))
+            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x.strip()+r'\b', re.IGNORECASE))
                                         for x in protect_names.split(',') ]);
         else:
             self.protect_names = None;
