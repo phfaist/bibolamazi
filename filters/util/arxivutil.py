@@ -188,7 +188,8 @@ def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
     """
 
     missing_ids = [ aid for aid in idlist
-                    if (aid not in cache_entrydic or
+                    if (aid not in cache_entrydic  or
+                        cache_entrydic.get(aid) is None  or
                         isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)) ]
     
     if not missing_ids:

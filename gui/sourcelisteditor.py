@@ -40,6 +40,8 @@ class SourceListEditor(QWidget):
         self.ui = Ui_SourceListEditor()
         self.ui.setupUi(self)
         
+        self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
+
         QObject.connect(self.ui.lstSources.model(), SIGNAL('layoutChanged()'), self.update_stuff_moved)
 
         self._is_updating = False
@@ -49,6 +51,8 @@ class SourceListEditor(QWidget):
 
     sourceListChanged = pyqtSignal('QStringList')
 
+    requestAddToFavorites = pyqtSignal()
+    
 
     def sourceList(self):
         return [str(self.ui.lstSources.item(i).text())  for i in xrange(self.ui.lstSources.count())]

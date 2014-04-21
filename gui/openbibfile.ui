@@ -90,17 +90,29 @@
           <widget class="QWidget" name="toolspageBase">
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <spacer name="verticalSpacer">
+             <widget class="QTreeView" name="treeFavorites">
+              <property name="font">
+               <font>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="dragDropMode">
+               <enum>QAbstractItemView::InternalMove</enum>
+              </property>
+              <property name="rootIsDecorated">
+               <bool>false</bool>
+              </property>
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
+             </widget>
+            </item>
+            <item>
+             <widget class="Line" name="line">
               <property name="orientation">
-               <enum>Qt::Vertical</enum>
+               <enum>Qt::Horizontal</enum>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>292</height>
-               </size>
-              </property>
-             </spacer>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="btnAddSourceList">

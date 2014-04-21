@@ -52,6 +52,11 @@ class BibolamaziFileParseError(butils.BibolamaziError):
         butils.BibolamaziError.__init__(self, msg, where=where);
 
 
+class NotBibolamaziFileError(BibolamaziFileParseError):
+    def __init__(self, msg, fname=None, lineno=None):
+        BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno);
+
+
 def _repl(s, dic):
     for (k,v) in dic.iteritems():
         s = re.sub(k, v, s);
@@ -468,6 +473,12 @@ class BibolamaziFile(object):
                 config_block_lines.append(cline)
 
             content[state] += line;
+
+        if (state != ST_REST):
+            # file is not a bibolamazi file--no config section found.
+            # error lineno is last line of file.
+            raise NotBibolamaziFileError("Not a bibolamazi file--no config section found.",
+                                         fname=self._fname, lineno=lineno)
 
         config_block = "\n".join(config_block_lines)
 

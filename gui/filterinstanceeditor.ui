@@ -47,13 +47,6 @@
      </item>
     </layout>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QPushButton" name="btnFilterHelp">
-     <property name="text">
-      <string>Help: Filter Reference</string>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="0" colspan="2">
     <widget class="QTreeView" name="lstOptions">
      <property name="sizePolicy">
@@ -79,8 +72,32 @@
      </property>
     </widget>
    </item>
+   <item row="4" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="hlytButtons">
+     <item>
+      <widget class="QPushButton" name="btnFilterHelp">
+       <property name="text">
+        <string>Help: Filter Reference</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="btnAddFavorite">
+       <property name="toolTip">
+        <string>Add this full command line to your favorites</string>
+       </property>
+       <property name="icon">
+        <iconset resource="bibolamazi_res.qrc">
+         <normaloff>:/pic/bookmark.png</normaloff>:/pic/bookmark.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="bibolamazi_res.qrc"/>
+ </resources>
  <connections/>
 </ui>

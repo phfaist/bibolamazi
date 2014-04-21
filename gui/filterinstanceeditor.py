@@ -182,11 +182,15 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
 
     def rowCount(self, parent):
+        if parent.isValid():
+            return 0
         if (self._fopts is None):
             return 0
         return len(self._fopts.filterOptions())
 
     def columnCount(self, parent):
+        if parent.isValid():
+            return 0
         return 2
     
 
@@ -449,6 +453,8 @@ class FilterInstanceEditor(QWidget):
         for filtername in filters.detect_filters():
             self.ui.cbxFilter.addItem(filtername)
 
+        self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
+
         self.filterNameChanged.connect(self.filterInstanceDefinitionChanged)
         self.filterOptionsChanged.connect(self.filterInstanceDefinitionChanged)
 
@@ -477,7 +483,9 @@ class FilterInstanceEditor(QWidget):
     filterOptionsChanged = pyqtSignal('QString')
 
     filterHelpRequested = pyqtSignal('QString')
-                        
+
+    requestAddToFavorites = pyqtSignal()
+    
 
     def filterName(self):
         return str(self.ui.cbxFilter.currentText())

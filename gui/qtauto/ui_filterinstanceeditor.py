@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'filterinstanceeditor.ui'
 #
-# Created: Sun Oct 27 13:10:05 2013
+# Created: Mon Apr 21 21:21:39 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -50,9 +50,6 @@ class Ui_FilterInstanceEditor(object):
         self.cbxFilter.setObjectName(_fromUtf8("cbxFilter"))
         self.horizontalLayout.addWidget(self.cbxFilter)
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 2)
-        self.btnFilterHelp = QtGui.QPushButton(FilterInstanceEditor)
-        self.btnFilterHelp.setObjectName(_fromUtf8("btnFilterHelp"))
-        self.gridLayout.addWidget(self.btnFilterHelp, 4, 0, 1, 2)
         self.lstOptions = QtGui.QTreeView(FilterInstanceEditor)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -66,6 +63,18 @@ class Ui_FilterInstanceEditor(object):
         self.lstOptions.setAllColumnsShowFocus(True)
         self.lstOptions.setObjectName(_fromUtf8("lstOptions"))
         self.gridLayout.addWidget(self.lstOptions, 3, 0, 1, 2)
+        self.hlytButtons = QtGui.QHBoxLayout()
+        self.hlytButtons.setObjectName(_fromUtf8("hlytButtons"))
+        self.btnFilterHelp = QtGui.QPushButton(FilterInstanceEditor)
+        self.btnFilterHelp.setObjectName(_fromUtf8("btnFilterHelp"))
+        self.hlytButtons.addWidget(self.btnFilterHelp)
+        self.btnAddFavorite = QtGui.QToolButton(FilterInstanceEditor)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bookmark.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btnAddFavorite.setIcon(icon)
+        self.btnAddFavorite.setObjectName(_fromUtf8("btnAddFavorite"))
+        self.hlytButtons.addWidget(self.btnAddFavorite)
+        self.gridLayout.addLayout(self.hlytButtons, 4, 0, 1, 2)
 
         self.retranslateUi(FilterInstanceEditor)
         QtCore.QMetaObject.connectSlotsByName(FilterInstanceEditor)
@@ -74,4 +83,6 @@ class Ui_FilterInstanceEditor(object):
         FilterInstanceEditor.setWindowTitle(_translate("FilterInstanceEditor", "Form", None))
         self.label.setText(_translate("FilterInstanceEditor", "Filter:", None))
         self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "Help: Filter Reference", None))
+        self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites", None))
 
+import bibolamazi_res_rc

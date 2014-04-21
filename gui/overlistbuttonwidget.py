@@ -39,37 +39,28 @@ OVERBUTTON_REMOVE = 2
 ROLE_ARGNAME = Qt.UserRole + 138
 
 
-class OverListButtonWidget(QWidget):
+class OverListButtonWidgetBase(QWidget):
     def __init__(self, itemview):
-        super(OverListButtonWidget, self).__init__(itemview.viewport())
+        super(OverListButtonWidgetBase, self).__init__(itemview.viewport())
         self.hide()
 
-        self.ui = Ui_OverListButtonWidget()
-        self.ui.setupUi(self)
-
         self._view = itemview
-        self._view.viewport().setMouseTracking(True)
-        self._view.viewport().installEventFilter(self)
+        self._view_viewport = self._view.viewport()
+        self._view_viewport.setMouseTracking(True)
+        self._view_viewport.installEventFilter(self)
 
         self._lastpos = None
+        self._curidx = None
 
-        #self._timer = QTimer(self)
-        #self._timer.setInterval(100)
-        #self._timer.setSingleShot(True)
-        #self._timer.timeout.connect(self.repaint)
-        
+    def curIndex(self):
+        return self._curidx
 
-    addClicked = pyqtSignal('QString')
-    editClicked = pyqtSignal('QString')
-    removeClicked = pyqtSignal('QString')
-    addIndexClicked = pyqtSignal('QModelIndex')
-    editIndexClicked = pyqtSignal('QModelIndex')
-    removeIndexClicked = pyqtSignal('QModelIndex')
-    
+    def itemView(self):
+        return self._view
 
     def eventFilter(self, obj, event):
 
-        if (obj == self._view.viewport()):
+        if (obj == self._view_viewport):
             if (event.type() == QEvent.FocusOut):
                 self.hide()
             if (event.type() == QEvent.MouseMove):
@@ -77,7 +68,7 @@ class OverListButtonWidget(QWidget):
             if (event.type() == QEvent.Leave):
                 self.updateDisplay(False)
 
-        return super(OverListButtonWidget, self).eventFilter(obj, event)
+        return super(OverListButtonWidgetBase, self).eventFilter(obj, event)
 
     @pyqtSlot()
     def updateDisplay(self, pos=None):
@@ -92,30 +83,16 @@ class OverListButtonWidget(QWidget):
             return
             
         idx = self._view.indexAt(pos)
-        if (not idx.isValid()):
-            self._disappear()
-            return
-        v = idx.data(ROLE_OVERBUTTON)
-        if (not v.isValid()):
-            self._disappear()
-            return
-        whichbtn = v.toPyObject()
-
-        if (whichbtn == OVERBUTTON_ADD):
-            self.ui.btnAdd.show()
-            self.ui.btnEdit.hide()
-            self.ui.btnRemove.hide()
+        if (self.show_status(idx)):
             self._appear(idx)
-            return
-        if (whichbtn == OVERBUTTON_REMOVE):
-            self.ui.btnAdd.hide()
-            self.ui.btnEdit.show()
-            self.ui.btnRemove.show()
-            self._appear(idx)
-            return
-
+            return True
+        # else:
         self._disappear()
-        return
+        return False
+
+
+    def show_status(self, index):
+        return False
 
     def _disappear(self):
         self._curidx = None
@@ -127,32 +104,76 @@ class OverListButtonWidget(QWidget):
         sh = self.minimumSizeHint()
         rect.setLeft(rect.right()-sh.width())
         self.setGeometry(rect)
-        self._curidx = idx #QPersistentModelIndex(idx)
-        #self.update()
-        #self.repaint()
-        #self._timer.start()
+        self._curidx = idx
+
+
+
+
+
+
+class OverListButtonWidget(OverListButtonWidgetBase):
+    def __init__(self, itemview):
+        super(OverListButtonWidget, self).__init__(itemview)
+
+        self.ui = Ui_OverListButtonWidget()
+        self.ui.setupUi(self)
+
+
+    addClicked = pyqtSignal('QString')
+    editClicked = pyqtSignal('QString')
+    removeClicked = pyqtSignal('QString')
+    addIndexClicked = pyqtSignal('QModelIndex')
+    editIndexClicked = pyqtSignal('QModelIndex')
+    removeIndexClicked = pyqtSignal('QModelIndex')
+    
+
+    def show_status(self, idx):
+        if (not idx.isValid()):
+            return False
         
+        v = idx.data(ROLE_OVERBUTTON)
+        if (not v.isValid()):
+            return False
+        
+        whichbtn = v.toPyObject()
+
+        if (whichbtn == OVERBUTTON_ADD):
+            self.ui.btnAdd.show()
+            self.ui.btnEdit.hide()
+            self.ui.btnRemove.hide()
+            return True
+        if (whichbtn == OVERBUTTON_REMOVE):
+            self.ui.btnAdd.hide()
+            self.ui.btnEdit.show()
+            self.ui.btnRemove.show()
+            return True
+
+        return False
+    
 
     @pyqtSlot()
     def on_btnAdd_clicked(self):
-        if (self._curidx is None):
+        curidx = self.curIndex()
+        if (curidx is None):
             return
-        self.addIndexClicked.emit(self._curidx)
-        self.addClicked.emit(self._curidx.data(ROLE_ARGNAME).toString())
+        self.addIndexClicked.emit(curidx)
+        self.addClicked.emit(curidx.data(ROLE_ARGNAME).toString())
 
     @pyqtSlot()
     def on_btnEdit_clicked(self):
-        if (self._curidx is None):
+        curidx = self.curIndex()
+        if (curidx is None):
             return
-        self.editIndexClicked.emit(self._curidx)
-        self.editClicked.emit(self._curidx.data(ROLE_ARGNAME).toString())
+        self.editIndexClicked.emit(curidx)
+        self.editClicked.emit(curidx.data(ROLE_ARGNAME).toString())
 
     @pyqtSlot()
     def on_btnRemove_clicked(self):
-        if (self._curidx is None):
+        curidx = self.curIndex()
+        if (curidx is None):
             return
-        self.removeIndexClicked.emit(self._curidx)
-        self.removeClicked.emit(self._curidx.data(ROLE_ARGNAME).toString())
+        self.removeIndexClicked.emit(curidx)
+        self.removeClicked.emit(curidx.data(ROLE_ARGNAME).toString())
 
 
     

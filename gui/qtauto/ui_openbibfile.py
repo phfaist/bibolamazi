@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-# Created: Mon Nov 11 19:38:00 2013
+# Created: Mon Apr 21 22:15:16 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -67,8 +67,20 @@ class Ui_OpenBibFile(object):
         self.toolspageBase.setObjectName(_fromUtf8("toolspageBase"))
         self.verticalLayout_3 = QtGui.QVBoxLayout(self.toolspageBase)
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
-        spacerItem = QtGui.QSpacerItem(20, 292, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.verticalLayout_3.addItem(spacerItem)
+        self.treeFavorites = QtGui.QTreeView(self.toolspageBase)
+        font = QtGui.QFont()
+        font.setItalic(True)
+        self.treeFavorites.setFont(font)
+        self.treeFavorites.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        self.treeFavorites.setRootIsDecorated(False)
+        self.treeFavorites.setObjectName(_fromUtf8("treeFavorites"))
+        self.treeFavorites.header().setVisible(False)
+        self.verticalLayout_3.addWidget(self.treeFavorites)
+        self.line = QtGui.QFrame(self.toolspageBase)
+        self.line.setFrameShape(QtGui.QFrame.HLine)
+        self.line.setFrameShadow(QtGui.QFrame.Sunken)
+        self.line.setObjectName(_fromUtf8("line"))
+        self.verticalLayout_3.addWidget(self.line)
         self.btnAddSourceList = QtGui.QPushButton(self.toolspageBase)
         self.btnAddSourceList.setObjectName(_fromUtf8("btnAddSourceList"))
         self.verticalLayout_3.addWidget(self.btnAddSourceList)

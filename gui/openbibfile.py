@@ -44,7 +44,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
-
+from favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
 
 from qtauto.ui_openbibfile import Ui_OpenBibFile
 
@@ -165,6 +165,12 @@ class OpenBibFile(QWidget):
 
         self.syntHighlighter = BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
 
+        self._favorites_overbtn = FavoritesOverBtns(self.ui.treeFavorites)
+        self._favorites_overbtn.insertCommand.connect(self._insert_new_cmd)
+
+        self.ui.filterInstanceEditor.requestAddToFavorites.connect(self.add_favorite_cmd)
+        self.ui.sourceListEditor.requestAddToFavorites.connect(self.add_favorite_cmd)
+
         self.bibolamaziFileName = None
         self.bibolamaziFile = None
 
@@ -188,6 +194,12 @@ class OpenBibFile(QWidget):
         self._needs_update_txtbibentries = False
         self._set_modified(False)
 
+
+    def setFavoriteCmdsList(self, favoriteCmdsList):
+        self.favoriteCmdsList = favoriteCmdsList
+
+        self._favorites_model = FavoritesModel(favcmds=self.favoriteCmdsList, parent=self);
+        self.ui.treeFavorites.setModel(self._favorites_model);
         
 
     def setOpenFile(self, filename):
@@ -208,7 +220,8 @@ class OpenBibFile(QWidget):
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
         self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
-        
+        self.ui.txtConfig.setFocus()
+
         if (self.bibolamaziFileName):
             self.fwatcher.addPath(self.bibolamaziFileName)
 
@@ -312,20 +325,7 @@ class OpenBibFile(QWidget):
         self._needs_update_txtbibentries = True
 
         # now, try to further parse the config
-        try:
-            self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
-        except BibolamaziError as e:
-            # see if we can parse the error
-            errortxt = str(Qt.escape(unicode(e)))
-            errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
-                              lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
-                                  self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
-                                  m.group()
-                                  ),
-                              errortxt)
-            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>"+
-                                    "<pre>"+errortxt+"</pre>")
-            return
+        self._bibolamazifile_reparse()
 
         def srcurl(s):
             if (re.match(r'^\w+:/', s)):
@@ -523,9 +523,25 @@ class OpenBibFile(QWidget):
         print 'modified!!'
 
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
-        self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
+        self._bibolamazifile_reparse();
 
         self._do_update_edittools()
+
+    def _bibolamazifile_reparse(self):
+        try:
+            self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
+        except BibolamaziError as e:
+            # see if we can parse the error
+            errortxt = str(Qt.escape(unicode(e)))
+            errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
+                              lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
+                                  self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
+                                  m.group()
+                                  ),
+                              errortxt)
+            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>"+
+                                    "<pre>"+errortxt+"</pre>")
+            return
 
     @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):
@@ -568,7 +584,7 @@ class OpenBibFile(QWidget):
             # insert _after_ current cmd (-> +1 for next line, +1 for counting from one and not from zero)
             insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend+1)+1))
 
-        insertcur.insertText(cmdtext+'\n')
+        insertcur.insertText(str(cmdtext)+'\n')
         # select inserted text without the newline
         insertcur.movePosition(QTextCursor.Left)
         insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
@@ -689,3 +705,18 @@ class OpenBibFile(QWidget):
     @pyqtSlot(QString)
     def on_filterInstanceEditor_filterHelpRequested(self, topic):
         self.requestHelpTopic.emit(str(topic))
+
+
+    @pyqtSlot(QString)
+    def add_favorite_cmd(self):
+        cmd = self._get_current_bibolamazi_cmd()
+
+        if (cmd is None):
+            print "No command to add to favorites!"
+            return
+
+        print "Adding command %s on lines %d--%d to favorites" %(cmd.cmd, cmd.lineno, cmd.linenoend)
+
+        self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmd.cmd[:50], cmd=cmd.text))
+
+        QMessageBox.information(self, "Favorite Added", "Added this command to your favorites.");

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'sourcelisteditor.ui'
 #
-# Created: Fri Nov 22 22:51:19 2013
+# Created: Mon Apr 21 21:21:39 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -29,9 +29,6 @@ class Ui_SourceListEditor(object):
         SourceListEditor.resize(377, 362)
         self.gridLayout = QtGui.QGridLayout(SourceListEditor)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.label = QtGui.QLabel(SourceListEditor)
-        self.label.setObjectName(_fromUtf8("label"))
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 2)
         self.lstSources = QtGui.QListWidget(SourceListEditor)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -41,7 +38,7 @@ class Ui_SourceListEditor(object):
         self.lstSources.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.lstSources.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
         self.lstSources.setObjectName(_fromUtf8("lstSources"))
-        self.gridLayout.addWidget(self.lstSources, 1, 0, 1, 2)
+        self.gridLayout.addWidget(self.lstSources, 2, 0, 1, 2)
         self.gbxEditSource = QtGui.QGroupBox(SourceListEditor)
         self.gbxEditSource.setObjectName(_fromUtf8("gbxEditSource"))
         self.gridLayout_2 = QtGui.QGridLayout(self.gbxEditSource)
@@ -56,25 +53,36 @@ class Ui_SourceListEditor(object):
         self.btnBrowse = QtGui.QPushButton(self.gbxEditSource)
         self.btnBrowse.setObjectName(_fromUtf8("btnBrowse"))
         self.gridLayout_2.addWidget(self.btnBrowse, 0, 1, 1, 1)
-        self.gridLayout.addWidget(self.gbxEditSource, 5, 0, 1, 2)
+        self.gridLayout.addWidget(self.gbxEditSource, 6, 0, 1, 2)
         self.btnAddSource = QtGui.QPushButton(SourceListEditor)
         self.btnAddSource.setObjectName(_fromUtf8("btnAddSource"))
-        self.gridLayout.addWidget(self.btnAddSource, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.btnAddSource, 3, 0, 1, 1)
         self.btnRemoveSource = QtGui.QPushButton(SourceListEditor)
         self.btnRemoveSource.setObjectName(_fromUtf8("btnRemoveSource"))
-        self.gridLayout.addWidget(self.btnRemoveSource, 2, 1, 1, 1)
+        self.gridLayout.addWidget(self.btnRemoveSource, 3, 1, 1, 1)
         spacerItem = QtGui.QSpacerItem(10, 5, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        self.gridLayout.addItem(spacerItem, 4, 0, 1, 1)
+        self.gridLayout.addItem(spacerItem, 5, 0, 1, 1)
         self.label_2 = QtGui.QLabel(SourceListEditor)
         self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.gridLayout.addWidget(self.label_2, 3, 0, 1, 2)
+        self.gridLayout.addWidget(self.label_2, 4, 0, 1, 2)
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.label = QtGui.QLabel(SourceListEditor)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.horizontalLayout.addWidget(self.label)
+        self.btnAddFavorite = QtGui.QToolButton(SourceListEditor)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bookmark.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btnAddFavorite.setIcon(icon)
+        self.btnAddFavorite.setObjectName(_fromUtf8("btnAddFavorite"))
+        self.horizontalLayout.addWidget(self.btnAddFavorite)
+        self.gridLayout.addLayout(self.horizontalLayout, 1, 0, 1, 2)
 
         self.retranslateUi(SourceListEditor)
         QtCore.QMetaObject.connectSlotsByName(SourceListEditor)
 
     def retranslateUi(self, SourceListEditor):
         SourceListEditor.setWindowTitle(_translate("SourceListEditor", "Form", None))
-        self.label.setText(_translate("SourceListEditor", "Source List: (first accessible will be used)", None))
         self.lstSources.setToolTip(_translate("SourceListEditor", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -86,4 +94,7 @@ class Ui_SourceListEditor(object):
         self.btnAddSource.setText(_translate("SourceListEditor", "Add Source", None))
         self.btnRemoveSource.setText(_translate("SourceListEditor", "Remove this source", None))
         self.label_2.setText(_translate("SourceListEditor", "(reorder sources by drag and drop)", None))
+        self.label.setText(_translate("SourceListEditor", "Source List: (first accessible will be used)", None))
+        self.btnAddFavorite.setToolTip(_translate("SourceListEditor", "Add this source list to your favorites", None))
 
+import bibolamazi_res_rc
