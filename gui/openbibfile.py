@@ -715,8 +715,15 @@ class OpenBibFile(QWidget):
             print "No command to add to favorites!"
             return
 
-        print "Adding command %s on lines %d--%d to favorites" %(cmd.cmd, cmd.lineno, cmd.linenoend)
+        print "Adding command %s on lines %d--%d to favorites: %r" %(cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
 
-        self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmd.cmd[:50], cmd=cmd.text))
+        cmdtext = []
+        doc = self.ui.txtConfig.document();
+        for n in xrange(self.bibolamaziFile.configLineNo(cmd.lineno),
+                        self.bibolamaziFile.configLineNo(cmd.linenoend)+1):
+            cmdtext.append(str(doc.findBlockByNumber(n-1).text()))
+        cmdtext = "\n".join(cmdtext)
+
+        self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmdtext[:30], cmd=cmdtext))
 
         QMessageBox.information(self, "Favorite Added", "Added this command to your favorites.");

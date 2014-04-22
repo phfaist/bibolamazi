@@ -100,12 +100,14 @@ class OverListButtonWidgetBase(QWidget):
 
     def _appear(self, idx):
         self.show()
-        rect = self._view.visualRect(idx)
-        sh = self.minimumSizeHint()
-        rect.setLeft(rect.right()-sh.width())
-        self.setGeometry(rect)
+        self.setGeometry(self.get_widget_rect(self._view.visualRect(idx)))
         self._curidx = idx
 
+    def get_widget_rect(self, rect):
+        rect2 = QRect(rect);
+        sh = self.minimumSizeHint()
+        rect2.setLeft(rect.right()-sh.width())
+        return rect2
 
 
 

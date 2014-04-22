@@ -253,8 +253,8 @@ class BibolamaziFile(object):
             self._rest = None
             self._cmds = None
             self._sources = None
-            self._source_lists = None
-            self._filters = None
+            self._source_lists = []
+            self._filters = []
             self._bibliographydata = None
             self._user_cache = BibUserCache()
             

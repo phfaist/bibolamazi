@@ -101,12 +101,15 @@ class FavoriteCmdsList(QObject):
     def moveFavorite(self, oldind, newind):
         if oldind == newind:
             return
-        elif oldind < newind:
-            newslice = self.favlist[oldind+1:newind] + [self.favlist[oldind]]
+
+        if oldind < newind:
+            self.favlist[oldind:newind] = self.favlist[oldind+1:newind] + [self.favlist[oldind]]
         else: # oldind > newind
-            newslice = [self.favlist[oldind]] + self.favlist[newind:oldind-1]
-        self.favlist[oldind:newind] = newslice
+            self.favlist[newind:oldind+1] = [self.favlist[oldind]] + self.favlist[newind:oldind]
+
         self.favChanged.emit()
+
+
 
 
 ROLE_CMD            = Qt.UserRole + 2014
@@ -135,6 +138,12 @@ class FavoritesModel(QAbstractTableModel):
         return 1;
 
     def data(self, index, role=Qt.DisplayRole):
+
+        if role == Qt.BackgroundRole:
+            if self._edit_mode:
+                return QVariant(QBrush(QColor(255,230,230)))
+            return QVariant()
+
         if not index.isValid():
             return QVariant()
         
@@ -237,7 +246,10 @@ class FavoritesModel(QAbstractTableModel):
 
         if not data.hasFormat('application/x-bibolamazi-internalmove-favorites'):
             return False
-        
+
+        if row < 0 or parent.isValid():
+            return False
+
         oldrow = int(data.data("application/x-bibolamazi-internalmove-favorites"))
         print "oldrow: %r" %(oldrow)
 
@@ -306,3 +318,7 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
 
         curidx.model().removeFavorite(curidx)
         self.updateDisplay()
+
+
+    def get_widget_rect(self, rect):
+        return rect

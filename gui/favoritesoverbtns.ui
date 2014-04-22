@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>FavoritesOverBtns</class>
  <widget class="QWidget" name="FavoritesOverBtns">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>143</width>
+    <height>26</height>
+   </rect>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>0</number>
@@ -10,21 +18,20 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QToolButton" name="btnDelete">
-     <property name="toolTip">
-      <string>Delete this favorite command</string>
+    <spacer name="hspcCenter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <property name="icon">
-      <iconset resource="bibolamazi_res.qrc">
-       <normaloff>:/pic/lstbtnremove.png</normaloff>:/pic/lstbtnremove.png</iconset>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="iconSize">
+     <property name="sizeHint" stdset="0">
       <size>
-       <width>10</width>
-       <height>16</height>
+       <width>5</width>
+       <height>10</height>
       </size>
      </property>
-    </widget>
+    </spacer>
    </item>
    <item>
     <widget class="QToolButton" name="btnEndEdit">
@@ -61,7 +68,7 @@
     </widget>
    </item>
    <item>
-    <spacer name="horizontalSpacer">
+    <spacer name="hspcLeft">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -70,11 +77,28 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>5</width>
-       <height>10</height>
+       <width>20</width>
+       <height>5</height>
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <widget class="QToolButton" name="btnDelete">
+     <property name="toolTip">
+      <string>Delete this favorite command</string>
+     </property>
+     <property name="icon">
+      <iconset resource="bibolamazi_res.qrc">
+       <normaloff>:/pic/lstbtnremove.png</normaloff>:/pic/lstbtnremove.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>10</width>
+       <height>16</height>
+      </size>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QToolButton" name="btnInsert">
