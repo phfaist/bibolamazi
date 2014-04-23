@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-# Created: Mon Apr 21 22:15:16 2014
+# Created: Wed Apr 23 11:24:46 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -67,6 +67,12 @@ class Ui_OpenBibFile(object):
         self.toolspageBase.setObjectName(_fromUtf8("toolspageBase"))
         self.verticalLayout_3 = QtGui.QVBoxLayout(self.toolspageBase)
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
+        self.lblFavorites = QtGui.QLabel(self.toolspageBase)
+        self.lblFavorites.setPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bookmark.png")))
+        self.lblFavorites.setAlignment(QtCore.Qt.AlignCenter)
+        self.lblFavorites.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
+        self.lblFavorites.setObjectName(_fromUtf8("lblFavorites"))
+        self.verticalLayout_3.addWidget(self.lblFavorites)
         self.treeFavorites = QtGui.QTreeView(self.toolspageBase)
         font = QtGui.QFont()
         font.setItalic(True)

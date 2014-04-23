@@ -90,6 +90,19 @@
           <widget class="QWidget" name="toolspageBase">
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
+             <widget class="QLabel" name="lblFavorites">
+              <property name="pixmap">
+               <pixmap resource="bibolamazi_res.qrc">:/pic/bookmark.png</pixmap>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="textInteractionFlags">
+               <set>Qt::NoTextInteraction</set>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QTreeView" name="treeFavorites">
               <property name="font">
                <font>

@@ -177,7 +177,7 @@ class OpenBibFile(QWidget):
         self.updateTimer = QTimer(self)
         self.updateTimer.setInterval(500)
         self.updateTimer.setSingleShot(True)
-        QObject.connect(self.updateTimer, SIGNAL('timeout()'), self.updateFileContents)
+        QObject.connect(self.updateTimer, SIGNAL('timeout()'), self.reloadFile)
         
         self._flag_modified_externally = False
 
@@ -188,6 +188,7 @@ class OpenBibFile(QWidget):
         self.shortcuts = [
             QShortcut(QKeySequence('Ctrl+W'), self, self.close, self.close),
             QShortcut(QKeySequence('Ctrl+S'), self, self.saveToFile, self.saveToFile),
+            QShortcut(QKeySequence(Qt.CTRL|Qt.Key_Return), self, self.runBibolamazi, self.runBibolamazi),
             ];
 
         self._ignore_change_for_edittools = False
@@ -207,23 +208,13 @@ class OpenBibFile(QWidget):
             self.fwatcher.removePath(self.bibolamaziFileName)
             
         self.bibolamaziFileName = filename
-        self.bibolamaziFile = bibolamazifile.BibolamaziFile()
-        try:
-            self.bibolamaziFile.load(filename, to_state=bibolamazifile.BIBOLAMAZIFILE_READ)
-        except butils.BibolamaziError as e:
-            self.ui.pageInfo.txtInfo.setText(unicode(e))
-        self.ui.lblFileName.setText(filename)
-        self.updateFileContents()
+        self.bibolamaziFile = None
 
-        self.setWindowFilePath(filename)
-        self.setWindowTitle(os.path.basename(filename))
-        self.setWindowIcon(QIcon(':/pic/file.png'))
-
-        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
-        self.ui.txtConfig.setFocus()
+        self.reloadFile()
 
         if (self.bibolamaziFileName):
             self.fwatcher.addPath(self.bibolamaziFileName)
+
 
     def hasUnsavedModifications(self):
         return self._modified;
@@ -291,9 +282,53 @@ class OpenBibFile(QWidget):
             self.updateTimer.stop()
         self.updateTimer.start()
 
+
+
+    def _set_win_state(self, file_is_loaded, errormessagehtml=None):
+
+        # enable/disable these GUI widgets/buttons
+        
+        self.ui.pageConfig.setEnabled(file_is_loaded)
+        self.ui.pageBibEntries.setEnabled(file_is_loaded)
+        self.ui.pageLog.setEnabled(file_is_loaded)
+
+        self.ui.btnSave.setEnabled(file_is_loaded)
+        self.ui.btnGo.setEnabled(file_is_loaded)
+        
+
+        if not file_is_loaded:
+            # disabled state
+
+            self.ui.tabs.setCurrentWidget(self.ui.pageInfo)
+            self.ui.txtInfo.setText(errormessagehtml)
+
+            with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
+                self.ui.txtConfig.setPlainText("")
+
+            self.ui.lblFileName.setText("<no file loaded>")
+
+            self.setWindowFilePath(QString())
+            self.setWindowTitle("<no file loaded>")
+            self.setWindowIcon(QIcon(':/pic/file.png'))
+
+            self._modified = False
+
+            return
+
+        # normal, enabled state
+        self.ui.lblFileName.setText(self.bibolamaziFileName)
+
+        self.setWindowFilePath(self.bibolamaziFileName)
+        self.setWindowTitle(os.path.basename(self.bibolamaziFileName))
+        self.setWindowIcon(QIcon(':/pic/file.png'))
+
+        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+        self.ui.txtConfig.setFocus()
+
+
     @pyqtSlot()
-    def updateFileContents(self):
-        print "updating config section"
+    def reloadFile(self):
+        print "reloading file"
 
         self._flag_modified_externally = False
 
@@ -303,17 +338,28 @@ class OpenBibFile(QWidget):
         if (self.fwatcher.signalsBlocked()):
             self.fwatcher.blockSignals(False)
 
-        
-        if (not self.bibolamaziFile):
+        if (not self.bibolamaziFileName):
             with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
+                self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">no file loaded.</h3>");
                 self.ui.txtConfig.setPlainText("")
             return
 
+        if (not self.bibolamaziFile):
+            self.bibolamaziFile = bibolamazifile.BibolamaziFile()
+
         try:
+
             self.bibolamaziFile.load(self.bibolamaziFileName, to_state=bibolamazifile.BIBOLAMAZIFILE_READ)
-        except BibolamaziError:
-            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Error reading file.</p>")
+
+        except butils.BibolamaziError as e:
+            self.bibolamaziFile = None
+            QMessageBox.critical(self, "Load Error", u"Error loading file: %s" %(unicode(e)))
+            self._set_win_state(False,
+                                "<h3 style=\"color: rgb(127,0,0)\">Error reading file.</h3>\n"
+                                +self._bibolamazi_error_html(unicode(e)))
             return
+
+        self._set_win_state(True)
 
         with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
             cursorpos = self.ui.txtConfig.textCursor().position()
@@ -406,6 +452,10 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnGo_clicked(self):
+        self.runBibolamazi()
+
+    @pyqtSlot()
+    def runBibolamazi(self):
         if (self._modified):
             yn = QMessageBox.question(self, "Save Changes?", "Save changes to your config?",
                                       QMessageBox.Save|QMessageBox.Cancel, QMessageBox.Save)
@@ -445,15 +495,16 @@ class OpenBibFile(QWidget):
     @pyqtSlot()
     def on_btnRefresh_clicked(self):
         if (self._modified):
-            yn = QMessageBox.question(self, "Really revert?", self.tr("You are about to revert the file, but you "
-                                                                      "have unsaved changes. Do you really want "
-                                                                      "to abandon your changes and revert the "
-                                                                      "file to disk?"),
+            yn = QMessageBox.question(self, "Really revert?",
+                                      self.tr("You are about to revert the file, but you "
+                                              "have unsaved changes. Do you really want "
+                                              "to abandon your changes and revert the "
+                                              "file to disk?"),
                                       QMessageBox.Ok|QMessageBox.Cancel, QMessageBox.Cancel)
             if (yn != QMessageBox.Ok):
                 return
 
-        self.updateFileContents()
+        self.reloadFile()
 
 
     @pyqtSlot(QUrl)
@@ -513,11 +564,14 @@ class OpenBibFile(QWidget):
             if (clickedbtn == revertbtn):
                 print "Reverting!!"
                 # reload the file
-                self.updateFileContents()
+                self.reloadFile()
                 return
 
             self._flag_modified_externally = False
 
+        if not self.bibolamaziFile:
+            print "No file loaded."
+            return
 
         self._set_modified(True)
         print 'modified!!'
@@ -527,21 +581,30 @@ class OpenBibFile(QWidget):
 
         self._do_update_edittools()
 
+
     def _bibolamazifile_reparse(self):
         try:
             self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
         except BibolamaziError as e:
             # see if we can parse the error
-            errortxt = str(Qt.escape(unicode(e)))
-            errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)',
-                              lambda m: "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
-                                  self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
-                                  m.group()
-                                  ),
-                              errortxt)
-            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>"+
-                                    "<pre>"+errortxt+"</pre>")
+            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
+                                    self._bibolamazi_error_html(unicode(e)))
             return
+
+    def _bibolamazi_error_html(self, errortxt):
+
+        def a_link(m):
+            if self.bibolamaziFile is not None:
+                return "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
+                    self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
+                    m.group()
+                    )
+            return m.group();
+
+        errortxt = str(Qt.escape(unicode(errortxt)))
+        errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
+        return ("<pre>"+errortxt+"</pre>")
+        
 
     @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):
@@ -677,7 +740,7 @@ class OpenBibFile(QWidget):
 
         # now, reparse the config
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
-        self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
+        self._bibolamazifile_reparse()
         
 
     @pyqtSlot(QStringList)
@@ -707,7 +770,7 @@ class OpenBibFile(QWidget):
         self.requestHelpTopic.emit(str(topic))
 
 
-    @pyqtSlot(QString)
+    @pyqtSlot()
     def add_favorite_cmd(self):
         cmd = self._get_current_bibolamazi_cmd()
 
@@ -724,6 +787,18 @@ class OpenBibFile(QWidget):
             cmdtext.append(str(doc.findBlockByNumber(n-1).text()))
         cmdtext = "\n".join(cmdtext)
 
+        self.add_favorite_cmdtext(cmdtext)
+
+    @pyqtSlot()
+    def add_favorite_selection(self):
+        # ### TODO : get selection (QTextCursor::selectedText()) ... and add favorite.
+        #            Also add this option in the context menu.
+        pass
+
+    @pyqtSlot(QString)
+    def add_favorite_cmdtext(self, cmdtext):
+        cmdtext = str(cmdtext)
+        
         self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmdtext[:30], cmd=cmdtext))
 
-        QMessageBox.information(self, "Favorite Added", "Added this command to your favorites.");
+        QMessageBox.information(self, "Favorite Added", "Added this command to your favorites.")

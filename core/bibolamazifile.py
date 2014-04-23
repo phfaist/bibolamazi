@@ -38,10 +38,11 @@ import pybtex.database.output.bibtex as outputbibtex;
 from core.blogger import logger;
 
 from core import butils;
+from core.butils import BibolamaziError;
 import filters;
 
 
-class BibolamaziFileParseError(butils.BibolamaziError):
+class BibolamaziFileParseError(BibolamaziError):
     def __init__(self, msg, fname=None, lineno=None):
         where = None
         if (fname is not None):
@@ -49,7 +50,7 @@ class BibolamaziFileParseError(butils.BibolamaziError):
             if (lineno is not None):
                 where += ", line %d" %(lineno)
                 
-        butils.BibolamaziError.__init__(self, msg, where=where);
+        BibolamaziError.__init__(self, msg, where=where);
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
@@ -264,7 +265,7 @@ class BibolamaziFile(object):
                     logger.longdebug("File "+repr(self._fname)+" opened.");
                     self._read_config_stream(f, self._fname);
             except IOError as e:
-                raise butils.BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)));
+                raise BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)));
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'favoritesoverbtns.ui'
 #
-# Created: Tue Apr 22 10:45:39 2014
+# Created: Wed Apr 23 11:24:46 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,8 @@ except AttributeError:
 class Ui_FavoritesOverBtns(object):
     def setupUi(self, FavoritesOverBtns):
         FavoritesOverBtns.setObjectName(_fromUtf8("FavoritesOverBtns"))
-        FavoritesOverBtns.resize(143, 26)
+        FavoritesOverBtns.resize(192, 32)
+        FavoritesOverBtns.setWindowOpacity(0.8)
         self.horizontalLayout = QtGui.QHBoxLayout(FavoritesOverBtns)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setMargin(0)
@@ -41,6 +42,11 @@ class Ui_FavoritesOverBtns(object):
         self.btnEndEdit.setObjectName(_fromUtf8("btnEndEdit"))
         self.horizontalLayout.addWidget(self.btnEndEdit)
         self.btnEdit = QtGui.QToolButton(FavoritesOverBtns)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnEdit.sizePolicy().hasHeightForWidth())
+        self.btnEdit.setSizePolicy(sizePolicy)
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(_fromUtf8(":/pic/lstbtnedit.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnEdit.setIcon(icon1)
@@ -56,11 +62,18 @@ class Ui_FavoritesOverBtns(object):
         self.btnDelete.setIconSize(QtCore.QSize(10, 16))
         self.btnDelete.setObjectName(_fromUtf8("btnDelete"))
         self.horizontalLayout.addWidget(self.btnDelete)
-        self.btnInsert = QtGui.QToolButton(FavoritesOverBtns)
+        self.btnInsert = QtGui.QPushButton(FavoritesOverBtns)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btnInsert.sizePolicy().hasHeightForWidth())
+        self.btnInsert.setSizePolicy(sizePolicy)
+        self.btnInsert.setAutoFillBackground(True)
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(_fromUtf8(":/pic/rightarrow.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnInsert.setIcon(icon3)
         self.btnInsert.setIconSize(QtCore.QSize(30, 16))
+        self.btnInsert.setFlat(True)
         self.btnInsert.setObjectName(_fromUtf8("btnInsert"))
         self.horizontalLayout.addWidget(self.btnInsert)
 
@@ -72,5 +85,6 @@ class Ui_FavoritesOverBtns(object):
         self.btnEdit.setToolTip(_translate("FavoritesOverBtns", "Edit favorite commands", None))
         self.btnDelete.setToolTip(_translate("FavoritesOverBtns", "Delete this favorite command", None))
         self.btnInsert.setToolTip(_translate("FavoritesOverBtns", "Insert this favorite command at current position in config", None))
+        self.btnInsert.setText(_translate("FavoritesOverBtns", "insert", None))
 
 import bibolamazi_res_rc
