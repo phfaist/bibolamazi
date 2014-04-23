@@ -38,12 +38,18 @@ class FavoriteCmd:
 
 
 default_cmds = [
-#    FavoriteCmd(name="fixes",
-#                cmd="filter: fixes"),
-#    FavoriteCmd(name="arxiv mode:eprint",
-#                cmd="filter: arxiv --mode=eprint --unpublished-mode=eprint"),
-#    FavoriteCmd(name="arxiv mode:unpublished-note",
-#                cmd="filter: arxiv --mode=unpublished-note --unpublished-mode=unpublished-note"),
+    FavoriteCmd(name="fixes (standard; for LaTeX)",
+                cmd=("filter: fixes -dFixSwedishA -dEncodeUtf8ToLatex -dRemoveTypeFromPhd "
+                     "-sRemoveFullBraces=title -sProtectNames=Einstein,Maxwell,Landauer,"
+                     "Shannon,Neumann,Szilard,Bell,I,II,III,IV,XIV -dRemoveFileField")),
+    FavoriteCmd(name="arxiv (for notes & verbose)",
+                cmd="filter: arxiv -sMode=eprint -sUnpublishedMode=eprint -dThesesCountAsPublished -dWarnJournalRef"),
+    FavoriteCmd(name="arxiv (for articles & finalizing)",
+                cmd="filter: arxiv -sMode=strip -sUnpublishedMode=unpublished-note"),
+    FavoriteCmd(name="url (standard cleanup)",
+                cmd="filter: url -dStripAllIfDoiOrArxiv -dStripDoiUrl -dStripArxivUrl -dKeepFirstUrlOnly"),
+    FavoriteCmd(name="orderentries (alphabetically by cite key)",
+                cmd="filter: orderentries -sOrder=alphabetical"),
     ];
 
 class FavoriteCmdsList(QObject):
