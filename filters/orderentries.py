@@ -14,6 +14,8 @@ from core import butils
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 
+from .util import arxivutil
+
 
 HELP_AUTHOR = u"""\
 Order entries filter by Philippe Faist, (C) 2013, GPL 3+
@@ -127,25 +129,44 @@ class OrderEntriesFilter(BibFilter):
                 if entry is None:
                     return datetime.today()
                 fields = entry.fields
-                year = datetime.MAXYEAR
-                month = 12
+
+                arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(key);
+                if arxivinfo is not None:
+                    m = re.match(r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(\d{3}|\.\d{4,})$',
+                                 arxivinfo['arxivid'])
+                    if m is not None:
+                        try:
+                            year =  ( int(m.group('year')) - 1990 ) % 100  +  1990;
+                            month = int(m.group('month'));
+                            return datetime.date(year, month, 1);
+                        except ValueError:
+                            pass
+                
+                year = None
                 if 'year' in fields:
                     try:
                         year = int(fields['year'])
                     except ValueError:
                         pass
+                if year is None:
+                    year = datetime.date.today().year
 
+                month = None
                 if 'month' in fields:
                     mon_s = re.sub('[^a-z]', '', fields['month'].lower())
                     month = next( (1+k for k in range(len(_month_regexps))
-                                   if (_month_regexps[k].match(mon_s)) ), 12 )
+                                   if (_month_regexps[k].match(mon_s)) ), None )
+                if month is None:
+                    month = 12
 
-                day = calendar.monthrange(year, month)[1];
+                day = None
                 if 'day' in fields:
                     try:
                         day = int(fields['day'])
                     except ValueError:
                         pass
+                if day is None:
+                    day = calendar.monthrange(year, month)[1];
 
                 try:
                     return datetime.date(year, month, day)
