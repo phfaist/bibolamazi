@@ -139,7 +139,6 @@ class OrderEntriesFilter(BibFilter):
                     mon_s = re.sub('[^a-z]', '', fields['month'].lower())
                     month = next( (1+k for k in range(len(_month_regexps))
                                    if (_month_regexps[k].match(mon_s)) ), 12 )
-                    logger.debug('\t%s: mon_s=%s; month=%d', key, mon_s, month);
 
                 day = calendar.monthrange(year, month)[1];
                 if 'day' in fields:
