@@ -206,15 +206,26 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 class BibolamaziFile(object):
-    def __init__(self, fname=None, create=False):
-        """Create a BibolamaziFile object. If `fname` is provided, the file is fully loaded. If
-        `create` is given and set to `True`, then an empty template is loaded and the internal
-        file name is set to `fname`.
+    def __init__(self, fname=None, create=False, use_cache=True):
+        """Create a BibolamaziFile object.
+
+        If `fname` is provided, the file is fully loaded (unless `create` is also
+        provided).
+
+        If `create` is given and set to `True`, then an empty template is loaded and the
+        internal file name is set to `fname`. The internal state will be set to ``LOADED''
+        and calling `save_to_file()` will result in writing this template to the file
+        `fname`.
+
+        If `use_cache` is `True` (default), then when loading this file, we'll attempt to
+        load a corresponding cache file if it exists. Note that even if `use_cache` is
+        `False`, then cache will still be *written* when calling `save_to_file()`.
         """
         
         logger.debug("Opening bibolamazi file `%s'" %(fname));
         self._fname = None
         self._dir = None
+        self._use_cache = use_cache
 
         if (create):
             self._init_empty_template();
@@ -273,15 +284,18 @@ class BibolamaziFile(object):
         if (to_state >= BIBOLAMAZIFILE_LOADED  and  self._load_state < BIBOLAMAZIFILE_LOADED):
             self._load_contents()
 
-            # then, try to load the cache if possible
-            cachefname = self.cachefname()
-            try:
-                with open(cachefname, 'rb') as f:
-                    logger.longdebug("Reading cache file %s" %(cachefname))
-                    self._user_cache.load_cache(f)
-            except (IOError, EOFError,):
-                logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
-                pass
+            if self._use_cache:
+                # then, try to load the cache if possible
+                cachefname = self.cachefname()
+                try:
+                    with open(cachefname, 'rb') as f:
+                        logger.longdebug("Reading cache file %s" %(cachefname))
+                        self._user_cache.load_cache(f)
+                except (IOError, EOFError,):
+                    logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
+                    pass
+            else:
+                logger.debug("As requested, I have not attempted to load any existing cache file.")
 
         return True
 

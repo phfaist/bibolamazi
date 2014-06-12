@@ -64,6 +64,8 @@ def get_args_parser():
                         help='Increase or set verbosity (0=quiet,1=info,2=verbose,3=long debug)')
     parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0,
                         help="Don't display any messages. Same as `-v 0'");
+    parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
+                        help="Show a list of available filters along with their description, and exit.");
     parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
                         help="Create a new bibolamazi file with a template configuration.");
     parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
@@ -122,7 +124,7 @@ def run_bibolamazi_args(args):
 
     # open the outputbibfile and create the BibolamaziFile object. This will parse the rules
     # and the entries, as well as keep some information on how to re-write to the file.
-    bfile = BibolamaziFile(args.outputbibfile);
+    bfile = BibolamaziFile(args.outputbibfile, use_cache=args.use_cache);
 
 
     bibdata = bfile.bibliographydata();
