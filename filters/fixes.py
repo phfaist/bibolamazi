@@ -27,8 +27,8 @@ from pybtex.database import Person
 from core.bibfilter import BibFilter, BibFilterError
 from core.blogger import logger
 from core import butils
-from core.latex import latexencode
-from core.latex import latex2text
+from core.pylatexenc import latexencode
+from core.pylatexenc import latex2text
 
 
 HELP_AUTHOR = u"""\

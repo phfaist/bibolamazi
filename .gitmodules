@@ -1,0 +1,3 @@
+[submodule "core/pylatexenc"]
+	path = core/pylatexenc
+	url = git@github.com:phfaist/pylatexenc.git

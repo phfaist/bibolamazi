@@ -27,7 +27,7 @@ from pybtex.database import Person
 from core.butils import getbool;
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
-from core.latex import latex2text;
+from core.pylatexenc import latex2text;
 
 # for the arxiv info parser tool
 import arxiv;

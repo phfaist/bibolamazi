@@ -32,7 +32,7 @@ from pybtex.database import BibliographyData;
 
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
-from core.latex import latex2text
+from core.pylatexenc import latex2text
 
 from .util import arxivutil
 
