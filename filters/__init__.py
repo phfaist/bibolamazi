@@ -418,7 +418,7 @@ class DefaultFilterOptions:
             fopt = farg.replace('_', '-');
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
             group_filter.add_argument('--'+fopt, action='store', dest=farg,
-                                      help=argdoc.doc);
+                                      help=argdoc.doc.replace('%','%%'));
             return argdoc
 
 
@@ -520,7 +520,12 @@ class DefaultFilterOptions:
 
         p = self._parser
 
-        parts = shlex.split(optionstring);
+        try:
+            parts = shlex.split(optionstring);
+        except ValueError as e:
+            raise FilterOptionsParseError("Error parsing option string: %s\n\t%s" %(e, optionstring.strip()),
+                                          self._filtername)
+        
         try:
             args = p.parse_args(parts);
         except FilterOptionsParseError as e:

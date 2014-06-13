@@ -38,7 +38,7 @@ to run the graphical user interface: the command-line version will happily run w
   easier with `git pull`).
 
            > cd somewhere/where/Ill-keep-bibolamazi/
-           ...> git clone https://github.com/phfaist/bibolamazi
+           ...> git clone --recursive https://github.com/phfaist/bibolamazi
 
   Then, link the executable(s) to somewhere in your path:
 

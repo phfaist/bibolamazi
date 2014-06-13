@@ -94,10 +94,10 @@ def main(argv=sys.argv[1:]):
     return run_bibolamazi_args(args)
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', ));
+ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', 'use_cache' ));
 
-def run_bibolamazi(outputbibfile, verbosity=1):
-    args = ArgsStruct(outputbibfile, verbosity)
+def run_bibolamazi(outputbibfile, verbosity=1, use_cache=True):
+    args = ArgsStruct(outputbibfile, verbosity, use_cache)
     return run_bibolamazi_args(args)
 
 

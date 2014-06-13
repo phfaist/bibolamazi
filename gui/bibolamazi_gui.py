@@ -44,6 +44,45 @@ from favorites import FavoriteCmdsList
 
 from qtauto.ui_mainwidget import Ui_MainWidget
 
+
+app = None
+
+
+class BibolamaziApplication(QApplication):
+    def __init__(self):
+        self.main_widget = None
+        
+        super(BibolamaziApplication, self).__init__(sys.argv)
+        
+        self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
+        self.setApplicationName('Bibolamazi')
+        self.setApplicationVersion(core.version.version_str)
+        self.setOrganizationDomain('org.bibolamazi')
+        self.setOrganizationName('Bibolamazi Project')
+
+        # before main widget, so that main widget can create & connect relevant menu items
+        setup_software_updater()
+
+        # create & setup main widget
+        self.main_widget = MainWidget()
+
+        self.main_widget.show()
+        self.main_widget.raise_()
+
+    def event(self, event):
+        if (event.type() == QEvent.FileOpen):
+            print "Opening file %s" %(event.file())
+            # request to open file
+            if (self.main_widget is None):
+                print "ERROR: CAN'T OPEN FILE: MAIN WIDGET IS NONE!"
+            else:
+                self.main_widget.openFile(event.file())
+            return True
+        return super(BibolamaziApplication, self).event(event)
+
+
+
+
 class MainWidget(QWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
@@ -115,7 +154,7 @@ class MainWidget(QWidget):
                     ]
             # now, setup the shortcuts.
             for (a, key, slot) in self.shortcuts:
-                print 'adding action with key %s' %(key)
+                #print 'adding action with key %s' %(key)
                 a.setShortcut(QKeySequence(key))
                 if (slot is not None):
                     a.triggered.connect(slot)
@@ -217,7 +256,6 @@ class MainWidget(QWidget):
         super(MainWidget, self).closeEvent(event)
 
 
-
 swu_updater = None
 swu_interface = None
 swu_source = None
@@ -259,19 +297,13 @@ def run_main():
 
     print "starting application"
 
-    app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
-    app.setApplicationName('Bibolamazi')
-    app.setApplicationVersion(core.version.version_str)
-    app.setOrganizationDomain('org.bibolamazi')
-    app.setOrganizationName('Bibolamazi Project')
+    app = BibolamaziApplication();
 
-    # before main widget, so that main widget can create & connect relevant menu items
-    setup_software_updater()
-
-    w = MainWidget()
-    w.show()
-    w.raise_()
+    args = app.arguments();
+    for k in xrange(1,len(args)): # skip program name == argv[0]
+        fn = str(args[k])
+        print "opening arg: %s" % (fn)
+        app.main_widget.openFile(fn);
 
     sys.exit(app.exec_())
     

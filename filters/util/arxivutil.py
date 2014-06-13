@@ -56,8 +56,9 @@ def detectEntryArXivInfo(entry):
 
     Returns upon success a dictionary of the form
         { 'primaryclass': <primary class, if available>,
-          'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
-          'published': True/False <whether this entry was published in a journal other than arxiv>
+          'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)>,
+          'published': True/False <whether this entry was published in a journal other than arxiv>,
+          'doi': <DOI of entry if any, otherwise None>
         }
 
     If no arXiv information was detected, then this function returns None.
@@ -68,6 +69,7 @@ def detectEntryArXivInfo(entry):
     d =  { 'primaryclass': None ,
            'arxivid': None ,
            'published': True ,
+           'doi': None,
            };
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
@@ -88,6 +90,10 @@ def detectEntryArXivInfo(entry):
         logger.longdebug('No decisive information about whether this entry is published: %s (type %s), '
                          'defaulting to True.', entry.key, entry.type);
         
+
+    if ('doi' in fields and fields['doi']):
+        d['doi'] = fields['doi']
+
 
     if ('eprint' in fields):
         # this gives the arxiv ID

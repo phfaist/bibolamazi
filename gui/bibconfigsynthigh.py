@@ -33,31 +33,13 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 
-## class BibConfigParsingCache(QTextBlockUserData):
-
-##     FilterCmdInfo = namedtuple('FilterCmdInfo', ('line', 'filtername', ))
-##     SourceListCmdInfo = namedtuple('SourceListCmdInfo', ('line', ))
-    
-    
-##     def __init__(self):
-##         super(BibConfigParsingCache, self).__init__()
-
-##         self.cmdfilters = []
-##         self.cmdsourcelists = []
-
-##     def add_filter(self, line, filtername):
-##         f = FilterCmdInfo(line=line, filtername=filtername)
-##         self.cmdfilters.append(f)
-
-##     def add_sourcelist(self, line):
-##         s = SourceListCmdInfo(line=line)
-##         self.cmdsourcelists.append(s)
-
 
 rxsrc = re.compile(r'^\s*(?P<src>src:)', re.MULTILINE)
 rxfilter = re.compile(r'^\s*(?P<filter>filter:)\s+(?P<filtername>[-\w]+)', re.MULTILINE)
 rxcomment = re.compile(r'^\s*%%.*$', re.MULTILINE)
-rxstring = re.compile(r'\"([^"\\]|\\\\|\\\")*\"')
+_rx_not_odd_num_backslashes = r'(((?<=[^\\])|^)(\\\\)*)';
+rxstring1 = re.compile(_rx_not_odd_num_backslashes+r'(?P<str>\"([^"\\]|\\\\|\\\")*\")', re.MULTILINE)
+rxstring2 = re.compile(_rx_not_odd_num_backslashes+r"(?P<str>\'[^']*\')", re.MULTILINE)
 
 
 class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
@@ -108,8 +90,10 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
                 
             self.setFormat(m.start('filtername'), len(m.group('filtername')), fmtname)
 
-        for m in rxstring.finditer(text):
-            self.setFormat(m.start(), len(m.group()), self.fmt_string)
+        for m in rxstring1.finditer(text):
+            self.setFormat(m.start('str'), len(m.group('str')), self.fmt_string)
+        for m in rxstring2.finditer(text):
+            self.setFormat(m.start('str'), len(m.group('str')), self.fmt_string)
 
         for m in rxcomment.finditer(text):
             self.setFormat(m.start(), len(m.group()), self.fmt_comment)

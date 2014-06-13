@@ -78,7 +78,10 @@ MODES:
     "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally, strip the
                  `title' field (useful for revtex styles)
     "note"    -- just add or append to the note={} the string "arXiv:XXXX.YYYY". Don't change
-                 the entry type. This mode is appropriate for entries that are published.
+                 the entry type. This mode is appropriate for entries that are published. 
+                 The string "arXiv:XXXX.YYYY" can be changed by specifying the
+                 -sNoteString="arXiv:%(arxivid)s" option [use `%(arxivid)s' to include the
+                 arXiv ID].
     "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
                  set to the detected arXiv ID, as well as a tag "primaryclass" set to the
                  primary archive (e.g. "quant-ph") if that information was detected. For
@@ -125,50 +128,6 @@ _modes = [
 Mode = bibfilter.enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
 
 
-##class Mode:
-##    type_arg_input = EnumArgType([x for (x,v) in _modes])
-    
-##    def __init__(self, val=None):
-##        if (not val):
-##            self.mode = MODE_NONE
-##        elif isinstance(val, Mode):
-##            self.mode = val.mode
-##        else:
-##            self.mode = self._parse_mode(val)
-
-##    def _parse_mode(self, mode):
-##        if (isinstance(mode, int)):
-##            return mode
-        
-##        if (mode is None):
-##            return MODE_NONE
-##        if (str(mode) in _modes_dict):
-##            return _modes_dict.get(str(mode))
-##        try:
-##            return int(mode)
-##        except ValueError:
-##            pass
-
-##        raise ValueError("arxiv: Invalid mode: %r" %(mode))
-
-##    # so that we can use a Mode object like an int
-##    def __eq__(self, other):
-##        if (isinstance(other, Mode)):
-##            return self.mode == other.mode
-##        return self.mode == self._parse_mode(other)
-
-##    def __str__(self):
-##        ok = [x for (x,v) in _modes if v == self.mode]
-##        if (not len(ok)):
-##            return str(self.mode) # the integer value directly ..
-##        return ok[0]
-
-##    def __repr__(self):
-##        return "arxiv.Mode('%s')"%(self.__str__())
-
-##    def __hash__(self):
-##        return hash(self.mode)
-
 
 # --- the filter object itself ---
 
@@ -181,7 +140,7 @@ class ArxivNormalizeFilter(BibFilter):
 
 
     def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
-                 theses_count_as_published=False, warn_journal_ref=True):
+                 note_string="{arXiv:%(arxivid)s}", theses_count_as_published=False, warn_journal_ref=True):
         """
         Constructor method for ArxivNormalizeFilter
 
@@ -191,6 +150,10 @@ class ArxivNormalizeFilter(BibFilter):
                    ID (if None, use the same mode as `mode').
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                    unpublished entries
+          - note_string: the string to insert in the `note' field (for modes 'unpublished-note',
+                   'note', and 'unpublished-note-notitle'). Use `%(arxivid)s' to include the ArXiv
+                   ID itself in the string. Default: '{arXiv:%(arxivid)s}'. Possible substitutions
+                   keys are 'arxivid','primaryclass','published','doi'.
           - theses_count_as_published(bool): if True, then entries of type @phdthesis and
                    @mastersthesis count as published entries, otherwise not (the default).
           - warn_journal_ref(bool): if True, then for all articles that look unpublished in our
@@ -206,6 +169,7 @@ class ArxivNormalizeFilter(BibFilter):
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
                                  else self.mode);
         self.arxiv_journal_name = arxiv_journal_name;
+        self.note_string = note_string;
         self.theses_count_as_published = butils.getbool(theses_count_as_published);
 
         self.warn_journal_ref = butils.getbool(warn_journal_ref);
@@ -286,7 +250,7 @@ class ArxivNormalizeFilter(BibFilter):
             return entry
 
         def add_note(entry, arxivinfo):
-            note = "{arXiv:"+arxivinfo['arxivid']+"}";
+            note = self.note_string % arxivinfo;
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
                 entry.fields['note'] += ', '+note;
