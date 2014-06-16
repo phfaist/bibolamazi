@@ -32,21 +32,36 @@ from core.blogger import logger
 _RX_BEFORE = r'(?:\s*([;,\{]?\s*)|\b|\s+|^)'
 _RX_AFTER = r'(?:\s*[;,\}]?\s*|$)'
 
-_RX_ARXIVID = r'(?P<arxivid>[0-9.]+)'
+_RX_ARXIVID_PURE = r'(?P<arxivid>[0-9.]+)' # only the numerical arxiv ID
+_RX_ARXIVID_TOL = r'(?P<arxivid>[-a-zA-Z0-9./]+)' # allow primary-class/ etc.
 
 # a regex that we will need often
-_rxarxivinnote = re.compile(
-    _RX_BEFORE +
-    r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?' + _RX_ARXIVID + r')' +
-    _RX_AFTER,
-    re.IGNORECASE
-    );
-_rxarxivurl    = re.compile(
-    _RX_BEFORE +
-    r'(?:http://)?arxiv\.org/(?:abs|pdf)/(?P<arxivid>[-a-zA-Z0-9./]+)' + # not quite same <arxivid>: allows '/'
-    _RX_AFTER,
-    re.IGNORECASE
-    );
+_rxarxiv = [
+    re.compile(
+        _RX_BEFORE
+        + r'\\href\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\}]*\}'
+        + _RX_AFTER,
+        re.IGNORECASE
+        ),
+    re.compile(
+        _RX_BEFORE
+        + r'\\url\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
+        + _RX_AFTER,
+        re.IGNORECASE
+        ),
+    re.compile(
+        _RX_BEFORE
+        + r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
+        + _RX_AFTER,
+        re.IGNORECASE
+        ),
+    re.compile(
+        _RX_BEFORE
+        + r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?' + _RX_ARXIVID_PURE + r')'
+        + _RX_AFTER,
+        re.IGNORECASE
+        ),
+    ];
 
 
 # extract arXiv info from an entry
@@ -106,28 +121,20 @@ def detectEntryArXivInfo(entry):
         d['primaryclass'] = fields['primaryclass'];
 
     def processNoteField(notefield, d):
-        m = _rxarxivinnote.search(notefield);
-        if m:
-            if (not d['arxivid']):
-                try:
-                    d['arxivid'] = m.group('arxivid');
-                except IndexError:
-                    logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
-                    pass
-            if (not d['primaryclass']):
-                try:
-                    d['primaryclass'] = m.group('primaryclass');
-                except IndexError:
-                    logger.longdebug("indexerror for 'primaryclass' group in note=%r, m=%r", notefield, m)
-                    pass
-        m = _rxarxivurl.search(notefield);
-        if m:
-            if (not d['arxivid']):
-                try:
-                    d['arxivid'] = m.group('arxivid');
-                except IndexError:
-                    logger.longdebug("_rxarxivurl: indexerror for 'arxivid' group in note=%r, m=%r", notefield, m);
-                    pass
+        for rx in _rxarxiv:
+            m = rx.search(notefield);
+            if m:
+                if (not d['arxivid']):
+                    try:
+                        d['arxivid'] = m.group('arxivid');
+                    except IndexError:
+                        logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
+                        pass
+                if (not d['primaryclass']):
+                    try:
+                        d['primaryclass'] = m.group('primaryclass');
+                    except IndexError:
+                        pass
                 
     if ('note' in fields):
         processNoteField(fields['note'], d);
@@ -154,7 +161,11 @@ def stripArXivInfoInNote(notestr):
     information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
     """
 
-    newnotestr = _rxarxivinnote.sub('', _rxarxivurl.sub('', notestr));
+    newnotestr = notestr
+    for rx in _rxarxiv:
+        # replace all occurences of rx's in _rxarxiv with nothing.
+        newnotestr = rx.sub('', newnotestr)
+
     if (notestr != newnotestr):
         logger.longdebug("stripArXivInfoInNote: stripped %r to %r", notestr, newnotestr)
     return newnotestr

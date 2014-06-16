@@ -53,30 +53,38 @@ class BibolamaziNoSourceEntriesError(BibolamaziError):
 
 def get_args_parser():
 
-    parser = argparse.ArgumentParser(description='Collect bibliographic entries from BibTeX files and'+
+    parser = argparse.ArgumentParser(description='Collect bibliographic entries from BibTeX files and'
                                      ' apply rules or filters to them.',
                                      prog='bibolamazi',
                                      add_help=False);
 
-    #parser.add_argument('-I', '--interactive', action='store_true',
-    #                    help='Create a new bibfilter configuration, or modify current one interactively.');
-    parser.add_argument('-v', '--verbose', action=store_or_count, dest='verbosity', default=1,
-                        help='Increase or set verbosity (0=quiet,1=info,2=verbose,3=long debug)')
-    parser.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0,
-                        help="Don't display any messages. Same as `-v 0'");
     parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
-                        help="Show a list of available filters along with their description, and exit.");
+                        help="Bypass and ignore any existing cache file, and regenerate the cache. If "
+                        "the cache file exists, it will be overwritten.");
     parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
                         help="Create a new bibolamazi file with a template configuration.");
     parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
                         help="Show a list of available filters along with their description, and exit.");
+
     parser.add_argument('--help', '-h', action=opt_action_help, nargs='?', metavar='filter',
-                        help='Show this help message and exit. If filter is given, show information and '+
+                        help='Show this help message and exit. If filter is given, show information and '
                         'help text for that filter. See --list-filters for a list of available filters.')
     parser.add_argument('--version', action=opt_action_version, nargs=0,
                         help='Show bibolamazi version number and exit.')
+
+    parser.add_argument('--verbosity', action='store', dest='verbosity', nargs=1, default=1,
+                        help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)")
+    parser.add_argument('-q', '-v0', '--quiet', action='store_const', dest='verbosity', const=0,
+                        help="Don't display any messages (same as --verbosity=0)");
+    parser.add_argument('-v1', action='store_const', dest='verbosity', default=1, const=1,
+                        help='Set normal verbosity mode (same as --verbosity=1)')
+    parser.add_argument('-v', '-v2', '--verbose', action='store_const', dest='verbosity', const=2,
+                        help='Set verbose mode (same as --verbosity=2)')
+    parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
+                        help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
+
     parser.add_argument('outputbibfile',
-                        help='The .bib file to update, i.e. that contains the %%%%%%BIB-OLA-MAZI '
+                        help='The .bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
                         'configuration tags.');
 
     return parser
