@@ -129,6 +129,82 @@ DUPL_WARN_BOTTOM = """\
 
 
 
+# --------------------------------------------------
+
+
+# some utilities
+
+BORING_WORDS = (
+    "a",
+    "of",
+    "the",
+    "in",
+    "on",
+    "and",
+    "its",
+    "de",
+    "et",
+    "der",
+    "und",
+    )
+
+
+def normstr(x, lower=True):
+    if not isinstance(x, unicode):
+        x = unicode(x.decode('utf-8'))
+
+    x2 = unicodedata.normalize('NFKD', x).strip();
+    if lower:
+        x2 = x2.lower();
+    # remove any unicode compositions (accents, etc.)
+    x2 = re.sub(r'[^\x00-\x7f]', '', x2.encode('utf-8')).decode('utf-8')
+    ## additionally, remove any special LaTeX chars which may be written differently.
+    #x2 = re.sub(r'\\([a-zA-Z]+|.)', '', x2);
+    x2 = re.sub(r'''[\{\}\|\.\+\?\*\,\'\"\\]''', '', x2);
+    x2 = re.sub(r'-+', '-', x2);
+    logger.longdebug("Normalized string: %r -> %r", x, x2)
+    return x2
+
+def getlast(pers, lower=True):
+    # join last names
+    last = normstr(unicode(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]), lower=lower)
+    initial = re.sub('[^a-z]', '', normstr(u"".join(pers.first(True)),lower=lower),
+                     flags=re.IGNORECASE)[0:1] # only first initial [a-z]
+    return (last, initial);
+
+def fmtjournal(x):
+    if not isinstance(x, unicode):
+        x = unicode(x.decode('utf-8'))
+        
+    x2 = normstr(x, lower=False)
+
+    # drop "a", "the", "on", "of"
+    # -- HACK to keep the `A' in ``Physics Review A'': Trick it into thinking as
+    #    ``Physics Review Aaaa'', and then only capital letters are kept anyway
+    x2 = re.sub(r'\s+(a)\s*([.:,]|$)', ' Aaaaaa', x2, flags=re.IGNORECASE)
+    # --
+    x2 = re.sub(r'\b(' + r'|'.join(BORING_WORDS) + r')\b', '', x2, flags=re.IGNORECASE)
+    #logger.longdebug('fmtjournal TEMP: %r', x2)
+
+    x2 = re.sub(r'\b([a-z])', lambda m: m.group().capitalize(), x2)
+    x2 = re.sub(r'[^A-Z]', '', x2)
+    #logger.longdebug('fmtjournal TEMP final: %r', x2)
+    return x2
+
+
+
+
+
+
+
+# --------------------------------------------------
+
+
+
+
+
+
+
 
 HELP_AUTHOR = u"""\
 Duplicates filter by Philippe Faist, (C) 2013, GPL 3+
@@ -158,7 +234,6 @@ Alternatively, if you just set the warn flag on, then a duplicate file is not
 created (unless the dupfile option is given), and a warning is displayed for
 each duplicate found.
 """
-
 
 
 class DuplicatesFilter(BibFilter):
@@ -204,24 +279,6 @@ class DuplicatesFilter(BibFilter):
 
 
     def prepare_entry_cache(self, a, cache_a, arxivaccess):
-        def normstr(x, lower=True):
-            x2 = unicodedata.normalize('NFKD', x).strip();
-            if lower:
-                x2 = x2.lower();
-            # remove any unicode compositions (accents, etc.)
-            x2 = re.sub(r'[^\x00-\x7f]', '', x2.encode('utf-8')).decode('utf-8')
-            ## additionally, remove any special LaTeX chars which may be written differently.
-            #x2 = re.sub(r'\\([a-zA-Z]+|.)', '', x2);
-            x2 = re.sub(r'''[\{\}\|\.\+\?\*\,\'\"\\]''', '', x2);
-            x2 = re.sub(r'-+', '-', x2);
-            logger.longdebug("Normalized string: %r -> %r", x, x2)
-            return x2
-
-        def getlast(pers):
-            # join last names
-            last = normstr(unicode(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]))
-            initial = re.sub('[^a-z]', '', normstr(u"".join(pers.first(True))))[0:1] # only first initial [a-z]
-            return (last, initial);
 
         cache_a['pers'] = [ getlast(pers) for pers in a.persons.get('author',[]) ]
 
@@ -229,22 +286,6 @@ class DuplicatesFilter(BibFilter):
 
         note = a.fields.get('note', '')
         cache_a['note_cleaned'] = (arxivutil.stripArXivInfoInNote(note) if note else "")
-
-        def fmtjournal(x):
-            x2 = normstr(unicode(x), lower=False)
-
-            # drop "a", "the", "on", "of"
-            # -- HACK to keep the `A' in ``Physics Review A'': Trick it into thinking as
-            #    ``Physics Review Aaaa'', and then only capital letters are kept anyway
-            x2 = re.sub(r'\s+(a)\s*([.:,]|$)', ' Aaaaaa', x2, flags=re.IGNORECASE)
-            # --
-            x2 = re.sub(r'\b(a|of|the|in|on|and|de|et|der|und)\b', '', x2, flags=re.IGNORECASE)
-            #logger.longdebug('fmtjournal TEMP: %r', x2)
-
-            x2 = re.sub(r'\b([a-z])', lambda m: m.group().capitalize(), x2)
-            x2 = re.sub(r'[^A-Z]', '', x2)
-            #logger.longdebug('fmtjournal TEMP final: %r', x2)
-            return x2
         
         cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
 
