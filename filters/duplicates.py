@@ -134,6 +134,8 @@ DUPL_WARN_BOTTOM = """\
 
 # some utilities
 
+
+# these words will get stripped from journal names when forming abbreviations
 BORING_WORDS = (
     "a",
     "of",

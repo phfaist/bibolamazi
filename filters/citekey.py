@@ -98,7 +98,51 @@ Set the citation key of entries in a standard format
 """
 
 HELP_TEXT = u"""
-................... doc here ..........................
+This filter replaces the bibtex citation key of all the concerned entries by a key
+generated using a standard scheme.
+
+Use the -sFormat="..." option to specify the standard citation key format. The format of
+the citation key is specified with standard Python formatting placeholders, of the form
+`%(<field name>)s`. Possible field names are:
+  - `author`: the last name of the first author
+  - `authors`: the last names of all authors, concatenated, truncated to 25 characters
+  - `year`: four-digit year of publication (`year` field of the bibtex entry)
+  - `year2`: same as `year`, but two-digit year instead (e.g. 88, 04)
+  - `journal_abb`: very abbreviated journal name (e.g. PRL, NJP)
+  - `journal`: somewhat shortened journal name (e.g. "Phys.Rev.Lett.")
+  - `title_word`:  the first word of the title that is not 'a', 'the', 'and', ...
+  - `doi`: the DOI digital identifier of the entry
+  - `arxivid`: the arXiv ID of the entry, if available. Excludes the primary class, except
+      for old-style IDs.
+  - `primaryclass`: the arXiv primary category, if available.
+
+If a field is given in the key but does not exist in the entry (e.g. `doi`, `arxivid`)
+then the placeholder silently expands to an empty string.
+
+Note that all the field values are strings (including year), so you'll never need the form
+`%(..)d` or `%(..)<anything else>`
+
+If the `-sFormat=...` option is not provided, then the default format
+`%(author)s%(year)s%(journal_abb)s_%(title_word)s` is used.
+
+Additionally, you can restrict which entries will be affected by this filter to a certain
+sub-class of all entries using the `-dIfPublished=1/0` and `-sIfType=...` options.
+
+If the `IfPublished` option is given, then the argument to the option (True or False)
+determines whether only all published entries are affected or all unpublished entries are
+affected. Entries with only arXiv identifiers and no journal information (see the `arXiv`
+filter) are considered unpublished.
+
+You can also set the `IfType` option to a comma-separated list of entry types that should
+be affected. This can be any standard bibtex entry type, e.g. `article`, `book`,
+`incollection`, etc.
+
+The `IfPublished` and `IfType` options may be combined; in this case the entry will have
+to satisfy both conditions in order to be affected.
+
+NOTE: If two entries give the same citation key, then the second one will get a suffix to
+differentiate it from the first. *WHICH ENTRY GETS THE SUFFIX IS UNDEFINED.* In this case,
+it might be that the entries are duplicates. Consider then using the `duplicates` filter.
 """
 
 
@@ -110,7 +154,7 @@ class CiteKeyFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, format="%(author)s%(year)04d_%(title_word)s", if_published=None, if_type=None):
+    def __init__(self, format="%(author)s%(year)s%(journal_abb)s_%(title_word)s", if_published=None, if_type=None):
         """
         CiteKeyFilter Constructor.
 
@@ -210,20 +254,22 @@ class CiteKeyFilter(BibFilter):
         
         for (key, entry) in bibdata.entries.iteritems():
 
+            keyorig = key
+            
             try:
                 ainfo = arxivaccess.getArXivInfo(key);
                 if (self.if_published is not None):
                     if (not self.if_published and (ainfo is None or ainfo['published'])):
                         logger.longdebug('Skipping published entry %s (filter: unpublished)', key)
-                        raise Jump()
+                        raise Jump
                     if (self.if_published and (ainfo is not None and not ainfo['published'])):
                         logger.longdebug('Skipping unpublished entry %s (filter: published)', key)
-                        raise Jump()
+                        raise Jump
                 if self.if_type is not None:
                     if entry.type not in self.if_type:
                         logger.longdebug('Skipping entry %s of different type %s (filter: %r)',
                                          key, entry.type, self.if_type)
-                        raise Jump()
+                        raise Jump
 
                 repldic = dict(zip(fld, [fld_fn[f](entry) for f in fld]));
 
@@ -235,7 +281,17 @@ class CiteKeyFilter(BibFilter):
             except Jump:
                 pass
             finally:
-                newbibdata.add_entry(key, entry);
+                # avoid duplicate keys
+                newkey = key
+                count = 0
+                while newkey in newbibdata.entries:
+                    count += 1;
+                    newkey = key + '.%d'%(count)
+                if count:
+                    logger.warning("`%s': Citation key `%s' already used: using `%s' instead.",
+                                   keyorig, key, newkey)
+                # add the entry
+                newbibdata.add_entry(newkey, entry);
 
         bibolamazifile.setBibliographyData(newbibdata);
 
