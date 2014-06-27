@@ -104,8 +104,9 @@ class MainWidget(QWidget):
 
         self.upd_checkenabled_action = None
         if (swu_interface is not None):
-            self.upd_checkenabled_action = QAction("Check for Updates", self)
+            self.upd_checkenabled_action = QAction("Regularly Check for Updates", self)
             self.upd_checkenabled_action.setCheckable(True)
+            self.upd_checkenabled_action.setChecked(swu_interface.checkForUpdatesEnabled())
             self.upd_checkenabled_action.toggled.connect(swu_interface.setCheckForUpdatesEnabled)
             swu_interface.checkForUpdatesEnabledChanged.connect(self.upd_checkenabled_action.setChecked)
             #self.upd_checkenabled_action.toggled.connect(
@@ -113,6 +114,8 @@ class MainWidget(QWidget):
             #    QMessageBox.information(self, 'Software Updates',
             #                            'Software update checks have been turned %s.' %('on' if value else 'off'))
             #    )
+            self.upd_checknow_action = QAction("Check for Updates Now", self)
+            self.upd_checknow_action.triggered.connect(self.doCheckForUpdates)
 
         if (sys.platform.startswith('darwin')):
             # Mac OS X
@@ -126,6 +129,8 @@ class MainWidget(QWidget):
             if (self.upd_checkenabled_action):
                 filemenu.addSeparator()
                 filemenu.addAction(self.upd_checkenabled_action)
+            if (self.upd_checknow_action):
+                filemenu.addAction(self.upd_checknow_action)
             helpmenu = self.menubar.addMenu("Help")
             helpmenu.addAction("Open Help && Reference Browser", self, SLOT('on_btnHelp_clicked()'),
                                QKeySequence("Ctrl+R"))
@@ -150,7 +155,11 @@ class MainWidget(QWidget):
                 ]
             if (self.upd_checkenabled_action):
                 self.shortcuts += [
-                    (self.upd_checkenabled_action, "Ctrl+U", None)
+                    #(self.upd_checkenabled_action, "Ctrl+U", None)
+                    ]
+            if (self.upd_checknow_action):
+                self.shortcuts += [
+                    (self.upd_checknow_action, "Ctrl+U", None)
                     ]
             # now, setup the shortcuts.
             for (a, key, slot) in self.shortcuts:
@@ -164,6 +173,25 @@ class MainWidget(QWidget):
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
 
+    def doCheckForUpdates(self):
+        if swu_interface is not None:
+            ret = swu_interface.do_check_for_updates()
+            if ret is None:
+                pass # no checking for updates
+            elif ret is False:
+                # no new updates
+                QMessageBox.information(self, "Software Update Check",
+                                        "There are no new updates.")
+            elif isinstance(ret, tuple):
+                if len(ret) == 3:
+                    QMessageBox.critical(self, "Error: Software Update Check",
+                                         ret[2]);
+                    return
+                # if ret[0]==True, then update installed but not restarted.
+                # if ret[0]==False, then udpate exists, but not installed.
+                return
+                    
+        
     def openFile(self, fname):
         w = openbibfile.OpenBibFile()
         w.setFavoriteCmdsList(self.favoriteCmdsList)
