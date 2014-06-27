@@ -195,7 +195,9 @@ def detect_filters(force_redetect=False):
         return False
 
     for (root, dirs, files) in os.walk(thisdir):
-        if (not '__init__.py' in files):
+        if (not '__init__.py' in files and
+            not '__init__.pyc' in files and
+            not '__init__.pyo' in files):
             # skip this directory, not a python module. also skip all subdirectories.
             dirs[:] = []
             continue
