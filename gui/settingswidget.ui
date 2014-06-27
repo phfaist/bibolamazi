@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>385</width>
-    <height>169</height>
+    <width>388</width>
+    <height>189</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,6 +31,13 @@
        <widget class="QCheckBox" name="chkDevelUpdates">
         <property name="text">
          <string>Include development (beta) versions</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnCheckNow">
+        <property name="text">
+         <string>Check Now</string>
         </property>
        </widget>
       </item>

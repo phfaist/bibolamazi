@@ -26,6 +26,7 @@
 import sys
 import os
 import os.path
+import re
 
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 import bibolamazi_init
@@ -103,6 +104,7 @@ class MainWidget(QWidget):
         self.shortcuts = []
 
         self.upd_checkenabled_action = None
+        self.upd_checknow_action = None
         if (swu_interface is not None):
             self.upd_checkenabled_action = QAction("Regularly Check for Updates", self)
             self.upd_checkenabled_action.setCheckable(True)
@@ -253,7 +255,7 @@ class MainWidget(QWidget):
         if self.settingswidget is None:
             self.settingswidget = settingswidget.SettingsWidget(swu_interface=swu_interface,
                                                                 swu_sourcefilter_devel=swu_sourcefilter_devel,
-                                                                parent=self)
+                                                                mainwin=self)
         self.settingswidget.show()
         self.settingswidget.raise_()
 
@@ -328,8 +330,14 @@ def run_main():
     app = BibolamaziApplication();
 
     args = app.arguments();
+    _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE);
     for k in xrange(1,len(args)): # skip program name == argv[0]
         fn = str(args[k])
+        if (_rxscript.search(fn)):
+            # our own script, bug on windows?
+            print "skipping own arg: %s" %(fn)
+            continue
+        
         print "opening arg: %s" % (fn)
         app.main_widget.openFile(fn);
 

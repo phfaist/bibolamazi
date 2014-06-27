@@ -29,13 +29,15 @@ from qtauto.ui_settingswidget import Ui_SettingsWidget
 
 
 class SettingsWidget(QDialog):
-    def __init__(self, swu_interface, swu_sourcefilter_devel, parent=None):
-        super(SettingsWidget, self).__init__(parent=parent)
+    def __init__(self, swu_interface, swu_sourcefilter_devel, mainwin=None):
+        super(SettingsWidget, self).__init__(parent=mainwin)
 
         print "swu_interface=%r, swu_sourcefilter_devel=%r" %(swu_interface, swu_sourcefilter_devel)
 
         self.swu_interface = swu_interface
         self.swu_sourcefilter_devel = swu_sourcefilter_devel
+
+        self.mainwin = mainwin
 
         self.ui = Ui_SettingsWidget()
         self.ui.setupUi(self)
@@ -58,3 +60,7 @@ class SettingsWidget(QDialog):
     def on_chkDevelUpdates_toggled(self, val):
         if self.swu_sourcefilter_devel:
             self.swu_sourcefilter_devel.setIncludeDevelReleases(val)
+
+    @pyqtSlot()
+    def on_btnCheckNow_clicked(self):
+        self.mainwin.doCheckForUpdates()

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'settingswidget.ui'
 #
-# Created: Sat Feb 15 13:48:46 2014
+# Created: Fri Jun 27 15:11:40 2014
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_SettingsWidget(object):
     def setupUi(self, SettingsWidget):
         SettingsWidget.setObjectName(_fromUtf8("SettingsWidget"))
-        SettingsWidget.resize(385, 169)
+        SettingsWidget.resize(388, 189)
         self.verticalLayout_2 = QtGui.QVBoxLayout(SettingsWidget)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
         self.frmUpdates = QtGui.QGroupBox(SettingsWidget)
@@ -39,6 +39,9 @@ class Ui_SettingsWidget(object):
         self.chkDevelUpdates = QtGui.QCheckBox(self.frmUpdates)
         self.chkDevelUpdates.setObjectName(_fromUtf8("chkDevelUpdates"))
         self.verticalLayout.addWidget(self.chkDevelUpdates)
+        self.btnCheckNow = QtGui.QPushButton(self.frmUpdates)
+        self.btnCheckNow.setObjectName(_fromUtf8("btnCheckNow"))
+        self.verticalLayout.addWidget(self.btnCheckNow)
         self.verticalLayout_2.addWidget(self.frmUpdates)
         spacerItem = QtGui.QSpacerItem(20, 16, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem)
@@ -59,4 +62,5 @@ class Ui_SettingsWidget(object):
         self.frmUpdates.setTitle(_translate("SettingsWidget", "Software Updates", None))
         self.chkUpdates.setText(_translate("SettingsWidget", "Check for software updates", None))
         self.chkDevelUpdates.setText(_translate("SettingsWidget", "Include development (beta) versions", None))
+        self.btnCheckNow.setText(_translate("SettingsWidget", "Check Now", None))
 
