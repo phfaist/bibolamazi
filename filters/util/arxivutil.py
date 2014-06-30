@@ -72,6 +72,7 @@ def detectEntryArXivInfo(entry):
     Returns upon success a dictionary of the form
         { 'primaryclass': <primary class, if available>,
           'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)>,
+          'archiveprefix': value of the 'archiveprefix' field
           'published': True/False <whether this entry was published in a journal other than arxiv>,
           'doi': <DOI of entry if any, otherwise None>
         }
@@ -84,6 +85,7 @@ def detectEntryArXivInfo(entry):
     d =  { 'primaryclass': None ,
            'arxivid': None ,
            'published': True ,
+           'archiveprefix': None,
            'doi': None,
            };
     
@@ -119,6 +121,9 @@ def detectEntryArXivInfo(entry):
 
     if ('primaryclass' in fields):
         d['primaryclass'] = fields['primaryclass'];
+
+    if ('archiveprefix' in fields):
+        d['archiveprefix'] = fields['archiveprefix'];
 
     def processNoteField(notefield, d):
         for rx in _rxarxiv:

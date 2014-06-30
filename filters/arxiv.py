@@ -82,11 +82,11 @@ MODES:
                  The string "arXiv:XXXX.YYYY" can be changed by specifying the
                  -sNoteString="arXiv:%(arxivid)s" option [use `%(arxivid)s' to include the
                  arXiv ID].
-    "eprint"  -- keep the entry type as "article", and adds the tags "eprint" and "arxivid"
-                 set to the detected arXiv ID, as well as a tag "primaryclass" set to the
-                 primary archive (e.g. "quant-ph") if that information was detected. For
-                 unpublished articles, also set journal={ArXiv e-prints} (or given arxiv
-                 journal name in filter options)
+    "eprint"  -- keep the entry type as "article", and adds the tags "archivePrefix",
+                 "eprint" and "arxivid" set to the detected arXiv ID, as well as a tag
+                 "primaryclass" set to the primary archive (e.g. "quant-ph") if that
+                 information was detected. For unpublished articles, also set
+                 journal={ArXiv e-prints} (or given arxiv journal name in filter options)
 
 ArXiv information is determined by inspecting the fields 'arxivid', 'eprint', 'primaryclass',
 and 'note'. The entry is determined as unpublished if it is of type "unpublished", or if it
@@ -140,7 +140,9 @@ class ArxivNormalizeFilter(BibFilter):
 
 
     def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
-                 note_string="{arXiv:%(arxivid)s}", theses_count_as_published=False, warn_journal_ref=True):
+                 note_string="{arXiv:%(arxivid)s}", no_archive_prefix=False,
+                 default_archive_prefix="arXiv", no_primary_class_for_old_ids=False,
+                 theses_count_as_published=False, warn_journal_ref=True):
         """
         Constructor method for ArxivNormalizeFilter
 
@@ -154,6 +156,13 @@ class ArxivNormalizeFilter(BibFilter):
                    'note', and 'unpublished-note-notitle'). Use `%(arxivid)s' to include the ArXiv
                    ID itself in the string. Default: '{arXiv:%(arxivid)s}'. Possible substitutions
                    keys are 'arxivid','primaryclass','published','doi'.
+          - no_archive_prefix(bool): If set, then removes the 'archiveprefix' key entirely.
+          - default_archive_prefix: In `eprint' mode, entries which don't have an archive prefix are
+                   given this one. Additionally, other entries whose archive prefix match this one
+                   up to letter casing are adjusted to this one. (Default: "arXiv")
+          - no_primary_class_for_old_ids(bool): if True, then in `eprint' mode no 'primaryclass' field
+                   is set if the entry has an "old" arXiv ID identifier already containing the
+                   primary-class, e.g. "quant-ph/YYYYZZZ".
           - theses_count_as_published(bool): if True, then entries of type @phdthesis and
                    @mastersthesis count as published entries, otherwise not (the default).
           - warn_journal_ref(bool): if True, then for all articles that look unpublished in our
@@ -170,6 +179,9 @@ class ArxivNormalizeFilter(BibFilter):
                                  else self.mode);
         self.arxiv_journal_name = arxiv_journal_name;
         self.note_string = note_string;
+        self.no_archive_prefix = no_archive_prefix;
+        self.default_archive_prefix = default_archive_prefix;
+        self.no_primary_class_for_old_ids = no_primary_class_for_old_ids;
         self.theses_count_as_published = butils.getbool(theses_count_as_published);
 
         self.warn_journal_ref = butils.getbool(warn_journal_ref);
@@ -285,13 +297,25 @@ class ArxivNormalizeFilter(BibFilter):
             if (arxivinfo['published'] == False):
                 # if the entry is unpublished, set the journal name to
                 # "arXiv e-prints" (or whatever was specified by filter option)
-                entry.fields['journal'] = self.arxiv_journal_name;
-                entry.fields.pop('pages','');
-                
-            entry.fields['arxivid'] = arxivinfo['arxivid'];
-            entry.fields['eprint'] = arxivinfo['arxivid'];
+                entry.fields['journal'] = self.arxiv_journal_name
+                entry.fields.pop('pages','')
+
+            if not self.no_archive_prefix:
+                if (not arxivinfo.get('archiveprefix','') or
+                    arxivinfo.get('archiveprefix','').lower() == self.default_archive_prefix.lower()):
+                    # no given archiveprefix or already default, but possibly not capitalized the same
+                    entry.fields['archiveprefix'] = self.default_archive_prefix
+                else:
+                    entry.fields['archiveprefix'] = arxivinfo['archiveprefix']
+            entry.fields['arxivid'] = arxivinfo['arxivid']
+            entry.fields['eprint'] = arxivinfo['arxivid']
             if (arxivinfo['primaryclass']):
-                entry.fields['primaryclass'] = arxivinfo['primaryclass'];
+                ok = True
+                if '/' in arxivinfo['arxivid'] and self.no_primary_class_for_old_ids:
+                    # quant-ph/XXXZZZZ old id
+                    ok = False
+                if ok:
+                    entry.fields['primaryclass'] = arxivinfo['primaryclass']
 
             return entry
         
