@@ -32,6 +32,7 @@ sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 import bibolamazi_init
 
 from core import bibolamazifile
+from core import main
 import core.version
 
 from PyQt4.QtCore import *
@@ -326,6 +327,8 @@ def setup_software_updater():
 def run_main():
 
     print "starting application"
+
+    main.setup_filterpackages_from_env()
 
     app = BibolamaziApplication();
 

@@ -45,6 +45,7 @@ from PyQt4.QtGui import *
 
 from bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
+import filterinstanceeditor
 
 from qtauto.ui_openbibfile import Ui_OpenBibFile
 
@@ -617,7 +618,7 @@ class OpenBibFile(QWidget):
     def on_btnAddFilter_clicked(self):
         print 'add filter: clicked'
 
-        filter_list = filters.detect_filters()
+        filter_list = filterinstanceeditor.get_filter_list()
 
         (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
                                               filter_list);

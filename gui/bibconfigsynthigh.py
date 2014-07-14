@@ -35,7 +35,7 @@ from PyQt4.QtGui import *
 
 
 rxsrc = re.compile(r'^\s*(?P<src>src:)', re.MULTILINE)
-rxfilter = re.compile(r'^\s*(?P<filter>filter:)\s+(?P<filtername>[-\w]+)', re.MULTILINE)
+rxfilter = re.compile(r'^\s*(?P<filter>filter:)\s+(?P<filtername>[-:\w]+)', re.MULTILINE)
 rxcomment = re.compile(r'^\s*%%.*$', re.MULTILINE)
 _rx_not_odd_num_backslashes = r'(((?<=[^\\])|^)(\\\\)*)';
 rxstring1 = re.compile(_rx_not_odd_num_backslashes+r'(?P<str>\"([^"\\]|\\\\|\\\")*\")', re.MULTILINE)
@@ -83,9 +83,9 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             fmtname = self.fmt_filtername
             try:
                 filtmodule = filters.get_module(m.group('filtername'))
-            except filters.NoSuchFilter:
+            except (filters.NoSuchFilter, filters.NoSuchFilterPackage):
                 fmtname = self.fmt_filtername_nonex
-                
+
             #pcache.add_filter(line=blockno, filtername=m.group('filtername'))
                 
             self.setFormat(m.start('filtername'), len(m.group('filtername')), fmtname)

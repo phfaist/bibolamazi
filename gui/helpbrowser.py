@@ -34,6 +34,8 @@ import filters
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+import filterinstanceeditor
+
 from qtauto.ui_helpbrowser import Ui_HelpBrowser
 
 
@@ -50,7 +52,7 @@ class HelpBrowser(QWidget):
 
         self.openTabs = []
 
-        for filt in filters.detect_filters():
+        for filt in filterinstanceeditor.get_filter_list():
             fbutton = QPushButton('%s' % (filt), self)
             fbutton.setProperty('helppath', 'filters/%s' %(filt))
             fbutton.setToolTip(filters.get_filter_class(filt).getHelpDescription())

@@ -181,6 +181,11 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 
     global filterpath
 
+    name = str(name)
+
+    logger.longdebug("get_module: name=%r, raise_nosuchfilter=%r, filterpackage=%r",
+                     name, raise_nosuchfilter, filterpackage)
+
     # shortcut: a filter name may be 'filterpackage:the.module.name' to force search in a
     # specific filter package.
     if ':' in name and filterpackage is None:
@@ -188,7 +193,6 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         return get_module(name=fpparts[1], raise_nosuchfilter=raise_nosuchfilter,
                           filterpackage=fpparts[0])
 
-    name = str(name)
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
 
@@ -197,6 +201,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 
 
     def get_module_in_filterpackage(filterpackname):
+        logger.longdebug("Attempting to load filter %s from package %s", name, filterpackname)
         oldsyspath = sys.path
         filterdir = filterpath[filterpackname]
         if filterdir:

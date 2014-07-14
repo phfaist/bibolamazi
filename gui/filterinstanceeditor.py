@@ -28,7 +28,7 @@ import os.path
 import re
 
 import filters
-from filters import NoSuchFilter, FilterError
+from filters import NoSuchFilter, NoSuchFilterPackage, FilterError
 from core import butils
 from core.bibfilter import EnumArgType, CommaStrList
 
@@ -39,6 +39,20 @@ from PyQt4.QtGui import *
 from qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 import overlistbuttonwidget
+
+
+def get_filter_list():
+    filter_pkg_list = filters.detect_filter_package_listings()
+    filter_list = []
+    for (fpkg, flist) in filter_pkg_list.items():
+        if fpkg == 'filters':
+            # built-in, ignore the filter package prefix.
+            filter_list += flist
+        else:
+            filter_list += [ fpkg+':'+f for f in flist ]
+    return filter_list
+
+
 
 
 class RegisteredArgInputType:
@@ -109,8 +123,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             # remember: filter_uses_default_arg_parser() may also raise NoSuchFilter
             if (filtername and filters.filter_uses_default_arg_parser(filtername)):
                 self._fopts = filters.DefaultFilterOptions(filtername)
-        except (NoSuchFilter,FilterError) as e:
-            print "No such filter or filtererror: %s"%(unicode(e))
+        except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
+            print "No such filter, no such filter package or filtererror: %s"%(unicode(e))
             pass
 
         if (reset_optionstring):
@@ -450,7 +464,7 @@ class FilterInstanceEditor(QWidget):
         self.ui = Ui_FilterInstanceEditor()
         self.ui.setupUi(self)
         
-        for filtername in filters.detect_filters():
+        for filtername in get_filter_list():
             self.ui.cbxFilter.addItem(filtername)
 
         self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
