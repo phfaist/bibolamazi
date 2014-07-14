@@ -291,7 +291,7 @@ def help_list_filters():
     import filters;
 
     #DEBUG
-    logger.setVerbosity(3)
+    #logger.setVerbosity(3)
 
     def fmt_filter_helpline(f, fp):
 
