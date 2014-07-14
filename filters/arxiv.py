@@ -142,6 +142,7 @@ class ArxivNormalizeFilter(BibFilter):
     def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
                  note_string="{arXiv:%(arxivid)s}", no_archive_prefix=False,
                  default_archive_prefix="arXiv", no_primary_class_for_old_ids=False,
+                 no_primary_class=False,
                  theses_count_as_published=False, warn_journal_ref=True):
         """
         Constructor method for ArxivNormalizeFilter
@@ -163,6 +164,7 @@ class ArxivNormalizeFilter(BibFilter):
           - no_primary_class_for_old_ids(bool): if True, then in `eprint' mode no 'primaryclass' field
                    is set if the entry has an "old" arXiv ID identifier already containing the
                    primary-class, e.g. "quant-ph/YYYYZZZ".
+          - no_primary_class(bool): if True, then the `primaryclass' field is always stripped.
           - theses_count_as_published(bool): if True, then entries of type @phdthesis and
                    @mastersthesis count as published entries, otherwise not (the default).
           - warn_journal_ref(bool): if True, then for all articles that look unpublished in our
@@ -181,7 +183,8 @@ class ArxivNormalizeFilter(BibFilter):
         self.note_string = note_string;
         self.no_archive_prefix = no_archive_prefix;
         self.default_archive_prefix = default_archive_prefix;
-        self.no_primary_class_for_old_ids = no_primary_class_for_old_ids;
+        self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids);
+        self.no_primary_class = butils.getbool(no_primary_class);
         self.theses_count_as_published = butils.getbool(theses_count_as_published);
 
         self.warn_journal_ref = butils.getbool(warn_journal_ref);
@@ -310,10 +313,14 @@ class ArxivNormalizeFilter(BibFilter):
             entry.fields['arxivid'] = arxivinfo['arxivid']
             entry.fields['eprint'] = arxivinfo['arxivid']
             if (arxivinfo['primaryclass']):
+                # see if we want to set the primary class
                 ok = True
-                if '/' in arxivinfo['arxivid'] and self.no_primary_class_for_old_ids:
+                if self.no_primary_class:
+                    ok = False
+                elif '/' in arxivinfo['arxivid'] and self.no_primary_class_for_old_ids:
                     # quant-ph/XXXZZZZ old id
                     ok = False
+                # maybe set the primary class:
                 if ok:
                     entry.fields['primaryclass'] = arxivinfo['primaryclass']
 

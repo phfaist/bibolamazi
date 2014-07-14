@@ -29,7 +29,8 @@ import shlex
 import inspect
 import argparse
 import textwrap
-from collections import namedtuple
+import types
+from collections import namedtuple, OrderedDict
 
 from core.argparseactions import store_key_val, store_key_const, store_key_bool
 from core.blogger import logger
@@ -47,6 +48,13 @@ __all__ = []
 class NoSuchFilter(Exception):
     def __init__(self, fname, errorstr=None):
         Exception.__init__(self, "No such filter or import error: "+fname+(": "+errorstr if errorstr else ""));
+
+class NoSuchFilterPackage(Exception):
+    def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
+        Exception.__init__(self, "No such filter package or import error: `"+ fpname + "'"
+                           + (" (dir=%s)"%(fpdir) if fpdir is not None else "")
+                           + (": "+errorstr if errorstr else ""));
+        
 
 class FilterError(Exception):
     def __init__(self, errorstr, name=None):
@@ -83,27 +91,66 @@ class FilterCreateArgumentError(FilterError):
 
 
 
+class PrependOrderedDict(OrderedDict):
+    """
+    Store the items in the order where the first item is the one that was added/modified
+    last.
+    """
+    def __init__(self, *args, **kwargs):
+        self.isupdating = False
+        OrderedDict.__init__(self, *args, **kwargs)
+        
+    def __setitem__(self, key, value):
+        if self.isupdating:
+            OrderedDict.__setitem__(self, key, value)
+            return
+        
+        self.isupdating = True
+        try:
+            if key in self:
+                del self[key]
+            ourself = self.items()
+            self.clear()
+            self.update({key: value})
+            self.update(ourself)
+        finally:
+            self.isupdating = False
+
+
+# list of packages providing bibolamazi filters. `filters` is the core bibolamazi filters
+# package. The value is the path to add when looking for the package, or None to add no
+# path.
+filterpath = PrependOrderedDict([
+    ('filters', None,),
+    ])
+
+
+
 
 # information about filters and modules etc.
 
 
 _filter_modules = {}
 _filter_list = None
+_filter_package_listings = None
 
 # For pyinstaller: precompiled filter list
 
 _filter_precompiled_load_attempted = False
 _filter_precompiled_loaded = False
+_filter_list_precompiled = None
 def _load_precompiled_filters():
     global _filter_precompiled_load_attempted
     global _filter_precompiled_loaded
     global _filter_list
+    global _filter_list_precompiled
     global _filter_modules
     
     _filter_precompiled_load_attempted = True
     try:
         import bibolamazi_compiled_filter_list
-        _filter_list = bibolamazi_compiled_filter_list.filter_list
+        _filter_list_precompiled = bibolamazi_compiled_filter_list.filter_list
+        _filter_list = _filter_list_precompiled
         for f in _filter_list:
             _filter_modules[f] = bibolamazi_compiled_filter_list.__dict__[f]
         _filter_precompiled_loaded = True
@@ -111,9 +158,36 @@ def _load_precompiled_filters():
         pass
 
 
+# utility to warn the user of invalid --filterpackage option
+def validate_filter_package(fpname, fpdir, raise_exception=True):
+    oldsyspath = sys.path
+    mod = None
+    if fpdir:
+        sys.path = [fpdir] + sys.path
+    try:
+        mod = importlib.import_module(fpname)
+    except ImportError:
+        if raise_exception:
+            raise NoSuchFilterPackage(fpname, fpdir=fpdir)
+        return False
+    finally:
+        sys.path = oldsyspath
+    return True if mod else False
+
+
 # store additional information about the modules.
 
-def get_module(name, raise_nosuchfilter=True):
+def get_module(name, raise_nosuchfilter=True, filterpackage=None):
+
+    global filterpath
+
+    # shortcut: a filter name may be 'filterpackage:the.module.name' to force search in a
+    # specific filter package.
+    if ':' in name and filterpackage is None:
+        fpparts = name.split(':',1)
+        return get_module(name=fpparts[1], raise_nosuchfilter=raise_nosuchfilter,
+                          filterpackage=fpparts[0])
+
     name = str(name)
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
@@ -121,49 +195,72 @@ def get_module(name, raise_nosuchfilter=True):
     if (not _filter_precompiled_load_attempted):
         _load_precompiled_filters()
 
-    # already open
+
+    def get_module_in_filterpackage(filterpackname):
+        oldsyspath = sys.path
+        filterdir = filterpath[filterpackname]
+        if filterdir:
+            sys.path = [filterdir] + sys.path
+        try:
+            return importlib.import_module('.'+name, package=filterpackname);
+        except ImportError as e:
+            logger.debug("Didn't find filter %s in package %s (dir %r)", name, filterpackname, filterdir)
+            return None
+        finally:
+            sys.path = oldsyspath
+    
+    # ---
+
+    if (filterpackage is not None):
+        # try to open module from a specific filter package
+        if (isinstance(filterpackage, types.ModuleType)):
+            filterpackage = filterpackage.__name__
+        if filterpackage not in filterpath:
+            raise NoSuchFilterPackage(filterpackage, fpdir=None)
+        mod = get_module_in_filterpackage(filterpackage)
+
+        if mod is None and raise_nosuchfilter:
+            raise NoSuchFilter(name, "Can't find filter module")
+
+        return mod
+    
+    # load the filter from any filter package, or from cache.
+
+    # already open?
     if (name in _filter_modules):
         return _filter_modules[name];
 
-    # try to open it
-    try:
-        mod = importlib.import_module('.'+name, package='filters');
+    mod = None
+
+    logger.longdebug("Looking for filter %s in filter packages %r", name, filterpath)
+
+    # explore filter packages
+    for filterpack in filterpath.keys():
+        mod = get_module_in_filterpackage(filterpack)
+        if mod is not None:
+            break
+
+    if mod is None and raise_nosuchfilter:
+        raise NoSuchFilter(name, "Can't find filter module");
+
+    if mod is not None:
+        # cache the module
         _filter_modules[name] = mod;
-    except ImportError as e:
-        if (not raise_nosuchfilter):
-            return None
-        raise NoSuchFilter(name, e.message);
 
     # and return it
-    return _filter_modules[name];
+    return mod
 
 
 
-_rxsuffix = re.compile(r'\.pyc?$')
+_rxpysuffix = re.compile(r'\.py[co]?$')
 
-##def _detect_list_of_all_filter_modules(file):
-##    thisdir = os.path.dirname(os.path.realpath(file));
-
-##    for fname in os.listdir(thisdir):
-##        # make sure this is a .py or .pyc file
-##        if (_rxsuffix.search(fname) is None):
-##            continue
-
-##        # deduce the module name relative to here
-##        modname = fname
-##        modname = _rxsuffix.sub('', modname)
-        
-##        # is a filter module?
-##        m = get_module(modname, False)
-##        if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
-##            continue
-
-##    logger.debug('Filters detected.')
-
-##    return sorted(_filter_modules.keys());
 
 def detect_filters(force_redetect=False):
     global _filter_list
+    global _filter_package_listings
+    global _filter_precompiled_load_attempted
+    global _filter_precompiled_loaded
+    global _filter_list_precompiled
 
     if (not _filter_precompiled_load_attempted):
         _load_precompiled_filters()
@@ -174,69 +271,113 @@ def detect_filters(force_redetect=False):
     if (_filter_precompiled_loaded):
         # no use going further, if we have a precompiled list it means we can't detect the filters.
         return _filter_list
-    
-    thisdir = os.path.dirname(os.path.realpath(__file__));
 
-    _filter_list = [];
+    def detect_filters_in_dir(thisdir, filterpackage):
+        """
+        thisdir: the directory corresponding to the filter package (inside the package)
+        filterpackage: the module object
+        """
+
+        global _filter_list
+        global _filter_package_listings
+
+        logger.debug('looking for filters in package %r in directory %r', filterpackage, thisdir)
+
+        filterpackagename = filterpackage.__name__
+
+        if not filterpackagename in _filter_package_listings:
+            _filter_package_listings[filterpackagename] = []
+
+        def tomodname(x):
+            if (os.sep):
+                x = x.replace(os.sep, '.')
+            if (os.altsep):
+                x = x.replace(os.altsep, '.')
+            return x
+        def startswithdotslash(x):
+            if (os.sep and x.startswith('.'+os.sep)):
+                return True
+            if (os.altsep and x.startswith('.'+os.altsep)):
+                return True
+            return False
+
+        for (root, dirs, files) in os.walk(thisdir):
+            if (not '__init__.py' in files and
+                not '__init__.pyc' in files and
+                not '__init__.pyo' in files):
+                # skip this directory, not a python module. also skip all subdirectories.
+                dirs[:] = []
+                continue
+
+            for fname in sorted(files):
+                # make sure this is a .py or .pyc file
+                if (_rxpysuffix.search(fname) is None):
+                    continue
+                if (fname.startswith('__init__.')):
+                    continue
+
+                # deduce the module name relative to here
+                modname = os.path.join(os.path.relpath(root, thisdir), fname)
+                modname = _rxpysuffix.sub('', modname)
+                if (startswithdotslash(modname)):
+                    modname = modname[2:]
+                modname = tomodname(modname)
+
+                # is a filter module?
+                m = get_module(modname, raise_nosuchfilter=False, filterpackage=filterpackage)
+                if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
+                    continue
+
+                # yes, _is_ a filter module.
+                
+                if modname not in _filter_package_listings[filterpackagename]:
+                    _filter_package_listings[filterpackagename].append(modname)
+
+                if modname not in _filter_list:
+                    _filter_list.append(modname)
+
+    # ----
+    
+    if _filter_list_precompiled:
+        _filter_list = _filter_list_precompiled
+        _filter_package_listings = OrderedDict( ('filters', _filter_list_precompiled,) )
+    else:
+        _filter_list = []
+        _filter_package_listings = OrderedDict()
+
 
     logger.debug('Detecting filters ...')
+    logger.longdebug("Filter path is %r", filterpath)
 
-    def tomodname(x):
-        if (os.sep):
-            x = x.replace(os.sep, '.')
-        if (os.altsep):
-            x = x.replace(os.altsep, '.')
-        return x
-    def startswithdotslash(x):
-        if (os.sep and x.startswith('.'+os.sep)):
-            return True
-        if (os.altsep and x.startswith('.'+os.altsep)):
-            return True
-        return False
-
-    for (root, dirs, files) in os.walk(thisdir):
-        if (not '__init__.py' in files and
-            not '__init__.pyc' in files and
-            not '__init__.pyo' in files):
-            # skip this directory, not a python module. also skip all subdirectories.
-            dirs[:] = []
-            continue
-
-        for fname in sorted(files):
-            # make sure this is a .py or .pyc file
-            if (_rxsuffix.search(fname) is None):
+    for (filterpack, filterdir) in filterpath.iteritems():
+        oldsyspath = sys.path
+        try:
+            if filterdir:
+                sys.path = [filterdir] + sys.path
+            try:
+                filterpackage = importlib.import_module(filterpack);
+            except ImportError:
+                logger.warning("Can't import package %s for detecting filters.", filterpack)
                 continue
-            if (fname.startswith('__init__.')):
-                continue
-
-            # deduce the module name relative to here
-            modname = os.path.join(os.path.relpath(root, thisdir), fname)
-            modname = _rxsuffix.sub('', modname)
-            if (startswithdotslash(modname)):
-                modname = modname[2:]
-            modname = tomodname(modname)
-
-            if (modname in _filter_list):
-                # we already have this one
-                continue
+            thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
             
-            # is a filter module?
-            m = get_module(modname, False)
-            if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
-                continue
+            detect_filters_in_dir(thisdir, filterpackage)
 
-            # yes, _is_ a filter module.
-            _filter_list.append(modname)
+        finally:
+            sys.path = oldsyspath
 
     logger.debug('Filters detected.')
 
     return _filter_list;
 
+def detect_filter_package_listings():
+    detect_filters()
+    return _filter_package_listings
 
 
-def get_filter_class(name):
+def get_filter_class(name, filterpackage=None):
     
-    fmodule = get_module(name);
+    fmodule = get_module(name, filterpackage=filterpackage);
 
     return fmodule.bibolamazi_filter_class();
 
@@ -419,8 +560,9 @@ class DefaultFilterOptions:
         def make_filter_option(farg):
             fopt = farg.replace('_', '-');
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
+            argdocdoc = (argdoc.doc.replace('%', '%%') if argdoc.doc is not None else None)
             group_filter.add_argument('--'+fopt, action='store', dest=farg,
-                                      help=argdoc.doc.replace('%','%%'));
+                                      help=argdocdoc);
             return argdoc
 
 
@@ -431,7 +573,8 @@ class DefaultFilterOptions:
                 continue
             # normalize name
             argdoc = make_filter_option(farg)
-            argdocs_left.remove(farg)
+            if farg in argdocs_left:
+                argdocs_left.remove(farg)
             self._filteroptions.append(argdoc)
 
         # in case user specified more docs than declared arguments, they document additional arguments that

@@ -236,8 +236,11 @@ class opt_action_help(argparse.Action):
             helptext = filters.format_filter_help(thefilter);
             pydoc.pager(helptext);
             parser.exit();
-        except filters.NoSuchFilter:
-            logger.error("No Such Filter: `"+thefilter+"'");
+        except filters.NoSuchFilter as e:
+            logger.error(unicode(e))
+            parser.exit();
+        except filters.NoSuchFilterPackage as e:
+            logger.error(unicode(e))
             parser.exit();
 
 
@@ -263,14 +266,22 @@ FILTERS_HELP = """
 List of available filters:
 --------------------------
 
-%(filter_list)s
+%(full_filter_list)s
 
 --------------------------
+
+Filter packages are listed in the order they are searched.
 
 Use  bibolamazi --help <filter>  for more information about a specific filter
 and its options.
 
 
+"""
+
+FILTER_HELP_INNER_PACKAGE_LIST = """\
+Package `%(filterpackage)s':
+
+%(filterlistcontents)s
 """
 
 
@@ -279,21 +290,31 @@ def help_list_filters():
     import textwrap;
     import filters;
 
-    def fmt_filter_helpline(f):
+    #DEBUG
+    logger.setVerbosity(3)
+
+    def fmt_filter_helpline(f, fp):
 
         nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
         return ( "  %-13s " %(f) +
-                 nlindentstr.join(textwrap.wrap(filters.get_filter_class(f).getHelpDescription(),
+                 nlindentstr.join(textwrap.wrap(filters.get_filter_class(f, filterpackage=fp)
+                                                .getHelpDescription(),
                                                 (80-16) # 80 line width, -16 indent chars
                                                 ))
                  )
 
-    filter_list = [
-        fmt_filter_helpline(f)
-        for f in filters.detect_filters()
-        ]
+    full_filter_list = []
+    for (fp,fplist) in filters.detect_filter_package_listings().iteritems():
+        filter_list = [
+            fmt_filter_helpline(f, fp)
+            for f in fplist
+            ]
+        full_filter_list.append(
+            FILTER_HELP_INNER_PACKAGE_LIST % {'filterpackage': fp,
+                                              'filterlistcontents': "\n".join(filter_list)}
+            )
 
-    return FILTERS_HELP % {'filter_list': "\n".join(filter_list)};
+    return FILTERS_HELP % {'full_filter_list': "\n".join(full_filter_list)};
 
 
 

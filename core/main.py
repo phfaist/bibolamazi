@@ -25,6 +25,7 @@ import os.path
 import sys
 import argparse
 import textwrap
+import types
 from collections import namedtuple
 
 
@@ -50,6 +51,33 @@ class BibolamaziNoSourceEntriesError(BibolamaziError):
 
 
 
+def setup_filterpackage_from_argstr(argstr):
+    """
+    Add a filter package definition and path to filters.filterpath from a string that is a
+    e.g. a command-line argument to --filterpath or a part of the environment variable
+    BIBOLAMAZI_FILTER_PATH.
+    """
+
+    fpparts = argstr.split('=',1)
+    fpname = fpparts[0]
+    fpdir = fpparts[1] if len(fpparts) >= 2 and fpparts[1] else None
+
+    if not filters.validate_filter_package(fpname, fpdir, raise_exception=False):
+        raise BibolamaziError("Invalid filter package: `%s' (dir=%r)" % (fpname, fpdir))
+
+    filters.filterpath[fpname] = fpdir
+    
+
+def setup_filterpackages_from_env():
+    if 'BIBOLAMAZI_FILTER_PATH' in os.environ:
+        logger.debug("Detected BIBOLAMAZI_FILTER_PATH=%s, using it" %(os.environ['BIBOLAMAZI_FILTER_PATH']))
+        for fp in os.environ['BIBOLAMAZI_FILTER_PATH'].split(os.pathsep):
+            setup_filterpackage_from_argstr(fp)
+
+class AddFilterPackageAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setup_filterpackage_from_argstr(values)
+    
 
 def get_args_parser():
 
@@ -72,6 +100,11 @@ def get_args_parser():
     parser.add_argument('--version', action=opt_action_version, nargs=0,
                         help='Show bibolamazi version number and exit.')
 
+    parser.add_argument('--filterpackage', action=AddFilterPackageAction,
+                        help="Add a package name in which to search for filters. Optionally you may also"
+                        " add a corresponding python path where to find the package, in the format"
+                        " 'filterpackage=/path/to/it'. You may specify this option multiple times.")
+
     parser.add_argument('--verbosity', action='store', dest='verbosity', nargs=1, default=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)")
     parser.add_argument('-q', '-v0', '--quiet', action='store_const', dest='verbosity', const=0,
@@ -90,7 +123,13 @@ def get_args_parser():
     return parser
 
 
+
 def main(argv=sys.argv[1:]):
+
+    # set up extra filter packages from environment variables
+    # -------------------------------------------------------
+
+    setup_filterpackages_from_env()
 
     # parse the command line arguments
     # --------------------------------
@@ -113,7 +152,6 @@ def run_bibolamazi_args(args):
     #
     # args is supposed to be the parsed arguments from main()
     #
-
 
     logger.setVerbosity(args.verbosity);
     logger.longdebug('Set verbosity: %d' %(args.verbosity));
