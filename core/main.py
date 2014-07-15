@@ -58,6 +58,9 @@ def setup_filterpackage_from_argstr(argstr):
     BIBOLAMAZI_FILTER_PATH.
     """
 
+    if not argstr:
+        return
+
     fpparts = argstr.split('=',1)
     fpname = fpparts[0]
     fpdir = fpparts[1] if len(fpparts) >= 2 and fpparts[1] else None

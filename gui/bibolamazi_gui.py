@@ -33,6 +33,8 @@ import bibolamazi_init
 
 from core import bibolamazifile
 from core import main
+from core.butils import BibolamaziError
+import filters
 import core.version
 
 from PyQt4.QtCore import *
@@ -324,13 +326,23 @@ def setup_software_updater():
     swu_interface.start()
 
 
+
 def run_main():
 
     print "starting application"
 
-    main.setup_filterpackages_from_env()
-
     app = BibolamaziApplication();
+
+    try:
+        # load filter packages from environment ...
+        main.setup_filterpackages_from_env()
+        # ... and from settings.
+        settingswidget.setup_filterpackages_from_settings(QSettings())
+    except (filters.NoSuchFilter, filters.NoSuchFilterPackage, BibolamaziError):
+        QMessageBox.warning(None, "Filter packages error",
+                            "An error was detected in the filter packages configuration. "
+                            "Please edit your settings.")
+        pass
 
     args = app.arguments();
     _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE);

@@ -116,6 +116,26 @@ class PrependOrderedDict(OrderedDict):
         finally:
             self.isupdating = False
 
+    def set_items(self, items):
+        self.isupdating = True
+        try:
+            self.clear()
+            self.update(items)
+        finally:
+            self.isupdating = False
+
+    def set_at(self, idx, key, value):
+        self.isupdating = True
+        try:
+            items = self.items()
+            self.clear()
+            self.update(items[:idx] + [ (key, value) ] + items[idx+1:])
+        finally:
+            self.isupdating = False
+
+    def item_at(self, idx):
+        return self.items()[idx]
+
 
 # list of packages providing bibolamazi filters. `filters` is the core bibolamazi filters
 # package. The value is the path to add when looking for the package, or None to add no
