@@ -97,7 +97,7 @@ class UselessFixesFilter(BibFilter):
         
 
     def name(self):
-        return "useless test extra filter"
+        return "fixes"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;

@@ -150,32 +150,36 @@ filterpath = PrependOrderedDict([
 # information about filters and modules etc.
 
 
-_filter_modules = {}
 _filter_list = None
 _filter_package_listings = None
+_filter_modules = {}
 
 # For pyinstaller: precompiled filter list
 
-_filter_precompiled_load_attempted = False
-_filter_precompiled_loaded = False
-_filter_list_precompiled = None
-def _load_precompiled_filters():
-    global _filter_precompiled_load_attempted
-    global _filter_precompiled_loaded
-    global _filter_list
-    global _filter_list_precompiled
-    global _filter_modules
+_filter_precompiled_cache = {}
+def load_precompiled_filters(filterpackage, precompiled_modules):
+    """
+    `filterpackage`: name of the filter package under which to scope the given precompiled
+        filter modules.
+    `precompiled_modules`: a dictionary of `'filter_name': filter_module` of precompiled
+        filter modules, along with their name.
+    """
+
+    global _filter_precompiled_cache
     
-    _filter_precompiled_load_attempted = True
-    try:
-        import bibolamazi_compiled_filter_list
-        _filter_list_precompiled = bibolamazi_compiled_filter_list.filter_list
-        _filter_list = _filter_list_precompiled
-        for f in _filter_list:
-            _filter_modules[f] = bibolamazi_compiled_filter_list.__dict__[f]
-        _filter_precompiled_loaded = True
-    except ImportError:
-        pass
+    _filter_precompiled_cache[filterpackage] = precompiled_modules
+
+
+def reset_filters_cache():
+    global _filter_list
+    global _filter_package_listings
+    global _filter_modules
+    global _filter_precompiled_cache
+
+    _filter_list = None
+    _filter_package_listings = None
+    _filter_modules = {}
+    # of course, don't reset the precompiled cache!! 
 
 
 # utility to warn the user of invalid --filterpackage option
@@ -216,24 +220,36 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
 
-    if (not _filter_precompiled_load_attempted):
-        _load_precompiled_filters()
-
 
     def get_module_in_filterpackage(filterpackname):
+
+        global _filter_precompiled_cache
+        
         logger.longdebug("Attempting to load filter %s from package %s", name, filterpackname)
+
+        mod = None
+        
+        # first, search the actual module.
         oldsyspath = sys.path
         filterdir = filterpath[filterpackname]
         if filterdir:
             sys.path = [filterdir] + sys.path
         try:
-            return importlib.import_module('.'+name, package=filterpackname);
+            mod = importlib.import_module('.'+name, package=filterpackname);
         except ImportError as e:
             logger.debug("Didn't find filter %s in package %s (dir %r)", name, filterpackname, filterdir)
-            return None
+            mod = None
         finally:
             sys.path = oldsyspath
-    
+
+        # then, check if we have a precompiled filter list for this filter package.
+        if mod is None and filterpackname in _filter_precompiled_cache:
+            if name in _filter_precompiled_cache[filterpackname]:
+                # found the module in the precompiled cache.
+                mod = _filter_precompiled_cache[filterpackname]
+
+        return mod
+
     # ---
 
     if (filterpackage is not None):
@@ -242,6 +258,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             filterpackage = filterpackage.__name__
         if filterpackage not in filterpath:
             raise NoSuchFilterPackage(filterpackage, fpdir=None)
+
         mod = get_module_in_filterpackage(filterpackage)
 
         if mod is None and raise_nosuchfilter:
@@ -283,21 +300,13 @@ _rxpysuffix = re.compile(r'\.py[co]?$')
 def detect_filters(force_redetect=False):
     global _filter_list
     global _filter_package_listings
-    global _filter_precompiled_load_attempted
-    global _filter_precompiled_loaded
-    global _filter_list_precompiled
-
-    if (not _filter_precompiled_load_attempted):
-        _load_precompiled_filters()
+    global _filter_precompiled_cache
 
     if (_filter_list is not None and not force_redetect):
         return _filter_list;
     
-    if (_filter_precompiled_loaded):
-        # no use going further, if we have a precompiled list it means we can't detect the filters.
-        return _filter_list
 
-    def detect_filters_in_dir(thisdir, filterpackage):
+    def detect_filters_in_dir(thisdir, filterpackagename, filterpackage):
         """
         thisdir: the directory corresponding to the filter package (inside the package)
         filterpackage: the module object
@@ -306,9 +315,7 @@ def detect_filters(force_redetect=False):
         global _filter_list
         global _filter_package_listings
 
-        logger.debug('looking for filters in package %r in directory %r', filterpackage, thisdir)
-
-        filterpackagename = filterpackage.__name__
+        logger.debug('looking for filters in package %r in directory %r', filterpackagename, thisdir)
 
         if not filterpackagename in _filter_package_listings:
             _filter_package_listings[filterpackagename] = []
@@ -363,13 +370,8 @@ def detect_filters(force_redetect=False):
 
     # ----
     
-    if _filter_list_precompiled:
-        _filter_list = _filter_list_precompiled
-        _filter_package_listings = OrderedDict( ('filters', _filter_list_precompiled,) )
-    else:
-        _filter_list = []
-        _filter_package_listings = OrderedDict()
-
+    _filter_list = []
+    _filter_package_listings = OrderedDict()
 
     logger.debug('Detecting filters ...')
     logger.longdebug("Filter path is %r", filterpath)
@@ -386,7 +388,14 @@ def detect_filters(force_redetect=False):
                 continue
             thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
             
-            detect_filters_in_dir(thisdir, filterpackage)
+            detect_filters_in_dir(thisdir, filterpack, filterpackage)
+
+            if filterpack in _filter_precompiled_cache:
+                for (fname,fmod) in _filter_precompiled_cache[filterpack].iteritems():
+                    if fname not in _filter_package_listings[filterpack]:
+                        _filter_package_listings[filterpack].append(fname)
+                    if fname not in _filter_list:
+                        _filter_list.append(fname)
 
         finally:
             sys.path = oldsyspath
@@ -397,6 +406,7 @@ def detect_filters(force_redetect=False):
 
 def detect_filter_package_listings():
     detect_filters()
+    print "detected filters. _filter_package_listings=%r\n" %(_filter_package_listings)
     return _filter_package_listings
 
 

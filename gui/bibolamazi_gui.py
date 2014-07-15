@@ -329,6 +329,16 @@ def setup_software_updater():
 
 def run_main():
 
+    # load precompiled filters, if we've got any
+    try:
+        import bibolamazi_compiled_filter_list as pc
+        filters.load_precompiled_filters('filters', dict([
+            (fname, pc.__dict__[fname])  for fname in pc.filter_list
+            ]))
+    except ImportError:
+        pass
+
+
     print "starting application"
 
     app = BibolamaziApplication();

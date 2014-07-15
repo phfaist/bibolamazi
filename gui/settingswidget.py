@@ -326,6 +326,8 @@ class SettingsWidget(QDialog):
                    QVariant(QString(os.pathsep.join(( "%s=%s"%(k,v if v else "")
                                                       for k,v in filters.filterpath.items() ))))
                    )
+        # reset the filter cache.
+        filters.reset_filters_cache()
 
         s.endGroup()
         s.sync()
