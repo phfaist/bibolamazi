@@ -103,7 +103,8 @@ def get_args_parser():
     parser.add_argument('--filterpackage', action=AddFilterPackageAction,
                         help="Add a package name in which to search for filters. Optionally you may also"
                         " add a corresponding python path where to find the package, in the format"
-                        " 'filterpackage=/path/to/it'. You may specify this option multiple times.")
+                        " 'filterpackage=/path/to/it'. You may specify this option multiple times; last"
+                        " specified filter packages are searched first.")
 
     parser.add_argument('--verbosity', action='store', dest='verbosity', nargs=1, default=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)")
