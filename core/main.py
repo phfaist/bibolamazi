@@ -71,7 +71,7 @@ def setup_filterpackage_from_argstr(argstr):
 def setup_filterpackages_from_env():
     if 'BIBOLAMAZI_FILTER_PATH' in os.environ:
         logger.debug("Detected BIBOLAMAZI_FILTER_PATH=%s, using it" %(os.environ['BIBOLAMAZI_FILTER_PATH']))
-        for fp in os.environ['BIBOLAMAZI_FILTER_PATH'].split(os.pathsep):
+        for fp in reversed(os.environ['BIBOLAMAZI_FILTER_PATH'].split(os.pathsep)):
             setup_filterpackage_from_argstr(fp)
 
 class AddFilterPackageAction(argparse.Action):

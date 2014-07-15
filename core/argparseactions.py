@@ -282,7 +282,7 @@ FILTER_HELP_INNER_PACKAGE_LIST = """\
 Package `%(filterpackage)s':
 
 %(filterlistcontents)s
-"""
+""".rstrip() # no trailing '\n'
 
 
 def help_list_filters():
@@ -314,7 +314,7 @@ def help_list_filters():
                                               'filterlistcontents': "\n".join(filter_list)}
             )
 
-    return FILTERS_HELP % {'full_filter_list': "\n".join(full_filter_list)};
+    return FILTERS_HELP % {'full_filter_list': "\n\n".join(full_filter_list)};
 
 
 
