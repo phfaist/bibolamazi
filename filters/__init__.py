@@ -179,7 +179,7 @@ def reset_filters_cache():
     _filter_list = None
     _filter_package_listings = None
     _filter_modules = {}
-    # of course, don't reset the precompiled cache!! 
+    # of course, don't reset the precompiled cache!!
 
 
 # utility to warn the user of invalid --filterpackage option
