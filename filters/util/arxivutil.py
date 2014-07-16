@@ -29,40 +29,35 @@ from core.blogger import logger
 
 # --- code to detect arXiv info ---
 
-_RX_BEFORE = r'(?:\s*([;,\{]?\s*)|\b|\s+|^)'
-_RX_AFTER = r'(?:\s*[;,\}]?\s*|$)'
+_RX_BEFORE = r'(?:\s*([;,]?\s*)|\b|\s+|^)'
+_RX_AFTER = r'(?:\s*[;,]?\s*|$)'
 
-_RX_ARXIVID_PURE = r'(?P<arxivid>[0-9.]+)' # only the numerical arxiv ID
+_RX_ARXIVID_PURE = r'(?P<arxivid>[0-9.]+(?:v\d+)?)' # only the numerical arxiv ID (+possible version)
 _RX_ARXIVID_TOL = r'(?P<arxivid>[-a-zA-Z0-9./]+)' # allow primary-class/ etc.
 
-# a regex that we will need often
-_rxarxiv = [
-    re.compile(
-        _RX_BEFORE
-        + r'\\href\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\}]*\}'
-        + _RX_AFTER,
-        re.IGNORECASE
-        ),
-    re.compile(
-        _RX_BEFORE
-        + r'\\url\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
-        + _RX_AFTER,
-        re.IGNORECASE
-        ),
-    re.compile(
-        _RX_BEFORE
-        + r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
-        + _RX_AFTER,
-        re.IGNORECASE
-        ),
-    re.compile(
-        _RX_BEFORE
-        + r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?' + _RX_ARXIVID_PURE + r')'
-        + _RX_AFTER,
-        re.IGNORECASE
-        ),
-    ];
+def _mk_braced_pair_rx(mid):
+    return [ re.compile(_RX_BEFORE + r'\{\s*' + mid + r'\s*\}' + _RX_AFTER, re.IGNORECASE) ,
+             re.compile(_RX_BEFORE + mid + _RX_AFTER, re.IGNORECASE) ]
 
+# a list of regexes that we will need often
+_rxarxiv = (
+    []
+    + _mk_braced_pair_rx(
+        r'\\href\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
+        )
+    + _mk_braced_pair_rx(
+        r'\\(?:url|href)\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
+        )
+    + _mk_braced_pair_rx(
+        r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
+        )
+    + _mk_braced_pair_rx(
+        r'arXiv[-\}\{.:/\s]+(((?P<primaryclass>[-a-zA-Z0-9./]+)/)?' + _RX_ARXIVID_PURE + r')'
+        )
+    );
+
+
+_rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d+))(v\d+)?)', re.IGNORECASE)
 
 # extract arXiv info from an entry
 def detectEntryArXivInfo(entry):
@@ -106,18 +101,29 @@ def detectEntryArXivInfo(entry):
     else:
         logger.longdebug('No decisive information about whether this entry is published: %s (type %s), '
                          'defaulting to True.', entry.key, entry.type);
-        
+
+
+    def extract_pure_id(x, primaryclass=None):
+        m = _rx_purearxivid.search( (primaryclass+'/' if primaryclass else "") + x)
+        if m is None:
+            raise IndexError
+        return m.group('purearxivid')
+
 
     if ('doi' in fields and fields['doi']):
         d['doi'] = fields['doi']
 
-
     if ('eprint' in fields):
         # this gives the arxiv ID
-        d['arxivid'] = fields['eprint'];
-        m = re.match('^([-\w.]+)/', d['arxivid']);
-        if (m):
-            d['primaryclass'] = m.group(1);
+        try:
+            d['arxivid'] = extract_pure_id(fields['eprint'], primaryclass=fields.get('primaryclass', None));
+            m = re.match('^([-\w.]+)/', d['arxivid']);
+            if (m):
+                d['primaryclass'] = m.group(1);
+        except IndexError as e:
+            logger.longdebug("Indexerror: invalid arXiv ID [%r/]%r: %s",
+                             fields.get('primaryclass',None), fields['eprint'], e)
+            logger.warning("Entry `%s' has invalid arXiv ID %r", entry.key, fields['eprint'])
 
     if ('primaryclass' in fields):
         d['primaryclass'] = fields['primaryclass'];
@@ -125,15 +131,21 @@ def detectEntryArXivInfo(entry):
     if ('archiveprefix' in fields):
         d['archiveprefix'] = fields['archiveprefix'];
 
+
     def processNoteField(notefield, d):
+
         for rx in _rxarxiv:
             m = rx.search(notefield);
             if m:
                 if (not d['arxivid']):
                     try:
-                        d['arxivid'] = m.group('arxivid');
-                    except IndexError:
-                        logger.longdebug("indexerror for 'arxivid' group in note=%r, m=%r", notefield, m)
+                        primaryclass = None
+                        try: primaryclass = m.group('primaryclass')
+                        except IndexError: pass
+
+                        d['arxivid'] = extract_pure_id(m.group('arxivid'), primaryclass=primaryclass)
+                    except IndexError as e:
+                        logger.longdebug("indexerror while getting arxivid in note=%r, m=%r: %s", notefield, m, e)
                         pass
                 if (not d['primaryclass']):
                     try:
