@@ -406,7 +406,7 @@ def detect_filters(force_redetect=False):
 
 def detect_filter_package_listings():
     detect_filters()
-    print "detected filters. _filter_package_listings=%r\n" %(_filter_package_listings)
+    #print "detected filters. _filter_package_listings=%r\n" %(_filter_package_listings)
     return _filter_package_listings
 
 

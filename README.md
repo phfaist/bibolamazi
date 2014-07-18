@@ -170,6 +170,12 @@ A list of available filters can be obtained by running
 
     > bibolamazi --list-filters
 
+**Note:** Filters are organized into *filter packages* (see below). A filter is searched
+in each filter package until a match is found. To force the lookup of a filter in a
+specific package, you may prefix the package name to the filter, e.g.:
+
+    % filter: myfilterpackage:myfiltername --option1=val1  ...
+
 
 Example Bibolamazi File
 -----------------------
@@ -236,35 +242,82 @@ filters is:
     List of available filters:
     --------------------------
     
+    Package `filters':
+    
       arxiv         ArXiv clean-up filter: normalizes the way each biblographic
                     entry refers to arXiv IDs.
       citearxiv     Filter that fills BibTeX files with relevant entries to cite
                     with \cite{1211.1037}
+      citekey       Set the citation key of entries in a standard format
       duplicates    Filter that detects duplicate entries and produces rules to make
                     one entry an alias of the other.
       fixes         Fixes filter: perform some various known fixes for bibtex
                     entries
       nameinitials  Name Initials filter: Turn full first names into only initials
                     for all entries.
+      only_used     Filter that keeps only BibTeX entries which are referenced in
+                    the LaTeX document
       orderentries  Order bibliographic entries in bibtex file
       url           Remove or add URLs from entries according to given rules, e.g.
                     whether DOI or ArXiv ID are present
     
     --------------------------
     
+    Filter packages are listed in the order they are searched.
+    
     Use  bibolamazi --help <filter>  for more information about a specific filter
     and its options.
-    
 
 
-Writing new filters
--------------------
+Filter Packages
+---------------
+
+Filters are organized into *filter packages*. All built-in filters are in the package
+named `filters`. If you want to write your own filters, or use someone else's own filters,
+then you can install further filter packages.
+
+A *filter package* is a Python package, i.e. a directory containing a `__init__.py` file,
+which contains python modules that implement the bibolamazi filter API.
+
+The command-line bibolamazi by default only knows the built-in fitler package `filters`. 
+You may however specify additional packages either by command-line options or with an
+environment variable.
+
+You can specify additional filter packages with the command-line option
+`--filter-package`.
+
+    > bibolamazi myfile.bib --filter-package 'package1=/path/to/filter/pack'
+
+The argument to `--filter-package` is of the form
+'packagename=/path/to/the/filter/package'. Note that the path is which path must be added
+to python's `sys.path` in order to import the `filterpackagename` package itself, i.e. the
+last item of the path must not be the package directory.
+
+This option may be repeated several times to import different filter packages. The order
+is relevant; the packages specified last will be searched for first.
+
+You may also set the environment variable `BIBOLAMAZI_FILTER_PATH`. The format is
+`filterpack1=/path/to/somewhere:filterpack2=/path/to/otherplace:...`, i.e. a list of
+filter package specifications separated by ':' (Linux/Mac) or ';' (Windows). Each filter
+package specification has the same format as the command-line option argument. In the
+environment variable, the first given filter packages are searched first.
+
+Note in the graphical user interface, you can specify filter packages in the settings
+dialog.
+
+
+Developing Custom filters
+-------------------------
 
 Writing filters is straightforward. Look inside the filters/ directory at the existing
 filters, e.g. `arxiv.py`, `duplicates.py` or `url.py`. They should be simple to understand.
 
 A filter can either act on individual entries (e.g. the `arxiv.py` filter), or on the
 whole database (e.g. `duplicates.py`).
+
+For your organization, it is recommended to develop your filter(s) in a custom filter
+package which you keep a repository e.g. on github.com, so that the filter package can be
+easily installed on the different locations you would like to run bibolamazi from.
 
 Feel free to contribute filters, it will only make bibolamazi more useful!
 
