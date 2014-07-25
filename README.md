@@ -322,6 +322,33 @@ easily installed on the different locations you would like to run bibolamazi fro
 Feel free to contribute filters, it will only make bibolamazi more useful!
 
 
+Credits and Copyright
+---------------------
+
+Copyright (C) 2014 Philippe Faist
+
+Bibolamazi is developed and maintained by Philippe Faist. It is distributed under the
+[GNU General Public License (GPL)](http://www.gnu.org/copyleft/gpl.html), Version 3 or higher.
+
+### Third-Party Code
+
+This project contains the following 3rd party code.
+
+#### PybTeX
+
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011 Andrey Golovizin
+
+Full copyright notice is availble in this repo in the file `3rdparty/pybtex/COPYING`.
+
+#### Arxiv2Bib
+
+Copyright (c) 2012, Nathan Grigg
+
+Full copyright notice is available in this repo in the first lines of the file
+`3rdparty/arxiv2bib/arxiv2bib.py`.
+
+
+
 Contact
 -------
 
