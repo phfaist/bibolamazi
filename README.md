@@ -325,24 +325,26 @@ Feel free to contribute filters, it will only make bibolamazi more useful!
 Credits and Copyright
 ---------------------
 
-Copyright (C) 2014 Philippe Faist
+Copyright (c) 2014 Philippe Faist
 
 Bibolamazi is developed and maintained by Philippe Faist. It is distributed under the
 [GNU General Public License (GPL)](http://www.gnu.org/copyleft/gpl.html), Version 3 or higher.
 
 ### Third-Party Code
 
-This project contains the following 3rd party code.
+This project also contains the following 3rd party code.
 
-#### PybTeX
+[**PybTeX**](http://pybtex.sourceforge.net/) provides a python library for parsing and writing
+BibTeX files.
 
-Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011 Andrey Golovizin
+    Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011 Andrey Golovizin
 
 Full copyright notice is availble in this repo in the file `3rdparty/pybtex/COPYING`.
 
-#### Arxiv2Bib
+[**Arxiv2Bib**](http://nathangrigg.github.io/arxiv2bib/) is a tool for querying the
+[arxiv.org](http://arxiv.org/) API for preprint details and for parsing its results.
 
-Copyright (c) 2012, Nathan Grigg
+    Copyright (c) 2012, Nathan Grigg
 
 Full copyright notice is available in this repo in the first lines of the file
 `3rdparty/arxiv2bib/arxiv2bib.py`.
