@@ -41,9 +41,7 @@ Remove or add URLs from entries according to given rules, e.g. whether DOI or Ar
 HELP_TEXT = """
 This filter removes or adds URLs to/from entries according to certain given
 rules. Please see the documentation for each option above for details about
-what the rule performs. Each rule may be set or removed individually. By
-default, performs the rules Strip, StripAllIfDoiOrArxiv, StripDoiUrl and
-StripArxivUrl.
+what the rule performs. Each rule may be set or removed individually.
 """
 
 
