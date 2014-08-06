@@ -56,7 +56,7 @@ _rxarxiv = (
         )
     );
 
-
+# "pure" arxiv ID means the arxiv ID (with primary class for old IDs only), without version information.
 _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d+))(v\d+)?)', re.IGNORECASE)
 
 # extract arXiv info from an entry
