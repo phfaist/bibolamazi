@@ -185,10 +185,10 @@ class FixesFilter(BibFilter):
 
 
         logger.debug(('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
-                     'remove_type_from_phd=%r; '
-                     'remove_full_braces=%r [fieldlist=%r, not lang=%r],'
-                     ' protect_names=%r, remove_file_field=%r')
-                     'remove_fields=%r, remove_doi_prefix=%r'
+                      'remove_type_from_phd=%r; '
+                      'remove_full_braces=%r [fieldlist=%r, not lang=%r],'
+                      ' protect_names=%r, remove_file_field=%r'
+                      'remove_fields=%r, remove_doi_prefix=%r')
                      % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
