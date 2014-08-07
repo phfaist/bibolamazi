@@ -69,7 +69,11 @@ class NameInitialsFilter(BibFilter):
     def __init__(self, *roles, **kwargs):
         """
         Arguments:
-          - names_to_utf8(bool): Convert LaTeX escapes to UTF-8 characters in names in bib file.
+          - only_single_letter_firsts(bool): Make proper initials (e.g. C. H. Bennett)
+            only if the entry itself only has initials. This is useful if your entries
+            don't contain the proper punctuation (e.g. C H Bennett). (default: False)
+          - names_to_utf8(bool): Convert LaTeX escapes to UTF-8 characters in names in
+            bib file. (default: True)
         """
         BibFilter.__init__(self);
 
@@ -78,6 +82,7 @@ class NameInitialsFilter(BibFilter):
             self.roles = ['author'];
 
         self._names_to_utf8 = getbool(kwargs.pop('names_to_utf8', True))
+        self._only_single_letter_firsts = getbool(kwargs.pop('only_single_letter_firsts', False))
 
         logger.debug('NameInitialsFilter constructor')
         
@@ -105,8 +110,20 @@ class NameInitialsFilter(BibFilter):
                 if (self._names_to_utf8):
                     pstr = latex2text.latex2text(pstr)
                 p = Person(pstr)
-                pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast()),
-                              " ".join(p.last()), " ".join(p.lineage()));
+                if self._only_single_letter_firsts:
+                    from pybtex.textutils import abbreviate
+                    def getparts(p, x):
+                        for part in p.get_part(x, False):
+                            if len(part) == 1:
+                                yield abbreviate(part)
+                            else:
+                                yield part
+                    pnew = Person('', " ".join(getparts(p, 'first')), " ".join(getparts(p, 'middle')),
+                                  " ".join(p.prelast()),
+                                  " ".join(p.last()), " ".join(p.lineage()));
+                else:
+                    pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast()),
+                                  " ".join(p.last()), " ".join(p.lineage()));
                 entry.persons[role][k] = pnew
                 #logger.debug("nameinitials: %r became %r" % (p, pnew));
 

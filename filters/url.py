@@ -100,7 +100,7 @@ class UrlNormalizeFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry);
+        arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
 
         # --- prepare urls[] list ---
         if ('url' in entry.fields):
@@ -108,7 +108,7 @@ class UrlNormalizeFilter(BibFilter):
         else:
             urls = [];
 
-        #logger.longdebug("%s: Urls is initially %r", entry.key, urls)
+        logger.longdebug("%s: Urls is initially %r; arxivinfo=%r", entry.key, urls, arxivinfo)
 
         # --- filter the urls[] list ---
         
@@ -156,8 +156,8 @@ class UrlNormalizeFilter(BibFilter):
         if (self.keepfirsturlonly):
             if (urls):
                 urls[1:] = []
-
-        #logger.longdebug("%s: Urls is now %r", entry.key, urls)
+                
+        logger.longdebug("%s: Urls is now %r", entry.key, urls)
 
         # --- reformat the entry as needed, according to the modified urls[] list, and return it ---
 

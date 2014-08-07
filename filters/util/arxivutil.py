@@ -323,6 +323,7 @@ class ArxivInfoCacheAccess:
     
 
     def getArXivInfo(self, entrykey):
+        logger.longdebug("Getting arxiv info for key %r, possibly from cache.", entrykey)
         if (entrykey not in self.entrydic):
             self.complete_cache()
 

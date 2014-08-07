@@ -24,7 +24,7 @@ import re
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter import BibFilter, BibFilterError, CommaStrList
 from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
@@ -79,7 +79,7 @@ For now, the implemented fixes are:
     people (author and editors), otherwise this is applied only to the specified
     (comma-separated) fields of the bibtex entries.
 
-  -sProtectNames=Name1,Name2
+  -sProtectNames=Name1,Name2...
     A list of names that should be protected within all fields except people (authors
     and editors). Whenever a field contains one of the given names (as full word),
     then the name is wrapped in braces (e.g. "On Bell Experiments" ->
@@ -87,7 +87,17 @@ For now, the implemented fixes are:
     'file' fields of the bibtex entry will not be affected.
 
   -dRemoveFileField
-    Removes the field file={...} (that e.g. Mendeley introduces) from all entries.
+    Removes the field file={...} (that e.g. Mendeley introduces) from all entries. (This
+    option is kept for compatibility, consider the newer and more flexible option
+    -sRemoveFields below)
+
+  -sRemoveFields=field1,field2...
+    Removes the given fields from *all entries*. `fieldN` are BibTeX field names of fields
+    to remove from all entries, e.g. `file', `issn', `note', etc.
+
+  -dRemoveDoiPrefix
+    Removes `doi:' prefix from all DOIs, if present.
+
 """
 
 
@@ -100,7 +110,7 @@ class FixesFilter(BibFilter):
 
     def __init__(self, fix_swedish_a=False, encode_utf8_to_latex=False, encode_latex_to_utf8=False,
                  remove_type_from_phd=False, remove_full_braces=False, protect_names=None,
-                 remove_file_field=False):
+                 remove_file_field=False, remove_fields=[], remove_doi_prefix=False):
         """
         Constructor method for FixesFilter
 
@@ -113,6 +123,8 @@ class FixesFilter(BibFilter):
           - remove_full_braces: removes overprotective global braces in field values.
           - protect_names: list of names to protect from bibtex style casing.
           - remove_file_field(bool): removes file={...} fields from all entries.
+          - remove_fields(CommaStrList): removes given fields from all entries.
+          - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
         """
         
         BibFilter.__init__(self);
@@ -142,15 +154,18 @@ class FixesFilter(BibFilter):
             self.protect_names = None;
 
         self.remove_file_field = butils.getbool(remove_file_field);
+        self.remove_fields = CommaStrList(remove_fields);
+        self.remove_doi_prefix = butils.getbool(remove_doi_prefix)
 
 
         logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                      'remove_type_from_phd=%r; '
-                     'remove_full_braces=%r [fieldlist=%r], protect_names=%r, remove_file_field=%r'
+                     'remove_full_braces=%r [fieldlist=%r], protect_names=%r, remove_file_field=%r,'
+                     'remove_fields=%r, remove_doi_prefix=%r'
                      % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist, self.protect_names,
-                        self.remove_file_field));
+                        self.remove_file_field, self.remove_fields, self.remove_doi_prefix));
         
 
     def name(self):
@@ -234,6 +249,14 @@ class FixesFilter(BibFilter):
         if (self.remove_file_field):
             if ('file' in entry.fields):
                 del entry.fields['file'];
+
+        if (self.remove_fields):
+            for fld in self.remove_fields:
+                entry.fields.pop(fld,None)
+
+        if (self.remove_doi_prefix):
+            if 'doi' in entry.fields:
+                entry.fields['doi'] = re.sub(r'^\s*doi:\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
         return entry;
     
