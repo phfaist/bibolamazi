@@ -18,8 +18,8 @@ These binaries don't need any installation, you can just download them, place th
 wherever you want, and run them.
 
 The rest of this document is concerned mostly about downloading, installing and using
-bibolamazi from source. This option is necessary if you want to use the command-line
-or if you want to develop new filters.
+bibolamazi from source. This option is only necessary if you want to use the
+command-line interface.
 
 
 Installing and Getting Started
