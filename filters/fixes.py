@@ -24,7 +24,7 @@ import re
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter import BibFilter, BibFilterError, CommaStrList
 from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
@@ -79,6 +79,12 @@ For now, the implemented fixes are:
     people (author and editors), otherwise this is applied only to the specified
     (comma-separated) fields of the bibtex entries.
 
+  -sRemoveFullBracesNotLang=German
+    Useful only if `RemoveFullBraces' is set. This option inhibits the removal of
+    the extra braces if the language of the entry (as given by a bibtex
+    language={...} field) is in the given list. This is useful, for example, to
+    preserve the capitalization of nouns in German titles.
+
   -sProtectNames=Name1,Name2
     A list of names that should be protected within all fields except people (authors
     and editors). Whenever a field contains one of the given names (as full word),
@@ -98,8 +104,14 @@ class FixesFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, fix_swedish_a=False, encode_utf8_to_latex=False, encode_latex_to_utf8=False,
-                 remove_type_from_phd=False, remove_full_braces=False, protect_names=None,
+    def __init__(self,
+                 fix_swedish_a=False,
+                 encode_utf8_to_latex=False,
+                 encode_latex_to_utf8=False,
+                 remove_type_from_phd=False,
+                 remove_full_braces=False,
+                 remove_full_braces_not_lang=[],
+                 protect_names=None,
                  remove_file_field=False):
         """
         Constructor method for FixesFilter
@@ -111,6 +123,9 @@ class FixesFilter(BibFilter):
           - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
           - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
           - remove_full_braces: removes overprotective global braces in field values.
+          - remove_full_braces_not_lang(CommaStrList): (in conjunction with --remove-full-braces) removes the
+            overprotective global braces only if the language of the entry (as per language={..} bibtex field)
+            is not in the given list.
           - protect_names: list of names to protect from bibtex style casing.
           - remove_file_field(bool): removes file={...} fields from all entries.
         """
@@ -135,6 +150,15 @@ class FixesFilter(BibFilter):
             self.remove_full_braces = True;
             self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ];
 
+        if self.remove_full_braces:
+            if not remove_full_braces_not_lang:
+                self.remove_full_braces_not_lang = []
+            else:
+                self.remove_full_braces_not_lang = [
+                    x.lower()
+                    for x in CommaStrList(remove_full_braces_not_lang)
+                    ]
+
         if protect_names is not None:
             self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x.strip()+r'\b', re.IGNORECASE))
                                         for x in protect_names.split(',') ]);
@@ -144,12 +168,15 @@ class FixesFilter(BibFilter):
         self.remove_file_field = butils.getbool(remove_file_field);
 
 
-        logger.debug('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
+        logger.debug(('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                      'remove_type_from_phd=%r; '
-                     'remove_full_braces=%r [fieldlist=%r], protect_names=%r, remove_file_field=%r'
+                     'remove_full_braces=%r [fieldlist=%r, not lang=%r],'
+                     ' protect_names=%r, remove_file_field=%r')
                      % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
-                        self.remove_full_braces, self.remove_full_braces_fieldlist, self.protect_names,
+                        self.remove_full_braces, self.remove_full_braces_fieldlist,
+                        self.remove_full_braces_not_lang,
+                        self.protect_names,
                         self.remove_file_field));
         
 
@@ -213,8 +240,9 @@ class FixesFilter(BibFilter):
                         # remove the extra braces.
                         entry.fields[k] = val[1:-1];
 
-        if (self.remove_full_braces):
-            filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist);
+        if self.remove_full_braces:
+            if entry.fields.get('language','').lower() not in self.remove_full_braces_not_lang:
+                filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist);
 
 
         def filter_protect_names(entry):

@@ -29,6 +29,7 @@ from pybtex.database import BibliographyData;
 import pybtex.database.input.bibtex as inputbibtex;
 
 from core.bibfilter import BibFilter, BibFilterError, CommaStrList;
+from core.butils import getbool;
 from core.blogger import logger;
 
 import arxiv2bib
@@ -93,8 +94,8 @@ class CiteArxivFilter(BibFilter):
         BibFilter.__init__(self);
 
         self.jobname = jobname
-        self.search_dirs = search_dirs
-        self.journal_ref_in_note = journal_ref_in_note;
+        self.search_dirs = CommaStrList(search_dirs)
+        self.journal_ref_in_note = getbool(journal_ref_in_note)
 
         if (not self.search_dirs):
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)

@@ -59,6 +59,9 @@ _rxarxiv = (
 
 _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d+))(v\d+)?)', re.IGNORECASE)
 
+_rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(\.\d{4,}|\d{3})')
+
+
 # extract arXiv info from an entry
 def detectEntryArXivInfo(entry):
     """
@@ -70,6 +73,7 @@ def detectEntryArXivInfo(entry):
           'archiveprefix': value of the 'archiveprefix' field
           'published': True/False <whether this entry was published in a journal other than arxiv>,
           'doi': <DOI of entry if any, otherwise None>
+          'year': <Year in preprint arXiv ID number>
         }
 
     If no arXiv information was detected, then this function returns None.
@@ -82,6 +86,7 @@ def detectEntryArXivInfo(entry):
            'published': True ,
            'archiveprefix': None,
            'doi': None,
+           'year': None,
            };
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
@@ -169,7 +174,15 @@ def detectEntryArXivInfo(entry):
     # FIX: if archive-ID is old style, and does not contain the primary class, add it as "quant-ph/XXXXXXX"
     if (re.match(r'^\d{7}$', d['arxivid']) and d['primaryclass'] and len(d['primaryclass']) > 0):
         d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
-    
+
+    # get the year
+    m = _rx_aid_year.search(d['arxivid'])
+    if not m:
+        logger.warning("Couldn't find the year in arXiv ID %r", d['arxivid'])
+    else:
+        # 91->1991, 89->2089 (arXiv started in 1991)
+        d['year'] = str(1990 + (int(m.group('year')) - 90) % 100)
+        
     return d
 
 

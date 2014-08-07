@@ -76,7 +76,7 @@ class OnlyUsedFilter(BibFilter):
         BibFilter.__init__(self);
 
         self.jobname = jobname
-        self.search_dirs = search_dirs
+        self.search_dirs = CommaStrList(search_dirs)
 
         if (not self.search_dirs):
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)

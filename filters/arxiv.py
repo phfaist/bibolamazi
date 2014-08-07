@@ -22,12 +22,24 @@
 
 import re
 
+from pybtex.utils import CaseInsensitiveDict
+
 from core import bibfilter
-from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter import BibFilter, BibFilterError, CommaStrList
 from core.blogger import logger
 from core import butils
 
 from .util import arxivutil
+
+
+
+class TolerantReplacer:
+    def __init__(self, dic):
+        self._dic = dic;
+        logger.longdebug("TolerantReplacer: dic is %r", dic)
+
+    def __getitem__(self, key):
+        return self._dic.get(key, "")
 
 
 
@@ -139,11 +151,18 @@ class ArxivNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, mode="eprint", unpublished_mode=None, arxiv_journal_name="ArXiv e-prints",
-                 note_string="{arXiv:%(arxivid)s}", no_archive_prefix=False,
-                 default_archive_prefix="arXiv", no_primary_class_for_old_ids=False,
+    def __init__(self,
+                 mode="eprint",
+                 unpublished_mode=None,
+                 arxiv_journal_name="ArXiv e-prints",
+                 strip_unpublished_fields=[],
+                 note_string="{arXiv:%(arxivid)s}",
+                 no_archive_prefix=False,
+                 default_archive_prefix="arXiv",
+                 no_primary_class_for_old_ids=False,
                  no_primary_class=False,
-                 theses_count_as_published=False, warn_journal_ref=True):
+                 theses_count_as_published=False,
+                 warn_journal_ref=True):
         """
         Constructor method for ArxivNormalizeFilter
 
@@ -151,6 +170,8 @@ class ArxivNormalizeFilter(BibFilter):
           - mode(Mode):  the behavior to adopt for published articles which also have an arxiv ID
           - unpublished_mode(Mode): the behavior to adopt for unpublished articles who have an arxiv
                    ID (if None, use the same mode as `mode').
+          - strip_unpublished_fields(CommaStrList): (all modes): a list of bibtex fields to remove
+                   from all unpublished entries.
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                    unpublished entries
           - note_string: the string to insert in the `note' field (for modes 'unpublished-note',
@@ -179,6 +200,7 @@ class ArxivNormalizeFilter(BibFilter):
         self.mode = Mode(mode);
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
                                  else self.mode);
+        self.strip_unpublished_fields = CommaStrList(strip_unpublished_fields)
         self.arxiv_journal_name = arxiv_journal_name;
         self.note_string = note_string;
         self.no_archive_prefix = no_archive_prefix;
@@ -264,14 +286,21 @@ class ArxivNormalizeFilter(BibFilter):
             # directly return stripped entry.
             return entry
 
+        origentryfields = CaseInsensitiveDict(entry.fields.iteritems())
+
         def add_note(entry, arxivinfo):
-            note = self.note_string % arxivinfo;
+            d = CaseInsensitiveDict(origentryfields.iteritems())
+            d.update(arxivinfo)
+            note = self.note_string % TolerantReplacer(d);
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
                 entry.fields['note'] += ', '+note;
             else:
                 entry.fields['note'] = note;
-            
+
+        if not arxivinfo['published'] and self.strip_unpublished_fields:
+            for field in self.strip_unpublished_fields:
+                entry.fields.pop(field,'')
 
         if (mode == MODE_UNPUBLISHED_NOTE or mode == MODE_UNPUBLISHED_NOTE_NOTITLE):
             # save arxiv information in the note={} field, and set type to unpublished if article
@@ -300,7 +329,8 @@ class ArxivNormalizeFilter(BibFilter):
             if (arxivinfo['published'] == False):
                 # if the entry is unpublished, set the journal name to
                 # "arXiv e-prints" (or whatever was specified by filter option)
-                entry.fields['journal'] = self.arxiv_journal_name
+                if self.arxiv_journal_name:
+                    entry.fields['journal'] = self.arxiv_journal_name
                 entry.fields.pop('pages','')
 
             if not self.no_archive_prefix:
