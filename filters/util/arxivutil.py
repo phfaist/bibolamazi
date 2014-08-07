@@ -56,7 +56,7 @@ _rxarxiv = (
         )
     );
 
-
+# "pure" arxiv ID means the arxiv ID (with primary class for old IDs only), without version information.
 _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d+))(v\d+)?)', re.IGNORECASE)
 
 _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(\.\d{4,}|\d{3})')
@@ -336,6 +336,7 @@ class ArxivInfoCacheAccess:
     
 
     def getArXivInfo(self, entrykey):
+        logger.longdebug("Getting arxiv info for key %r, possibly from cache.", entrykey)
         if (entrykey not in self.entrydic):
             self.complete_cache()
 

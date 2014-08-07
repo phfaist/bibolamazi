@@ -237,7 +237,8 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         try:
             mod = importlib.import_module('.'+name, package=filterpackname);
         except ImportError as e:
-            logger.debug("Didn't find filter %s in package %s (dir %r)", name, filterpackname, filterdir)
+            logger.debug("Failed to import module %s from package %s (dir %r): %s",
+                         name, filterpackname, filterdir, unicode(e))
             mod = None
         finally:
             sys.path = oldsyspath
@@ -383,8 +384,8 @@ def detect_filters(force_redetect=False):
                 sys.path = [filterdir] + sys.path
             try:
                 filterpackage = importlib.import_module(filterpack);
-            except ImportError:
-                logger.warning("Can't import package %s for detecting filters.", filterpack)
+            except ImportError as e:
+                logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicode(e))
                 continue
             thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
             

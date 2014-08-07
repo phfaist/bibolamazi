@@ -84,7 +84,8 @@ unpublished with arxiv IDs, specified as operating modes.
 
 MODES:
     "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
-    "strip"   -- remove the arxiv information completely.
+    "strip"   -- remove the arxiv information completely. Note that arXiv URLs are left, use
+                 the `url` filter if you want to strip those.
     "unpublished-note"  -- set the entry type to "unpublished", and add or append to the
                  note={} the string "arXiv:XXXX.YYYY". Any journal field is stripped.
     "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally, strip the
