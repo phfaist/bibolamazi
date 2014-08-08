@@ -280,7 +280,7 @@ class ArxivNormalizeFilter(BibFilter):
         #    #if (not len(entry.fields['url'])):
         #    #    del entry.fields['url'];
 
-        if (entry.type == u'unpublished' or entry.type == u'misc'):
+        if entry.type in (u'unpublished', u'misc',):
             entry.type = u'article';
             
         if (mode == MODE_STRIP):
@@ -330,7 +330,7 @@ class ArxivNormalizeFilter(BibFilter):
             if (arxivinfo['published'] == False):
                 # if the entry is unpublished, set the journal name to
                 # "arXiv e-prints" (or whatever was specified by filter option)
-                if self.arxiv_journal_name:
+                if self.arxiv_journal_name and entry.type in (u'article', u'unpublished',):
                     entry.fields['journal'] = self.arxiv_journal_name
                 entry.fields.pop('pages','')
 

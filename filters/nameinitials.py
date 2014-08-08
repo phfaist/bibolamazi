@@ -29,9 +29,6 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 from core.pylatexenc import latex2text;
 
-# for the arxiv info parser tool
-import arxiv;
-
 
 HELP_AUTHOR = u"""\
 Name Initials filter by Philippe Faist, (C) 2013, GPL 3+

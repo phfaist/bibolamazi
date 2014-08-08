@@ -76,6 +76,10 @@ def detectEntryArXivInfo(entry):
           'year': <Year in preprint arXiv ID number>
         }
 
+    Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
+    filter handles this case separately and explicitly, the option there
+    -dThesesCountAsPublished=0 has no effect here.
+
     If no arXiv information was detected, then this function returns None.
     """
     
@@ -91,6 +95,10 @@ def detectEntryArXivInfo(entry):
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
         d['published'] = False
+    elif entry.type in (u'phdthesis', u'mastersthesis',):
+        # by default, PhD theses and Master's thesis count as published (although this
+        # case is handled specially in the arxiv filter)
+        d['published'] = True
     elif ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
         # if journal is the arXiv, then it's not published.
         d['published'] = False
