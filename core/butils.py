@@ -108,3 +108,30 @@ def guess_encoding_decode(dat, encoding=None):
 
 
 
+
+
+def call_with_args(fn, *args, **kwargs):
+    """
+    Utility to call a function `fn` with `*args` and `**kwargs`.
+
+    `fn(*args)` must be an acceptable function call; beyond that, additional keyword
+    arguments which the function accepts will be provided from `**kwargs`.
+
+    This function is meant to be essentially `fn(*args, **kwargs)`, but without raising an
+    error if there are arguments in `kwargs` which the function doesn't accept (in which
+    case, those arguments are ignored).
+    """
+
+    args2 = args
+    kwargs2 = kwargs
+    if hasattr(fn, '__call__'):
+        args2 = [fn] + args
+        fn = fn.__call__
+
+    (fargs, varargs, keywords, defaults) = inspect.getargspec(fn)
+
+    if keywords:
+        return fn(*args2, **kwargs2)
+    
+    kwargs2 = dict([(k,v) for (k,v) in kwargs2 if k in fargs])
+    return fn(*args2, **kwargs2)

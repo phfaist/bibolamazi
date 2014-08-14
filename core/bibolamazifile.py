@@ -39,6 +39,7 @@ from core.blogger import logger;
 
 from core import butils;
 from core.butils import BibolamaziError;
+from core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
 import filters;
 
 
@@ -64,82 +65,6 @@ def _repl(s, dic):
     return s;
 
 
-
-def _to_bibusercacheobj(obj):
-    if (isinstance(obj, BibUserCacheDic) or isinstance(obj, BibUserCacheList)):
-        # make sure we don't make copies of these objects, but keep references
-        # to the original instance. Especially important for the on_set_bind_to
-        # feature.
-        return obj
-    if (isinstance(obj, dict)):
-        return BibUserCacheDic(obj)
-    if (isinstance(obj, list)):
-        return BibUserCacheList(obj)
-    return obj
-
-
-class BibUserCacheDic(dict):
-    def __init__(self, *args, **kwargs):
-        self._on_set_bind_to = kwargs.pop('on_set_bind_to', None);
-        
-        super(BibUserCacheDic, self).__init__(*args, **kwargs)
-        
-    def __getitem__(self, key):
-        return self.get(key, BibUserCacheDic({}, on_set_bind_to=(self, key)))
-
-    def __setitem__(self, key, val):
-        super(BibUserCacheDic, self).__setitem__(key, _to_bibusercacheobj(val))
-        self._do_pending_bind()
-
-    def setdefault(self, key, val):
-        super(BibUserCacheDic, self).setdefault(key, _to_bibusercacheobj(val))
-        self._do_pending_bind()
-
-    def update(self, *args, **kwargs):
-        # Problem: we need to make sure each value is filtered with _to_bibusercacheobj(val)
-        raise NotImplementedError("Can't use update() with BibUserCacheDic: not implemented")
-        #super(BibUserCacheDic, self).update(*args, **kwargs)
-        #self._do_pending_bind()
-
-    def _do_pending_bind(self):
-        if (hasattr(self, '_on_set_bind_to') and self._on_set_bind_to is not None):
-            (obj, key) = self._on_set_bind_to
-            obj[key] = self
-            self._on_set_bind_to = None
-
-    def __repr__(self):
-        return 'BibUserCacheDic(%s)' %(super(BibUserCacheDic, self).__repr__())
-
-
-class BibUserCacheList(list):
-    def __init__(self, *args, **kwargs):
-        super(BibUserCacheList, self).__init__(*args, **kwargs)
-
-    def __setitem__(self, key, val):
-        super(BibUserCacheList, self).__setitem__(key, _to_bibusercacheobj(val))
-    
-    def __repr__(self):
-        return 'BibUserCacheList(%s)' %(super(BibUserCacheList, self).__repr__())
-
-
-class BibUserCache(object):
-    def __init__(self):
-        self.cachedic = BibUserCacheDic({})
-
-    def cache_for(self, cachename):
-        if (self.cachedic is None):
-            return None
-
-        return self.cachedic[cachename]
-
-    def has_cache(self):
-        return bool(self.cachedic)
-
-    def load_cache(self, cachefobj):
-        self.cachedic = pickle.load(cachefobj);
-
-    def save_cache(self, cachefobj):
-        pickle.dump(self.cachedic, cachefobj, protocol=2);
 
 
 
@@ -361,8 +286,10 @@ class BibolamaziFile(object):
         """
         return self._fname + '.bibolamazicache';
 
-    def cache_for(self, namespace):
-        return self._user_cache.cache_for(namespace)
+    def cache_for(self, namespace, dont_expire=False):
+        cachedic = self._user_cache.cache_for(namespace)
+        ...............
+        return cachedic
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
