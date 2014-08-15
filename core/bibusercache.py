@@ -26,18 +26,82 @@ from core.blogger import logger
 from core.butils import call_with_args
 
 
-class validtoken_date:
-    def __init__(time_valid=datetime.timedelta(days=3)):
+class TokenChecker(object):
+    def __init__(self, **kwargs):
+        super(TokenChecker, self).__init__(**kwargs)
+
+    def new_token(self, key, value, **kwargs):
+        return True
+
+    def cmp_tokens(self, key, value, oldtoken, **kwargs):
+        # by default, compare for equality.
+        if self.new_token(key, value, **kwargs) == oldtoken:
+            return True
+        return False
+
+
+class TokenCheckerDate(TokenChecker):
+    def __init__(self, time_valid=datetime.timedelta(days=3), **kwargs):
+        super(TokenCheckerDate, self).__init__(**kwargs)
         self.time_valid = time_valid
 
-    def __call__(self, x, oldvalidtoken):
-        if oldvalidtoken is None:
-            return False
-        return ((datetime.now() - oldvalidtoken) < self.time_valid)
+    def set_time_valid(self, time_valid):
+        self.time_valid = time_valid
 
-    @staticmethod
-    def newvalidtoken(x=None):
+    def cmp_tokens(self, key, value, oldtoken, **kwargs):
+        if oldtoken is None:
+            return False
+        return ((datetime.now() - oldtoken) < self.time_valid)
+
+    def new_token(self, **kwargs):
         return datetime.now()
+
+
+class TokenCheckerCombine(TokenChecker):
+    def __init__(self, *args, **kwargs):
+        super(TokenCheckerCombine, self).__init__(**kwargs)
+        self.subcheckers = args
+
+    def cmp_tokens(self, key, value, oldtoken, **kwargs):
+        for k in range(len(self.subcheckers)):
+            chk = self.subcheckers[k]
+            if not chk.cmp_tokens(self, key=key, value=value, oldtoken=oldtoken[k], **kwargs):
+                return False
+        return True
+
+    def new_token(self, key, value, **kwargs):
+        return  tuple( (chk.new_token(key, value, **kwargs) for chk in self.subcheckers) )
+
+
+class TokenCheckerPerEntry(TokenChecker):
+    def __init__(self, checkers={}, **kwargs):
+        super(TokenCheckerPerEntry, self).__init__(**kwargs)
+        self.checkers = checkers
+
+    def add_entry_check(self, key, checker):
+        self.checkers[key] = checker
+
+    def has_entry_for(self, key):
+        return (key in self.checkers)
+
+    def checker_for(self, key):
+        return self.checkers.get(key, None)
+
+    def remove_entry_check(self, key):
+        if not key in self.checkers:
+            return
+        del self.checkers[key]
+
+    def cmp_tokens(self, key, value, oldtoken, **kwargs):
+        if not key in self.checkers:
+            return True # no validation if we have no checkers
+        return self.checkers[key].cmp_tokens(key, value, oldtoken, **kwargs)
+
+    def new_token(self, key, value, **kwargs):
+        if not key in self.checkers:
+            return True # no validation if we have no checkers
+        return self.checkers[key].new_token(key, value, **kwargs)
+
 
 
 def _to_bibusercacheobj(obj):
@@ -62,7 +126,7 @@ class BibUserCacheDic(dict):
     dictionary.
 
     This implements *cache validation*, i.e. making sure that the values stored in the
-    cache are up-to-date. Each entry of the dictionary has a corresponding *validtoken*,
+    cache are up-to-date. Each entry of the dictionary has a corresponding *token*,
     i.e. a value (of any python picklable type) which will identify whether the cache is
     invalid or not. For example, the value could be `datetime` corresponding to the time
     when the entry was created, and the rule for validating the cache might be to check
@@ -72,52 +136,30 @@ class BibUserCacheDic(dict):
         self._on_set_bind_to = kwargs.pop('on_set_bind_to', None)
 
         # by default, no validation.
-        self.validtoken_fn = None
-        self.validtoken_fncmp = None
-
-        self.validtokens = {}
+        self.tokenchecker = None
+        self.tokens = {}
 
         # ---
         
         super(BibUserCacheDic, self).__init__(*args, **kwargs)
 
-    def set_validation(self, fn, fncmp=None, validate=True):
+    def set_validation(self, tokenchecker, validate=True):
         """
-        Set a function that will calculate the `validtoken' for a given entry. The
-        function `fn` shall compute a value based on a key (and possibly cache value) of
-        the cache, such that comparision with `fncmp` (by default equality) will tell us
-        if the entry is out of date. *********TODO: BETTER DOC **************
+        Set a function that will calculate the `token' for a given entry, for cache
+        validation. The function `fn` shall compute a value based on a key (and possibly
+        cache value) of the cache, such that comparision with `fncmp` (by default
+        equality) will tell us if the entry is out of date. *********TODO: BETTER DOC
+        **************
 
         If `validate` is `True`, then we immediately validate the contents of the cache.
         """
 
-        # store this validtoken_fn
-        self.validtoken_fn = fn
-
-        # validtoken_fncmp:
-
-        if not fncmp:
-            # default comparator is equality: if two tokens are different then the cache
-            # is invalid.
-            validtoken_fncmp = (lambda key, val, oldvalidtoken, self=self:
-                                (self.call_validtoken_fn(x, key=key) is oldvalidtoken)
-                                )
-        self.validtoken_fncmp = validtoken_fncmp
+        # store this token checker
+        self.tokenchecker = tokenchecker
 
         if validate:
             self.validate()
 
-
-    def call_validtoken_fn(self, key, val):
-        if not self.validtoken_fn:
-            return True
-        return call_with_args(self.validtoken_fn, key=key, val=val)
-
-    def call_validtoken_fncmp(self, key, val, oldvalidtoken):
-        if not self.validtoken_fncmp:
-            return True # always valid in case of no validation
-        return call_with_args(self.validtoken_fncmp, key=key, val=val, oldvalidtoken=oldvalidtoken)
-        
     def validate(self):
         """
         Validate this whole dictionary, i.e. make sure that each entry is still valid.
@@ -141,18 +183,18 @@ class BibUserCacheDic(dict):
             return False
         
         val = self[key]
-        if self.call_validtoken_fncmp(key=key, val=val,
-                                      oldvalidtoken=self.validtokens.get(key,None)):
+        if self.tokenchecker.cmp_tokens(key=key, val=val,
+                                        oldtoken=self.tokens.get(key,None)):
             if isinstance(val, BibUserCacheDic):
                 val.validate()
-                # still return True independently of val.validate(), because this
-                # dictionary is still valid.
+                # still return True independently of what happens in val.validate(),
+                # because this dictionary is still valid.
             return True
         # otherwise, invalidate the cache. Don't just set to None or {} or [] because we
         # don't know what type the value is. This way is safe, because if getitem is
         # called, automatically an empty dic will be created.
         del self[key]
-        del self.validtokens[key]
+        del self.tokens[key]
         return False
 
     def __getitem__(self, key):
@@ -162,8 +204,8 @@ class BibUserCacheDic(dict):
         super(BibUserCacheDic, self).__setitem__(key, _to_bibusercacheobj(val))
         self._do_pending_bind()
         # assume that we __setitem__ is called, the value is up-to-date, ie. update the
-        # corresponding validtoken.
-        self.validtokens[key] = self.validtoken_fn(val)
+        # corresponding token.
+        self.tokens[key] = self.tokenchecker.new_token(val)
 
     def setdefault(self, key, val):
         super(BibUserCacheDic, self).setdefault(key, _to_bibusercacheobj(val))
@@ -172,6 +214,7 @@ class BibUserCacheDic(dict):
     def update(self, *args, **kwargs):
         # Problem: we need to make sure each value is filtered with _to_bibusercacheobj(val)
         # ###: Wait, doesn't dict.update() call __setitem__() for each item?
+        # ### ###: From what I see on stackoverflow, doesn't seems so
         raise NotImplementedError("Can't use update() with BibUserCacheDic: not implemented")
         #super(BibUserCacheDic, self).update(*args, **kwargs)
         #self._do_pending_bind()
@@ -187,25 +230,25 @@ class BibUserCacheDic(dict):
 
     def __setstate__(self, state):
         self.clear()
-        if not 'cache' in state or 'validtokens' in state:
+        if not 'cache' in state or 'tokens' in state:
             # invalid cache
             logger.debug("Ignoring invalid cache")
             return
 
         cache = state['cache']
-        validtokens = state['validtokens']
+        tokens = state['tokens']
         for k,v in cache.iteritems():
             self[k] = v
-            self.validtokens[k] = validtokens.get(k,None)
+            self.tokens[k] = tokens.get(k,None)
 
     def __getstate__(self):
         state = {
             'cache': {}
-            'validtokens': {}
+            'tokens': {}
             }
         for k,v in self.iteritems():
             state['cache'][k] = v
-            state['validtokens'][k] = self.validtokens.get(k, None)
+            state['tokens'][k] = self.tokens.get(k, None)
 
         return state
 

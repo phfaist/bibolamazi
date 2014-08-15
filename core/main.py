@@ -37,7 +37,7 @@ from core.bibolamazifile import BibolamaziFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
 from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
-from core.butils import BibolamaziError
+from core.butils import BibolamaziError, parse_timedelta
 
 # for list of filters
 import filters
@@ -89,13 +89,16 @@ def get_args_parser():
                                      prog='bibolamazi',
                                      add_help=False);
 
-    parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
-                        help="Bypass and ignore any existing cache file, and regenerate the cache. If "
-                        "the cache file exists, it will be overwritten.");
     parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
                         help="Create a new bibolamazi file with a template configuration.");
     parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
                         help="Show a list of available filters along with their description, and exit.");
+    parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
+                        help="Bypass and ignore any existing cache file, and regenerate the cache. If "
+                        "the cache file exists, it will be overwritten.");
+    parser.add_argument('-z', '--cache-timeout', dest='cache_timeout', type=butils.parse_timedelta,
+                        help="The default timeout after which to consider items in cache to be invalid. "
+                        "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s");
 
     parser.add_argument('--help', '-h', action=opt_action_help, nargs='?', metavar='filter',
                         help='Show this help message and exit. If filter is given, show information and '

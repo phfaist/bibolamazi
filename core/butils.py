@@ -22,6 +22,8 @@
 
 import re
 import types
+import math
+import datetime
 
 from blogger import logger
 import version
@@ -135,3 +137,55 @@ def call_with_args(fn, *args, **kwargs):
     
     kwargs2 = dict([(k,v) for (k,v) in kwargs2 if k in fargs])
     return fn(*args2, **kwargs2)
+
+
+
+
+_rx_timedelta_part = re.compile(r'(?P<value>\d+(?:\.\d*)?|\d*\.\d+)(?P<unit>\w+)', flags=re.IGNORECASE)
+    
+def parse_timedelta(in_s):
+    """
+    Note: only positive timedelta accepted.
+    """
+
+    # all-lowercase, please
+    keys = {"weeks": (7, 'days'),
+            "days": (24, 'hours'),
+            "hours": (60, 'minutes'),
+            "minutes": (60, 'seconds'),
+            "seconds": (1000, 'milliseconds'),
+            }
+
+    kwargs = {}
+    for k in keys.keys():
+        kwargs[k] = 0.0
+        kwargs[keys[k][1]] = 0.0
+
+    for m in _rx_timedelta_part.finditer(in_s):
+        unit = m.group('unit').lower()
+        keyoks = [x for x in keys if x.startswith(unit)]
+        if len(keyoks) < 1:
+            raise ValueError("Unknown unit for timedelta: %s" %(unit))
+        if len(keyoks) > 1:
+            raise ValueError("Ambiguous unit for timedelta: %s" %(unit)) # should never happen
+        
+        key = keyoks[0]
+        value = float(m.group('value'))
+        value_int = math.floor(value)
+        kwargs[key] += value_int
+
+        x = value - value_int
+
+        while True:
+            x *= keys[key][0]
+            newkey = keys[key][1]
+            v = math.floor(x)
+            kwargs[newkey] += v
+            x = (x - v)
+
+            key = newkey
+            if key not in keys:
+                break
+            
+    #print 'kwargs: %r'%(kwargs)
+    return datetime.timedelta(**kwargs)
