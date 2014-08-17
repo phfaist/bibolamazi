@@ -21,9 +21,10 @@
 
 
 import re
+import datetime
 import hashlib
 
-from pybtex.database import Person
+from pybtex.database import Person, Entry
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.blogger import logger
@@ -47,12 +48,23 @@ HELP_TEXT = u"""
 
 
 class EntryTitleTokenChecker(bibusercache.TokenChecker):
-    def __init__(self, **kwargs):
-        super(EntryTokenChecker, self).__init__(**kwargs)
+    def __init__(self, bibdata, **kwargs):
+        self.bibdata = bibdata
+        super(EntryTitleTokenChecker, self).__init__(**kwargs)
 
-    def new_token(self, key, value):
-        data = value.fields.get('title', '')
+    def new_token(self, key, value, **kwargs):
+        data = self.bibdata.entries.get(key,Entry('misc')).fields.get('title', '')
         return hashlib.md5(data).hexdigest()
+
+
+class EntryDOITokenChecker(bibusercache.TokenChecker):
+    def __init__(self, bibdata, **kwargs):
+        self.bibdata = bibdata
+        super(EntryDOITokenChecker, self).__init__(**kwargs)
+
+    def new_token(self, key, value, **kwargs):
+        data = self.bibdata.entries.get(key,Entry('misc')).fields.get('doi', '')
+        return hashlib.md5(data).digest()
 
 
 class TestCacheValidationFilter(BibFilter):
@@ -81,7 +93,9 @@ class TestCacheValidationFilter(BibFilter):
         #
 
         title_cache = self.cache_for('title_cache', dont_expire=True)
+        title_cache.set_validation(EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()))
 
+        key = entry.key
         if key in title_cache:
             newtitle = title_cache[key]['title']
         else:
@@ -92,10 +106,36 @@ class TestCacheValidationFilter(BibFilter):
 
 
         #
+        # example: simple expiring cache
+        #
+
+        expiring_cache = self.cache_for('expiring_cache')
+
+        if 'data' not in expiring_cache:
+            expiring_cache['data'] = ('Random data generated on %r'%(datetime.datetime.now()))
+        entry.fields['annote'] = expiring_cache['data']
+
+        #
         # an example with combination of caches:
         #
+
+        comb_cache = self.cache_for('comb_cache')
+
+        comb_cache.set_validation(bibusercache.TokenCacheCombine(
+            EntryDOITokenChecker(self.bibolamaziFile().bibliographydata()),
+            EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()),
+            bibusercache.TokenCheckerDate()
+            ))
+
+        if not key in comb_cache:
+            comb_cache[key] = ('DOI='+entry.fields.get('url','????') + '; title='+entry.fields.get('title','')
+                               +';; generated on %r'%(datetime.datetime.now()))
+
+        entry.fields['note'] = comb_cache[key]
         
         return entry;
+
+
     
 
 def bibolamazi_filter_class():

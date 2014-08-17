@@ -35,7 +35,7 @@ class TokenChecker(object):
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
         # by default, compare for equality.
-        if self.new_token(key, value, **kwargs) == oldtoken:
+        if self.new_token(key=key, value=value, **kwargs) == oldtoken:
             return True
         return False
 
@@ -70,7 +70,7 @@ class TokenCheckerCombine(TokenChecker):
         return True
 
     def new_token(self, key, value, **kwargs):
-        return  tuple( (chk.new_token(key, value, **kwargs) for chk in self.subcheckers) )
+        return  tuple( (chk.new_token(key=key, value=value, **kwargs) for chk in self.subcheckers) )
 
 
 class TokenCheckerPerEntry(TokenChecker):
@@ -79,6 +79,8 @@ class TokenCheckerPerEntry(TokenChecker):
         self.checkers = checkers
 
     def add_entry_check(self, key, checker):
+        if not checker:
+            raise ValueError("add_entry_check(): may not provide `None`")
         self.checkers[key] = checker
 
     def has_entry_for(self, key):
@@ -95,12 +97,12 @@ class TokenCheckerPerEntry(TokenChecker):
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
         if not key in self.checkers:
             return True # no validation if we have no checkers
-        return self.checkers[key].cmp_tokens(key, value, oldtoken, **kwargs)
+        return self.checkers[key].cmp_tokens(key=key, value=value, oldtoken=oldtoken, **kwargs)
 
     def new_token(self, key, value, **kwargs):
         if not key in self.checkers:
             return True # no validation if we have no checkers
-        return self.checkers[key].new_token(key, value, **kwargs)
+        return self.checkers[key].new_token(key=key, value=value, **kwargs)
 
 
 
@@ -182,6 +184,10 @@ class BibUserCacheDic(dict):
             # not valid anyway.
             return False
         
+        if not self.tokenchecker:
+            # no validation
+            return True
+
         val = self[key]
         if self.tokenchecker.cmp_tokens(key=key, val=val,
                                         oldtoken=self.tokens.get(key,None)):
@@ -205,7 +211,8 @@ class BibUserCacheDic(dict):
         self._do_pending_bind()
         # assume that we __setitem__ is called, the value is up-to-date, ie. update the
         # corresponding token.
-        self.tokens[key] = self.tokenchecker.new_token(val)
+        if self.tokenchecker:
+            self.tokens[key] = self.tokenchecker.new_token(key=key, val=val)
 
     def setdefault(self, key, val):
         super(BibUserCacheDic, self).setdefault(key, _to_bibusercacheobj(val))
@@ -218,6 +225,11 @@ class BibUserCacheDic(dict):
         raise NotImplementedError("Can't use update() with BibUserCacheDic: not implemented")
         #super(BibUserCacheDic, self).update(*args, **kwargs)
         #self._do_pending_bind()
+
+
+    .......... # TODO: BUG: if an entry gets updated, then the parent dictionary does not get
+    # a chance to update its token for the dictionary!! The dictionary should hold a
+    # pointer to its parent, and inform it....
 
     def _do_pending_bind(self):
         if (hasattr(self, '_on_set_bind_to') and self._on_set_bind_to is not None):
@@ -243,8 +255,8 @@ class BibUserCacheDic(dict):
 
     def __getstate__(self):
         state = {
-            'cache': {}
-            'tokens': {}
+            'cache': {},
+            'tokens': {},
             }
         for k,v in self.iteritems():
             state['cache'][k] = v
@@ -268,12 +280,33 @@ class BibUserCacheList(list):
 class BibUserCache(object):
     def __init__(self):
         self.cachedic = BibUserCacheDic({})
+        self.validation_checker = TokenCheckerPerEntry()
+        self.cachedic.set_validation(self.validation_checker)
+        # an instance of an expiry_checker that several entries might share in
+        # self.validation_checker.
+        self.expiry_checker = TokenCheckerDate()
 
-    def cache_for(self, cachename):
+    def set_default_invalidation_time(self, time_delta):
+        """
+        A timedelta object giving the amount of time for which data in cache is consdered
+        valid (by default).
+        """
+        self.expiry_checker.set_time_valid(time_delta)
+
+
+    def cache_for(self, cachename, dont_expire=False):
         if (self.cachedic is None):
             return None
 
+        if not dont_expire:
+            # normal thing, i.e. the cache expires after N days
+            self.validation_checker.add_entry_check(cachename, self.expiry_checker)
+        elif self.validation_checker.has_entry_for(cachename):
+            # conflict: twice cache requested with conflicting values of dont_expire
+            raise RuntimeError("Conflicting values of dont_expire given for cache `%s'"%(cachename))
+
         return self.cachedic[cachename]
+    
 
     def has_cache(self):
         return bool(self.cachedic)

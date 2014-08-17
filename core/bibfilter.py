@@ -85,7 +85,7 @@ class BibFilter(object):
         """
         return self._bibolamazifile;
 
-    def cache_for(self, namespace):
+    def cache_for(self, namespace, **kwargs):
         """
         Get access to the cache data stored within the namespace `namespace`. This directly
         queries the cache stored in the `BibolamaziFile` object set with
@@ -99,7 +99,7 @@ class BibFilter(object):
         a specific cache.
         """
         if (self._bibolamazifile is not None):
-            return self._bibolamazifile.cache_for(namespace)
+            return self._bibolamazifile.cache_for(namespace, **kwargs)
         return None
 
 

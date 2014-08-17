@@ -22,6 +22,7 @@
 
 import os
 import os.path
+import re
 import sys
 import argparse
 import textwrap
@@ -37,7 +38,8 @@ from core.bibolamazifile import BibolamaziFile
 from core.bibfilter import BibFilter
 from core.blogger import logger
 from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
-from core.butils import BibolamaziError, parse_timedelta
+from core import butils
+from core.butils import BibolamaziError
 
 # for list of filters
 import filters
@@ -65,8 +67,13 @@ def setup_filterpackage_from_argstr(argstr):
     fpname = fpparts[0]
     fpdir = fpparts[1] if len(fpparts) >= 2 and fpparts[1] else None
 
+    if re.search(r'[^a-zA-Z0-9_\.]', fpname):
+        raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
+                              "Did you get the filterpackage syntax wrong? "
+                              "Syntax: '<packagename>[=<path>]'." %(fpname))
+
     if not filters.validate_filter_package(fpname, fpdir, raise_exception=False):
-        raise BibolamaziError("Invalid filter package: `%s' (dir=%r)" % (fpname, fpdir))
+        raise BibolamaziError("Invalid filter package `%s' [in directory `%s']" % (fpname, fpdir))
 
     filters.filterpath[fpname] = fpdir
     
@@ -148,10 +155,10 @@ def main(argv=sys.argv[1:]):
     return run_bibolamazi_args(args)
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', 'use_cache' ));
+ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', 'use_cache', 'cache_timeout' ));
 
-def run_bibolamazi(outputbibfile, verbosity=1, use_cache=True):
-    args = ArgsStruct(outputbibfile, verbosity, use_cache)
+def run_bibolamazi(outputbibfile, verbosity=1, use_cache=True, cache_timeout=None):
+    args = ArgsStruct(outputbibfile, verbosity, use_cache, cache_timeout)
     return run_bibolamazi_args(args)
 
 
@@ -179,6 +186,12 @@ def run_bibolamazi_args(args):
     # and the entries, as well as keep some information on how to re-write to the file.
     bfile = BibolamaziFile(args.outputbibfile, use_cache=args.use_cache);
 
+    #
+    # If given a cache_timeout, set it
+    #
+    if args.cache_timeout:
+        bfile.set_default_cache_invalidation_time(args.cache_timeout)
+    
 
     bibdata = bfile.bibliographydata();
     if (bibdata is None or not len(bibdata.entries)):

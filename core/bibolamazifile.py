@@ -194,8 +194,6 @@ class BibolamaziFile(object):
             self._filters = []
             self._bibliographydata = None
             self._user_cache = BibUserCache()
-            self._user_cache.set_validation(bibusercache.TokenCheckerPerEntry())
-            self._user_cache_expiry_checker = bibusercache.TokenCheckerDate()
             
         if (to_state >= BIBOLAMAZIFILE_READ  and  self._load_state < BIBOLAMAZIFILE_READ):
             try:
@@ -288,15 +286,8 @@ class BibolamaziFile(object):
         """
         return self._fname + '.bibolamazicache';
 
-    def cache_for(self, namespace, dont_expire=False):
-        cachedic = self._user_cache.cache_for(namespace)
-        if not dont_expire:
-            # normal thing, i.e. the cache expires after N days
-            self._user_cache_expiry_checker.add_entry_checker(namespace)
-        elif self._user_cache_expiry_checker.has_entry_for(namespace):
-            # conflict: twice cache requested with conflicting values of dont_expire
-            raise RuntimeError("Conflicting values of dont_expire given for cache `%s'"%(namespace))
-        return cachedic
+    def cache_for(self, namespace, **kwargs):
+        return self._user_cache.cache_for(namespace, **kwargs)
 
     def set_default_cache_invalidation_time(self, time_delta):
         """
@@ -307,7 +298,7 @@ class BibolamaziFile(object):
             logger.warning('set_default_cache_invalidation_time: No cache in use: ignoring new value.')
             return
 
-        self._user_cache_expiry_checker.set_time_valid(time_delta)
+        self._user_cache.set_default_invalidation_time(time_delta)
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
@@ -682,7 +673,7 @@ class BibolamaziFile(object):
             logger.info("Updated output file `"+self._fname+"'.");
 
         # if we have cache to save, save it
-        if (self._user_cache.has_cache()):
+        if (self._user_cache and self._user_cache.has_cache()):
             cachefname = self.cachefname()
             try:
                 with open(cachefname, 'wb') as f:
