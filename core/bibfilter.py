@@ -55,7 +55,6 @@ class BibFilter(object):
     def action(self):
         raise BibFilterError(self.name(), 'BibFilter subclasses must reimplement action()!')
 
-
     def filter_bibentry(self, x):
         raise BibFilterError(self.name(), 'filter_bibentry() not implemented !')
 

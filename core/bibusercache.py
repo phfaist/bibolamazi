@@ -19,9 +19,13 @@
 #                                                                              #
 ################################################################################
 
+import collections
 import inspect
 import datetime
+import pickle
+import hashlib
 
+from pybtex.database import Entry
 from core.blogger import logger
 from core.butils import call_with_args
 
@@ -35,8 +39,11 @@ class TokenChecker(object):
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
         # by default, compare for equality.
-        if self.new_token(key=key, value=value, **kwargs) == oldtoken:
+        newtoken = self.new_token(key=key, value=value, **kwargs)
+        if newtoken == oldtoken:
+            #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> OK", newtoken, oldtoken)
             return True
+        #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> DIFFERENT", newtoken, oldtoken)
         return False
 
 
@@ -49,12 +56,14 @@ class TokenCheckerDate(TokenChecker):
         self.time_valid = time_valid
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
+        now = datetime.datetime.now()
+        #logger.longdebug("Comparing %r with %r; time_valid=%r", now, oldtoken, self.time_valid)
         if oldtoken is None:
             return False
-        return ((datetime.now() - oldtoken) < self.time_valid)
+        return ((now - oldtoken) < self.time_valid)
 
     def new_token(self, **kwargs):
-        return datetime.now()
+        return datetime.datetime.now()
 
 
 class TokenCheckerCombine(TokenChecker):
@@ -65,7 +74,9 @@ class TokenCheckerCombine(TokenChecker):
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
         for k in range(len(self.subcheckers)):
             chk = self.subcheckers[k]
-            if not chk.cmp_tokens(self, key=key, value=value, oldtoken=oldtoken[k], **kwargs):
+            #logger.longdebug("TokenCheckerCombine: cmp_tokens(): #%d: %r : key=%s value=... oldtoken=%r",
+            #                 k, chk, key, oldtoken[k])
+            if not chk.cmp_tokens(key=key, value=value, oldtoken=oldtoken[k], **kwargs):
                 return False
         return True
 
@@ -79,8 +90,19 @@ class TokenCheckerPerEntry(TokenChecker):
         self.checkers = checkers
 
     def add_entry_check(self, key, checker):
+        """
+        Add an entry-specific checker.
+
+        Note that no explicit validation is performed. (This can't be done because we
+        don't even have a pointer to the cache dict.) So you should call manually
+        `BibUserCacheDict.validate_item()`
+        """
         if not checker:
             raise ValueError("add_entry_check(): may not provide `None`")
+        if key in self.checkers:
+            if self.checkers[key] is checker:
+                return # already set
+            logger.warning("TokenCheckerPerEntry: Replacing checker for `%s'", key)
         self.checkers[key] = checker
 
     def has_entry_for(self, key):
@@ -106,20 +128,54 @@ class TokenCheckerPerEntry(TokenChecker):
 
 
 
-def _to_bibusercacheobj(obj):
+
+class EntryFieldsTokenChecker(TokenChecker):
+    def __init__(self, bibdata, fields=[], store_type=False, store_persons=[], **kwargs):
+        self.bibdata = bibdata
+        self.fields = fields
+        self.store_type = store_type
+        self.store_persons = store_persons
+        super(EntryFieldsTokenChecker, self).__init__(**kwargs)
+
+    def new_token(self, key, value, **kwargs):
+        entry = self.bibdata.entries.get(key,Entry('misc'))
+        
+        data = "\n\n".join( (entry.fields.get(fld, '').encode('utf-8')
+                         for fld in self.fields) )
+        if self.store_type:
+            data += "\n\n" + entry.type.encode('utf-8')
+        if self.store_persons:
+            data += "".join([
+                ("\n\n"+p+":"+";".join([unicode(pers) for pers in entry.persons.get(p, [])]))
+                for p in self.store_persons ]).encode('utf-8')
+        
+        return hashlib.md5(data).digest()
+
+
+
+
+
+
+
+
+def _to_bibusercacheobj(obj, parent):
     if (isinstance(obj, BibUserCacheDic) or isinstance(obj, BibUserCacheList)):
         # make sure we don't make copies of these objects, but keep references
         # to the original instance. Especially important for the on_set_bind_to
         # feature.
+        obj.set_parent(parent)
         return obj
     if (isinstance(obj, dict)):
-        return BibUserCacheDic(obj)
+        return BibUserCacheDic(obj, parent=parent)
     if (isinstance(obj, list)):
-        return BibUserCacheList(obj)
+        return BibUserCacheList(obj, parent=parent)
     return obj
 
 
-class BibUserCacheDic(dict):
+
+
+
+class BibUserCacheDic(collections.MutableMapping):
     """
     Implements a cache where information may be stored between different runs of
     bibolamazi, and between different filter runs.
@@ -135,15 +191,28 @@ class BibUserCacheDic(dict):
     that the entry is not more than e.g. 3 days old.
     """
     def __init__(self, *args, **kwargs):
-        self._on_set_bind_to = kwargs.pop('on_set_bind_to', None)
+        self._init_empty(on_set_bind_to_key=kwargs.pop('on_set_bind_to_key', None),
+                         parent = kwargs.pop('parent', None))
 
         # by default, no validation.
         self.tokenchecker = None
-        self.tokens = {}
-
-        # ---
         
-        super(BibUserCacheDic, self).__init__(*args, **kwargs)
+        self.update(dict(*args, **kwargs))
+
+    def _init_empty(self, on_set_bind_to_key=None, parent=None):
+        self.dic = {}
+        self.tokens = {}
+        self.tokenchecker = None
+        self._on_set_bind_to_key = on_set_bind_to_key
+        self.parent = parent
+
+    def _guess_name_for_dbg(self):
+        if not self.parent:
+            return "<root>"
+        for key, val in self.parent.iteritems():
+            if val == self:
+                return key
+        return "<unknown>"
 
     def set_validation(self, tokenchecker, validate=True):
         """
@@ -156,8 +225,15 @@ class BibUserCacheDic(dict):
         If `validate` is `True`, then we immediately validate the contents of the cache.
         """
 
+        if self.tokenchecker is tokenchecker:
+            # no change
+            return
+
         # store this token checker
         self.tokenchecker = tokenchecker
+
+        # this counts as a change, so save it
+        self._do_pending_bind()
 
         if validate:
             self.validate()
@@ -168,7 +244,10 @@ class BibUserCacheDic(dict):
 
         This calls `validate_item()` for each item in the dictionary.
         """
-        for key in self:
+
+        keylist = self.dic.keys()
+
+        for key in keylist:
             self.validate_item(key)
 
     def validate_item(self, key):
@@ -180,101 +259,161 @@ class BibUserCacheDic(dict):
 
         Returns `True` if have valid item, otherwise `False`.
         """
-        if not key in self:
+        if not key in self.dic:
             # not valid anyway.
+            #logger.longdebug("validate_item(): %s: no such key %s", self._guess_name_for_dbg(), key)
             return False
         
         if not self.tokenchecker:
             # no validation
+            #logger.longdebug("validate_item(): %s[%s]: no validation set", self._guess_name_for_dbg(), key)
             return True
 
-        val = self[key]
-        if self.tokenchecker.cmp_tokens(key=key, val=val,
+        logger.longdebug("Validating item `%s' in `%s', ...", key, self._guess_name_for_dbg())
+
+        val = self.dic[key]
+        if self.tokenchecker.cmp_tokens(key=key, value=val,
                                         oldtoken=self.tokens.get(key,None)):
             if isinstance(val, BibUserCacheDic):
+                #logger.longdebug("Validating sub-dictionary `%s' ...", key)
                 val.validate()
                 # still return True independently of what happens in val.validate(),
                 # because this dictionary is still valid.
+            logger.longdebug("Cache item `%s' is valid; keeping", key)
             return True
+
         # otherwise, invalidate the cache. Don't just set to None or {} or [] because we
         # don't know what type the value is. This way is safe, because if getitem is
         # called, automatically an empty dic will be created.
-        del self[key]
-        del self.tokens[key]
+        logger.longdebug("Cache item `%s' is NO LONGER VALID; trashing.", key)
+        del self.dic[key]
+        if key in self.tokens:
+            del self.tokens[key]
         return False
 
     def __getitem__(self, key):
-        return self.get(key, BibUserCacheDic({}, on_set_bind_to=(self, key)))
+        return self.dic.get(key, BibUserCacheDic({}, parent=self, on_set_bind_to_key=key))
 
     def __setitem__(self, key, val):
-        super(BibUserCacheDic, self).__setitem__(key, _to_bibusercacheobj(val))
+        self.dic[key] = _to_bibusercacheobj(val, parent=self)
         self._do_pending_bind()
         # assume that we __setitem__ is called, the value is up-to-date, ie. update the
         # corresponding token.
         if self.tokenchecker:
-            self.tokens[key] = self.tokenchecker.new_token(key=key, val=val)
-
-    def setdefault(self, key, val):
-        super(BibUserCacheDic, self).setdefault(key, _to_bibusercacheobj(val))
-        self._do_pending_bind()
-
-    def update(self, *args, **kwargs):
-        # Problem: we need to make sure each value is filtered with _to_bibusercacheobj(val)
-        # ###: Wait, doesn't dict.update() call __setitem__() for each item?
-        # ### ###: From what I see on stackoverflow, doesn't seems so
-        raise NotImplementedError("Can't use update() with BibUserCacheDic: not implemented")
-        #super(BibUserCacheDic, self).update(*args, **kwargs)
-        #self._do_pending_bind()
+            self.tokens[key] = self.tokenchecker.new_token(key=key, value=val)
+        if self.parent:
+            self.parent.child_notify_changed(self)
 
 
-    .......... # TODO: BUG: if an entry gets updated, then the parent dictionary does not get
-    # a chance to update its token for the dictionary!! The dictionary should hold a
-    # pointer to its parent, and inform it....
+    def __delitem__(self, key):
+        del self.dic[key]
+        if key in self.tokens:
+            del self.tokens[key]
+        if self.parent:
+            self.parent.child_notify_changed(self)
+
+    def iteritems(self):
+        return self.dic.iteritems()
+
+    def __iter__(self):
+        return iter(self.dic)
+
+    def __len__(self):
+        return len(self.dic)
+
+    def __contains__(self, key):
+        return key in self.dic
+
+
+    def child_notify_changed(self, obj):
+        # update cache validation tokens for this object
+        if self.tokenchecker:
+            for key, val in self.dic.iteritems():
+                if val is obj:
+                    self.tokens[key] = self.tokenchecker.new_token(key=key, value=val)
+                    # don't break, as it could be that the same object is pointed to by
+                    # different keys... so complete the for loop
+        
+        if self.parent:
+            self.parent.child_notify_changed(self)
+
+    def set_parent(self, parent):
+        self.parent = parent
 
     def _do_pending_bind(self):
-        if (hasattr(self, '_on_set_bind_to') and self._on_set_bind_to is not None):
-            (obj, key) = self._on_set_bind_to
-            obj[key] = self
-            self._on_set_bind_to = None
+        if (self._on_set_bind_to_key is not None and
+            self.parent is not None):
+            #
+            self.parent[self._on_set_bind_to_key] = self
+            self._on_set_bind_to_key = None
 
     def __repr__(self):
-        return 'BibUserCacheDic(%s)' %(super(BibUserCacheDic, self).__repr__())
+        return 'BibUserCacheDic(%r)' %(self.dic if hasattr(self,'dic') else {})
 
     def __setstate__(self, state):
-        self.clear()
-        if not 'cache' in state or 'tokens' in state:
+        #logger.longdebug("Set state to empty; loading state=%r", state)
+
+        self._init_empty()
+
+        if not ('cache' in state and 'tokens' in state and 'parent' in state):
             # invalid cache
             logger.debug("Ignoring invalid cache")
             return
 
-        cache = state['cache']
-        tokens = state['tokens']
-        for k,v in cache.iteritems():
-            self[k] = v
-            self.tokens[k] = tokens.get(k,None)
+        self.parent = state['parent']
+        self.dic = state['cache']
+        self.tokens = state['tokens']
+
 
     def __getstate__(self):
         state = {
-            'cache': {},
-            'tokens': {},
+            'parent': self.parent,
+            'cache': self.dic,
+            'tokens': self.tokens,
             }
-        for k,v in self.iteritems():
-            state['cache'][k] = v
-            state['tokens'][k] = self.tokens.get(k, None)
-
         return state
 
 
 
-class BibUserCacheList(list):
+class BibUserCacheList(collections.MutableSequence):
     def __init__(self, *args, **kwargs):
-        super(BibUserCacheList, self).__init__(*args, **kwargs)
+        self.lst = []
+        self.parent = kwargs.pop('parent', None)
+        for x in list(*args, **kwargs):
+            self.append(x)
+
+    def __getitem__(self, index):
+        return self.lst[index]
+
+    def __delitem__(self, index):
+        def deltheitem(value=None):
+            del self.lst[index]
+        self._do_changing_operation(self, None, deltheitem)
+
+    def __contains__(self, value):
+        return value in self.lst
+
+    def __len__(self):
+        return len(self.lst)
+
+    def insert(self, index, value):
+        self._do_changing_operation(self, value, lambda x: self.lst.insert(index, x))
+
+    def append(self, value):
+        self._do_changing_operation(self, value, lambda x: self.lst.append(x))
 
     def __setitem__(self, key, val):
-        super(BibUserCacheList, self).__setitem__(key, _to_bibusercacheobj(val))
+        self._do_changing_operation(self, val, lambda x: self.lst.__setitem__(key, x))
+
+    def _do_changing_operation(self, val, fn):
+        ret = fn(None if val is None else _to_bibusercacheobj(val))
+        if self.parent:
+            self.parent.child_notify_changed(self)
+        return ret
     
     def __repr__(self):
-        return 'BibUserCacheList(%s)' %(super(BibUserCacheList, self).__repr__())
+        return 'BibUserCacheList(%r)' %(self.lst)
+
 
 
 class BibUserCache(object):
@@ -298,22 +437,38 @@ class BibUserCache(object):
         if (self.cachedic is None):
             return None
 
+        #logger.longdebug("cache_for(%r, dont_expire=%r)", cachename, dont_expire)
+
         if not dont_expire:
             # normal thing, i.e. the cache expires after N days
-            self.validation_checker.add_entry_check(cachename, self.expiry_checker)
+            if not self.validation_checker.has_entry_for(cachename):
+                logger.longdebug("Adding expiry checker for %s", cachename)
+                self.validation_checker.add_entry_check(cachename, self.expiry_checker)
+                self.cachedic.validate_item(cachename)
         elif self.validation_checker.has_entry_for(cachename):
             # conflict: twice cache requested with conflicting values of dont_expire
             raise RuntimeError("Conflicting values of dont_expire given for cache `%s'"%(cachename))
 
         return self.cachedic[cachename]
-    
+
 
     def has_cache(self):
         return bool(self.cachedic)
 
     def load_cache(self, cachefobj):
-        self.cachedic = pickle.load(cachefobj);
+        try:
+            data = pickle.load(cachefobj);
+            self.cachedic = data['cachedic']
+        except Exception as e:
+            logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
+            pass
+        
+        self.cachedic.set_validation(self.validation_checker)
 
     def save_cache(self, cachefobj):
-        pickle.dump(self.cachedic, cachefobj, protocol=2);
+        data = {
+            'cachepickleversion': 1,
+            'cachedic': self.cachedic,
+            }
+        pickle.dump(data, cachefobj, protocol=2);
 

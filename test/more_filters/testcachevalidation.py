@@ -54,7 +54,7 @@ class EntryTitleTokenChecker(bibusercache.TokenChecker):
 
     def new_token(self, key, value, **kwargs):
         data = self.bibdata.entries.get(key,Entry('misc')).fields.get('title', '')
-        return hashlib.md5(data).hexdigest()
+        return hashlib.md5(data.encode('utf-8')).hexdigest()
 
 
 class EntryDOITokenChecker(bibusercache.TokenChecker):
@@ -64,7 +64,7 @@ class EntryDOITokenChecker(bibusercache.TokenChecker):
 
     def new_token(self, key, value, **kwargs):
         data = self.bibdata.entries.get(key,Entry('misc')).fields.get('doi', '')
-        return hashlib.md5(data).digest()
+        return hashlib.md5(data.encode('utf-8')).digest()
 
 
 class TestCacheValidationFilter(BibFilter):
@@ -78,7 +78,30 @@ class TestCacheValidationFilter(BibFilter):
         Constructor method for the test cache validation filter.
         """
         
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
+
+        self.caches_prepared = False
+
+
+    def _prepare_caches(self):
+        if self.caches_prepared:
+            return
+        
+        self.caches_prepared = True
+
+        self.title_cache = self.cache_for('title_cache', dont_expire=True)
+        self.title_cache.set_validation(EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()))
+
+        self.expiring_cache = self.cache_for('expiring_cache')
+
+        self.comb_cache = self.cache_for('comb_cache', dont_expire=True)
+
+        self.comb_cache.set_validation(bibusercache.TokenCheckerCombine(
+            EntryDOITokenChecker(self.bibolamaziFile().bibliographydata()),
+            EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()),
+            bibusercache.TokenCheckerDate()
+            ))
+        
 
 
     def name(self):
@@ -92,46 +115,53 @@ class TestCacheValidationFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        title_cache = self.cache_for('title_cache', dont_expire=True)
-        title_cache.set_validation(EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()))
+        self._prepare_caches()
+
+        print "Filtering entry `%s'"%(entry.key)
+
+        title_cache = self.title_cache
 
         key = entry.key
         if key in title_cache:
+            print "\ttitle_cache: `", key, "' is in cache, w/ value=", title_cache[key]['title']
             newtitle = title_cache[key]['title']
         else:
             newtitle = entry.fields.get('title', '').upper()
             title_cache[key]['title'] = newtitle
+            print "\ttitle_cache: `", key, "' is NOT in cache, recalculated its value & set it."
 
-        entry.fields['title'] = newtitle
+        entry.fields['uppertitle'] = newtitle
 
 
         #
         # example: simple expiring cache
         #
 
-        expiring_cache = self.cache_for('expiring_cache')
+        expiring_cache = self.expiring_cache
 
-        if 'data' not in expiring_cache:
+        if 'data' in expiring_cache:
+            print "\texpiring_cache: we have 'data' in cache, w/ value=", expiring_cache['data']
+        else:
             expiring_cache['data'] = ('Random data generated on %r'%(datetime.datetime.now()))
+            print "\texpiring_cache: we DON'T have 'data' in cache, set value=", expiring_cache['data']
         entry.fields['annote'] = expiring_cache['data']
+
 
         #
         # an example with combination of caches:
         #
 
-        comb_cache = self.cache_for('comb_cache')
+        comb_cache = self.comb_cache
 
-        comb_cache.set_validation(bibusercache.TokenCacheCombine(
-            EntryDOITokenChecker(self.bibolamaziFile().bibliographydata()),
-            EntryTitleTokenChecker(self.bibolamaziFile().bibliographydata()),
-            bibusercache.TokenCheckerDate()
-            ))
-
-        if not key in comb_cache:
+        if key in comb_cache:
+            print "\tcomb_cache: we have '", key, "' in cache, w/ value=", repr(comb_cache[key])
+        else:
             comb_cache[key] = ('DOI='+entry.fields.get('url','????') + '; title='+entry.fields.get('title','')
                                +';; generated on %r'%(datetime.datetime.now()))
+            print "\tcomb_cache: we DON'T have '", key, "' in cache, set value=", repr(comb_cache[key])
 
         entry.fields['note'] = comb_cache[key]
+
         
         return entry;
 

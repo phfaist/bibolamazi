@@ -104,6 +104,7 @@ def get_args_parser():
                         help="Bypass and ignore any existing cache file, and regenerate the cache. If "
                         "the cache file exists, it will be overwritten.");
     parser.add_argument('-z', '--cache-timeout', dest='cache_timeout', type=butils.parse_timedelta,
+                        default=None,
                         help="The default timeout after which to consider items in cache to be invalid. "
                         "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s");
 
@@ -189,7 +190,8 @@ def run_bibolamazi_args(args):
     #
     # If given a cache_timeout, set it
     #
-    if args.cache_timeout:
+    if args.cache_timeout is not None:
+        logger.debug("Setting default cache timeout to %r", args.cache_timeout)
         bfile.set_default_cache_invalidation_time(args.cache_timeout)
     
 

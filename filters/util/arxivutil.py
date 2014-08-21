@@ -24,7 +24,7 @@ import re
 from urllib2 import URLError, HTTPError
 
 from core.blogger import logger
-
+from core.bibusercache import EntryFieldsTokenChecker
 
 
 # --- code to detect arXiv info ---
@@ -92,6 +92,11 @@ def detectEntryArXivInfo(entry):
            'doi': None,
            'year': None,
            };
+
+    #
+    # NOTE: If you add/change the fields that are used here, make sure you update the
+    # EntryFieldsTokenChecker below!
+    #
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
         d['published'] = False
@@ -349,11 +354,22 @@ class ArxivInfoCacheAccess:
             self.complete_cache()
 
         return self.entrydic.get(entrykey, None)
-            
+
+
+_arxiv_info_validator = None
 
 def get_arxiv_cache_access(bibolamazifile):
+    global _arxiv_info_validator
+    
     arxiv_info_cache = bibolamazifile.cache_for('arxiv_info', dont_expire=True)
-    #arxiv_info_cache.set_validation(....)
+    
+    if _arxiv_info_validator is None:
+        _arxiv_info_validator = EntryFieldsTokenChecker(bibolamazifile.bibliographydata(),
+                                                        store_type=True,
+                                                        fields=['journal', 'doi', 'eprint', 'arxivid', 'url',
+                                                                'note', 'annote', 'primaryclass',
+                                                                'archiveprefix', ])
+        arxiv_info_cache['entries'].set_validation(_arxiv_info_validator)
 
     #logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))
 
