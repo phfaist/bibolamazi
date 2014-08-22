@@ -172,6 +172,8 @@ class FixesFilter(BibFilter):
                     x.lower()
                     for x in CommaStrList(remove_full_braces_not_lang)
                     ]
+        else:
+            self.remove_full_braces_not_lang = None
 
         if protect_names is not None:
             self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x.strip()+r'\b', re.IGNORECASE))
