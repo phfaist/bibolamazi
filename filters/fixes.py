@@ -86,11 +86,11 @@ For now, the implemented fixes are:
     preserve the capitalization of nouns in German titles.
 
   -sProtectNames=Name1,Name2...
-    A list of names that should be protected within all fields except people (authors
-    and editors). Whenever a field contains one of the given names (as full word),
-    then the name is wrapped in braces (e.g. "On Bell Experiments" ->
-    "On {Bell} Experiments") in order to protect the possible upper casing. The 'url' and
-    'file' fields of the bibtex entry will not be affected.
+    A list of names that should be protected within most fields. Whenever a field
+    contains one of the given names (as full word), then the name is wrapped in
+    braces (e.g. "On Bell Experiments" -> "On {Bell} Experiments") in order to
+    protect the possible upper casing. This applies to all fields except 'url',
+    'file', and people (authors and editors).
 
   -dRemoveFileField
     Removes the field file={...} (that e.g. Mendeley introduces) from all entries. (This
