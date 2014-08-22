@@ -32,8 +32,8 @@ from core.bibusercache import EntryFieldsTokenChecker
 _RX_BEFORE = r'(?:\s*([;,]?\s*)|\b|\s+|^)'
 _RX_AFTER = r'(?:\s*[;,]?\s*|$)'
 
-_RX_ARXIVID_PURE = r'(?P<arxivid>[0-9.]+(?:v\d+)?)' # only the numerical arxiv ID (+possible version)
-_RX_ARXIVID_TOL = r'(?P<arxivid>[-a-zA-Z0-9./]+)' # allow primary-class/ etc.
+_RX_ARXIVID_PURE = r'(?P<arxivid>[0-9\.]+(?:v\d+)?)' # only the numerical arxiv ID (+possible version)
+_RX_ARXIVID_TOL = r'(?P<arxivid>[-a-zA-Z0-9\./]+)' # allow primary-class/ etc.
 
 def _mk_braced_pair_rx(mid):
     return [ re.compile(_RX_BEFORE + r'\{\s*' + mid + r'\s*\}' + _RX_AFTER, re.IGNORECASE) ,
@@ -57,7 +57,7 @@ _rxarxiv = (
     );
 
 # "pure" arxiv ID means the arxiv ID (with primary class for old IDs only), without version information.
-_rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d+))(v\d+)?)', re.IGNORECASE)
+_rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|([-a-zA-Z0-9.]+/\d{7}))(v\d+)?)', re.IGNORECASE)
 
 _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(\.\d{4,}|\d{3})')
 
