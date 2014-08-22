@@ -193,7 +193,7 @@ class BibolamaziFile(object):
             self._source_lists = []
             self._filters = []
             self._bibliographydata = None
-            self._user_cache = BibUserCache()
+            self._user_cache = BibUserCache(cache_version=butils.get_version())
             
         if (to_state >= BIBOLAMAZIFILE_READ  and  self._load_state < BIBOLAMAZIFILE_READ):
             try:

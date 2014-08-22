@@ -153,6 +153,15 @@ class EntryFieldsTokenChecker(TokenChecker):
 
 
 
+class VersionTokenChecker(TokenChecker):
+    def __init__(self, this_version, **kwargs):
+        super(VersionTokenChecker, self).__init__(**kwargs)
+        self.this_version = this_version
+
+    def new_token(self, key, value, **kwargs):
+        return self.this_version
+
+
 
 
 
@@ -417,12 +426,15 @@ class BibUserCacheList(collections.MutableSequence):
 
 
 class BibUserCache(object):
-    def __init__(self):
+    def __init__(self, cache_version=None):
         self.cachedic = BibUserCacheDic({})
-        self.validation_checker = TokenCheckerPerEntry()
-        self.cachedic.set_validation(self.validation_checker)
+        self.entry_validation_checker = TokenCheckerPerEntry()
+        self.comb_validation_checker = TokenCheckerCombine(VersionTokenChecker(cache_version),
+                                                           self.entry_validation_checker,
+                                                           )
+        self.cachedic.set_validation(self.comb_validation_checker)
         # an instance of an expiry_checker that several entries might share in
-        # self.validation_checker.
+        # self.entry_validation_checker.
         self.expiry_checker = TokenCheckerDate()
 
     def set_default_invalidation_time(self, time_delta):
@@ -441,11 +453,11 @@ class BibUserCache(object):
 
         if not dont_expire:
             # normal thing, i.e. the cache expires after N days
-            if not self.validation_checker.has_entry_for(cachename):
+            if not self.entry_validation_checker.has_entry_for(cachename):
                 logger.longdebug("Adding expiry checker for %s", cachename)
-                self.validation_checker.add_entry_check(cachename, self.expiry_checker)
+                self.entry_validation_checker.add_entry_check(cachename, self.expiry_checker)
                 self.cachedic.validate_item(cachename)
-        elif self.validation_checker.has_entry_for(cachename):
+        elif self.entry_validation_checker.has_entry_for(cachename):
             # conflict: twice cache requested with conflicting values of dont_expire
             raise RuntimeError("Conflicting values of dont_expire given for cache `%s'"%(cachename))
 
@@ -463,7 +475,7 @@ class BibUserCache(object):
             logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
             pass
         
-        self.cachedic.set_validation(self.validation_checker)
+        self.cachedic.set_validation(self.comb_validation_checker)
 
     def save_cache(self, cachefobj):
         data = {
