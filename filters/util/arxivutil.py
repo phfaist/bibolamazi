@@ -99,14 +99,15 @@ def detectEntryArXivInfo(entry):
         # by default, PhD theses and Master's thesis count as published (although this
         # case is handled specially in the arxiv filter)
         d['published'] = True
+    elif entry.type in (u'book', u'booksection', u'inproceedings', u'incollection', u'conference',
+                        u'inbook', u'proceedings',):
+        # proceedings, books, etc. are published
+        d['published'] = True
     elif ('journal' in fields and re.search(r'arxiv', fields['journal'], re.IGNORECASE)):
         # if journal is the arXiv, then it's not published.
         d['published'] = False
     elif ('journal' in fields and fields['journal'].strip()):
         # otherwise, if there is a journal, it's published
-        d['published'] = True
-    elif (entry.type == u'inproceedings'):
-        # in conference proceedings -- published
         d['published'] = True
     elif ('journal' not in fields or fields['journal'] == ""):
         # if there's no journal, it's the arxiv.
