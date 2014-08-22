@@ -39,12 +39,16 @@ class TokenChecker(object):
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
         # by default, compare for equality.
-        newtoken = self.new_token(key=key, value=value, **kwargs)
-        if newtoken == oldtoken:
-            #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> OK", newtoken, oldtoken)
-            return True
-        #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> DIFFERENT", newtoken, oldtoken)
-        return False
+        try:
+            newtoken = self.new_token(key=key, value=value, **kwargs)
+            if newtoken == oldtoken:
+                #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> OK", newtoken, oldtoken)
+                return True
+            #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> DIFFERENT", newtoken, oldtoken)
+            return False
+        except Exception as e:
+            logger.debug("Got exception in TokenChecker.cmp_tokens: ignoring and invalidating: %s", e)
+            return False
 
 
 class TokenCheckerDate(TokenChecker):
@@ -60,7 +64,11 @@ class TokenCheckerDate(TokenChecker):
         #logger.longdebug("Comparing %r with %r; time_valid=%r", now, oldtoken, self.time_valid)
         if oldtoken is None:
             return False
-        return ((now - oldtoken) < self.time_valid)
+        try:
+            return ((now - oldtoken) < self.time_valid)
+        except Exception as e:
+            logger.debug("Got exception in TokenCheckerDate.cmp_tokens: ignoring and invalidating: %s", e)
+            return False
 
     def new_token(self, **kwargs):
         return datetime.datetime.now()
@@ -72,13 +80,17 @@ class TokenCheckerCombine(TokenChecker):
         self.subcheckers = args
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        for k in range(len(self.subcheckers)):
-            chk = self.subcheckers[k]
-            #logger.longdebug("TokenCheckerCombine: cmp_tokens(): #%d: %r : key=%s value=... oldtoken=%r",
-            #                 k, chk, key, oldtoken[k])
-            if not chk.cmp_tokens(key=key, value=value, oldtoken=oldtoken[k], **kwargs):
-                return False
-        return True
+        try:
+            for k in range(len(self.subcheckers)):
+                chk = self.subcheckers[k]
+                #logger.longdebug("TokenCheckerCombine: cmp_tokens(): #%d: %r : key=%s value=... oldtoken=%r",
+                #                 k, chk, key, oldtoken[k])
+                if not chk.cmp_tokens(key=key, value=value, oldtoken=oldtoken[k], **kwargs):
+                    return False
+            return True
+        except Exception as e:
+            logger.debug("Got exception in TokenCheckerCombine.cmp_tokens: ignoring and invalidating: %s", e)
+            return False
 
     def new_token(self, key, value, **kwargs):
         return  tuple( (chk.new_token(key=key, value=value, **kwargs) for chk in self.subcheckers) )
@@ -117,9 +129,13 @@ class TokenCheckerPerEntry(TokenChecker):
         del self.checkers[key]
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        if not key in self.checkers:
-            return True # no validation if we have no checkers
-        return self.checkers[key].cmp_tokens(key=key, value=value, oldtoken=oldtoken, **kwargs)
+        try:
+            if not key in self.checkers:
+                return True # no validation if we have no checkers
+            return self.checkers[key].cmp_tokens(key=key, value=value, oldtoken=oldtoken, **kwargs)
+        except Exception as e:
+            logger.debug("Got exception in TokenCheckerPerEntry.cmp_tokens: ignoring and invalidating: %s", e)
+            return False
 
     def new_token(self, key, value, **kwargs):
         if not key in self.checkers:
