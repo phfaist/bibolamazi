@@ -131,7 +131,9 @@ class OrderEntriesFilter(BibFilter):
                 fields = entry.fields
 
                 arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(key);
-                if arxivinfo is not None:
+                if arxivinfo is not None and not arxivinfo['published']:
+                    # use arxiv ID information only if entry is not published--otherwise,
+                    # try to get actual publication date.
                     m = re.match(r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(\d{3}|\.\d{4,})$',
                                  arxivinfo['arxivid'])
                     if m is not None:
@@ -156,6 +158,7 @@ class OrderEntriesFilter(BibFilter):
                     mon_s = re.sub('[^a-z]', '', fields['month'].lower())
                     month = next( (1+k for k in range(len(_month_regexps))
                                    if (_month_regexps[k].match(mon_s)) ), None )
+                    logger.longdebug("Got month: %r", month)
                 if month is None:
                     month = 12
 
@@ -174,9 +177,15 @@ class OrderEntriesFilter(BibFilter):
                     logger.warning("Can't parse date for entry %s: %s", key, e)
                     return datetime.date.today()
 
+            def getentrysortkey(key):
+                # use tuple with key to always keep consistent sorting order between
+                # entries with same detected publication date (happens often if only
+                # month/year detected)
+                return (getpubdate(key), key)
+
             # see above. Note the "not reverse" because the date key will sort
             # increasingly, whereas we want the default sort order to be newest first.
-            bibdata.entries.order.sort(key=getpubdate, reverse=(not self.reverse));
+            bibdata.entries.order.sort(key=getentrysortkey, reverse=(not self.reverse));
 
         elif (self.order == ORDER_RAW):
             # natural order mode. don't do anything.
