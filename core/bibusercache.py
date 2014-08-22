@@ -297,8 +297,14 @@ class BibUserCacheDic(collections.MutableMapping):
         logger.longdebug("Validating item `%s' in `%s', ...", key, self._guess_name_for_dbg())
 
         val = self.dic[key]
-        if self.tokenchecker.cmp_tokens(key=key, value=val,
-                                        oldtoken=self.tokens.get(key,None)):
+        ok = None
+        try:
+            ok = self.tokenchecker.cmp_tokens(key=key, value=val,
+                                              oldtoken=self.tokens.get(key,None))
+        except Exception as e:
+            logger.debug("%s: Got exception in cmp_tokens(): ignoring and invalidating: %s", key, e)
+            ok = False
+        if ok:
             if isinstance(val, BibUserCacheDic):
                 #logger.longdebug("Validating sub-dictionary `%s' ...", key)
                 val.validate()
