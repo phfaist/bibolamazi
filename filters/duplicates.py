@@ -35,6 +35,7 @@ from pybtex.database import BibliographyData, Entry;
 from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 from core.pylatexenc import latex2text
+from core import butils
 
 from .util import arxivutil
 
@@ -59,7 +60,9 @@ BIBALIAS_HEADER = ur"""
 % in your document preamble.
 %
 
+""".replace('####BIBALIAS_WARNING_HEADER####\n', BIBALIAS_WARNING_HEADER)
 
+BIBALIAS_LATEX_DEFINITIONS = ur"""
 
 %
 % The following will define the command \bibalias{<alias>}{<source>}, which will make
@@ -75,9 +78,34 @@ BIBALIAS_HEADER = ur"""
   \@namedef{bibali@#1}{#2}%
 }
 
+
+%
+% Note: The `\cite` command provided here does not accept spaces in/between its
+% arguments. This might be tricky, since revTeX does accept those spaces. You
+% can work around by using LaTeX comments which automatically remove the
+% following space after newline, in the following way:
+%
+%    \cite{key1,%
+%          key2,%
+%          key3%
+%    }
+%
+% Make sure you don't add space between the comma and the percent sign.
+%
+
 \newtoks\biba@toks
 \let\bibalias@oldcite\cite
-\renewcommand\cite[2][]{%
+\def\cite{%
+  \@ifnextchar[{%
+    \biba@cite@optarg%
+  }{%
+    \biba@cite{}%
+  }%
+}
+\newcommand\biba@cite@optarg[2][]{%
+  \biba@cite{[#1]}{#2}%
+}
+\newcommand\biba@cite[2]{%
   \biba@toks{\bibalias@oldcite#1}%
   \def\biba@comma{}%
   \def\biba@all{}%
@@ -102,7 +130,7 @@ BIBALIAS_HEADER = ur"""
 % Now, declare all the alias keys.
 %
 
-""".replace('####BIBALIAS_WARNING_HEADER####\n', BIBALIAS_WARNING_HEADER)
+"""
 
 
 
@@ -216,7 +244,7 @@ HELP_DESC = u"""\
 Filter that detects duplicate entries and produces rules to make one entry an alias of the other.
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = ur"""
 This filter works by writing a LaTeX file to a specified location (via the
 `dupfile' option) which contains the commands needed to define the bibtex
 aliases.
@@ -235,6 +263,22 @@ where of couse yourdupfile.tex is the file that you specified to this filter.
 Alternatively, if you just set the warn flag on, then a duplicate file is not
 created (unless the dupfile option is given), and a warning is displayed for
 each duplicate found.
+
+The dupfile will be by default self-contained, i.e. will contain all the
+definitions necessary so that you can use the different cite keys
+transparently with the `\cite` LaTeX command. However the implementation of the
+`\cite' command is a bit minimal. For example, no spaces are allowed between
+its arguments, and other commands such as `\citep' are not supported.
+
+If you specify the `-dCustomBibalias' option, then the dupfile will only contain
+a list of duplicate definitions of the form
+
+    \bibalias{<alias>}{<original>}
+
+without any definition of the `\bibalias' command itself. It is thus up to the
+user to provide a usable `\bibalias' command, before the `\input{<dupfile>}'
+invocation. Use this option to get most flexibly on how you want to treat your
+aliases, but this will require more work from your side.
 """
 
 
@@ -245,19 +289,23 @@ class DuplicatesFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, dupfile=None, warn=False):
-        """DuplicatesFilter constructor.
+    def __init__(self, dupfile=None, warn=False, custom_bibalias=False):
+        r"""DuplicatesFilter constructor.
 
         *dupfile: the name of a file to write latex code for defining duplicates to. This file
                   will be overwritten!!
         *warn(bool): if this flag is set, dupfile is not mandatory, and a warning is issued
                for every duplicate entry found in the database.
+        *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
+               in the file given in `dupfile', and will rely on a user-defined implementation
+               of `\bibalias`.
         """
 
         BibFilter.__init__(self);
 
         self.dupfile = dupfile
-        self.warn = warn
+        self.warn = butils.getbool(warn)
+        self.custom_bibalias = butils.getbool(custom_bibalias)
 
         if (not self.dupfile and not self.warn):
             logger.warning("bibolamazi duplicates filter: no action will be taken as neither -sDupfile or"+
@@ -502,6 +550,8 @@ class DuplicatesFilter(BibFilter):
             dupstrlist = [];
             with codecs.open(dupfilepath, 'w', 'utf-8') as dupf:
                 dupf.write(BIBALIAS_HEADER.replace('####DUP_FILE_NAME####', self.dupfile));
+                if not self.custom_bibalias:
+                    dupf.write(BIBALIAS_LATEX_DEFINITIONS)
                 for (dupalias, duporiginal) in duplicates:
                     dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n");
                     dupstrlist.append("\t%s is an alias of %s" % (dupalias,duporiginal)) ;
