@@ -234,10 +234,9 @@ class BibUserCacheDic(collections.MutableMapping):
     def _guess_name_for_dbg(self):
         if not self.parent:
             return "<root>"
-        for key, val in self.parent.iteritems():
-            if val == self:
-                return key
-        return "<unknown>"
+        return next( (key for key, val in self.parent.iteritems()
+                      if val is self),
+                     "<unknown>")
 
     def set_validation(self, tokenchecker, validate=True):
         """
@@ -322,6 +321,31 @@ class BibUserCacheDic(collections.MutableMapping):
             del self.tokens[key]
         return False
 
+    def new_value_set(self, key=None):
+        """
+        Informs the dic that the value for `key` has been updated, and a new validation
+        token should be stored.
+
+        If `key` is `None`, then this call is meant for the current object, so this call
+        will relay to the parent dictionary.
+        """
+        self._do_pending_bind()
+
+        if key is None:
+            if not self.parent:
+                logger.warning("BibUserCacheDic.new_value_set(): No parent set!")
+            try:
+                self.parent.new_value_set(next( (k for k,v in self.parent.iteritems()
+                                                 if v is self) ))
+            except StopIteration:
+                logger.warning("BibUserCacheDic.new_value_set(): Can't find ourselves in parent!")
+
+        if self.tokenchecker:
+            self.tokens[key] = self.tokenchecker.new_token(key=key, value=self.dic.get(key))
+        if self.parent:
+            self.parent.child_notify_changed(self)
+                
+
     def __getitem__(self, key):
         return self.dic.get(key, BibUserCacheDic({}, parent=self, on_set_bind_to_key=key))
 
@@ -330,11 +354,7 @@ class BibUserCacheDic(collections.MutableMapping):
         self._do_pending_bind()
         # assume that we __setitem__ is called, the value is up-to-date, ie. update the
         # corresponding token.
-        if self.tokenchecker:
-            self.tokens[key] = self.tokenchecker.new_token(key=key, value=val)
-        if self.parent:
-            self.parent.child_notify_changed(self)
-
+        self.new_value_set(key)
 
     def __delitem__(self, key):
         del self.dic[key]
