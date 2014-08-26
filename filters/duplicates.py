@@ -241,17 +241,17 @@ Duplicates filter by Philippe Faist, (C) 2013, GPL 3+
 """
 
 HELP_DESC = u"""\
-Filter that detects duplicate entries and produces rules to make one entry an alias of the other.
+Produces LaTeX rules to make duplicate entries aliases of one another.
 """
 
 HELP_TEXT = ur"""
-This filter works by writing a LaTeX file to a specified location (via the
-`dupfile' option) which contains the commands needed to define the bibtex
-aliases.
+This filter works by writing a LaTeX file (the ``dupfile''), which contains the
+commands needed to define the bibtex aliases. You may then use the LaTeX `\cite'
+command with either key; a single citation will be produced in the bibliography.
 
 Note that the dupfile option is mandatory in order to create the file with
-duplicate definitions. You need to specify a file to write to. You may do this
-with `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
+duplicate definitions. This file is specifed via the `--dupfile' option as
+`--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
 
 In your main LaTeX document, you need to add the following command in the
 preamble:
@@ -265,10 +265,10 @@ created (unless the dupfile option is given), and a warning is displayed for
 each duplicate found.
 
 The dupfile will be by default self-contained, i.e. will contain all the
-definitions necessary so that you can use the different cite keys
-transparently with the `\cite` LaTeX command. However the implementation of the
-`\cite' command is a bit minimal. For example, no spaces are allowed between
-its arguments, and other commands such as `\citep' are not supported.
+definitions necessary so that you can use the different cite keys transparently
+with the `\cite` LaTeX command. However the implementation of the `\cite'
+command is a bit minimal. For example, no spaces are allowed between its
+arguments, and other commands such as `\citep' are not supported.
 
 If you specify the `-dCustomBibalias' option, then the dupfile will only contain
 a list of duplicate definitions of the form
@@ -278,7 +278,7 @@ a list of duplicate definitions of the form
 without any definition of the `\bibalias' command itself. It is thus up to the
 user to provide a usable `\bibalias' command, before the `\input{<dupfile>}'
 invocation. Use this option to get most flexibly on how you want to treat your
-aliases, but this will require more work from your side.
+aliases, but this will require a little more work from your side.
 """
 
 
