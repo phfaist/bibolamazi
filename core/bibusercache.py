@@ -25,7 +25,7 @@ import datetime
 import pickle
 import hashlib
 
-from pybtex.database import Entry
+from pybtex.database import Entry, Person
 from core.blogger import logger
 from core.butils import call_with_args
 
@@ -150,7 +150,11 @@ class EntryFieldsTokenChecker(TokenChecker):
         self.bibdata = bibdata
         self.fields = fields
         self.store_type = store_type
-        self.store_persons = store_persons
+        if (isinstance(store_persons, bool)):
+            self.store_persons = Person.valid_roles
+        else:
+            self.store_persons = [x for x in store_persons]
+
         super(EntryFieldsTokenChecker, self).__init__(**kwargs)
 
     def new_token(self, key, value, **kwargs):
@@ -439,7 +443,7 @@ class BibUserCacheList(collections.MutableSequence):
     def __delitem__(self, index):
         def deltheitem(value=None):
             del self.lst[index]
-        self._do_changing_operation(self, None, deltheitem)
+        self._do_changing_operation(None, deltheitem)
 
     def __contains__(self, value):
         return value in self.lst
@@ -448,16 +452,16 @@ class BibUserCacheList(collections.MutableSequence):
         return len(self.lst)
 
     def insert(self, index, value):
-        self._do_changing_operation(self, value, lambda x: self.lst.insert(index, x))
+        self._do_changing_operation(value, lambda x: self.lst.insert(index, x))
 
     def append(self, value):
-        self._do_changing_operation(self, value, lambda x: self.lst.append(x))
+        self._do_changing_operation(value, lambda x: self.lst.append(x))
 
     def __setitem__(self, key, val):
-        self._do_changing_operation(self, val, lambda x: self.lst.__setitem__(key, x))
+        self._do_changing_operation(val, lambda x: self.lst.__setitem__(key, x))
 
     def _do_changing_operation(self, val, fn):
-        ret = fn(None if val is None else _to_bibusercacheobj(val))
+        ret = fn(None if val is None else _to_bibusercacheobj(val, parent=self))
         if self.parent:
             self.parent.child_notify_changed(self)
         return ret

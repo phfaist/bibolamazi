@@ -36,6 +36,7 @@ from core.bibfilter import BibFilter, BibFilterError;
 from core.blogger import logger;
 from core.pylatexenc import latex2text
 from core import butils
+from core import bibusercache
 
 from .util import arxivutil
 
@@ -307,6 +308,8 @@ class DuplicatesFilter(BibFilter):
         self.warn = butils.getbool(warn)
         self.custom_bibalias = butils.getbool(custom_bibalias)
 
+        self.cache_entries_validator = None
+
         if (not self.dupfile and not self.warn):
             logger.warning("bibolamazi duplicates filter: no action will be taken as neither -sDupfile or"+
                            " -dWarn are given!")
@@ -371,7 +374,7 @@ class DuplicatesFilter(BibFilter):
             (lasta, ina) = apers[k]
             (lastb, inb) = bpers[k]
             # use Levenshtein distance to detect possible typos or alternative spellings
-            # (e.g. Koenig vs Konig). Allow one such typo per 8 characters.
+            # (e.g. Koenig vs Konig). Allow approx. one such typo per 8 characters.
             if (levenshtein(lasta, lastb) > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
                 logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
                 return False
@@ -482,6 +485,28 @@ class DuplicatesFilter(BibFilter):
                 origentry.fields[fk] = fval
 
 
+    def get_cache_entries(self):
+        cache_entries = self.cache_for('duplicates_entryinfo_cache')
+
+        if not self.cache_entries_validator:
+            self.cache_entries_validator = bibusercache.EntryFieldsTokenChecker(
+                self.bibolamaziFile().bibliographydata(),
+                store_type=True,
+                store_persons=['author'],
+                fields=list(set(
+                    # from arxivInfo
+                    arxivutil.arxivinfo_from_bibtex_fields +
+                    [
+                        'note',
+                        'journal',
+                        'title',
+                    ])),
+                )
+            cache_entries.set_validation(self.cache_entries_validator)
+
+        return cache_entries
+        
+
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
@@ -495,22 +520,17 @@ class DuplicatesFilter(BibFilter):
 
         arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
 
-        # In a future version, we could imagine using the bibolamazi cache, and not recalculating
-        # these values if they are already in the cache. However:
         #
-        # NOTE: It is important that this cache is UP TO DATE, because otherwise if the user notices
-        #       that two entries are matched falsely as duplicates and modifies one of the entries,
-        #       it has to be picked up in the cache!
+        # Make sure we set up cache invalidation properly, to ensure that if a
+        # user modifies a falsely picked-up duplicate, that the cache is
+        # updated!
         #
-        # So the simplest is to always recalculate the cache for all entries. It's fast in practice.
-        # We actually don't need to store it in the bibolamazi cache.
-        #
-        #cache_entries = self.cache_for('duplicates_entryinfo_cache')
-        cache_entries = {};
+        cache_entries = self.get_cache_entries()
 
         for (key, entry) in bibdata.entries.iteritems():
-            cache_entries[key] = {}
-            self.prepare_entry_cache(entry, cache_entries[key], arxivaccess)
+            #cache_entries[key] = {}
+            if not key in cache_entries:
+                self.prepare_entry_cache(entry, cache_entries[key], arxivaccess)
 
         for (key, entry) in bibdata.entries.iteritems():
             #

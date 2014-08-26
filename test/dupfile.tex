@@ -28,9 +28,34 @@
   \@namedef{bibali@#1}{#2}%
 }
 
+
+%
+% Note: The `\cite` command provided here does not accept spaces in/between its
+% arguments. This might be tricky, since revTeX does accept those spaces. You
+% can work around by using LaTeX comments which automatically remove the
+% following space after newline, in the following way:
+%
+%    \cite{key1,%
+%          key2,%
+%          key3%
+%    }
+%
+% Make sure you don't add space between the comma and the percent sign.
+%
+
 \newtoks\biba@toks
 \let\bibalias@oldcite\cite
-\renewcommand\cite[2][]{%
+\def\cite{%
+  \@ifnextchar[{%
+    \biba@cite@optarg%
+  }{%
+    \biba@cite{}%
+  }%
+}
+\newcommand\biba@cite@optarg[2][]{%
+  \biba@cite{[#1]}{#2}%
+}
+\newcommand\biba@cite[2]{%
   \biba@toks{\bibalias@oldcite#1}%
   \def\biba@comma{}%
   \def\biba@all{}%

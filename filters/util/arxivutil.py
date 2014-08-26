@@ -65,6 +65,15 @@ _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|'+
 
 _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(?:\.\d{4,}|\d{3})')
 
+#
+# A list of fields which are inspected for arXiv information. This is useful for cache
+# invalidation in various instances.
+#
+arxivinfo_from_bibtex_fields = [
+    'journal', 'doi', 'eprint', 'arxivid', 'url',
+    'note', 'annote', 'primaryclass',
+    'archiveprefix', ]
+
 
 # extract arXiv info from an entry
 def detectEntryArXivInfo(entry):
@@ -373,9 +382,7 @@ def get_arxiv_cache_access(bibolamazifile):
     if _arxiv_info_validator is None:
         _arxiv_info_validator = EntryFieldsTokenChecker(bibolamazifile.bibliographydata(),
                                                         store_type=True,
-                                                        fields=['journal', 'doi', 'eprint', 'arxivid', 'url',
-                                                                'note', 'annote', 'primaryclass',
-                                                                'archiveprefix', ])
+                                                        fields=arxivinfo_from_bibtex_fields)
         arxiv_info_cache['entries'].set_validation(_arxiv_info_validator)
 
     #logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))

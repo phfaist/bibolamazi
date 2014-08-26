@@ -5,3 +5,4 @@
 gui/_precompiled_filters_build
 gui/build
 gui/dist
+*.bibolamazicache
