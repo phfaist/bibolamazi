@@ -69,7 +69,7 @@ _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(?:\.\d{4,}|\d{3})')
 # extract arXiv info from an entry
 def detectEntryArXivInfo(entry):
     """
-    Extract arXiv information from a pybtex.database.Entry bibliographic entry.
+    Extract arXiv information from a `pybtex.database.Entry` bibliographic entry.
 
     Returns upon success a dictionary of the form
         { 'primaryclass': <primary class, if available>,
@@ -77,7 +77,7 @@ def detectEntryArXivInfo(entry):
           'archiveprefix': value of the 'archiveprefix' field
           'published': True/False <whether this entry was published in a journal other than arxiv>,
           'doi': <DOI of entry if any, otherwise None>
-          'year': <Year in preprint arXiv ID number>
+          'year': <Year in preprint arXiv ID number. 4-digit, string type.>
         }
 
     Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
@@ -118,7 +118,7 @@ def detectEntryArXivInfo(entry):
     elif ('journal' in fields and fields['journal'].strip()):
         # otherwise, if there is a journal, it's published
         d['published'] = True
-    elif ('journal' not in fields or fields['journal'] == ""):
+    elif ('journal' not in fields or fields['journal'].strip() == ""):
         # if there's no journal for an article or an unknown publication type, it's the arxiv.
         d['published'] = False
     else:
