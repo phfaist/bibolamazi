@@ -53,7 +53,7 @@ def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=N
     # parse allaux for \citation{...}
     #
     
-    for citation in re.finditer(r'\\citation\{(?P<citekey>[^\}]+)\}', allaux):
+    for citation in re.finditer(r'\\citation\s*\{(?P<citekey>[^\}]+)\}', allaux):
         citekeys = (x.strip() for x in citation.group('citekey').split(','))
         if (return_set):
             for citekey in citekeys:

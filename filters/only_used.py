@@ -48,9 +48,12 @@ directory as the bibolamazi file, you may specify an additional directory (or se
 additional directories) in which to search while looking for the aux file with the option
 `-sSearchDirs=...'.
 
-NOTE: If you would also like to use the `duplicates' filter, you must invoke the
-`only_used' filter *BEFORE* the `duplicates' filter. Otherwise, you'll most likely get
-missing bibtex entries.
+WARNING: This filter doesn't integrate very well with the `duplicates' filter. If you
+would also like to use the `duplicates' filter, you must invoke the `only_used' filter
+*BEFORE* the `duplicates' filter. Otherwise, you'll most likely get missing bibtex
+entries. But then, be warned that no merging of the duplicates will be possible as the
+duplicates may have been removed by the `only_used' filter. Bottom line: avoid using both
+filters at the same time. In the future hopefully I'll fix this.
 
 """
 
