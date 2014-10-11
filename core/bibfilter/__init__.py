@@ -21,7 +21,8 @@
 
 import re
 
-from butils import BibolamaziError
+from ..butils import BibolamaziError
+
 
 class BibFilterError(BibolamaziError):
     def __init__(self, filtername, errorstr):

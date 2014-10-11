@@ -152,7 +152,7 @@ class FixesFilter(BibFilter):
         self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
-            raise FilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
+            raise BibFilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
 

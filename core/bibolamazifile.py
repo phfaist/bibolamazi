@@ -40,7 +40,7 @@ from core.blogger import logger;
 from core import butils;
 from core.butils import BibolamaziError;
 from core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-import filters;
+from core.bibfilter import factory
 
 
 class BibolamaziFileParseError(BibolamaziError):
@@ -208,19 +208,6 @@ class BibolamaziFile(object):
 
         if (to_state >= BIBOLAMAZIFILE_LOADED  and  self._load_state < BIBOLAMAZIFILE_LOADED):
             self._load_contents()
-
-            if self._use_cache:
-                # then, try to load the cache if possible
-                cachefname = self.cachefname()
-                try:
-                    with open(cachefname, 'rb') as f:
-                        logger.longdebug("Reading cache file %s" %(cachefname))
-                        self._user_cache.load_cache(f)
-                except (IOError, EOFError,):
-                    logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
-                    pass
-            else:
-                logger.debug("As requested, I have not attempted to load any existing cache file.")
 
         return True
 
@@ -531,14 +518,14 @@ class BibolamaziFile(object):
                 filname = cmd.info['filtername'];
                 filoptions = cmd.text;
                 try:
-                    filterinstance = filters.make_filter(filname, filoptions)
+                    filterinstance = factory.make_filter(filname, filoptions)
                     filterinstance.setBibolamaziFile(self)
                     self._filters.append(filterinstance)
-                except filters.NoSuchFilter as e:
+                except factory.NoSuchFilter as e:
                     self._raise_parse_error(str(e), lineno=cmd.lineno);
-                except filters.NoSuchFilterPackage as e:
+                except factory.NoSuchFilterPackage as e:
                     self._raise_parse_error(str(e), lineno=cmd.lineno);
-                except filters.FilterError as e:
+                except factory.FilterError as e:
                     import traceback
                     logger.debug("FilterError:\n" + traceback.format_exc())
                     self._raise_parse_error(unicode(e),
@@ -556,6 +543,12 @@ class BibolamaziFile(object):
 
 
     def _load_contents(self):
+        """
+        Load the source data and the cache.
+        """
+
+        # Load the sources
+        # ----------------
 
         self._bibliographydata = None;
 
@@ -568,6 +561,23 @@ class BibolamaziFile(object):
             srclist = self._source_lists[k];
             src = self._populate_from_srclist(srclist);
             self._sources[k] = src;
+
+
+        # Now, try to load the cache
+        # --------------------------
+        if self._use_cache:
+            # then, try to load the cache if possible
+            cachefname = self.cachefname()
+            try:
+                with open(cachefname, 'rb') as f:
+                    logger.longdebug("Reading cache file %s" %(cachefname))
+                    self._user_cache.load_cache(f)
+            except (IOError, EOFError,):
+                logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
+                pass
+        else:
+            logger.debug("As requested, I have not attempted to load any existing cache file.")
+
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 
