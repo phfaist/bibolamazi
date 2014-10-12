@@ -188,13 +188,20 @@ class CiteKeyFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
+
+
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
         bibdata = bibolamazifile.bibliographydata();
 
-        arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
+        arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 
         # first, find required fields and apply possible "filters"
 

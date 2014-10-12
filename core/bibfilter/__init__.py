@@ -202,6 +202,13 @@ class BibFilter(object):
 ##             return self._bibolamazifile.cache_for(namespace, **kwargs)
 ##         return None
 
+    def cacheAccessor(self, klass):
+        """
+        A shorthand for calling the `cacheAccessor()` method of the bibolamazi file
+        returned by `bibolamaziFile()`.
+        """
+        return self.bibolamaziFile().cacheAccessor(klass)
+
 
     def getRunningMessage(self):
         """

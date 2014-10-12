@@ -167,18 +167,6 @@ class CiteArxivFilter(BibFilter):
 
         thebibdata = bibolamazifile.bibliographydata();
 
-##         # join all the bibtex blocks of all the cached entries
-##         def add_bibtex(key, info):
-##             if not info:
-##                 logger.warning("Cannot add bibtex for arXiv entry %s!", key)
-##                 return ""
-##             return info['bibtex']
-##         allbibtex = "\n".join( (add_bibtex(info)
-##                                 for (arxivid, info) in (
-##                                     (arxivid, arxiv_api_accessor.getArxivApiInfo(arxivid))
-##                                     for arxivid in citearxiv_uselist
-##                                     )
-##                                 ) );
 
         for arxivid in citearxiv_uselist:
             dat = arxiv_api_accessor.getArxivApiInfo(arxivid)

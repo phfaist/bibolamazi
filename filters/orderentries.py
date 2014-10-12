@@ -124,13 +124,15 @@ class OrderEntriesFilter(BibFilter):
 
             entries = bibdata.entries;
 
+            arxivaccessor = arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
+
             def getpubdate(key):
                 entry = entries.get(key)
                 if entry is None:
                     return datetime.today()
                 fields = entry.fields
 
-                arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(key);
+                arxivinfo = arxivaccessor.getArXivInfo(key);
                 if arxivinfo is not None and not arxivinfo['published']:
                     # use arxiv ID information only if entry is not published--otherwise,
                     # try to get actual publication date.

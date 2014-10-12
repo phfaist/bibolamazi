@@ -292,7 +292,7 @@ class FixesFilter(BibFilter):
             if 'doi' in entry.fields:
                 entry.fields['doi'] = re.sub(r'^\s*doi:\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
-        return entry;
+        return
     
 
 def bibolamazi_filter_class():
