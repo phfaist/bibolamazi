@@ -33,9 +33,9 @@ import textwrap
 import types
 from collections import namedtuple, OrderedDict
 
-from ..core.argparseactions import store_key_val, store_key_const, store_key_bool
-from ..core.blogger import logger
-from ..core import butils
+from core.argparseactions import store_key_val, store_key_const, store_key_bool
+from core.blogger import logger
+from core import butils
 
 
 

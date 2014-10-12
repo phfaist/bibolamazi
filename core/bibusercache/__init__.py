@@ -25,8 +25,8 @@ import pickle
 
 from pybtex.database import Entry, Person
 from core.blogger import logger
-from core.butils import call_with_args
-
+from core.butils import call_with_args, BibolamaziError
+from core.bibusercache import tokencheckers
 
 
 
@@ -127,6 +127,8 @@ class BibUserCacheDic(collections.MutableMapping):
 
         If the value is valid, and happens to be a BibUserCacheDic, then that dictionary
         is also validated.
+
+        Invalid entries are deleted.
 
         Returns `True` if have valid item, otherwise `False`.
         """
@@ -317,14 +319,15 @@ class BibUserCacheList(collections.MutableSequence):
 class BibUserCache(object):
     def __init__(self, cache_version=None):
         self.cachedic = BibUserCacheDic({})
-        self.entry_validation_checker = TokenCheckerPerEntry()
-        self.comb_validation_checker = TokenCheckerCombine(VersionTokenChecker(cache_version),
-                                                           self.entry_validation_checker,
-                                                           )
+        self.entry_validation_checker = tokencheckers.TokenCheckerPerEntry()
+        self.comb_validation_checker = tokencheckers.TokenCheckerCombine(
+            tokencheckers.VersionTokenChecker(cache_version),
+            self.entry_validation_checker,
+            )
         self.cachedic.set_validation(self.comb_validation_checker)
         # an instance of an expiry_checker that several entries might share in
         # self.entry_validation_checker.
-        self.expiry_checker = TokenCheckerDate()
+        self.expiry_checker = tokencheckers.TokenCheckerDate()
 
     def set_default_invalidation_time(self, time_delta):
         """
@@ -353,6 +356,31 @@ class BibUserCache(object):
         return self.cachedic[cachename]
 
 
+    def installCacheExpirationChecker(cachename):
+        """
+        Installs a cache expiration checker on the given cache.
+
+        This is a utility that is at the disposal of the cache accessors to easily set up
+        an expiration validator on their caches. Also, a single instance of an expiry
+        token checker (see `TokenCheckerDate`) is shared between the different sub-caches
+        and handled by this main cache object.
+
+        The duration of the expiry is typically several days; because the token checker
+        instance is shared this cannot be changed easily nor should it be relied upon. If
+        you have custom needs or need more control over this, create your own token
+        checker.
+        """
+        if not cachename in self.cachedic:
+            raise ValueError("Invalid cache name: %s"%(cachename))
+        
+        # normal thing, i.e. the cache expires after N days
+        if not self.entry_validation_checker.has_entry_for(cachename):
+            logger.longdebug("Adding expiry checker for %s", cachename)
+            self.entry_validation_checker.add_entry_check(cachename, self.expiry_checker)
+            self.cachedic.validate_item(cachename)
+
+
+
     def has_cache(self):
         return bool(self.cachedic)
 
@@ -362,6 +390,7 @@ class BibUserCache(object):
             self.cachedic = data['cachedic']
         except Exception as e:
             logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
+            self.cachedic = {}
             pass
         
         self.cachedic.set_validation(self.comb_validation_checker)
@@ -373,3 +402,129 @@ class BibUserCache(object):
             }
         pickle.dump(data, cachefobj, protocol=2);
 
+
+
+
+
+
+# ------------------------------------------------------------------------------
+
+
+class BibUserCacheError(BibolamaziError):
+    """
+    An exception which occurred when handling user caches. Usually, problems in the cache
+    are silently ignored, because the cache can usually be safely regenerated.
+
+    However, if there is a serious error which prevents the cache from being regenerated,
+    for example, then this error should be raised.
+    """
+
+    def __init__(self, cachename, msg):
+        if (not isinstance(cachename, basestring)):
+            cachename = '<unknown>'
+        super(BibUserCacheError, self).__init__(u"Cache `"+cachename+"': "+unicode(msg))
+
+
+
+
+class BibUserCacheAccessor(object):
+    """
+    Base class for a cache accessor.
+
+    Filters should access the bibolamazi cache through a *cache accessor*. A cache
+    accessor organizes how the caches are used and maintained. This is needed since
+    several filters may want to access the same cache (e.g. fetched arXiv info from the
+    arxiv.org API), so it is necessary to abstract out the cache object and how it is
+    maintained out of the filter. This also avoids issues such as which filter is
+    responsible for creating/refreshing the cache, etc.
+
+    A unique accessor instance is attached to a particular cache name
+    (e.g. 'arxiv_info'). It is instantiated by the BibolamaziFile. It is instructed to
+    initialize the cache, possibly install token checkers, etc. at the beginning, before
+    running any filters. The accessor is free to handle the cache as it prefers--build it
+    right away, refresh it on demand only, etc.
+
+    Filters access the cache by requesting an instance to the accessor. This is done by
+    calling `BibolamaziFile.cache_accessor()` (see also `BibFilter.bibolamaziFile()` and
+    `BibFilter.cache_accessor()`.
+
+    Filters should specify which cache they would like to have access to by reimplementing
+    the `cache_accessors()` method.
+
+    Accessors are free to implement their public API how they deem it best. There is no
+    obligation or particular structure to follow. (Although `refresh_cache()`,
+    `fetch_missing_items(list)`, or similar function names may be typical.)
+
+    Cache accessor objects are instantiated by the bibolamazi file. Their constructors
+    should not accept any arguments (but should accept **kwargs for possible compatibility
+    with future additions).
+    """
+    def __init__(self, cache_name, **kwargs):
+        super(BibUserCacheAccess, self).__init__(**kwargs)
+        self._cache_name = cache_name
+
+
+    def initialize(self, cache_dic, cache_obj):
+        """
+        Initialize the cache.
+
+        Subclasses should perform any initialization tasks, such as install *token
+        checkers*. This function should not return anything.
+
+        Note that it is *strongly* recommended to install some form of cache invalidation,
+        would it be just even an expiry validator. You may want to call
+        `installCacheExpirationChecker()` on `cacheobj`.
+
+        Note that the order in which the `initialize()` method of the various caches is
+        called is undefined.
+
+        The default implementation raises a `NotImplemented` exception.
+        """
+        raise NotImplemented("Subclasses of BibUserCacheAccess must reimplement initialize()")
+
+
+    def cacheName(self):
+        """
+        Return the cache name, as set in the constructor.
+
+        Subclasses do not need to reimplement this function.
+        """
+        return self._cache_name
+
+
+    def cacheDic(self):
+        """
+        Returns the cache dictionary. This is meant as a ``protected'' method for the
+        accessor only. Objects that query the accessor should use the accessor-specific
+        API to access data.
+
+        This returns the data that was set internally by the `BibolamaziFile` via the
+        method `setCacheDicAndObj()`. Don't call that manually, though, unless you're
+        implementing an alternative `BibolamaziFile` class !
+        """
+        return self._cache_dic
+
+
+    def cacheObject(self):
+        """
+        Returns the parent `BibUserCache` object in which `cacheDic()` is a
+        sub-cache. This is provided FOR CONVENIENCE! Don't abuse this!
+
+        You should never need to access the object directly. Maybe just read-only to get
+        some standard attributes such as the root cache version. If you're writing
+        directly to the root cache object, there is most likely a design flaw in your
+        code!
+
+        Most of all, don't write into other sub-caches!!
+        """
+        return self._cache_obj
+
+
+    def setCacheDicAndObj(self, cache_dic, cache_obj):
+        """
+        Sets the cache dictionary and cache object that will be returned by `cacheDic()`
+        and `cacheObject()`, respectively. Accessors and filters should not call this
+        function. This function gets called by the `BibolamaziFile`.
+        """
+        self._cache_dic = cache_dic
+        self._cache_obj = cache_obj

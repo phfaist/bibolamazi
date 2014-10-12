@@ -214,6 +214,8 @@ def run_bibolamazi_args(args):
 
         logger.info("Filter: %s" %(filtr.getRunningMessage()));
 
+        filtr.prerun(bfile)
+
         #
         # pass the whole bibolamazifile to the filter. the filter can actually do
         # whatever it wants with it (!!)
@@ -225,16 +227,6 @@ def run_bibolamazi_args(args):
             continue
 
         #
-        # filter all the bibligraphy data in batch
-        #
-        if (action == BibFilter.BIB_FILTER_BIBLIOGRAPHYDATA):
-            bibliographydata = filtr.filter_bibliographydata(bfile.bibliographydata());
-            bfile.setBibliographyData(bibliographydata);
-
-            logger.debug('filter '+filtr.name()+' filtered the bibliography data.');
-            continue
-
-        #
         # filter all the bibentries one by one throught the filter. The filter can only
         # process a single bibentry at a time.
         #
@@ -242,8 +234,8 @@ def run_bibolamazi_args(args):
 
             bibdata = bfile.bibliographydata();
 
-            for k,v in bibdata.entries.iteritems():
-                bibdata.entries[k] = filtr.filter_bibentry(v);
+            for (k, entry) in bibdata.entries.iteritems():
+                filtr.filter_bibentry(entry);
 
             bfile.setBibliographyData(bibdata);
 

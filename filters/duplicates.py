@@ -292,6 +292,85 @@ aliases, but this will require a little more work from your side.
 """
 
 
+# ------------------------------------------------
+
+
+class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
+    def __init__(self, **kwargs):
+        super(DuplicatesEntryInfoCacheAccessor, self).__init__(
+            cachename='duplicates_entryinfo',
+            **kwargs
+            )
+
+
+    def initialize(self, cache_dic, cache_obj, **kwargs):
+        #
+        # Make sure we set up cache invalidation properly, to ensure that if a
+        # user modifies a falsely picked-up duplicate, that the cache is
+        # updated!
+        #
+
+        cache_entries_validator = bibusercache.EntryFieldsTokenChecker(
+            self.bibolamaziFile().bibliographydata(),
+            store_type=True,
+            store_persons=['author'],
+            fields=list(set(
+                # from arxivInfo
+                arxivutil.arxivinfo_from_bibtex_fields +
+                [
+                    'note',
+                    'journal',
+                    'title',
+                    ])),
+            )
+
+        cache_dic['entries'].set_validation(cache_entries_validator)
+
+
+    def prepare_entry_cache(self, key, a, arxivaccess):
+
+        entriescache = self.cacheDic()['entries']
+
+        if key in entriescache and entriescache[key]:
+            return
+
+        cache_a = entriescache[key]
+
+        cache_a['pers'] = [ getlast(pers) for pers in a.persons.get('author',[]) ]
+
+        cache_a['arxivinfo'] = arxivaccess.getArXivInfo(a.key)
+
+        note = a.fields.get('note', '')
+        cache_a['note_cleaned'] = (arxivutil.stripArXivInfoInNote(note) if note else "")
+        
+        cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
+
+        def cleantitle(title):
+            title = unicodedata.normalize('NFKD', unicode(delatex(title).lower()))
+            # remove any unicode compositions (accents, etc.)
+            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
+            # remove any unusual characters
+            title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
+            # remove any inline math
+            title = re.sub(r'$[^$]+$', '', title)
+            # clean up whitespace
+            title = re.sub(r'\s+', ' ', title)
+            return title.strip()
+
+        cache_a['title_clean'] = cleantitle(a.fields.get('title', ''))
+
+
+    def get_entry_cache(self, key):
+        return self.cacheDic()['entries'][key]
+
+
+
+
+
+
+
+# ------------------------------------------------
+
 class DuplicatesFilter(BibFilter):
 
     helpauthor = HELP_AUTHOR
@@ -340,30 +419,13 @@ class DuplicatesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
-    def prepare_entry_cache(self, a, cache_a, arxivaccess):
-
-        cache_a['pers'] = [ getlast(pers) for pers in a.persons.get('author',[]) ]
-
-        cache_a['arxivinfo'] = arxivaccess.getArXivInfo(a.key)
-
-        note = a.fields.get('note', '')
-        cache_a['note_cleaned'] = (arxivutil.stripArXivInfoInNote(note) if note else "")
-        
-        cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
-
-        def cleantitle(title):
-            title = unicodedata.normalize('NFKD', unicode(delatex(title).lower()))
-            # remove any unicode compositions (accents, etc.)
-            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
-            # remove any unusual characters
-            title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
-            # remove any inline math
-            title = re.sub(r'$[^$]+$', '', title)
-            # clean up whitespace
-            title = re.sub(r'\s+', ' ', title)
-            return title.strip()
-
-        cache_a['title_clean'] = cleantitle(a.fields.get('title', ''))
+    def requested_cache_accessors(self):
+        return [
+            DuplicatesEntryInfoCacheAccessor,
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor,
+            ]
+                 
 
 
     def compare_entries_same(self, a, b, cache_a, cache_b):
@@ -494,28 +556,6 @@ class DuplicatesFilter(BibFilter):
                 origentry.fields[fk] = fval
 
 
-    def get_cache_entries(self):
-        cache_entries = self.cache_for('duplicates_entryinfo_cache')
-
-        if not self.cache_entries_validator:
-            self.cache_entries_validator = bibusercache.EntryFieldsTokenChecker(
-                self.bibolamaziFile().bibliographydata(),
-                store_type=True,
-                store_persons=['author'],
-                fields=list(set(
-                    # from arxivInfo
-                    arxivutil.arxivinfo_from_bibtex_fields +
-                    [
-                        'note',
-                        'journal',
-                        'title',
-                    ])),
-                )
-            cache_entries.set_validation(self.cache_entries_validator)
-
-        return cache_entries
-        
-
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
@@ -527,19 +567,13 @@ class DuplicatesFilter(BibFilter):
 
         newbibdata = BibliographyData();
 
-        arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
+        arxivaccess = arxivutil.setup_and_get_arxiv_info_accessor(bibolamazifile)
 
-        #
-        # Make sure we set up cache invalidation properly, to ensure that if a
-        # user modifies a falsely picked-up duplicate, that the cache is
-        # updated!
-        #
-        cache_entries = self.get_cache_entries()
+        dupl_entryinfo_cache_accessor = self.cacheAccessor(DuplicatesEntryInfoCacheAccessor)
 
         for (key, entry) in bibdata.entries.iteritems():
             #cache_entries[key] = {}
-            if not key in cache_entries:
-                self.prepare_entry_cache(entry, cache_entries[key], arxivaccess)
+            dupl_entryinfo_cache_accessor.prepare_entry_cache(key, entry, arxivaccess)
 
         for (key, entry) in bibdata.entries.iteritems():
             #
@@ -548,7 +582,8 @@ class DuplicatesFilter(BibFilter):
             logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
             for (nkey, nentry) in newbibdata.entries.iteritems():
-                if self.compare_entries_same(entry, nentry, cache_entries[key], cache_entries[nkey]):
+                if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                                             dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
                     logger.longdebug('    ... matches existing entry %s!', nkey);
                     is_duplicate_of = nkey;
                     break

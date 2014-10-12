@@ -192,6 +192,7 @@ class BibolamaziFile(object):
             self._sources = None
             self._source_lists = []
             self._filters = []
+            self._cache_accessors = {} # dict { class-type: class-instance }
             self._bibliographydata = None
             self._user_cache = BibUserCache(cache_version=butils.get_version())
             
@@ -267,14 +268,19 @@ class BibolamaziFile(object):
         return self._bibliographydata;
 
     def cachefname(self):
-        """The file name where the cache will be stored. You don't need to access this directly,
-        the cache will be loaded and saved automatically. You should normally only use the
-        function `cache_for()`.
+        """
+        The file name where the cache will be stored. You don't need to access this
+        directly, the cache will be loaded and saved automatically. You should normally
+        only access the cache through cache accessors. See `cacheAccessor()`.
         """
         return self._fname + '.bibolamazicache';
 
-    def cache_for(self, namespace, **kwargs):
-        return self._user_cache.cache_for(namespace, **kwargs)
+    def cacheAccessor(self, klass):
+        """
+        Returns the cache accessor instance corresponding to the given class.
+        """
+        return self._cache_accessors.get(klass, None)
+        
 
     def set_default_cache_invalidation_time(self, time_delta):
         """
@@ -328,6 +334,7 @@ class BibolamaziFile(object):
         self._sources = [];
         self._source_lists = [];
         self._filters = [];
+        self._cache_accessors = {};
 
         # cheat, we've loaded it manually
         self._load_state = BIBOLAMAZIFILE_LOADED
@@ -506,6 +513,7 @@ class BibolamaziFile(object):
         self._sources = [];
         self._source_lists = [];
         self._filters = [];
+        self._cache_accessors = {};
         for cmd in cmds:
             if (cmd.cmd == "src"):
                 thesrc_list = shlex.split(cmd.text);
@@ -530,6 +538,13 @@ class BibolamaziFile(object):
                     logger.debug("FilterError:\n" + traceback.format_exc())
                     self._raise_parse_error(unicode(e),
                                             lineno=cmd.lineno);
+
+                # see if we have to register a new cache accessor
+                for req_cache in list(filterinstance.required_cache_accessors()):
+                    if req_cache not in self._cache_accessors:
+                        # construct a cache accessor for this cache.
+                        self._cache_accessors[req_cache] = req_cache()
+                        
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 
@@ -578,6 +593,19 @@ class BibolamaziFile(object):
         else:
             logger.debug("As requested, I have not attempted to load any existing cache file.")
 
+        # Finally, initialize the cache.
+        # ------------------------------
+
+        # this should be done independently of whether we are loading/saving cache and/or
+        # if the cache load succeeded. Remember that the cache is always there, and
+        # filters always use it. `self._use_cache` only tells us whether to load some
+        # initial data.
+
+        for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
+            cacheaccessorinstance.initialize(
+                self._user_cache[cacheaccessorinstance.cacheName()],
+                self._user_cache
+                 )
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 

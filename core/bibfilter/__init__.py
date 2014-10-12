@@ -25,10 +25,14 @@ from ..butils import BibolamaziError
 
 
 class BibFilterError(BibolamaziError):
+    """
+    Exception a filter should raise if it encounters an error.
+    """
     def __init__(self, filtername, errorstr):
         if (not isinstance(filtername, basestring)):
             filtername = '<unknown>'
-        super(BibFilterError, self).__init__("filter `"+filtername+"': "+errorstr);
+        super(BibFilterError, self).__init__(u"Filter `"+filtername+"': "+unicode(errorstr));
+
 
 
 
@@ -53,29 +57,6 @@ class BibFilter(object):
         super(BibFilter, self).__init__()
         self._filtername = self.__class__.__name__
 
-    def name(self):
-        """
-        Returns the name of the filter as it was invoked in the bibolamazifile. This might
-        be with, or without, the filterpackage. This information should
-        be only used for reporting purposes and might slightly vary.
-
-        If the filter was instantiated manually, and `set_invokation_name()` was not
-        called, then this function returns the class name.
-
-        The subclass should not reimplement this function unless it really really really
-        *really* feels it needs to.
-        """
-        return self._filtername
-
-    def set_invokation_name(self, filtername):
-        """
-        Called internally by bibolamazifile, so that `name()` returns the name by which
-        this filter was invoked.
-
-        This function sets exactly what `name()` will return. Subclasses should not
-        reimplement, the default implementation should suffice.
-        """
-        self._filtername = filtername
 
     def action(self):
         """
@@ -89,6 +70,21 @@ class BibFilter(object):
         the filter's way of acting.
         """
         raise BibFilterError(self.name(), 'BibFilter subclasses must reimplement action()!')
+
+
+    def prerun(self, bibolamazifile):
+        """
+        This function gets called immediately before the filter is run, after any
+        preceeding filters have been executed.
+
+        It is not very useful if the `action()` is `BibFilter.BIB_FILTER_BIBOLAMAZIFILE`,
+        but it can prove useful for filters with action
+        `BibFilter.BIB_FILTER_SINGLE_ENTRY`, for setting up a cache, for example.
+
+        The default implementation does nothing.
+        """
+        pass
+    
 
     def filter_bibentry(self, x):
         """
@@ -127,6 +123,48 @@ class BibFilter(object):
         raise BibFilterError(self.name(), 'filter_bibolamazifile() not implemented !')
 
 
+    def requested_cache_accessors(self):
+        """
+        This function should return a list of `bibusercache.BibUserCacheAccessor` class
+        names of cache objects it would like to use. The relevant caches are then
+        collected from the various filters and automatically instantiated and initialized.
+
+        The default implementation of this function returns an empty list. Subclasses
+        should override if they want to access the bibolamazi cache.
+        """
+        return []
+
+
+
+
+    # --------------------------------------------------------------------------
+
+
+    def name(self):
+        """
+        Returns the name of the filter as it was invoked in the bibolamazifile. This might
+        be with, or without, the filterpackage. This information should
+        be only used for reporting purposes and might slightly vary.
+
+        If the filter was instantiated manually, and `setInvokationName()` was not
+        called, then this function returns the class name.
+
+        The subclass should not reimplement this function unless it really really really
+        *really* feels it needs to.
+        """
+        return self._filtername
+
+    def setInvokationName(self, filtername):
+        """
+        Called internally by bibolamazifile, so that `name()` returns the name by which
+        this filter was invoked.
+
+        This function sets exactly what `name()` will return. Subclasses should not
+        reimplement, the default implementation should suffice.
+        """
+        self._filtername = filtername
+
+
 
     def setBibolamaziFile(self, bibolamazifile):
         """
@@ -147,22 +185,22 @@ class BibFilter(object):
         return self._bibolamazifile;
     
 
-    def cache_for(self, namespace, **kwargs):
-        """
-        Get access to the cache data stored within the namespace `namespace`. This directly
-        queries the cache stored in the `BibolamaziFile` object set with
-        `setBibolamaziFile()`.
+##     def cache_for(self, namespace, **kwargs):
+##         """
+##         Get access to the cache data stored within the namespace `namespace`. This directly
+##         queries the cache stored in the `BibolamaziFile` object set with
+##         `setBibolamaziFile()`.
 
-        Returns a `BibUserCacheDic` object, or `None` if no bibolamazi file was set (which can
-        only happen if you instantiate the filter explicitly yourself, which is usually not the
-        case).
+##         Returns a `BibUserCacheDic` object, or `None` if no bibolamazi file was set (which can
+##         only happen if you instantiate the filter explicitly yourself, which is usually not the
+##         case).
 
-        When writing your filter, cache works transparently. Just call this function to access
-        a specific cache.
-        """
-        if (self._bibolamazifile is not None):
-            return self._bibolamazifile.cache_for(namespace, **kwargs)
-        return None
+##         When writing your filter, cache works transparently. Just call this function to access
+##         a specific cache.
+##         """
+##         if (self._bibolamazifile is not None):
+##             return self._bibolamazifile.cache_for(namespace, **kwargs)
+##         return None
 
 
     def getRunningMessage(self):
