@@ -298,7 +298,7 @@ aliases, but this will require a little more work from your side.
 class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
     def __init__(self, **kwargs):
         super(DuplicatesEntryInfoCacheAccessor, self).__init__(
-            cachename='duplicates_entryinfo',
+            cache_name='duplicates_entryinfo',
             **kwargs
             )
 

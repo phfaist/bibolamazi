@@ -248,6 +248,8 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
 
 
+    import_errors = []
+
     def get_module_in_filterpackage(filterpackname):
 
         global _filter_precompiled_cache
@@ -267,6 +269,12 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         except ImportError as e:
             logger.debug("Failed to import module %s from package %s (dir %r): %s",
                          name, filterpackname, filterdir, unicode(e))
+            import_errors.append(u"Import module %s in package %s (dir %s) failed: %s"
+                                 %(name, filterpackname, filterdir, unicode(e)))
+            mod = None
+        except Exception as e:
+            logger.error("Failed to import module %s from package %s (dir %r): %s: %s",
+                         name, filterpackname, filterdir, e.__class__.__name__, unicode(e))
             mod = None
         finally:
             sys.path = oldsyspath
@@ -291,7 +299,10 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         mod = get_module_in_filterpackage(filterpackage)
 
         if mod is None and raise_nosuchfilter:
-            raise NoSuchFilter(name, "Can't find filter module")
+            extrainfo = ""
+            if import_errors:
+                extrainfo = ". Messages: \n" + "\n".join(import_errors)
+            raise NoSuchFilter(name, "Can't find module defining the filter" + extrainfo)
 
         return mod
     
@@ -312,7 +323,10 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             break
 
     if mod is None and raise_nosuchfilter:
-        raise NoSuchFilter(name, "Can't find filter module");
+        extrainfo = ""
+        if import_errors:
+            extrainfo = ". Messages: \n" + "\n".join(import_errors)
+        raise NoSuchFilter(name, "Can't find module that defines the filter" + extrainfo);
 
     if mod is not None:
         # cache the module

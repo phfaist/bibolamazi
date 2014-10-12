@@ -12,6 +12,7 @@ from pybtex.database import BibliographyData;
 from core import bibfilter
 from core import butils
 from core.bibfilter import BibFilter, BibFilterError;
+from core.bibfilter.argtypes import enum_class
 from core.blogger import logger;
 
 from .util import arxivutil
@@ -57,12 +58,12 @@ ORDER_CITATION_KEY_ALPHA = 1
 ORDER_DATE = 2
 
 
-OrderMode = bibfilter.enum_class('OrderMode', [('raw', ORDER_RAW),
-                                               ('alphabetical', ORDER_CITATION_KEY_ALPHA),
-                                               ('date', ORDER_DATE),
-                                               ],
-                                 default_value='alphabetical',
-                                 value_attr_name='ordermode')
+OrderMode = enum_class('OrderMode', [('raw', ORDER_RAW),
+                                     ('alphabetical', ORDER_CITATION_KEY_ALPHA),
+                                     ('date', ORDER_DATE),
+                                     ],
+                       default_value='alphabetical',
+                       value_attr_name='ordermode')
 
 
 

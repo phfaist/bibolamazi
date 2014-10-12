@@ -24,7 +24,8 @@ import re
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode

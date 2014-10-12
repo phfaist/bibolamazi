@@ -460,7 +460,7 @@ class BibUserCacheAccessor(object):
     with future additions).
     """
     def __init__(self, cache_name, **kwargs):
-        super(BibUserCacheAccess, self).__init__(**kwargs)
+        super(BibUserCacheAccessor, self).__init__(**kwargs)
         self._cache_name = cache_name
 
 

@@ -25,7 +25,8 @@ import re
 from pybtex.utils import CaseInsensitiveDict
 
 from core import bibfilter
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList, enum_class
 from core.blogger import logger
 from core import butils
 
@@ -138,7 +139,7 @@ _modes = [
     ];
 #_modes_dict = dict(_modes)
 
-Mode = bibfilter.enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
+Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
 
 
 

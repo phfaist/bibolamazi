@@ -540,10 +540,18 @@ class BibolamaziFile(object):
                                             lineno=cmd.lineno);
 
                 # see if we have to register a new cache accessor
-                for req_cache in list(filterinstance.required_cache_accessors()):
+                for req_cache in list(filterinstance.requested_cache_accessors()):
                     if req_cache not in self._cache_accessors:
                         # construct a cache accessor for this cache.
-                        self._cache_accessors[req_cache] = req_cache()
+                        try:
+                            self._cache_accessors[req_cache] = req_cache()
+                        except Exception as e:
+                            ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
+                            raise BibolamaziError(
+                                (u"Error in cache %s: Exception while instantiating the class:\n"
+                                 u"%s: %s")
+                                %( req_cache.__name__, e.__class__.__name__, unicode(e) )
+                                )
                         
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
@@ -603,9 +611,9 @@ class BibolamaziFile(object):
 
         for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
             cacheaccessorinstance.initialize(
-                self._user_cache[cacheaccessorinstance.cacheName()],
+                self._user_cache.cache_for(cacheaccessorinstance.cacheName()),
                 self._user_cache
-                 )
+                )
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 

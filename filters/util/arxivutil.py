@@ -25,7 +25,7 @@ from urllib2 import URLError, HTTPError
 
 from core.blogger import logger
 from core.bibusercache import BibUserCacheAccessor
-form core.bibusercache.tokenchecker import EntryFieldsTokenChecker 
+from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
 
 
 # --- code to detect arXiv info ---
@@ -344,7 +344,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
     arXiv API.
     """
     def __init__(self, **kwargs):
-        super(ArxivFetchedAPIInfoCacheAccessor, self).__init__(
+        super(ArxivInfoCacheAccessor, self).__init__(
             cache_name='arxiv_info',
             **kwargs
             )
