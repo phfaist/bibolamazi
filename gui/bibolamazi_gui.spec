@@ -9,6 +9,7 @@ from hooks import hookutils
 ## WARNING: Assuming that CWD is inside the `gui/' directory !!
 
 #bibolamazi_path = '/home/pfaist/ETH/PhD/util/bibolamazi'
+# NOTE: cannot use __file__ here as it refers to the Python PyInstaller egg ?!?
 bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 
 
