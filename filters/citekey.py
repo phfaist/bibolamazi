@@ -32,7 +32,8 @@ import textwrap
 from pybtex.database import BibliographyData, Entry;
 
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList;
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger;
 from core import butils
 from core.pylatexenc import latex2text

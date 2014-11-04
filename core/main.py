@@ -42,7 +42,7 @@ from core import butils
 from core.butils import BibolamaziError
 
 # for list of filters
-import filters
+from bibfilter import factory as filterfactory
 
 
 
@@ -55,9 +55,9 @@ class BibolamaziNoSourceEntriesError(BibolamaziError):
 
 def setup_filterpackage_from_argstr(argstr):
     """
-    Add a filter package definition and path to filters.filterpath from a string that is a
-    e.g. a command-line argument to --filterpath or a part of the environment variable
-    BIBOLAMAZI_FILTER_PATH.
+    Add a filter package definition and path to filterfactory.filterpath from a string
+    that is a e.g. a command-line argument to --filterpath or a part of the environment
+    variable BIBOLAMAZI_FILTER_PATH.
     """
 
     if not argstr:
@@ -72,10 +72,10 @@ def setup_filterpackage_from_argstr(argstr):
                               "Did you get the filterpackage syntax wrong? "
                               "Syntax: '<packagename>[=<path>]'." %(fpname))
 
-    if not filters.validate_filter_package(fpname, fpdir, raise_exception=False):
+    if not filterfactory.validate_filter_package(fpname, fpdir, raise_exception=False):
         raise BibolamaziError("Invalid filter package `%s' [in directory `%s']" % (fpname, fpdir))
 
-    filters.filterpath[fpname] = fpdir
+    filterfactory.filterpath[fpname] = fpdir
     
 
 def setup_filterpackages_from_env():
@@ -131,8 +131,8 @@ def get_args_parser():
     parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
 
-    parser.add_argument('outputbibfile',
-                        help='The .bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
+    parser.add_argument('bibolamazifile',
+                        help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
                         'configuration tags.');
 
     return parser
@@ -156,10 +156,10 @@ def main(argv=sys.argv[1:]):
     return run_bibolamazi_args(args)
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', 'use_cache', 'cache_timeout' ));
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache', 'cache_timeout' ));
 
-def run_bibolamazi(outputbibfile, verbosity=1, use_cache=True, cache_timeout=None):
-    args = ArgsStruct(outputbibfile, verbosity, use_cache, cache_timeout)
+def run_bibolamazi(bibolamazifile, verbosity=1, use_cache=True, cache_timeout=None):
+    args = ArgsStruct(bibolamazifile, verbosity, use_cache, cache_timeout)
     return run_bibolamazi_args(args)
 
 
@@ -180,12 +180,12 @@ def run_bibolamazi_args(args):
                      }));
 
 
-    # open the bibolamazifile, which is the output bibtex file
-    # -------------------------------------------------------
+    # open the bibolamazifile, which is the main bibtex file
+    # ------------------------------------------------------
 
-    # open the outputbibfile and create the BibolamaziFile object. This will parse the rules
+    # open the bibolamazi file and create the BibolamaziFile object. This will parse the rules
     # and the entries, as well as keep some information on how to re-write to the file.
-    bfile = BibolamaziFile(args.outputbibfile, use_cache=args.use_cache);
+    bfile = BibolamaziFile(args.bibolamazifile, use_cache=args.use_cache);
 
     #
     # If given a cache_timeout, set it

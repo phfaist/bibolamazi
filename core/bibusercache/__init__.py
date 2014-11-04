@@ -22,6 +22,7 @@
 import collections
 import inspect
 import pickle
+import traceback
 
 from pybtex.database import Entry, Person
 from core.blogger import logger
@@ -375,10 +376,7 @@ class BibUserCache(object):
             self.entry_validation_checker.add_entry_check(cache_name, self.expiry_checker)
             self.cachedic.validate_item(cache_name)
 
-        if cache_name not in self.cachedic:
-            self.cachedic[cache_name] = {}
-
-        return self.cachedic[cache_name]
+        return self.cacheFor(cache_name)
 
 
 
@@ -390,8 +388,9 @@ class BibUserCache(object):
             data = pickle.load(cachefobj);
             self.cachedic = data['cachedic']
         except Exception as e:
+            logger.longdebug("EXCEPTION IN pickle.load():\n%s", traceback.format_exc())
             logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
-            self.cachedic = {}
+            self.cachedic = BibUserCacheDic({})
             pass
         
         self.cachedic.set_validation(self.comb_validation_checker)
