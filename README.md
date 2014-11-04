@@ -55,17 +55,17 @@ to run the graphical user interface: the command-line version will happily run w
 
 * To compile a bibolamazi bibtex file, you should run `bibolamazi` in general as
 
-           > bibolamazi bibolamazibibtexfile.bib
+           > bibolamazi bibolamazibibtexfile.bibolamazi.bib
 
 * To quickly get started with a new bibolamazi file, the following command will create the
   given file and produce a usable template which you can edit:
 
-           > bibolamazi --new newfile.bib
+           > bibolamazi --new newfile.bibolamazi.bib
 
-* For an example to study, look at the file `test/output.bib` in the source code. To compile
-  it, run
+* For an example to study, look at the file `test/test0.bibolamazi.bib` in the source code.
+  To compile it, run
 
-           > bibolamazi test/output.bib
+           > bibolamazi test/test0.bibolamazi.bib
            
 * For a help message with a list of possible options, run
 
@@ -85,11 +85,11 @@ Using Bibolamazi
 
 ### Bibolamazi Operating Mode
 
-Bibolamazi works by reading a bibtex file (say `main.bib`) with a special bibolamazi
-configuration section at the top. These describe on one hand *sources*, and on the
-other hand *filters*. Bibolamazi first reads all the entries in the given sources
-(say `source1.bib` and `source2.bib`), and then applies the given filters to them.
-Then, the main bibtex file (in our example `main.bib`) is updated, such that:
+Bibolamazi works by reading a bibtex file (say `main.bibolamazi.bib`) with a special
+bibolamazi configuration section at the top. These describe on one hand *sources*, and on
+the other hand *filters*. Bibolamazi first reads all the entries in the given sources (say
+`source1.bib` and `source2.bib`), and then applies the given filters to them.  Then, the
+main bibtex file (in our example `main.bibolamazi.bib`) is updated, such that:
 
 * Any content that was already present in the main bibtex file *before* the
   configuration section is restored unchanged;
@@ -97,7 +97,7 @@ Then, the main bibtex file (in our example `main.bib`) is updated, such that:
 * The configuration section is restored as it was;
 
 * All the filtered entries (obtained from, e.g., `source1.bib` and `source2.bib`) are
-  then dumped in the rest of the file, overwriting the rest of `main.bib` (which
+  then dumped in the rest of the file, overwriting the rest of `main.bibolamazi.bib` (which
   logically contained output of a previous run of bibolamazi).
 
 
@@ -286,7 +286,7 @@ environment variable.
 You can specify additional filter packages with the command-line option
 `--filter-package`.
 
-    > bibolamazi myfile.bib --filter-package 'package1=/path/to/filter/pack'
+    > bibolamazi myfile.bibolamazi.bib --filter-package 'package1=/path/to/filter/pack'
 
 The argument to `--filter-package` is of the form
 'packagename=/path/to/the/filter/package'. Note that the path is which path must be added
