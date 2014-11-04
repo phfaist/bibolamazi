@@ -66,7 +66,8 @@ class TokenCheckerDate(TokenChecker):
         try:
             return ((now - oldtoken) < self.time_valid)
         except Exception as e:
-            logger.debug("Got exception in TokenCheckerDate.cmp_tokens: ignoring and invalidating: %s", e)
+            logger.debug("Got exception in TokenCheckerDate.cmp_tokens, probably not a datetime object: "
+                         "ignoring and invalidating: %s", e)
             return False
 
     def new_token(self, **kwargs):

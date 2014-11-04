@@ -360,6 +360,11 @@ class BibUserCache(object):
         instance is shared this cannot be changed easily nor should it be relied upon. If
         you have custom needs or need more control over this, create your own token
         checker.
+
+        Returns: the cache dictionary. This may have changed to a new empty object if the
+        cache didn't validate!
+
+        WARNING: the cache dictionary may have been altered with the validation of the cache!
         """
         if not cache_name in self.cachedic:
             raise ValueError("Invalid cache name: %s"%(cache_name))
@@ -369,6 +374,11 @@ class BibUserCache(object):
             logger.longdebug("Adding expiry checker for %s", cache_name)
             self.entry_validation_checker.add_entry_check(cache_name, self.expiry_checker)
             self.cachedic.validate_item(cache_name)
+
+        if cache_name not in self.cachedic:
+            self.cachedic[cache_name] = {}
+
+        return self.cachedic[cache_name]
 
 
 
@@ -391,6 +401,7 @@ class BibUserCache(object):
             'cachepickleversion': 1,
             'cachedic': self.cachedic,
             }
+        logger.longdebug("Saving cache. Cache keys are: %r", self.cachedic.dic.keys())
         pickle.dump(data, cachefobj, protocol=2);
 
 
@@ -455,11 +466,10 @@ class BibUserCacheAccessor(object):
         super(BibUserCacheAccessor, self).__init__(**kwargs)
         self._cache_name = cache_name
         self._bibolamazifile = bibolamazifile
-        self._cache_dic = None
         self._cache_obj = None
 
 
-    def initialize(self, cache_dic, cache_obj):
+    def initialize(self, cache_obj):
         """
         Initialize the cache.
 
@@ -472,6 +482,11 @@ class BibUserCacheAccessor(object):
 
         Note that the order in which the `initialize()` method of the various caches is
         called is undefined.
+
+        Use the `cacheDic()` method to access the cache dictionary. Note that if you
+        install token checkers on this cache, e.g. with
+        `cache_obj.installCacheExpirationChecker()`, then the cache dictionary object may
+        have changed!
 
         The default implementation raises a `NotImplemented` exception.
         """
@@ -493,11 +508,11 @@ class BibUserCacheAccessor(object):
         accessor only. Objects that query the accessor should use the accessor-specific
         API to access data.
 
-        This returns the data that was set internally by the `BibolamaziFile` via the
-        method `setCacheDicAndObj()`. Don't call that manually, though, unless you're
-        implementing an alternative `BibolamaziFile` class !
+        This returns the data in the cache object that was set internally by the
+        `BibolamaziFile` via the method `setCacheObj()`. Don't call that manually,
+        though, unless you're implementing an alternative `BibolamaziFile` class !
         """
-        return self._cache_dic
+        return self._cache_obj.cacheFor(self.cacheName())
 
 
     def cacheObject(self):
@@ -515,13 +530,12 @@ class BibUserCacheAccessor(object):
         return self._cache_obj
 
 
-    def setCacheDicAndObj(self, cache_dic, cache_obj):
+    def setCacheObj(self, cache_obj):
         """
         Sets the cache dictionary and cache object that will be returned by `cacheDic()`
         and `cacheObject()`, respectively. Accessors and filters should not call (nor
         reimplement) this function. This function gets called by the `BibolamaziFile`.
         """
-        self._cache_dic = cache_dic
         self._cache_obj = cache_obj
 
     def bibolamaziFile(self):

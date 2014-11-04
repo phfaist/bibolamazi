@@ -645,20 +645,18 @@ class BibolamaziFile(object):
 
         for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
             #
-            # Create/get the sub-dictionary for this cache
+            # Ensure the existance of the cache dictionary instance in the cache
             #
-            cachedic = self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
+            self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
             #
-            # set the accessor dic/obj
+            # Set the accessor's pointer to the cache object
             #
-            cacheaccessorinstance.setCacheDicAndObj(cache_dic=cachedic, cache_obj=self._user_cache)
+            cacheaccessorinstance.setCacheObj(cache_obj=self._user_cache)
             #
             # and initialize the cache accessor
             #
-            cacheaccessorinstance.initialize(
-                cachedic,
-                self._user_cache
-                )
+            cacheaccessorinstance.initialize(self._user_cache)
+
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 
@@ -759,7 +757,7 @@ class BibolamaziFile(object):
             cachefname = self.cacheFileName()
             try:
                 with open(cachefname, 'wb') as f:
-                    logger.longdebug("Writing our cache to file %s" %(cachefname))
+                    logger.debug("Writing cache to file %s" %(cachefname))
                     self._user_cache.saveCache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file `%s'." %(cachefname))

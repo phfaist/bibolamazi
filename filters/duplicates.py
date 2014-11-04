@@ -32,14 +32,16 @@ import textwrap
 from pybtex.database import BibliographyData, Entry;
 
 
-from core.bibfilter import BibFilter, BibFilterError;
-from core.blogger import logger;
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
+from core.blogger import logger
 from core.pylatexenc import latex2text
 from core import butils
 from core import bibusercache
 from core.bibusercache import tokencheckers
 
 from .util import arxivutil
+from .util import auxfile
 
 ### DON'T CHANGE THIS STRING. IT IS THE STRING THAT IS SEARCHED FOR IN AN EXISTING
 ### DUPFILE TO PREVENT OVERWRITING OF WRONG FILES.
@@ -304,7 +306,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
             )
 
 
-    def initialize(self, cache_dic, cache_obj, **kwargs):
+    def initialize(self, cache_obj, **kwargs):
         #
         # Make sure we set up cache invalidation properly, to ensure that if a
         # user modifies a falsely picked-up duplicate, that the cache is
@@ -325,7 +327,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
                     ])),
             )
 
-        cache_dic['entries'].set_validation(cache_entries_validator)
+        self.cacheDic()['entries'].set_validation(cache_entries_validator)
 
 
     def prepare_entry_cache(self, key, a, arxivaccess):
@@ -379,7 +381,8 @@ class DuplicatesFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, dupfile=None, warn=False, custom_bibalias=False):
+    def __init__(self, dupfile=None, warn=False, custom_bibalias=False,
+                 keep_only_used_in_jobname=None, jobname_search_dirs=None):
         r"""DuplicatesFilter constructor.
 
         *dupfile: the name of a file to write latex code for defining duplicates to. This file
@@ -389,6 +392,11 @@ class DuplicatesFilter(BibFilter):
         *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
                in the file given in `dupfile', and will rely on a user-defined implementation
                of `\bibalias`.
+        *keep_only_used_in_jobname: only keep entries which are referenced in LaTeX job Jobname.
+               The corresponding AUX file is searched for and analyzed, see only_used filter.
+               Note that this has no effect if the `dupfile' is not set.
+        *jobname_search_dirs(CommaStrList): (use with keep_only_used_in_jobname) search for the
+               AUX file in the given directories, as for the only_used filter.
         """
 
         BibFilter.__init__(self);
@@ -396,6 +404,14 @@ class DuplicatesFilter(BibFilter):
         self.dupfile = dupfile
         self.warn = butils.getbool(warn)
         self.custom_bibalias = butils.getbool(custom_bibalias)
+
+        if not keep_only_used_in_jobname:
+            keep_only_used_in_jobname = None
+        self.keep_only_used_in_jobname = keep_only_used_in_jobname
+
+        if jobname_search_dirs is not None:
+            jobname_search_dirs = CommaStrList(jobname_search_dirs)
+        self.jobname_search_dirs = jobname_search_dirs
 
         self.cache_entries_validator = None
 
@@ -426,7 +442,6 @@ class DuplicatesFilter(BibFilter):
             arxivutil.ArxivInfoCacheAccessor,
             arxivutil.ArxivFetchedAPIInfoCacheAccessor,
             ]
-                 
 
 
     def compare_entries_same(self, a, b, cache_a, cache_b):
@@ -557,6 +572,7 @@ class DuplicatesFilter(BibFilter):
                 origentry.fields[fk] = fval
 
 
+
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
@@ -564,11 +580,18 @@ class DuplicatesFilter(BibFilter):
 
         bibdata = bibolamazifile.bibliographyData();
 
+        used_citations = None
+        
+        if self.keep_only_used_in_jobname:
+            logger.debug("Getting list of used citations from %s.aux." %(self.keep_only_used_in_jobname))
+            used_citations = auxfile.get_all_auxfile_citations(
+                self.keep_only_used_in_jobname, bibolamazifile, self.name(),
+                self.jobname_search_dirs, return_set=True
+                )
+
         duplicates = [];
 
-        newbibdata = BibliographyData();
-
-        arxivaccess = arxivutil.setup_and_get_arxiv_info_accessor(bibolamazifile)
+        arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 
         dupl_entryinfo_cache_accessor = self.cacheAccessor(DuplicatesEntryInfoCacheAccessor)
 
@@ -576,17 +599,51 @@ class DuplicatesFilter(BibFilter):
             #cache_entries[key] = {}
             dupl_entryinfo_cache_accessor.prepare_entry_cache(key, entry, arxivaccess)
 
+
+        newbibdata = BibliographyData();
+        unused = BibliographyData();
+        unused_respawned = set() # because del unused.entries[key] is not implemented ... :(
+
+        def copy_entry(entry):
+            return Entry(type_=entry.type,
+                         fields=entry.fields,
+                         persons=entry.persons,
+                         collection=entry.collection
+                         )
+
+        # Strategy: go through the list of entries, and each time keeping it if it is new,
+        # or updating the original and registering the alias if it is a duplicate.
+        #
+        # With only_used, the situation is a little trickier as we cannot just discard the
+        # entries as they are filtered: indeed, they might be duplicates of a used entry,
+        # with which one should merge the bib information.
+        #
+        # So the full algorithm does not immediately discard the unused keys, but rather
+        # keeps them in an `unused` list. If they are later required, they are respawned
+        # into the actual new list.
+        #
+
         for (key, entry) in bibdata.entries.iteritems():
             #
             # search the newbibdata object, in case this entry already exists.
             #
             logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
+            duplicate_original_is_unused = False
             for (nkey, nentry) in newbibdata.entries.iteritems():
                 if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                              dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
                     logger.longdebug('    ... matches existing entry %s!', nkey);
                     is_duplicate_of = nkey;
+                    break
+            for (nkey, nentry) in unused.entries.iteritems():
+                if nkey in unused_respawned:
+                    continue
+                if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                                             dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
+                    logger.longdebug('    ... matches existing entry %s!', nkey);
+                    is_duplicate_of = nkey;
+                    duplicate_original_is_unused = True
                     break
 
             #
@@ -594,15 +651,30 @@ class DuplicatesFilter(BibFilter):
             #
             if is_duplicate_of is not None:
                 dup = (key, is_duplicate_of)
-                self.update_entry_with_duplicate(is_duplicate_of, newbibdata.entries[is_duplicate_of],
-                                                 key, entry)
-                duplicates.append(dup);
+                if duplicate_original_is_unused:
+                    self.update_entry_with_duplicate(is_duplicate_of, unused.entries[is_duplicate_of],
+                                                     key, entry)
+                else:
+                    # a duplicate of a key we have used. So update the original ...
+                    self.update_entry_with_duplicate(is_duplicate_of, newbibdata.entries[is_duplicate_of],
+                                                     key, entry)
+                    # ... and register the alias.
+                    duplicates.append(dup);
+
+                if duplicate_original_is_unused and used_citations and key in used_citations:
+                    # if we had set the original in the unused list, but we need the
+                    # alias, then respawn the original to the newbibdata so we can refer
+                    # to it. Bonus: use the name with which we have referred to it, so we
+                    # don't need to register any duplicate.
+                    newbibdata.add_entry(key, copy_entry(unused.entries[is_duplicate_of]))
+                    unused_respawned.add(is_duplicate_of)
             else:
-                newbibdata.add_entry(key, Entry(type_=entry.type,
-                                                fields=entry.fields,
-                                                persons=entry.persons,
-                                                collection=entry.collection
-                                                ));
+                if used_citations is not None and key not in used_citations:
+                    # new entry, but we don't want it. So add it to the unused list.
+                    unused.add_entry(key, copy_entry(entry))
+                else:
+                    # new entry and we want it. So add it to the main newbibdata list.
+                    newbibdata.add_entry(key, copy_entry(entry))
 
         # output duplicates to the duplicates file
 
@@ -654,8 +726,10 @@ class DuplicatesFilter(BibFilter):
 
                 tw = textwrap.TextWrapper(width=DUPL_WARN_ENTRY_COLWIDTH)
 
-                fmtalias = fmt(dupalias, bibdata.entries[dupalias], cache_entries[dupalias])
-                fmtorig = fmt(duporiginal, bibdata.entries[duporiginal], cache_entries[duporiginal])
+                fmtalias = fmt(dupalias, bibdata.entries[dupalias],
+                               dupl_entryinfo_cache_accessor.get_entry_cache(dupalias))
+                fmtorig = fmt(duporiginal, bibdata.entries[duporiginal],
+                              dupl_entryinfo_cache_accessor.get_entry_cache(duporiginal))
                 linesalias = tw.wrap(fmtalias)
                 linesorig = tw.wrap(fmtorig)
                 maxlines = max(len(linesalias), len(linesorig))

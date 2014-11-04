@@ -250,9 +250,9 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             **kwargs
             )
 
-    def initialize(self, cache_dic, cache_obj, **kwargs):
+    def initialize(self, cache_obj, **kwargs):
         cache_obj.installCacheExpirationChecker(cache_name=self.cacheName())
-        cache_dic.setdefault('fetched', [])
+        self.cacheDic().setdefault('fetched', {})
 
 
     def fetchArxivApiInfo(self, idlist):
@@ -278,7 +278,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # nothing to fetch
             return True
 
-        logger.longdebug('fetching missing id list %r' %(missing_ids))
+        logger.debug('fetching missing id list %r' %(missing_ids))
         try:
             arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
             logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
@@ -317,6 +317,10 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             bibtex = ref.bibtex()
             cache_entrydic[k]['bibtex'] = bibtex
 
+
+        logger.longdebug("arxiv api info: Got all references. cacheDic() is now:  %r", self.cacheDic())
+        logger.longdebug("... and cacheObject().cachedic is now:  %r", self.cacheObject().cachedic)
+
         return True
 
 
@@ -349,7 +353,8 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             **kwargs
             )
 
-    def initialize(self, cache_dic, cache_obj, **kwargs):
+    def initialize(self, cache_obj, **kwargs):
+        cache_dic = self.cacheDic()
         cache_dic['entries'].set_validation(
             EntryFieldsTokenChecker(self.bibolamaziFile().bibliographyData(),
                                     store_type=True,
