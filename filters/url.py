@@ -103,7 +103,7 @@ class UrlNormalizeFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        arxivinfo = self.cacheAccessor(arxiutil.ArxivInfoCacheAccessor).getArXivInfo(entry.key);
+        arxivinfo = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).getArXivInfo(entry.key);
 
         # --- prepare urls[] list ---
         if ('url' in entry.fields):

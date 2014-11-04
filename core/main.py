@@ -245,7 +245,7 @@ def run_bibolamazi_args(args):
         raise ValueError("Bad value for BibFilter.action(): "+repr(action));
 
     # and output everything back to the original file.
-    bfile.save_to_file();
+    bfile.saveToFile();
 
 
     logger.debug('Done.');
