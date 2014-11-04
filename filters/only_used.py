@@ -108,7 +108,7 @@ class OnlyUsedFilter(BibFilter):
         logger.longdebug("set of citations: %r"%(citations))
 
 
-        bibdata = bibolamazifile.bibliographydata()
+        bibdata = bibolamazifile.bibliographyData()
         
         newentries = OrderedCaseInsensitiveDict()
 

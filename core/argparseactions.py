@@ -357,7 +357,7 @@ class opt_init_empty_template(argparse.Action):
             parser.exit(9);
 
         bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.save_to_file();
+        bfile.saveToFile();
 
         parser.exit();
 

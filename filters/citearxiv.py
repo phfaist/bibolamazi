@@ -165,7 +165,7 @@ class CiteArxivFilter(BibFilter):
         # Variable bibdata is a pybtex.database.BibliographyData object
         #
 
-        thebibdata = bibolamazifile.bibliographydata();
+        thebibdata = bibolamazifile.bibliographyData();
 
 
         for arxivid in citearxiv_uselist:

@@ -139,12 +139,12 @@ class BibolamaziFile(object):
 
         If `create` is given and set to `True`, then an empty template is loaded and the
         internal file name is set to `fname`. The internal state will be set to ``LOADED''
-        and calling `save_to_file()` will result in writing this template to the file
+        and calling `saveToFile()` will result in writing this template to the file
         `fname`.
 
         If `use_cache` is `True` (default), then when loading this file, we'll attempt to
         load a corresponding cache file if it exists. Note that even if `use_cache` is
-        `False`, then cache will still be *written* when calling `save_to_file()`.
+        `False`, then cache will still be *written* when calling `saveToFile()`.
         """
         
         logger.debug("Opening bibolamazi file `%s'" %(fname));
@@ -161,7 +161,7 @@ class BibolamaziFile(object):
         else:
             logger.debug("No file given. Don't forget to set one with load()")
 
-    def loadstate(self):
+    def getLoadState(self):
         return self._load_state;
 
     def reset(self):
@@ -219,16 +219,16 @@ class BibolamaziFile(object):
     def fdir(self):
         return self._dir;
 
-    def rawheader(self):
+    def rawHeader(self):
         return self._header;
 
-    def rawconfig(self):
+    def rawConfig(self):
         return self._config;
 
-    def config_data(self):
+    def configData(self):
         return self._config_data;
 
-    def rawstartconfigdatalineno(self):
+    def rawStartConfigDataLineNo(self):
         """Returns the line number on which the begin config tag `CONFIG_BEGIN_TAG` is located.
         Line numbers start at 1 at the top of the file like in any reasonable editor.
         """
@@ -258,22 +258,30 @@ class BibolamaziFile(object):
     def sources(self):
         return self._sources;
 
-    def source_lists(self):
+    def sourceLists(self):
         return self._source_lists;
 
     def filters(self):
         return self._filters;
 
-    def bibliographydata(self):
+    def bibliographyData(self):
         return self._bibliographydata;
 
-    def cachefname(self):
+    def bibliographydata(self):
+        """
+        Deprecated: use `bibliographyData()` instead!
+        """
+        butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()")
+        return self.bibliographyData()
+
+    def cacheFileName(self):
         """
         The file name where the cache will be stored. You don't need to access this
         directly, the cache will be loaded and saved automatically. You should normally
         only access the cache through cache accessors. See `cacheAccessor()`.
         """
         return self._fname + '.bibolamazicache';
+        
 
     def cacheAccessor(self, klass):
         """
@@ -282,16 +290,20 @@ class BibolamaziFile(object):
         return self._cache_accessors.get(klass, None)
         
 
-    def set_default_cache_invalidation_time(self, time_delta):
+    def setDefaultCacheInvalidationTime(self, time_delta):
         """
         A timedelta object giving the amount of time for which data in cache is consdered
         valid (by default).
         """
-        if not self._use_cache or not self._user_cache:
-            logger.warning('set_default_cache_invalidation_time: No cache in use: ignoring new value.')
+
+        # Note that we set the invalidation anyway, even if we have
+        # `self._use_cache==False`, because in that case the cache is still saved.
+
+        if not self._user_cache:
+            logger.warning('BibolamaziFile.setDefaultCacheInvalidationTime(): Invalid cache object')
             return
 
-        self._user_cache.set_default_invalidation_time(time_delta)
+        self._user_cache.setDefaultInvalidationTime(time_delta)
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
@@ -315,6 +327,27 @@ class BibolamaziFile(object):
         self._config_data = self._config_data_from_block(configblock)
         # in case we were in a more advanced state, reset to READ state, because config has changed.
         self._load_state = BIBOLAMAZIFILE_READ
+
+
+    def resolveSourcePath(self, path):
+        """
+        Resolves a path (for example corresponding to a source file) to an absolute file
+        location.
+
+        This function expands '~/foo/bar' to e.g. '/home/someone/foo/bar', it expands
+        shell variables, e.g. '$HOME/foo/bar' or '${MYBIBDIR}/foo/bar.bib'.
+
+        If the path is relative, it is made absolute by interpreting it as relative to the
+        location of this bibolamazi file (see `fdir()`).
+
+        Note: `path` should not be an URL.
+        """
+        # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
+        path = os.path.expanduser(path);
+        path = os.path.expandvars(path);
+        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
+        # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
+        return os.path.join(self._dir, path)
 
 
     def _init_empty_template(self):
@@ -544,7 +577,8 @@ class BibolamaziFile(object):
                     if req_cache not in self._cache_accessors:
                         # construct a cache accessor for this cache.
                         try:
-                            self._cache_accessors[req_cache] = req_cache()
+                            cache_accessor = req_cache(bibolamazifile=self)
+                            self._cache_accessors[req_cache] = cache_accessor
                         except Exception as e:
                             ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
                             raise BibolamaziError(
@@ -590,11 +624,11 @@ class BibolamaziFile(object):
         # --------------------------
         if self._use_cache:
             # then, try to load the cache if possible
-            cachefname = self.cachefname()
+            cachefname = self.cacheFileName()
             try:
                 with open(cachefname, 'rb') as f:
                     logger.longdebug("Reading cache file %s" %(cachefname))
-                    self._user_cache.load_cache(f)
+                    self._user_cache.loadCache(f)
             except (IOError, EOFError,):
                 logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
                 pass
@@ -610,8 +644,19 @@ class BibolamaziFile(object):
         # initial data.
 
         for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
+            #
+            # Create/get the sub-dictionary for this cache
+            #
+            cachedic = self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
+            #
+            # set the accessor dic/obj
+            #
+            cacheaccessorinstance.setCacheDicAndObj(cache_dic=cachedic, cache_obj=self._user_cache)
+            #
+            # and initialize the cache accessor
+            #
             cacheaccessorinstance.initialize(
-                self._user_cache.cache_for(cacheaccessorinstance.cacheName()),
+                cachedic,
                 self._user_cache
                 )
 
@@ -629,15 +674,6 @@ class BibolamaziFile(object):
                 return src
         logger.info("Ignoring nonexisting source list: %s" %(", ".join(srclist)));
         return None
-
-    def resolveSourcePath(self, path):
-        # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
-        path = os.path.expanduser(path);
-        path = os.path.expandvars(path);
-        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
-        # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
-        return os.path.join(self._dir, path)
-
 
     def _populate_from_src(self, src):
         bib_data = None;
@@ -703,7 +739,7 @@ class BibolamaziFile(object):
 
 
 
-    def save_to_file(self):
+    def saveToFile(self):
         with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header);
             f.write(self._config);
@@ -719,12 +755,12 @@ class BibolamaziFile(object):
             logger.info("Updated output file `"+self._fname+"'.");
 
         # if we have cache to save, save it
-        if (self._user_cache and self._user_cache.has_cache()):
-            cachefname = self.cachefname()
+        if (self._user_cache and self._user_cache.hasCache()):
+            cachefname = self.cacheFileName()
             try:
                 with open(cachefname, 'wb') as f:
                     logger.longdebug("Writing our cache to file %s" %(cachefname))
-                    self._user_cache.save_cache(f)
+                    self._user_cache.saveCache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file `%s'." %(cachefname))
                 pass

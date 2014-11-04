@@ -37,6 +37,7 @@ from core.blogger import logger;
 from core.pylatexenc import latex2text
 from core import butils
 from core import bibusercache
+from core.bibusercache import tokencheckers
 
 from .util import arxivutil
 
@@ -310,8 +311,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         # updated!
         #
 
-        cache_entries_validator = bibusercache.EntryFieldsTokenChecker(
-            self.bibolamaziFile().bibliographydata(),
+        cache_entries_validator = tokencheckers.EntryFieldsTokenChecker(
+            self.bibolamaziFile().bibliographyData(),
             store_type=True,
             store_persons=['author'],
             fields=list(set(
@@ -561,7 +562,7 @@ class DuplicatesFilter(BibFilter):
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        bibdata = bibolamazifile.bibliographydata();
+        bibdata = bibolamazifile.bibliographyData();
 
         duplicates = [];
 

@@ -199,7 +199,7 @@ class CiteKeyFilter(BibFilter):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
-        bibdata = bibolamazifile.bibliographydata();
+        bibdata = bibolamazifile.bibliographyData();
 
         arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 

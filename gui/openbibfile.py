@@ -263,7 +263,7 @@ class OpenBibFile(QWidget):
         
         # change the config block.
         self.bibolamaziFile.setConfigData(config_data)
-        self.bibolamaziFile.save_to_file()
+        self.bibolamaziFile.saveToFile()
 
         self._set_modified(False)
 
@@ -364,7 +364,7 @@ class OpenBibFile(QWidget):
 
         with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
             cursorpos = self.ui.txtConfig.textCursor().position()
-            self.ui.txtConfig.setPlainText(self.bibolamaziFile.config_data())
+            self.ui.txtConfig.setPlainText(self.bibolamaziFile.configData())
             cur = self.ui.txtConfig.textCursor()
             cur.setPosition(cursorpos)
             self.ui.txtConfig.setTextCursor(cur)
@@ -382,7 +382,7 @@ class OpenBibFile(QWidget):
             return 'file:///'+s;
 
         sources = []
-        for srcline in self.bibolamaziFile.source_lists():
+        for srcline in self.bibolamaziFile.sourceLists():
             if (isinstance(srcline, list)):
                 srclist = srcline
             else:

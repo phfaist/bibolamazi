@@ -251,7 +251,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             )
 
     def initialize(self, cache_dic, cache_obj, **kwargs):
-        cache_obj.installCacheExpirationChecker(cachename=self.cacheName())
+        cache_obj.installCacheExpirationChecker(cache_name=self.cacheName())
         cache_dic.setdefault('fetched', [])
 
 
@@ -320,7 +320,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         return True
 
 
-    def getArxivApiInfo(arxivid):
+    def getArxivApiInfo(self, arxivid):
         """
         Returns a dictionary
 
@@ -351,7 +351,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
 
     def initialize(self, cache_dic, cache_obj, **kwargs):
         cache_dic['entries'].set_validation(
-            EntryFieldsTokenChecker(bibolamazifile.bibliographydata(),
+            EntryFieldsTokenChecker(self.bibolamaziFile().bibliographyData(),
                                     store_type=True,
                                     fields=arxivinfo_from_bibtex_fields)
             )
@@ -414,10 +414,13 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         is not in the cache, returns `None`. Call `complete_cache()` first!
         """
         logger.longdebug("Getting arxiv info for key %r from cache.", entrykey)
-        if (entrykey not in self.entrydic):
+
+        entrydic = self.cacheDic()['entries']
+
+        if (entrykey not in entrydic):
             return None
 
-        return self.entrydic.get(entrykey, None)
+        return entrydic.get(entrykey, None)
 
 
     def _reference_doi(self, ref):
@@ -441,7 +444,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
 
 
 def setup_and_get_arxiv_accessor(bibolamazifile):
-    arxivinfoaccessor = self.cacheAccessor(ArxivInfoCacheAccessor)
+    arxivinfoaccessor = bibolamazifile.cacheAccessor(ArxivInfoCacheAccessor)
     arxivinfoaccessor.complete_cache(
         bibolamazifile.bibliographyData(),
         bibolamazifile.cacheAccessor(ArxivFetchedAPIInfoCacheAccessor)

@@ -192,10 +192,10 @@ def run_bibolamazi_args(args):
     #
     if args.cache_timeout is not None:
         logger.debug("Setting default cache timeout to %r", args.cache_timeout)
-        bfile.set_default_cache_invalidation_time(args.cache_timeout)
+        bfile.setDefaultCacheInvalidationTime(args.cache_timeout)
     
 
-    bibdata = bfile.bibliographydata();
+    bibdata = bfile.bibliographyData();
     if (bibdata is None or not len(bibdata.entries)):
         logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.");
         raise BibolamaziNoSourceEntriesError()
@@ -232,7 +232,7 @@ def run_bibolamazi_args(args):
         #
         if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
 
-            bibdata = bfile.bibliographydata();
+            bibdata = bfile.bibliographyData();
 
             for (k, entry) in bibdata.entries.iteritems():
                 filtr.filter_bibentry(entry);

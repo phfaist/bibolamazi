@@ -237,7 +237,7 @@ class MainWidget(QWidget):
             return
 
         bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.save_to_file();
+        bfile.saveToFile();
 
         self.openFile(newfilename)
 

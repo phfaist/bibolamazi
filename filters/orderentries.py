@@ -95,7 +95,7 @@ class OrderEntriesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
     def getRunningMessage(self):
-        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographydata().entries))
+        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographyData().entries))
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
@@ -106,7 +106,7 @@ class OrderEntriesFilter(BibFilter):
 
         if (self.order == ORDER_CITATION_KEY_ALPHA):
             
-            bibdata = bibolamazifile.bibliographydata();
+            bibdata = bibolamazifile.bibliographyData();
 
             #newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
             entries = bibdata.entries;
@@ -121,7 +121,7 @@ class OrderEntriesFilter(BibFilter):
 
         elif (self.order == ORDER_DATE):
 
-            bibdata = bibolamazifile.bibliographydata();
+            bibdata = bibolamazifile.bibliographyData();
 
             entries = bibdata.entries;
 

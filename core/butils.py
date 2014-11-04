@@ -189,3 +189,17 @@ def parse_timedelta(in_s):
             
     #print 'kwargs: %r'%(kwargs)
     return datetime.timedelta(**kwargs)
+
+
+
+def warn_deprecated(classname, oldname, newname):
+    import traceback
+    logger.warning(
+        ("%(classnamedot)s%(oldname)s is deprecated. Please use %(classnamedot)s%(newname)s instead. at:\n"
+         "%(stack)s")
+        % { 'classnamedot': (classname+'.' if classname else ''),
+            'oldname': oldname,
+            'newname': newname,
+            'stack': traceback.format_stack(limit=3)[0],
+            }
+        )
