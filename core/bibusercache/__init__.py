@@ -397,7 +397,11 @@ class BibUserCache(object):
 
     def saveCache(self, cachefobj):
         data = {
-            'cachepickleversion': 1,
+            # cache pickle versions for Bibolamazi versions:
+            #   -1.4:  <no information saved, incompatible>
+            #   1.5+:  1
+            #   2.x :  2
+            'cachepickleversion': 2,
             'cachedic': self.cachedic,
             }
         logger.longdebug("Saving cache. Cache keys are: %r", self.cachedic.dic.keys())

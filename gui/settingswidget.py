@@ -26,7 +26,7 @@ import os.path
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-import filters
+from core.bibfilter import factory as filters_factory
 from core import main
 
 from qtauto.ui_settingswidget import Ui_SettingsWidget
@@ -61,9 +61,9 @@ class MyOrderedDictModel(QAbstractTableModel):
             return QVariant()
 
         if role == Qt.BackgroundRole:
-            valid = filters.validate_filter_package(str(self._dic.item_at(row)[0]),
-                                                    str(self._dic.item_at(row)[1]),
-                                                    raise_exception=False)
+            valid = filters_factory.validate_filter_package(str(self._dic.item_at(row)[0]),
+                                                            str(self._dic.item_at(row)[1]),
+                                                            raise_exception=False)
             if not valid:
                 return QVariant(QBrush(QColor(255,200,200)))
             return QVariant()
@@ -132,7 +132,7 @@ class MyOrderedDictModel(QAbstractTableModel):
         if (role != Qt.EditRole):
             return False
 
-        if (row < 0 or row >= len(filters.filterpath)):
+        if (row < 0 or row >= len(filters_factory.filterpath)):
             return False
 
         value = value.toPyObject()
@@ -187,7 +187,7 @@ class SettingsWidget(QDialog):
 
         # filter packages
 
-        self.fpmodel = MyOrderedDictModel(filters.filterpath)
+        self.fpmodel = MyOrderedDictModel(filters_factory.filterpath)
         self.ui.lstFilterPackages.setModel(self.fpmodel)
 
         self.ui.lstFilterPackages.selectionModel().selectionChanged.connect(
@@ -224,7 +224,7 @@ class SettingsWidget(QDialog):
         idx = self.filterpackages_selected_rows()
         if len(idx) == 1:
             self.ui.btnFilterPackageMoveUp.setEnabled(idx[0] > 0)
-            self.ui.btnFilterPackageMoveDown.setEnabled(idx[0] < len(filters.filterpath)-1)
+            self.ui.btnFilterPackageMoveDown.setEnabled(idx[0] < len(filters_factory.filterpath)-1)
         else:
             self.ui.btnFilterPackageMoveUp.setEnabled(False)
             self.ui.btnFilterPackageMoveDown.setEnabled(False)
@@ -238,11 +238,11 @@ class SettingsWidget(QDialog):
         thekey = os.path.basename(thedir)
         thedir = os.path.dirname(thedir)
 
-        if thekey in filters.filterpath:
+        if thekey in filters_factory.filterpath:
             QMessageBox.critical(self, "There is already an existing filter package `%s'!", thekey)
 
         if thekey and thedir:
-            filters.filterpath[thekey] = str(thedir)
+            filters_factory.filterpath[thekey] = str(thedir)
             self.ui.lstFilterPackages.reset();
             self.save_settings()
 
@@ -256,13 +256,13 @@ class SettingsWidget(QDialog):
             yn = QMessageBox.question(self, "Remove filter package?",
                                       ("Unset filter package %s? The files will not be removed, "
                                       "they will just be ignored by bibolamazi.") % (
-                                          filters.filterpath.item_at(idx)[0]
+                                          filters_factory.filterpath.item_at(idx)[0]
                                           ),
                                       QMessageBox.Yes|QMessageBox.Cancel, QMessageBox.Cancel)
             if yn != QMessageBox.Yes:
                 continue
             
-            del filters.filterpath[filters.filterpath.item_at(idx)[0]]
+            del filters_factory.filterpath[filters_factory.filterpath.item_at(idx)[0]]
             self.ui.lstFilterPackages.reset()
             self.save_settings()
 
@@ -276,9 +276,9 @@ class SettingsWidget(QDialog):
         if row == 0:
             return
 
-        fpitems = filters.filterpath.items()
-        filters.filterpath.clear()
-        filters.filterpath.update(reversed( fpitems[:row-1] + [fpitems[row], fpitems[row-1]] + fpitems[row+1:] ))
+        fpitems = filters_factory.filterpath.items()
+        filters_factory.filterpath.clear()
+        filters_factory.filterpath.update(reversed( fpitems[:row-1] + [fpitems[row], fpitems[row-1]] + fpitems[row+1:] ))
         self.ui.lstFilterPackages.reset()
         self.save_settings()
         
@@ -289,12 +289,12 @@ class SettingsWidget(QDialog):
             return
         row = idxlist[0]
 
-        if row >= len(filters.filterpath)-1:
+        if row >= len(filters_factory.filterpath)-1:
             return
 
-        fpitems = filters.filterpath.items()
-        filters.filterpath.clear()
-        filters.filterpath.update(reversed( fpitems[:row] + [fpitems[row+1], fpitems[row]] + fpitems[row+2:] ))
+        fpitems = filters_factory.filterpath.items()
+        filters_factory.filterpath.clear()
+        filters_factory.filterpath.update(reversed( fpitems[:row] + [fpitems[row+1], fpitems[row]] + fpitems[row+2:] ))
         self.ui.lstFilterPackages.reset()
         self.save_settings()
 
@@ -324,10 +324,10 @@ class SettingsWidget(QDialog):
 
         s.setValue("filterpath",
                    QVariant(QString(os.pathsep.join(( "%s=%s"%(k,v if v else "")
-                                                      for k,v in filters.filterpath.items() ))))
+                                                      for k,v in filters_factory.filterpath.items() ))))
                    )
         # reset the filter cache.
-        filters.reset_filters_cache()
+        filters_factory.reset_filters_cache()
 
         s.endGroup()
         s.sync()

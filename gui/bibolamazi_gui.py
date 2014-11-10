@@ -34,7 +34,7 @@ import bibolamazi_init
 from core import bibolamazifile
 from core import main
 from core.butils import BibolamaziError
-import filters
+from core.bibfilter import factory as filters_factory
 import core.version
 
 from PyQt4.QtCore import *
@@ -332,7 +332,7 @@ def run_main():
     # load precompiled filters, if we've got any
     try:
         import bibolamazi_compiled_filter_list as pc
-        filters.load_precompiled_filters('filters', dict([
+        filters_factory.load_precompiled_filters('filters', dict([
             (fname, pc.__dict__[fname])  for fname in pc.filter_list
             ]))
     except ImportError:
@@ -348,7 +348,7 @@ def run_main():
         main.setup_filterpackages_from_env()
         # ... and from settings.
         settingswidget.setup_filterpackages_from_settings(QSettings())
-    except (filters.NoSuchFilter, filters.NoSuchFilterPackage, BibolamaziError):
+    except (filters_factory.NoSuchFilter, filters_factory.NoSuchFilterPackage, BibolamaziError):
         QMessageBox.warning(None, "Filter packages error",
                             "An error was detected in the filter packages configuration. "
                             "Please edit your settings.")

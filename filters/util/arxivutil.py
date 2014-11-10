@@ -26,7 +26,7 @@ from urllib2 import URLError, HTTPError
 from core.blogger import logger
 from core.bibusercache import BibUserCacheAccessor
 from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
-
+from core import butils
 
 # --- code to detect arXiv info ---
 
@@ -455,3 +455,15 @@ def setup_and_get_arxiv_accessor(bibolamazifile):
         bibolamazifile.cacheAccessor(ArxivFetchedAPIInfoCacheAccessor)
         )
     return arxivinfoaccessor
+
+
+
+# deprecated:
+def get_arxiv_cache_access(bibolamazifile):
+    butils.warn_deprecated(None, "get_arxiv_cache_access()", "setup_and_get_arxiv_accessor()",
+                           modulename="arxivutil.py",
+                           explanation="We now use the new cache mechanism; your filter should "
+                           "also explicitly request the cache accessors ArxivInfoCacheAccessor "
+                           "and ArxivFetchedAPIInfoCacheAccessor so that the cache is correctly "
+                           "set up.")
+    return setup_and_get_arxiv_accessor(bibolamazifile)

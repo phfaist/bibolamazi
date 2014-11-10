@@ -29,7 +29,7 @@ from core.blogger import logger
 from core import butils
 import core.argparseactions
 
-import filters
+from core.bibfilter import factory as filters_factory
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -55,7 +55,7 @@ class HelpBrowser(QWidget):
         for filt in filterinstanceeditor.get_filter_list():
             fbutton = QPushButton('%s' % (filt), self)
             fbutton.setProperty('helppath', 'filters/%s' %(filt))
-            fbutton.setToolTip(filters.get_filter_class(filt).getHelpDescription())
+            fbutton.setToolTip(filters_factory.get_filter_class(filt).getHelpDescription())
             self.ui.lytHomeFilterButtons.addWidget(fbutton)
 
             QObject.connect(fbutton, SIGNAL('clicked()'), self.openHelpTopicBySender)
@@ -145,10 +145,10 @@ class HelpBrowser(QWidget):
 
             tb = QTextBrowser(self.ui.tabs)
             tb.setFont(font)
-            tb.setText(filters.format_filter_help(filtname))
+            tb.setText(filters_factory.format_filter_help(filtname))
 
             tb.setProperty('HelpTabTitle', '%s filter' %(filtname))
-            tb.setProperty('HelpTabToolTip', filters.get_filter_class(filtname).getHelpDescription())
+            tb.setProperty('HelpTabToolTip', filters_factory.get_filter_class(filtname).getHelpDescription())
             return tb
 
         if (pathitems[0] == 'general'):

@@ -192,14 +192,18 @@ def parse_timedelta(in_s):
 
 
 
-def warn_deprecated(classname, oldname, newname):
+def warn_deprecated(classname, oldname, newname, modulename=None, explanation=None):
     import traceback
     logger.warning(
-        ("%(classnamedot)s%(oldname)s is deprecated. Please use %(classnamedot)s%(newname)s instead. at:\n"
+        ("%(modulenamecolon)s%(classnamedot)s%(oldname)s is deprecated. Please use "
+         "%(modulenamecolon)s%(classnamedot)s%(newname)s instead. %(explanationspace)s"
+         "at:\n"
          "%(stack)s")
         % { 'classnamedot': (classname+'.' if classname else ''),
+            'modulenamecolon': (modulename+':' if modulename else ''),
             'oldname': oldname,
             'newname': newname,
+            'explanationspace': (explanation+' ' if explanation else ''),
             'stack': traceback.format_stack(limit=3)[0],
             }
         )

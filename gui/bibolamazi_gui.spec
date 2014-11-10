@@ -1,4 +1,5 @@
 # -*- mode: python -*-
+# -*- coding: utf-8 -*-
 
 import sys
 import os
@@ -17,7 +18,7 @@ bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 ##
 sys.path += [bibolamazi_path];
 import bibolamazi_init
-import filters
+from core.bibfilter import factory as filterfac
 
 ##
 ## All the python files under 'filters/'
@@ -28,8 +29,8 @@ import filters
 ## pre-compile filter list
 ##
 precompiled_filters_dir = '_precompiled_filters_build';
-import filters
-filternames = filters.detect_filters()
+#import filters
+filternames = filterfac.detect_filters()
 if (not os.path.isdir(precompiled_filters_dir)):
     os.mkdir(precompiled_filters_dir)
 with open(os.path.join(precompiled_filters_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
