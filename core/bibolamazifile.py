@@ -131,7 +131,10 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 class BibolamaziFile(object):
-    def __init__(self, fname=None, create=False, use_cache=True):
+    def __init__(self, fname=None, create=False,
+                 load_to_state=BIBOLAMAZIFILE_LOADED,
+                 use_cache=True,
+                 default_cache_invalidation_time=None):
         """Create a BibolamaziFile object.
 
         If `fname` is provided, the file is fully loaded (unless `create` is also
@@ -142,9 +145,16 @@ class BibolamaziFile(object):
         and calling `saveToFile()` will result in writing this template to the file
         `fname`.
 
+        If `load_to_state` is given, then the file is only loaded up to the given state. 
+        See `load()` for more details. The state should be one of `BIBOLAMAZIFILE_INIT`,
+        `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or `BIBOLAMAZIFILE_LOADED`.
+
         If `use_cache` is `True` (default), then when loading this file, we'll attempt to
         load a corresponding cache file if it exists. Note that even if `use_cache` is
         `False`, then cache will still be *written* when calling `saveToFile()`.
+
+        If `default_cache_invalidation_time` is given, then the default cache invalidation
+        time is set before loading the cache.
         """
         
         logger.debug("Opening bibolamazi file `%s'" %(fname));
@@ -157,7 +167,15 @@ class BibolamaziFile(object):
             self._fname = fname
             self._dir = os.path.dirname(os.path.realpath(fname));
         elif (fname):
-            self.load(fname=fname, to_state=BIBOLAMAZIFILE_LOADED)
+            # read the file, load settings
+            self.load(fname=fname, to_state=min(load_to_state, BIBOLAMAZIFILE_PARSED))
+            # set the default cache invalidation time to the given value, before we load
+            # all the data and cache.
+            if default_cache_invalidation_time is not None:
+                self.setDefaultCacheInvalidationTime(default_cache_invalidation_time)
+            # now load the data, if required.
+            if (load_to_state > BIBOLAMAZIFILE_PARSED):
+                self.load(to_state=load_to_state)
         else:
             logger.debug("No file given. Don't forget to set one with load()")
 
@@ -173,9 +191,11 @@ class BibolamaziFile(object):
         If `fname` is `None`, then resets the object to an empty state. If fname is not given or an
         empty list, then uses any previously loaded fname and its state.
 
-        If `to_state` is given, will only attempt to load the file up to that state. This can be
-        useful, e.g., in a config editor which needs to parse the sections of the file but does not
-        need to worry about syntax errors.
+        If `to_state` is given, will only attempt to load the file up to that state. This
+        can be useful, e.g., in a config editor which needs to parse the sections of the
+        file but does not need to worry about syntax errors. The state should be one of
+        `BIBOLAMAZIFILE_INIT`, `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or
+        `BIBOLAMAZIFILE_LOADED`.
         """
         
         if (fname or not isinstance(fname, list)):
@@ -294,6 +314,15 @@ class BibolamaziFile(object):
         """
         A timedelta object giving the amount of time for which data in cache is consdered
         valid (by default).
+
+        Note that this function should be called BEFORE the data is loaded. If you just
+        call, for example the default constructor, this might be too late already. If you
+        use the `load()` function, set the default cache invalidation time before you load
+        up to the state `BIBOLAMAZIFILE_LOADED`.
+
+        Note that you may also use the option in the constructor
+        `default_cache_invalidation_time`, which has the same effect as this funtion
+        called at the appropriate time.
         """
 
         # Note that we set the invalidation anyway, even if we have

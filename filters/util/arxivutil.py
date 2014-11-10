@@ -251,8 +251,18 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             )
 
     def initialize(self, cache_obj, **kwargs):
-        cache_obj.installCacheExpirationChecker(cache_name=self.cacheName())
-        self.cacheDic().setdefault('fetched', {})
+        dic = self.cacheDic()
+        dic.setdefault('fetched', {})
+        #logger.longdebug("dic is %r\n"
+        #                 "id(dic['fetched'])=%r", dic, id(dic['fetched']))
+
+        logger.debug("arxiv_fetched_api_info: adding validation checker; time valid is %r",
+                     cache_obj.cacheExpirationTokenChecker().time_valid)
+
+        # validate each entry with an expiration checker. Do this per entry, rather than
+        # globally on the full cache. (So don't use installCacheExpirationChecker())
+        dic['fetched'].set_validation(cache_obj.cacheExpirationTokenChecker())
+        
 
 
     def fetchArxivApiInfo(self, idlist):
@@ -267,11 +277,22 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         """
 
         cache_entrydic = self.cacheDic()['fetched']
+        #logger.longdebug("fetchArxivApiInfo(): "
+        #                 "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
+        #                 "len(dic['fetched'])=%d",
+        #                 id(cache_entrydic), id(self.cacheObject().cachedic['arxiv_fetched_api_info']),
+        #                 len(cache_entrydic))
 
-        missing_ids = [ aid for aid in idlist
-                        if (aid not in cache_entrydic  or
-                            cache_entrydic.get(aid) is None  or
-                            isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)) ]
+        missing_ids = []
+        #debug_allids = []
+        for aid in idlist:
+            #debug_allids.append(aid)
+            if (aid not in cache_entrydic  or
+                cache_entrydic.get(aid) is None  or
+                isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)):
+                missing_ids.append(aid)
+
+        #logger.longdebug("fetchArxivApiInfo(): debug_allids=%r, missing_ids=%r", debug_allids, missing_ids)
 
         if not missing_ids:
             logger.longdebug('nothing to fetch: no missing ids')
@@ -303,8 +324,8 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                                "might be incomplete.")
                 return False
                 #
-                # Don't raise an error, in case the guy is running bibolamazi on his laptop in the
-                # train. In that case he might prefer some missing entries rather than a huge complaint.
+                # Don't raise an error, in case the guy is running bibolamazi on his laptop on the
+                # train. In that case he might prefer some missing entries rather than a critical failure.
                 #
                 #            raise BibFilterError(
                 #                filtname,
@@ -335,6 +356,9 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         Don't forget to first call `fetchArxivApiInfo()` to retrieve the information in
         the first place.
+
+        Note the reference part may be a `ReferenceErrorInfo`, if there was an error
+        retreiving the reference.
         """
         return self.cacheDic()['fetched'].get(arxivid, None)
 
@@ -397,6 +421,10 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             
             if (entrydic[k] is not None):
                 needs_to_be_completed.append( (k, arinfo['arxivid'],) )
+
+        logger.longdebug("complete_cache(): needs_to_be_completed=%r\nentrydic=%r\n",
+                         needs_to_be_completed,
+                         entrydic)
 
         #
         # Complete the entry arXiv info using fetched info from the arXiv API.

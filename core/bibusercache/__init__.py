@@ -319,6 +319,7 @@ class BibUserCacheList(collections.MutableSequence):
 
 class BibUserCache(object):
     def __init__(self, cache_version=None):
+        logger.longdebug("BibUserCache: Constructor!")
         self.cachedic = BibUserCacheDic({})
         self.entry_validation_checker = tokencheckers.TokenCheckerPerEntry()
         self.comb_validation_checker = tokencheckers.TokenCheckerCombine(
@@ -347,6 +348,20 @@ class BibUserCache(object):
 
         return self.cachedic[cache_name]
 
+
+    def cacheExpirationTokenChecker(self):
+        """
+        Returns a cache expiration token checker validator which is configured with the
+        default cache invalidation time.
+
+        This object may be used by subclasses as a token checker for sub-caches that need
+        regular invalidation (typically several days in the default configuration).
+
+        Consider using though `installCacheExpirationChecker()`, which simply applies a
+        general validator to your full cache; this is generally what you might want.
+        """
+        return self.expiry_checker
+    
 
     def installCacheExpirationChecker(self, cache_name):
         """
@@ -398,9 +413,9 @@ class BibUserCache(object):
     def saveCache(self, cachefobj):
         data = {
             # cache pickle versions for Bibolamazi versions:
-            #   -1.4:  <no information saved, incompatible>
-            #   1.5+:  1
-            #   2.x :  2
+            #   --1.4:  <no information saved, incompatible>
+            #   1.5+:   1
+            #   2.x :   2
             'cachepickleversion': 2,
             'cachedic': self.cachedic,
             }

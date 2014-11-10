@@ -183,17 +183,22 @@ def run_bibolamazi_args(args):
     # open the bibolamazifile, which is the main bibtex file
     # ------------------------------------------------------
 
-    # open the bibolamazi file and create the BibolamaziFile object. This will parse the rules
-    # and the entries, as well as keep some information on how to re-write to the file.
-    bfile = BibolamaziFile(args.bibolamazifile, use_cache=args.use_cache);
+    kwargs = {
+        'use_cache': args.use_cache
+        }
 
     #
-    # If given a cache_timeout, set it
+    # If given a cache_timeout, give it as parameter
     #
     if args.cache_timeout is not None:
-        logger.debug("Setting default cache timeout to %r", args.cache_timeout)
-        bfile.setDefaultCacheInvalidationTime(args.cache_timeout)
+        logger.debug("default cache timeout: %r", args.cache_timeout)
+        kwargs['default_cache_invalidation_time'] = args.cache_timeout
     
+
+    # open the bibolamazi file and create the BibolamaziFile object. This will parse the rules
+    # and the entries, as well as keep some information on how to re-write to the file.
+    bfile = BibolamaziFile(args.bibolamazifile, **kwargs)
+
 
     bibdata = bfile.bibliographyData();
     if (bibdata is None or not len(bibdata.entries)):

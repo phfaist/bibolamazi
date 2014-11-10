@@ -7,8 +7,9 @@ import pickle
 import textwrap
 import pydoc
 import StringIO
+import locale
 
-sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__), '../..'))]
+sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))]
 
 import bibolamazi_init
 
@@ -48,7 +49,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
             dump_bibcacheobj(val, name='<item>', indent=indent+indent_step, **kwargs)
         return
     # display as string:
-    s = str(cacheobj)
+    s = unicode(cacheobj)
     if len(s) < 50:
         f.write(s)
         return
@@ -72,6 +73,7 @@ dump_bibcacheobj(cache['cachedic'], f=f)
 
 f.write("\n" + "=" * 90 + "\n\n\n")
 
-pydoc.pager(f.getvalue())
+encoding = locale.getdefaultlocale()[1];
+pydoc.pager(f.getvalue().encode(encoding if encoding else 'utf-8'))
 
 sys.exit(0)

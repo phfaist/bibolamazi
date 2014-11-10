@@ -33,12 +33,12 @@ Additionally, the graphical user interface requires
 distribution, it's most probably in your distribution packages. Note you only need PyQt4
 to run the graphical user interface: the command-line version will happily run without.
 
-Note that these requirements are NOT necessary if you use a precompiled binary release
-(https://github.com/phfaist/bibolamazi/releases). The requirements (and following
+Note that these requirements are NOT necessary if you use a [precompiled binary
+release](https://github.com/phfaist/bibolamazi/releases). The requirements (and following
 instructions) apply to downloading and running bibolamazi from source, which for example
 is required if you want to use the command-line version.
 
-* To install bibolamazi, simply clone this repository on your computer, or download it as
+* First, clone this repository on your computer, or download it as
   a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
   easier with `git pull`).
 
@@ -48,14 +48,14 @@ is required if you want to use the command-line version.
   Then, link the executable(s) to somewhere in your path:
 
            > cd ~/bin/
-           bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi .
-           bin> ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi_gui .
+           bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi .
+           bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
 
   or, for a system-wide install,
 
            > cd /usr/local/bin/
-           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi .
-           > sudo ln -s /path/to/where/you/unpacked/bibolamazi/bibolamazi_gui .
+           > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi .
+           > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
 
 
 * To compile a bibolamazi bibtex file, you should run `bibolamazi` in general as
@@ -104,6 +104,12 @@ main bibtex file (in our example `main.bibolamazi.bib`) is updated, such that:
 * All the filtered entries (obtained from, e.g., `source1.bib` and `source2.bib`) are
   then dumped in the rest of the file, overwriting the rest of `main.bibolamazi.bib` (which
   logically contained output of a previous run of bibolamazi).
+
+The bibolamazi file `main.bibolamazi.bib` is then a valid BibTeX file to include into your
+LaTeX document, so you would include the bibliography in your document with a LaTeX command
+similar to:
+
+    \bibliography{main.bibolamazi}
 
 
 ### The Bibolamazi Configuration Section
@@ -339,8 +345,8 @@ Bibolamazi is developed and maintained by Philippe Faist. It is distributed unde
 
 This project also contains the following 3rd party code.
 
-[**PybTeX**](http://pybtex.sourceforge.net/) provides a python library for parsing and writing
-BibTeX files.
+[**PybTeX**](http://pybtex.sourceforge.net/) is used as python library for parsing and
+writing BibTeX files.
 
     Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011 Andrey Golovizin
 

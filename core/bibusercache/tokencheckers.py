@@ -51,7 +51,7 @@ class TokenChecker(object):
 
 
 class TokenCheckerDate(TokenChecker):
-    def __init__(self, time_valid=datetime.timedelta(days=3), **kwargs):
+    def __init__(self, time_valid=datetime.timedelta(days=5), **kwargs):
         super(TokenCheckerDate, self).__init__(**kwargs)
         self.time_valid = time_valid
 
