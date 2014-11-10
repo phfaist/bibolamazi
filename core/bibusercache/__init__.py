@@ -465,8 +465,8 @@ class BibUserCacheAccessor(object):
     right away, refresh it on demand only, etc.
 
     Filters access the cache by requesting an instance to the accessor. This is done by
-    calling `BibolamaziFile.cache_accessor()` (see also `BibFilter.bibolamaziFile()` and
-    `BibFilter.cache_accessor()`.
+    calling :py:meth:`BibolamaziFile.cache_accessor()` (see also
+    :py:meth:`BibFilter.bibolamaziFile()` and :py:meth:`BibFilter.cache_accessor()`.
 
     Filters should specify which cache they would like to have access to by reimplementing
     the `cache_accessors()` method.
@@ -477,8 +477,8 @@ class BibUserCacheAccessor(object):
 
     Cache accessor objects are instantiated by the bibolamazi file. Their constructors
     should accept a keyword argument `bibolamazifile` and pass it on to the superclass
-    constructor. Constructors should also accept **kwargs for possible compatibility with
-    future additions.
+    constructor. Constructors should also accept `**kwargs` for possible compatibility
+    with future additions.
     """
     def __init__(self, cache_name, bibolamazifile, **kwargs):
         super(BibUserCacheAccessor, self).__init__(**kwargs)
@@ -522,21 +522,22 @@ class BibUserCacheAccessor(object):
 
     def cacheDic(self):
         """
-        Returns the cache dictionary. This is meant as a ``protected'' method for the
+        Returns the cache dictionary. This is meant as a 'protected' method for the
         accessor only. Objects that query the accessor should use the accessor-specific
         API to access data.
 
         This returns the data in the cache object that was set internally by the
-        `BibolamaziFile` via the method `setCacheObj()`. Don't call that manually,
-        though, unless you're implementing an alternative `BibolamaziFile` class !
+        :py:class:`BibolamaziFile` via the method :py:meth:`setCacheObj()`. Don't call
+        that manually, though, unless you're implementing an alternative
+        :py:class:`BibolamaziFile` class !
         """
         return self._cache_obj.cacheFor(self.cacheName())
 
 
     def cacheObject(self):
         """
-        Returns the parent `BibUserCache` object in which `cacheDic()` is a
-        sub-cache. This is provided FOR CONVENIENCE! Don't abuse this!
+        Returns the parent :py:class:`BibUserCache` object in which :py:meth:`cacheDic()`
+        is a sub-cache. This is provided FOR CONVENIENCE! Don't abuse this!
 
         You should never need to access the object directly. Maybe just read-only to get
         some standard attributes such as the root cache version. If you're writing

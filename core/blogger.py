@@ -30,10 +30,14 @@ class ConditionalFormatter(logging.Formatter):
     Very much like logging.Formatter, except that different formats can be specified for
     different log levels.
 
-    Specify the different formats to the constructor with keyword arguments. E.g.:
-      ConditionalFormatter('%(message)s', DEBUG='DEBUG: %(message)s', INFO='just some info... %(message)s')
-    This will use '%(message)s' as format for all messages except with level other thand DEBUG or INFO, for
-    which their respective formats are used.
+    Specify the different formats to the constructor with keyword arguments. E.g.::
+    
+      ConditionalFormatter('%(message)s',
+                           DEBUG='DEBUG: %(message)s',
+                           INFO='just some info... %(message)s')
+    
+    This will use `'%(message)s'` as format for all messages except with level other thand
+    DEBUG or INFO, for which their respective formats are used.
     """
     
     def __init__(self, defaultfmt=None, datefmt=None, **kwargs):

@@ -19,3 +19,9 @@
 #                                                                              #
 ################################################################################
 
+"""
+Core bibolamazi module.
+
+See `core.bibfilter`, `core.bibolamazifile`, `core.bibusercache` for the main core
+modules.
+"""

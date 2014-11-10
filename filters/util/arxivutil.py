@@ -81,7 +81,8 @@ def detectEntryArXivInfo(entry):
     """
     Extract arXiv information from a `pybtex.database.Entry` bibliographic entry.
 
-    Returns upon success a dictionary of the form
+    Returns upon success a dictionary of the form::
+    
         { 'primaryclass': <primary class, if available>,
           'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)>,
           'archiveprefix': value of the 'archiveprefix' field
@@ -92,7 +93,7 @@ def detectEntryArXivInfo(entry):
 
     Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
     filter handles this case separately and explicitly, the option there
-    -dThesesCountAsPublished=0 has no effect here.
+    `-dThesesCountAsPublished=0` has no effect here.
 
     If no arXiv information was detected, then this function returns None.
     """
@@ -347,18 +348,21 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
     def getArxivApiInfo(self, arxivid):
         """
-        Returns a dictionary
+        Returns a dictionary::
 
-            { 'reference':  <arxiv2bib.Reference>,  'bibtex': <bibtex string> }
+            {
+              'reference':  <arxiv2bib.Reference>,
+              'bibtex': <bibtex string>
+            }
 
         for the given arXiv id in the cache. If the information is not in the cache,
         returns `None`.
 
-        Don't forget to first call `fetchArxivApiInfo()` to retrieve the information in
-        the first place.
+        Don't forget to first call :py:meth:`fetchArxivApiInfo()` to retrieve the
+        information in the first place.
 
-        Note the reference part may be a `ReferenceErrorInfo`, if there was an error
-        retreiving the reference.
+        Note the reference part may be a :py:class:`arxiv2bib.ReferenceErrorInfo`, if
+        there was an error retreiving the reference.
         """
         return self.cacheDic()['fetched'].get(arxivid, None)
 

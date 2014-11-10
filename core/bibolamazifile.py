@@ -20,6 +20,11 @@
 ################################################################################
 
 
+"""
+The Main bibolamazifile module: this contains the BibolamaziFile class definition.
+"""
+
+
 import re;
 import io;
 import sys;
@@ -55,6 +60,10 @@ class BibolamaziFileParseError(BibolamaziError):
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
+    """
+    This error is raised to signify that the file specified is not a bibolamazi
+    file---most probably, it does not contain a valid configuration section.
+    """
     def __init__(self, msg, fname=None, lineno=None):
         BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno);
 
@@ -384,10 +393,10 @@ class BibolamaziFile(object):
         # provide us an initialized instance
         self.load(None, to_state=BIBOLAMAZIFILE_INIT)
 
-        self._header = TEMPLATE_HEADER;
-        self._config = TEMPLATE_CONFIG;
-        self._config_data = self._config_data_from_block(TEMPLATE_CONFIG);
-        self._rest = '';#TEMPLATE_REST;
+        self._header = _TEMPLATE_HEADER;
+        self._config = _TEMPLATE_CONFIG;
+        self._config_data = self._config_data_from_block(_TEMPLATE_CONFIG);
+        self._rest = '';#_TEMPLATE_REST;
 
         # store raw cmds
         self._cmds = [];
@@ -797,7 +806,7 @@ class BibolamaziFile(object):
 
 
 
-TEMPLATE_HEADER = """\
+_TEMPLATE_HEADER = """\
 
 
 .. Additionnal stuff here will not be managed by bibolamazi. It will also not be
@@ -807,7 +816,7 @@ TEMPLATE_HEADER = """\
 
 """
 
-TEMPLATE_CONFIG = """\
+_TEMPLATE_CONFIG = """\
 %%%-BIB-OLA-MAZI-BEGIN-%%%
 %
 % %% This bibliography database uses BIBOLAMAZI:
@@ -848,3 +857,4 @@ TEMPLATE_CONFIG = """\
 %
 %%%-BIB-OLA-MAZI-END-%%%
 """
+
