@@ -33,6 +33,11 @@ Additionally, the graphical user interface requires
 distribution, it's most probably in your distribution packages. Note you only need PyQt4
 to run the graphical user interface: the command-line version will happily run without.
 
+Note that these requirements are NOT necessary if you use a precompiled binary release
+(https://github.com/phfaist/bibolamazi/releases). The requirements (and following
+instructions) apply to downloading and running bibolamazi from source, which for example
+is required if you want to use the command-line version.
+
 * To install bibolamazi, simply clone this repository on your computer, or download it as
   a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
   easier with `git pull`).
