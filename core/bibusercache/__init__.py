@@ -31,6 +31,8 @@ from core.bibusercache import tokencheckers
 
 
 
+
+
 def _to_bibusercacheobj(obj, parent):
     if (isinstance(obj, BibUserCacheDic) or isinstance(obj, BibUserCacheList)):
         # make sure we don't make copies of these objects, but keep references
@@ -340,9 +342,10 @@ class BibUserCache(object):
 
 
     def cacheFor(self, cache_name):
-        if (self.cachedic is None):
-            return None
-
+        """
+        Returns the cache dictionary object for the given cache name. If the cache
+        dictionary does not exist, it is created.
+        """
         if not cache_name in self.cachedic:
             self.cachedic[cache_name] = {}
 
@@ -396,9 +399,24 @@ class BibUserCache(object):
 
 
     def hasCache(self):
+        """
+        Returns `True` if we have any cache at all. This only returns `False` if there are
+        no cache dictionaries defined.
+        """
         return bool(self.cachedic)
 
     def loadCache(self, cachefobj):
+        """
+        Load the cache from a file-like object `cachefobj`.
+
+        This tries to unpickle the data and restore the cache. If the loading fails, e.g. 
+        because of an I/O error, the exception is logged but ignored, and an empty cache
+        is initialized.
+
+        Note that at this stage
+        only the basic validation is performed; the cache accessors should then each
+        initialize their own subcaches with possibly their own specialized validators.
+        """
         try:
             data = pickle.load(cachefobj);
             self.cachedic = data['cachedic']
@@ -411,6 +429,10 @@ class BibUserCache(object):
         self.cachedic.set_validation(self.comb_validation_checker)
 
     def saveCache(self, cachefobj):
+        """
+        Saves the cache to the file-like object `cachefobj`. This dumps a pickle-d version
+        of the cache information into the stream.
+        """
         data = {
             # cache pickle versions for Bibolamazi versions:
             #   --1.4:  <no information saved, incompatible>
@@ -439,10 +461,12 @@ class BibUserCacheError(BibolamaziError):
     for example, then this error should be raised.
     """
 
-    def __init__(self, cache_name, msg):
+    def __init__(self, cache_name, message):
         if (not isinstance(cache_name, basestring)):
             cache_name = '<unknown>'
-        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+"': "+unicode(msg))
+        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+u"': "+unicode(message))
+        self.cache_name = cache_name
+        self.message = message
 
 
 

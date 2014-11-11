@@ -6,4 +6,6 @@ Example of a custom filter
 ==========================
 
 
-example ... ... ... ...
+.. include:: develfilterexample.py
+   :literal:
+

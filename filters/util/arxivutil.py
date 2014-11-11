@@ -24,9 +24,15 @@ import re
 from urllib2 import URLError, HTTPError
 
 from core.blogger import logger
-from core.bibusercache import BibUserCacheAccessor
+from core.bibusercache import BibUserCacheAccessor, BibUserCacheError
 from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
 from core import butils
+
+
+class BibArxivApiFetchError(BibUserCacheError):
+    def __init__(self, msg):
+        super(BibArxivApiFetchError).__init__('arxiv_fetched_api_info', msg)
+
 
 # --- code to detect arXiv info ---
 
@@ -272,6 +278,14 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         `idlist`. This must be, yes you guessed right, a list of arXiv identifiers that we
         should fetch.
 
+        This function performs a query on the arXiv.org API, using the arxiv2bib library. 
+        Please note that you should avoid making rapid fire requests in a row (this should
+        normally not happen anyway thanks to our cache mechanism). However, beware that if
+        we get a ``403 Forbidden`` HTTP answer, we should not continue or else arXiv.org
+        might interpret our requests as a DOS attack. If a ``403 Forbidden`` HTTP answer
+        is received this function raises :py:exc:`BibArxivApiFetchError` with a meaningful
+        error text.
+
         Only those entries in `idlist` which are not already in the cache are fetched.
 
         `idlist` can be any iterable.
@@ -306,8 +320,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
         except URLError as error:
             if isinstance(error, HTTPError) and error.getcode() == 403:
-                raise BibCacheError(
-                    self.cacheName(),
+                raise BibArxivApiFetchError(
                     textwrap.dedent("""\
                     Error fetching ArXiv API Info: ** 403 Forbidden **
 

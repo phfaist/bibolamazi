@@ -1,5 +1,5 @@
 
-Writing a new filter
+Writing a New Filter
 ====================
 
 
@@ -9,7 +9,7 @@ Writing a new filter
    devel-filter-example
 
 
-The filter module
+The Filter Module
 -----------------
 
 There are two main objects your module should define at the very least:
@@ -44,3 +44,6 @@ There are several other functions the module may define, although they are not m
   filter option processor; so if you implement `format_help()` manually, the ``helptext``
   attribute will be ignored.
 
+
+Passing Arguments to the Filter
+-------------------------------
