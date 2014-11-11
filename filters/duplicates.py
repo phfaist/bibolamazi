@@ -422,9 +422,6 @@ class DuplicatesFilter(BibFilter):
         logger.debug('duplicates: dupfile=%r, warn=%r' % (dupfile, warn));
 
 
-    def name(self):
-        return "duplicates"
-
     def getRunningMessage(self):
         if (self.dupfile):
             return (u"processing duplicate entries. Don't forget to insert `\\input{%s}' in "

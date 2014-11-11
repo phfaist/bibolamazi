@@ -98,8 +98,10 @@ class MyTestFilter(BibFilter):
             return
 
         if self.mode == MODE_FIXED:
-            entry.fields['testField'] = (u"On d\u00E9daigne volontiers un but qu'on n'a pas r\u00E9ussi "
-                                         u"\u00E0 atteindre, ou qu'on a atteint d\u00E9finitivement. (Proust)")
+            entry.fields['testField'] = (
+                u"On d\u00E9daigne volontiers un but qu'on n'a pas r\u00E9ussi "
+                u"\u00E0 atteindre, ou qu'on a atteint d\u00E9finitivement. (Proust)"
+                )
         
         raise BibFilterError('testfilter', "Unknown operating mode: %s" % mode );
 

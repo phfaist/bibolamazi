@@ -178,9 +178,6 @@ class CiteKeyFilter(BibFilter):
         logger.debug('citekey: fmt=%r', self.fmt)
 
 
-    def name(self):
-        return "citekey"
-
     def getRunningMessage(self):
         return u"Generating standard citekeys"
     

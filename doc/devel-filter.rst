@@ -12,10 +12,10 @@ Writing a New Filter
 Developing Custom filters
 -------------------------
 
-Writing filters is straightforward. An example is provided here: develfilterexample_. Look
-inside the filters/ directory at the existing filters for further examples,
-e.g. ``arxiv.py``, ``duplicates.py`` or ``url.py``. They should be rather simple to
-understand.
+Writing filters is straightforward. An example is provided here:
+:ref:`devel-filter-example`. Look inside the filters/ directory at the existing filters
+for further examples, e.g. ``arxiv.py``, ``duplicates.py`` or ``url.py``. They should be
+rather simple to understand.
 
 A filter can either act on individual entries (e.g. the ``arxiv.py`` filter), or on the
 whole database (e.g. `duplicates.py`).

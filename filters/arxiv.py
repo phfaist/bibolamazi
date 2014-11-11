@@ -216,9 +216,6 @@ class ArxivNormalizeFilter(BibFilter):
         logger.debug('arxiv filter constructor: mode=%s; unpublished_mode=%s' % (self.mode, self.unpublished_mode));
 
 
-    def name(self):
-        return "arxiv"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
 

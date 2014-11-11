@@ -104,9 +104,6 @@ class CiteArxivFilter(BibFilter):
         logger.debug('citearxiv: jobname=%r' % (jobname,));
 
 
-    def name(self):
-        return "citearxiv"
-
     def getRunningMessage(self):
         return u"citearxiv: parsing & fetching relevant arxiv citations ..."
 

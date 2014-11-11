@@ -88,9 +88,6 @@ class OnlyUsedFilter(BibFilter):
         logger.debug('only_used: jobname=%r' % (jobname,));
 
 
-    def name(self):
-        return "only_used"
-
     def getRunningMessage(self):
         return u"only_used: filtering entries ..."
 

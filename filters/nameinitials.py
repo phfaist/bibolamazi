@@ -84,9 +84,6 @@ class NameInitialsFilter(BibFilter):
         logger.debug('NameInitialsFilter constructor')
         
 
-    def name(self):
-        return "nameinitials"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
 

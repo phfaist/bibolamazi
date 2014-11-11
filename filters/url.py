@@ -89,9 +89,6 @@ class UrlNormalizeFilter(BibFilter):
         logger.debug('url filter constructor')
         
 
-    def name(self):
-        return "url"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
 
