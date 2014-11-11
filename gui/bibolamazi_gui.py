@@ -218,21 +218,35 @@ class MainWidget(QWidget):
     @pyqtSlot()
     def on_btnOpenFile_clicked(self):
         fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
-                                                'Bibolamazi Files (*.bib);;All Files (*)'))
+                                                'Bibolamazi Files (*.bibolamazi.bib);;All Files (*)'))
         if (fname):
             self.openFile(fname)
         
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        newfilename = str(QFileDialog.getSaveFileName(self, 'Create Bibolamazi File', QString(),
-                                                      'Bibolamazi Files (*.bib);;All Files (*)'))
+        saveFileDialog = QFileDialog(self, "Create Bibolamazi File", QString(),
+                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)");
+        if sys.platform.startswith('darwin'):
+            # NOTE: BUG: OS X' file selection dialog is so stupid it won't understand the
+            # .bibolamazi.bib extension and will force some silly warning dialong and mess up
+            # the extension completely. So use Qt's file dialog.
+            saveFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
+        
+        saveFileDialog.setDefaultSuffix("bibolamazi.bib")
+        saveFileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        saveFileDialog.setFileMode(QFileDialog.AnyFile)
+        if not saveFileDialog.exec_():
+            return
+        
+        newfilename = [unicode(x) for x in saveFileDialog.selectedFiles()][0]
+            
         if (not newfilename):
             # cancelled
             return
 
         if (os.path.exists(newfilename)):
             QMessageBox.critical(self, "File Exists",
-                                 "Cowardly refusing to overwrite existing file `%s'. Remove it first."
+                                 "Cowardly refusing to overwrite existing file `%s'. Please remove it first."
                                  %(newfilename))
             return
 

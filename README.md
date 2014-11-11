@@ -17,6 +17,14 @@ release from:
 These binaries don't need any installation, you can just download them, place them
 wherever you want, and run them.
 
+Documentation
+-------------
+
+The full Bibolamazi Documenation is available on ReadTheDocs:
+
+  http://bibolamazi.readthedocs.org/en/latest/
+
+
 The rest of this document is concerned mostly about downloading, installing and using
 bibolamazi from source. This option is only necessary if you want to use the
 command-line interface.

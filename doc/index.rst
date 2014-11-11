@@ -3,16 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+
 Welcome to Bibolamazi's documentation!
 ======================================
 
-Contents:
+Table of Contents:
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   devel-filter
+   bibolamazi-user-manual
    modules
+
 
 
 Indices and tables

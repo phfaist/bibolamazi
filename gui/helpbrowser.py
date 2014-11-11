@@ -264,11 +264,15 @@ What now?
 We suggest at this point that you create a new bibolamazi file, and get started
 with the serious stuff :)
 
+You might want to have a look at the documentation. It is available at:
+
+  http://bibolamazi.readthedocs.org/en/latest/
+
 If you want an example, you can have a look at the directory
 
   https://github.com/phfaist/bibolamazi/tree/master/test
 
-and, in particular the bibolamazi file `output.bib`.
+and, in particular the bibolamazi files `testX.bibolamazi.bib`.
 
 
 Command-line

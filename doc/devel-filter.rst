@@ -9,6 +9,32 @@ Writing a New Filter
    devel-filter-example
 
 
+Developing Custom filters
+-------------------------
+
+Writing filters is straightforward. An example is provided here: develfilterexample_. Look
+inside the filters/ directory at the existing filters for further examples,
+e.g. ``arxiv.py``, ``duplicates.py`` or ``url.py``. They should be rather simple to
+understand.
+
+A filter can either act on individual entries (e.g. the ``arxiv.py`` filter), or on the
+whole database (e.g. `duplicates.py`).
+
+For your organization, it is recommended to develop your filter(s) in a custom filter
+package which you keep a repository e.g. on github.com, so that the filter package can be
+easily installed on the different locations you would like to run bibolamazi from.
+
+Don't forget to make use of the *bibolamazi cache*, in case you fetch or compute values
+which you could cache for further reuse. Look at for the documentation for
+:py:class:`~core.bibusercache.BibUserCacheAccessor`.
+
+There are a couple utilities provided for the filters, check the :py:mod:`filters.util`
+module. In particular check out the :py:mod:`~filters.util.arxivutil` and
+:py:mod:`~filters.util.auxfile` modules.
+
+Feel free to contribute filters, it will only make bibolamazi more useful!
+
+
 The Filter Module
 -----------------
 

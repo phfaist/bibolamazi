@@ -320,6 +320,14 @@ class BibUserCacheList(collections.MutableSequence):
 
 
 class BibUserCache(object):
+    """
+    The basic root cache object.
+
+    This object stores the corresponding cache dictionaries for each cache. (See
+    :py:meth:`cacheFor`.)
+
+    (Internally, the caches are stored in one root :py:class:`BibUserCacheDic`.)
+    """
     def __init__(self, cache_version=None):
         logger.longdebug("BibUserCache: Constructor!")
         self.cachedic = BibUserCacheDic({})
@@ -383,7 +391,16 @@ class BibUserCache(object):
         Returns: the cache dictionary. This may have changed to a new empty object if the
         cache didn't validate!
 
-        WARNING: the cache dictionary may have been altered with the validation of the cache!
+        WARNING: the cache dictionary may have been altered with the validation of the
+        cache! Use the return value of this function, or call
+        :py:meth:`BibUserCacheAccessor.cacheDic` again!
+
+        Note: this validation will not validate individual items in the cache dictionary,
+        but the dictionary as a whole. Depending on your use case, it might be worth
+        introducing per-entry validation. For that, check out the various token checkers
+        in :py:mod:`.tokencheckers` and call
+        :py:meth:`~core.bibusercache.BibUserCacheDic.set_validation` to install a
+        specific validator instance.
         """
         if not cache_name in self.cachedic:
             raise ValueError("Invalid cache name: %s"%(cache_name))
@@ -489,8 +506,8 @@ class BibUserCacheAccessor(object):
     right away, refresh it on demand only, etc.
 
     Filters access the cache by requesting an instance to the accessor. This is done by
-    calling :py:meth:`BibolamaziFile.cache_accessor()` (see also
-    :py:meth:`BibFilter.bibolamaziFile()` and :py:meth:`BibFilter.cache_accessor()`.
+    calling :py:meth:`BibolamaziFile.cache_accessor` (see also
+    :py:meth:`BibFilter.bibolamaziFile` and :py:meth:`BibFilter.cache_accessor`.
 
     Filters should specify which cache they would like to have access to by reimplementing
     the `cache_accessors()` method.
@@ -525,8 +542,8 @@ class BibUserCacheAccessor(object):
         Note that the order in which the `initialize()` method of the various caches is
         called is undefined.
 
-        Use the `cacheDic()` method to access the cache dictionary. Note that if you
-        install token checkers on this cache, e.g. with
+        Use the :py:meth:`cacheDic` method to access the cache dictionary. Note that if
+        you install token checkers on this cache, e.g. with
         `cache_obj.installCacheExpirationChecker()`, then the cache dictionary object may
         have changed!
 
@@ -551,7 +568,7 @@ class BibUserCacheAccessor(object):
         API to access data.
 
         This returns the data in the cache object that was set internally by the
-        :py:class:`BibolamaziFile` via the method :py:meth:`setCacheObj()`. Don't call
+        :py:class:`BibolamaziFile` via the method :py:meth:`setCacheObj`. Don't call
         that manually, though, unless you're implementing an alternative
         :py:class:`BibolamaziFile` class !
         """
@@ -560,7 +577,7 @@ class BibUserCacheAccessor(object):
 
     def cacheObject(self):
         """
-        Returns the parent :py:class:`BibUserCache` object in which :py:meth:`cacheDic()`
+        Returns the parent :py:class:`BibUserCache` object in which :py:meth:`cacheDic`
         is a sub-cache. This is provided FOR CONVENIENCE! Don't abuse this!
 
         You should never need to access the object directly. Maybe just read-only to get
