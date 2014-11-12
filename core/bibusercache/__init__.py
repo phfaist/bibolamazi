@@ -93,8 +93,8 @@ class BibUserCacheDic(collections.MutableMapping):
         Set a function that will calculate the `token' for a given entry, for cache
         validation. The function `fn` shall compute a value based on a key (and possibly
         cache value) of the cache, such that comparision with `fncmp` (by default
-        equality) will tell us if the entry is out of date. *********TODO: BETTER DOC
-        **************
+        equality) will tell us if the entry is out of date. See the documentation for the
+        :py:mod:`tokencheckers` modules for more information about cache validation.
 
         If `validate` is `True`, then we immediately validate the contents of the cache.
         """
@@ -506,11 +506,11 @@ class BibUserCacheAccessor(object):
     right away, refresh it on demand only, etc.
 
     Filters access the cache by requesting an instance to the accessor. This is done by
-    calling :py:meth:`BibolamaziFile.cache_accessor` (see also
-    :py:meth:`BibFilter.bibolamaziFile` and :py:meth:`BibFilter.cache_accessor`.
-
-    Filters should specify which cache they would like to have access to by reimplementing
-    the `cache_accessors()` method.
+    calling :py:meth:`~core.bibolamazifile.BibolamaziFile.cache_accessor` (you can use
+    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile` to get a pointer to the
+    `bibolamazifile` object.). Filters should declare in advance which caches they would
+    like to have access to by reimplementing the
+    :py:meth:`~core.bibfilter.BibFilter.requested_cache_accessors` method.
 
     Accessors are free to implement their public API how they deem it best. There is no
     obligation or particular structure to follow. (Although `refresh_cache()`,
@@ -519,7 +519,9 @@ class BibUserCacheAccessor(object):
     Cache accessor objects are instantiated by the bibolamazi file. Their constructors
     should accept a keyword argument `bibolamazifile` and pass it on to the superclass
     constructor. Constructors should also accept `**kwargs` for possible compatibility
-    with future additions.
+    with future additions and pass it on to the parent constructor. The `cache_name`
+    argument of this constructor should be a fixed string passed by the subclass,
+    identifying this cache (e.g. 'arxiv_info').
     """
     def __init__(self, cache_name, bibolamazifile, **kwargs):
         super(BibUserCacheAccessor, self).__init__(**kwargs)
@@ -537,7 +539,8 @@ class BibUserCacheAccessor(object):
 
         Note that it is *strongly* recommended to install some form of cache invalidation,
         would it be just even an expiry validator. You may want to call
-        `installCacheExpirationChecker()` on `cacheobj`.
+        :py:meth:`~core.bibusercache.BibUserCache.installCacheExpirationChecker` on
+        `cache_obj`.
 
         Note that the order in which the `initialize()` method of the various caches is
         called is undefined.
@@ -545,7 +548,7 @@ class BibUserCacheAccessor(object):
         Use the :py:meth:`cacheDic` method to access the cache dictionary. Note that if
         you install token checkers on this cache, e.g. with
         `cache_obj.installCacheExpirationChecker()`, then the cache dictionary object may
-        have changed!
+        have changed! (To be sure, call :py:meth:`cacheDic` again.)
 
         The default implementation raises a `NotImplemented` exception.
         """
@@ -566,6 +569,10 @@ class BibUserCacheAccessor(object):
         Returns the cache dictionary. This is meant as a 'protected' method for the
         accessor only. Objects that query the accessor should use the accessor-specific
         API to access data.
+
+        The cache dictionary is a :py:class:`BibUserCacheDic` object. In particular,
+        subcaches may want to set custom token checkers for proper cache invalidation
+        (this should be done in the :py:meth:`initialize` method).
 
         This returns the data in the cache object that was set internally by the
         :py:class:`BibolamaziFile` via the method :py:meth:`setCacheObj`. Don't call
