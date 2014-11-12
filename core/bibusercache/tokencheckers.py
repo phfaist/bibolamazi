@@ -41,7 +41,7 @@ class TokenChecker(object):
     """
     Base class for a token checker validator.
 
-    The :py:meth`new_token` function always returns `True` and :py:meth:`cmp_tokens` just
+    The :py:meth:`new_token` function always returns `True` and :py:meth:`cmp_tokens` just
     compares tokens for equality with the ``==`` operator.
 
     Subclasses should reimplement :py:meth:`new_token` to return something useful. 
@@ -178,7 +178,7 @@ class TokenCheckerCombine(TokenChecker):
 
 class TokenCheckerPerEntry(TokenChecker):
     """
-    A :py:class:`TokenChecker` implementation that associates different `TokenChecker`s
+    A :py:class:`TokenChecker` implementation that associates different `TokenChecker`'s
     for individual entries, set manually.
 
     By default, the items of the dictionary are always valid. When an entry-specific token
@@ -199,7 +199,7 @@ class TokenCheckerPerEntry(TokenChecker):
 
         Note that no explicit validation is performed. (This can't be done because we
         don't even have a pointer to the cache dict.) So you should call manually
-        `BibUserCacheDict.validate_item()`
+        :py:meth:`BibUserCacheDict.validate_item`
 
         If a token checker was already set for this entry, it is replaced by the new one.
         """
