@@ -12,8 +12,13 @@ Table of Contents:
 .. toctree::
    :maxdepth: 2
 
-   bibolamazi-user-manual
-   modules
+   introduction-to-bibolamazi
+   using-bibolamazi
+   using-bibolamazi-cmdl
+   devel-filter
+   Python API: Core Bibolamazi Module <core>
+   Python API: Filter Utilities Package <filters.util>
+   credits-contact
 
 
 
