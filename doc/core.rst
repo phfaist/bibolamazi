@@ -30,7 +30,6 @@ core Package
 
 .. automodule:: core.blogger
     :members:
-    :undoc-members:
     :show-inheritance:
 
 :mod:`butils` Module

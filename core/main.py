@@ -20,6 +20,11 @@
 ################################################################################
 
 
+"""
+This module contains the code that implements Bibolamazi's command-line interface.
+"""
+
+
 import os
 import os.path
 import re

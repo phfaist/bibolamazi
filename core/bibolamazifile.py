@@ -21,7 +21,8 @@
 
 
 """
-The Main bibolamazifile module: this contains the BibolamaziFile class definition.
+The Main bibolamazifile module: this contains the :py:class:`BibolamaziFile` class
+definition.
 """
 
 
@@ -140,6 +141,19 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 class BibolamaziFile(object):
+    """
+    Represents a Bibolamazi file.
+
+    This class provides an API to read and parse bibolamazi files, as well as load data
+    defined in its configuration section and interact with its filters.
+
+    Filter instances are automatically created upon loading, etc.
+
+    .......... TODO: MORE DOC ............
+
+    .......... TODO: DOCUMENT MEMBERS ...........
+    
+    """
     def __init__(self, fname=None, create=False,
                  load_to_state=BIBOLAMAZIFILE_LOADED,
                  use_cache=True,

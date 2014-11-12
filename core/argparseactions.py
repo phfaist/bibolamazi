@@ -19,6 +19,12 @@
 #                                                                              #
 ################################################################################
 
+"""
+This module defines callbacks and actions for parsing the command-line arguments for
+bibolamazi. You're most probably not interested in this API. (Not mentioning that it might
+change if I feel the need for it.)
+"""
+
 import re
 import os
 import sys

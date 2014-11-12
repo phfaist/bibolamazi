@@ -19,6 +19,10 @@
 #                                                                              #
 ################################################################################
 
+"""
+Various utilities for use within all of the Bibolamazi Project.
+"""
+
 
 import re
 import types
@@ -30,11 +34,23 @@ import version
 
 
 def get_version():
+    """
+    Return the version string :py:data:`~core.version.version_str`, unchanged.
+    """
     return version.version_str;
+
 
 _theversionsplit = None
 
 def get_version_split():
+    """
+    Return a 4-tuple `(maj, min, rel, suffix)` resulting from parsing the version obtained
+    via :py:data:`version.version_str`.
+
+    ............ TODO: FIXME: CURRENTLY, the elements are strings! why not integers? If
+    not there, they will/should be empty or None?
+
+    """
     if (_theversionsplit is None):
         m = re.match(r'^(\d+)(?:\.(\d+)(?:\.(\d+)(.+)?)?)?', version.version_str);
         _theversionsplit = (m.group(1), m.group(2), m.group(3), m.group(4));
@@ -44,6 +60,12 @@ def get_version_split():
 
 
 class BibolamaziError(Exception):
+    """
+    Root bibolamazi error exception.
+
+    See also :py:class:`~core.bibfilter.BibFilterError` and
+    :py:class:`~core.bibusercache.BibUserCacheError`.
+    """
     def __init__(self, msg, where=None):
         self.where = where;
         fullmsg = msg
@@ -55,6 +77,16 @@ class BibolamaziError(Exception):
 
 
 def getbool(x):
+    """
+    Utility to parse a string representing a boolean value.
+
+    If `x` is already of integer or boolean type (actually, anything castable to an
+    integer), then the corresponding boolean convertion is returned. If it is a
+    string-like type, then it is matched against something that looks like 't(rue)?', '1',
+    'y(es)?' or 'on' (ignoring case), or against something that looks like 'f(alse)?',
+    '0', 'n(o)?' or 'off' (also ignoring case). Leading or trailing whitespace is ignored. 
+    If the string cannot be parsed, a :py:exc:`ValueError` is raised.
+    """
     try:
         return (int(x) != 0)
     except (TypeError, ValueError):
@@ -71,6 +103,12 @@ def getbool(x):
 
 
 def resolve_type(typename, in_module=None):
+    """
+    Returns a type object corresponding to the given type name `typename`, given as a
+    string.
+
+    ..... TODO: MORE DOC .........
+    """
 
     if (in_module is not None):
         if (typename in in_module.__dict__):
