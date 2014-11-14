@@ -613,6 +613,7 @@ class BibolamaziFile(object):
                 try:
                     filterinstance = factory.make_filter(filname, filoptions)
                     filterinstance.setBibolamaziFile(self)
+                    filterinstance.setInvokationName(filname)
                     self._filters.append(filterinstance)
                 except factory.NoSuchFilter as e:
                     self._raise_parse_error(str(e), lineno=cmd.lineno);
