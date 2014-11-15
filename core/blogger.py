@@ -24,6 +24,9 @@ Define utilities related to logging debug, information, warning and error messag
 
 The only important thing here is the :py:data:`logger` object, which you can use to log
 messages.
+
+TODO: FIXME: Better implement logging mechanism with python's logging module and
+getLogger() etc..
 """
 
 import logging
@@ -116,8 +119,10 @@ This corresponds to bibolamazi command-line verbosity level 3.
 """
 
 # add logger.longdebug() method
+# see http://stackoverflow.com/a/13638084/1694896
 def longdebug(l, msg, *args, **kwargs):
-    l.log(LONGDEBUG, msg, *args, **kwargs);
+    if l.isEnabledFor(LONGDEBUG):
+        l._log(LONGDEBUG, msg, *args, **kwargs)
 logger.longdebug = MethodType(longdebug, logger, logging.Logger)
 
 # create console handler

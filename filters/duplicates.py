@@ -277,6 +277,19 @@ Alternatively, if you just set the warn flag on, then a duplicate file is not
 created (unless the dupfile option is given), and a warning is displayed for
 each duplicate found.
 
+Duplicates are detected based on several heuristics and quite extensive
+testing. Recently I've been pretty much satisfied with the results, but there is
+no guarantee that it won't miss some matches sometimes. The algorithm is
+designed to prevent any false matches, so that shouldn't normally happen, but
+again there's no guarantee. Also, if two entries refer to different versions of
+a paper one on the arXiv and the other published, they are NOT considered
+duplicates.
+
+If you set -sKeepOnlyUsedInJobname=.... with the base file name of your LaTeX
+document, then while sorting out the duplicates, we only keep those entries that
+are referred to from within the document. For this to work, you need to have
+called latex/pdflatex on your document first.
+
 The dupfile will be by default self-contained, i.e. will contain all the
 definitions necessary so that you can use the different cite keys transparently
 with the `\cite` LaTeX command. However the implementation of the `\cite'
@@ -575,15 +588,23 @@ class DuplicatesFilter(BibFilter):
         # bibdata is a pybtex.database.BibliographyData object
         #
 
+        if (not self.dupfile and not self.warn):
+            logger.warning("duplicates filter: No action is being taken because neither "
+                           "-sDupfile= nor -dWarn have been requested.")
+            return
+
         bibdata = bibolamazifile.bibliographyData();
 
         used_citations = None
         
         if self.keep_only_used_in_jobname:
-            logger.debug("Getting list of used citations from %s.aux." %(self.keep_only_used_in_jobname))
-            used_citations = auxfile.get_all_auxfile_citations(
-                self.keep_only_used_in_jobname, bibolamazifile, self.name(),
-                self.jobname_search_dirs, return_set=True
+            if not self.dupfile:
+                logger.warning("Option -sKeepOnlyUsedInJobname has no effect without -sDupfile=... !")
+            else:
+                logger.debug("Getting list of used citations from %s.aux." %(self.keep_only_used_in_jobname))
+                used_citations = auxfile.get_all_auxfile_citations(
+                    self.keep_only_used_in_jobname, bibolamazifile, self.name(),
+                    self.jobname_search_dirs, return_set=True
                 )
 
         duplicates = [];

@@ -1,5 +1,6 @@
-util Package
-============
+
+Python API: Filter Utilities Package
+====================================
 
 :mod:`arxivutil` Module
 -----------------------

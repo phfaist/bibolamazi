@@ -1,5 +1,6 @@
-core Package
-============
+
+Python API: Core Bibolamazi Module
+==================================
 
 :mod:`core` Package
 -------------------

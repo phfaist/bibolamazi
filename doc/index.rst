@@ -16,8 +16,8 @@ Table of Contents:
    using-bibolamazi
    using-bibolamazi-cmdl
    devel-filter
-   Python API: Core Bibolamazi Module <core>
-   Python API: Filter Utilities Package <filters.util>
+   core
+   filters.util
    credits-contact
 
 
