@@ -2,89 +2,89 @@
 Introduction to Bibolamazi
 ==========================
 
-Collect bibliographic entries from BibTeX files and apply rules or filters to them
-
-Command-Line vs Graphical User Interface
-----------------------------------------
-
-There are two flavors of bibolamazi: the command-line version, and the nice windowed
-graphical interface.
-
-Most users might prefer the straightforward-to-install, ready-and-easy-to-use
-graphical interface, in which case you should download the latest stable binary
-release from:
-
-**Download Release:** https://github.com/phfaist/bibolamazi/releases
-
-These binaries don't need any installation, you can just download them, place them
-wherever you want, and run them.
-
-The rest of this document is concerned mostly about downloading, installing and using
-bibolamazi from source. This option is only necessary if you want to use the
-command-line interface.
+Bibolamazi lets you prepare consistent and uniform BibTeX files for your LaTeX
+documents. It lets you prepare your BibTeX entries as you would like them to be---adding
+missing or dropping irrelevant information, capitalizing names or turning them into
+initials, converting unicode characters to latex escapes, etc.
 
 
-Installing and Getting Started
-------------------------------
+Example Usage Scenario
+----------------------
 
-Note: bibolamazi requires Python 2.7 being installed (which is there by default on most
-linux and Mac systems).
+A typical scenario of Bibolamazi usage might be:
 
-Additionally, the graphical user interface requires PyQt4_. If you're on a linux
-distribution, it's most probably in your distribution packages. Note you only need PyQt4
-to run the graphical user interface: the command-line version will happily run without.
+- You use a bibliography manager, such as Mendeley_, to store all your references. You
+  have maybe configured e.g. Mendeley_ to keep a BibTeX file
+  ``Documents/bib/MyLibrary.bib`` in sync with your library;
 
-Note that these requirements are NOT necessary if you use a `precompiled binary
-release`_. The requirements (and following instructions) apply to downloading and running
-bibolamazi from source, which for example is required if you want to use the command-line
-version.
+- You're working, say on a document ``mydoc.tex``, which cites entries from ``MyLibrary.bib``;
 
-* First, clone this repository on your computer, or download it as
-  a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
-  easier with ``git pull``)::
+- You like to keep URLs in your entries in your Mendeley library, because it lets you open
+  the journal page easily, but you don't want the URLs to be displayed in the bibliography
+  of your document ``mydoc.tex``. But you've gone through all the bibliography styles, and
+  really, the one you prefer unfortunatly does display those URLs.
 
-    > cd somewhere/where/Ill-keep-bibolamazi/
-    ...> git clone --recursive https://github.com/phfaist/bibolamazi
+- You don't want to edit the file ``MyLibrary.bib``, because it would just be overwritten
+  again the next time you open Mendeley. The low-tech solution (what people generally do!) 
+  would then be to export the required citations from Mendeley to a new bibtex file, or
+  copy ``MyLibrary.bib`` to a new file, and edit that file manually.
 
-  Then, link the executable(s) to somewhere in your path::
+- To avoid having to perform this tedious task manually, you can use Bibolamazi to prepare
+  the BibTeX file as you would like it to be. For this specific task, for example, you
+  would perform the following steps:
 
-    > cd ~/bin/
-    bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi .
-    bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
+  - Create a bibolamazi file, say, ``mydoc.bibolamazi.bib``;
 
-  or, for a system-wide install::
+  - Specify as a source your original ``MyLibrary.bib``::
 
-     > cd /usr/local/bin/
-     > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi .
-     > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
+      src: ~/Documents/bib/MyLibrary.bib
 
+  - Give the following filter command::
 
-* To compile a bibolamazi bibtex file, you should run ``bibolamazi`` in general as::
+      filter: url -dStrip
 
-     > bibolamazi bibolamazibibtexfile.bibolamazi.bib
+    which instructs to strip all urls (check out the documentation of the `url` filter in
+    the `Help & Reference Browser`)
 
-* To quickly get started with a new bibolamazi file, the following command will create the
-  given file and produce a usable template which you can edit::
+  - Run bibolamazi.
 
-     > bibolamazi --new newfile.bibolamazi.bib
+  - Use this file as your bibtex bibliography, i.e. in your LaTeX document, use::
 
-* For an example to study, look at the file ``test/test0.bibolamazi.bib`` in the source code.
-  To compile it, run::
+      \bibliography{mydoc.bibolamazi}
 
-     > bibolamazi test/test0.bibolamazi.bib
-           
-* For a help message with a list of possible options, run::
-
-     > bibolamazi --help
-
-  To get a list of all available filters along with their description, run::
-
-     > bibolamazi --list-filters
-
-  To get information about a specific filter, simply use the command::
-
-     > bibolamazi --help <filter>
+  Note that you can then run Bibolamazi as many times as you like, to update your file,
+  should there have been changes to your original ``MyLibrary.bib``, for example.
 
 
-.. _PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
-.. _precompiled binary release: https://github.com/phfaist/bibolamazi/releases
+.. _Mendeley: http://mendeley.com/
+
+
+Teaser: Features
+----------------
+
+The most prominent features of Bibolamazi include:
+
+- A `duplicates` filter allows you to efficiently collaborate on LaTeX documents: in your
+  shared LaTeX document, each collaborator may cite entries in his own bibliography
+  database (each a source in the bibolamazi file). Then, if instructed to do so,
+  bibolamazi will detect when two entries are duplicates of each other, merge their
+  information, and produce LaTeX definitions such that the entries become aliases of one
+  another. Then both entry keys will refer to the same entry in the bibliography.
+
+  **Catch**: there is one catch to this, though, which we can do nothing about: if two
+  entries in two different database share the same key, but refer to different
+  entries. This may happen, for example, if you have automatic citation keys of the form
+  ``AuthorYYYY``, and if the author published several papers that same year.
+  
+- A powerful `arxiv` filter, which can normalize the way entries refer to the arXiv.org
+  online preprint repository. It can distinguish between published and unpublished
+  entries, and its output is highly customizable.
+
+- A general-purpose `fixes` filter provides general fixes that are usually welcome in a
+  BibTeX files. For example, revtex doesn't like Mendeley's way of exporting swedish 'Å',
+  for example in ``Åberg``, as ``\AA berg``, and introduces a space between the 'Å' and
+  the 'berg'. This filter allows you to fix this.
+
+- Many more! Check out the filter list in the `Help & Reference Browser` window of
+  Bibolamazi!
+

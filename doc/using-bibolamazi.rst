@@ -1,4 +1,5 @@
 
+.. _using-bibolamazi:
 
 Using Bibolamazi
 ================
@@ -35,6 +36,10 @@ one), you'll immediately be prompted to edit its configuration section.
 
 Specifying sources
 ~~~~~~~~~~~~~~~~~~
+
+Sources are where your 'original' bibtex entries are stored, the ones you would like to
+process. This is typically a bibtex file which a reference manager such as Mendeley keeps
+in sync.
 
 Sources are specified with the ``src:`` keyword. As an example::
 

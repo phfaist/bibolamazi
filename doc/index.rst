@@ -13,6 +13,7 @@ Table of Contents:
    :maxdepth: 2
 
    introduction-to-bibolamazi
+   download-and-install
    using-bibolamazi
    using-bibolamazi-cmdl
    devel-filter
