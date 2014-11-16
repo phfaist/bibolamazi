@@ -1,5 +1,15 @@
+
 pylatexenc Package
 ==================
+
+:mod:`pylatexenc` Module
+------------------------
+
+.. automodule:: core.pylatexenc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 :mod:`latex2text` Module
 ------------------------

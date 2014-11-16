@@ -23,7 +23,28 @@
 This module provides a collection of useful token checkers that can be used to make sure
 the cache information is always valid and up-to-date.
 
-..........TODO: DOC ...........................
+Recall the Bibolamazi Cache is organized as nested dictionaries in which the cached
+information is organized.
+
+One main concern of the caching mechanism is that information be *invalidated* when it is
+no longer relevant (between different runs of bibolamazi). This may be for example because
+the original bibtex entry from the source has changed.
+
+Each cache dictionary (:py:class:`BibUserCacheDic`) may be set a *token validator*, that
+is a verifier instance class which will invalidate items it detects as no longer
+valid. The validity of items is determined on the basis of *validation tokens*.
+
+When an item in a cache dictionary is added or updated, a token (which can be any python
+value) is generated corresponding to the cached value. This token may be, for example, the
+date and time at which the value was cached. The validator then checks the tokens of the
+cache values and detects those entries whose token indicates that the entries are no
+longer valid: for example, if the token corresponds to the date and time at which the
+entry was stored, the validator may invalidate all entries whose token indicates that they
+are too old.
+
+Token Checkers are free to decide what information to store in the tokens. See the
+:py:mod:`tokencheckers` module for examples. Token checkers must derive from the base
+class :py:class:`~tokencheckers.TokenChecker`.
 
 """
 

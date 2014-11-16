@@ -2,6 +2,7 @@
 Python API: Core Bibolamazi Module
 ==================================
 
+
 :mod:`core` Package
 -------------------
 
@@ -9,6 +10,16 @@ Python API: Core Bibolamazi Module
     :members:
     :undoc-members:
     :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    core.bibfilter
+    core.bibusercache
+    core.pylatexenc
+
 
 :mod:`argparseactions` Module
 -----------------------------
@@ -56,13 +67,3 @@ Python API: Core Bibolamazi Module
     :members:
     :undoc-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    core.bibfilter
-    core.bibusercache
-    core.pylatexenc
-
