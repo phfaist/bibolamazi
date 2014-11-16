@@ -38,7 +38,7 @@ bibolamzi python API, and more.
 Credits and Copyright
 ---------------------
 
-Copyright (c) 2014 Philippe Faist: ![phf](phf.png)
+Copyright (c) 2014 Philippe Faist: ![phf-contact](phf.png)
 
 Bibolamazi is developed and maintained by Philippe Faist. It is distributed under the [GNU
 General Public License (GPL)][gpl], Version 3 or higher.
