@@ -82,7 +82,7 @@ class Ui_MainWidget(object):
         QtCore.QMetaObject.connectSlotsByName(MainWidget)
 
     def retranslateUi(self, MainWidget):
-        MainWidget.setWindowTitle(_translate("MainWidget", "Bibolamazi bibliography formatter", None))
+        MainWidget.setWindowTitle(_translate("MainWidget", "Bibolamazi", None))
         self.groupBox.setTitle(_translate("MainWidget", "Open bibolamazi file or create new bibolamazi file", None))
         self.btnOpenFile.setText(_translate("MainWidget", "Open Bibolamazi File ...", None))
         self.btnNewFile.setText(_translate("MainWidget", "Create New Bibolamazi File ...", None))

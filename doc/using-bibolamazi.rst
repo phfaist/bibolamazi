@@ -13,7 +13,7 @@ collaborators---and merging them all into a new file, applying specific rules, o
 'filters', such as turning all the first names into initials or normalizing the way arxiv
 IDs are presented.
 
-The Bibolamazi file is a new file, in which all the required bibtex entries will be
+The Bibolamazi file is this new file, in which all the required bibtex entries will be
 merged. When you prepare you LaTeX document, you should create a new bibolamazi file, and
 provide that bibolamazi file as the bibtex file for the bibliography.
 
