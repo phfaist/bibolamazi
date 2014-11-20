@@ -20,6 +20,11 @@
 ################################################################################
 
 
+"""
+This module contains the code that implements Bibolamazi's command-line interface.
+"""
+
+
 import os
 import os.path
 import re
@@ -42,7 +47,7 @@ from core import butils
 from core.butils import BibolamaziError
 
 # for list of filters
-import filters
+from bibfilter import factory as filterfactory
 
 
 
@@ -55,9 +60,9 @@ class BibolamaziNoSourceEntriesError(BibolamaziError):
 
 def setup_filterpackage_from_argstr(argstr):
     """
-    Add a filter package definition and path to filters.filterpath from a string that is a
-    e.g. a command-line argument to --filterpath or a part of the environment variable
-    BIBOLAMAZI_FILTER_PATH.
+    Add a filter package definition and path to filterfactory.filterpath from a string
+    that is a e.g. a command-line argument to --filterpath or a part of the environment
+    variable BIBOLAMAZI_FILTER_PATH.
     """
 
     if not argstr:
@@ -72,10 +77,10 @@ def setup_filterpackage_from_argstr(argstr):
                               "Did you get the filterpackage syntax wrong? "
                               "Syntax: '<packagename>[=<path>]'." %(fpname))
 
-    if not filters.validate_filter_package(fpname, fpdir, raise_exception=False):
+    if not filterfactory.validate_filter_package(fpname, fpdir, raise_exception=False):
         raise BibolamaziError("Invalid filter package `%s' [in directory `%s']" % (fpname, fpdir))
 
-    filters.filterpath[fpname] = fpdir
+    filterfactory.filterpath[fpname] = fpdir
     
 
 def setup_filterpackages_from_env():
@@ -131,8 +136,8 @@ def get_args_parser():
     parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
 
-    parser.add_argument('outputbibfile',
-                        help='The .bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
+    parser.add_argument('bibolamazifile',
+                        help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
                         'configuration tags.');
 
     return parser
@@ -156,10 +161,10 @@ def main(argv=sys.argv[1:]):
     return run_bibolamazi_args(args)
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('outputbibfile', 'verbosity', 'use_cache', 'cache_timeout' ));
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache', 'cache_timeout' ));
 
-def run_bibolamazi(outputbibfile, verbosity=1, use_cache=True, cache_timeout=None):
-    args = ArgsStruct(outputbibfile, verbosity, use_cache, cache_timeout)
+def run_bibolamazi(bibolamazifile, verbosity=1, use_cache=True, cache_timeout=None):
+    args = ArgsStruct(bibolamazifile, verbosity, use_cache, cache_timeout)
     return run_bibolamazi_args(args)
 
 
@@ -180,22 +185,27 @@ def run_bibolamazi_args(args):
                      }));
 
 
-    # open the bibolamazifile, which is the output bibtex file
-    # -------------------------------------------------------
+    # open the bibolamazifile, which is the main bibtex file
+    # ------------------------------------------------------
 
-    # open the outputbibfile and create the BibolamaziFile object. This will parse the rules
-    # and the entries, as well as keep some information on how to re-write to the file.
-    bfile = BibolamaziFile(args.outputbibfile, use_cache=args.use_cache);
+    kwargs = {
+        'use_cache': args.use_cache
+        }
 
     #
-    # If given a cache_timeout, set it
+    # If given a cache_timeout, give it as parameter
     #
     if args.cache_timeout is not None:
-        logger.debug("Setting default cache timeout to %r", args.cache_timeout)
-        bfile.set_default_cache_invalidation_time(args.cache_timeout)
+        logger.debug("default cache timeout: %r", args.cache_timeout)
+        kwargs['default_cache_invalidation_time'] = args.cache_timeout
     
 
-    bibdata = bfile.bibliographydata();
+    # open the bibolamazi file and create the BibolamaziFile object. This will parse the rules
+    # and the entries, as well as keep some information on how to re-write to the file.
+    bfile = BibolamaziFile(args.bibolamazifile, **kwargs)
+
+
+    bibdata = bfile.bibliographyData();
     if (bibdata is None or not len(bibdata.entries)):
         logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.");
         raise BibolamaziNoSourceEntriesError()
@@ -214,6 +224,8 @@ def run_bibolamazi_args(args):
 
         logger.info("Filter: %s" %(filtr.getRunningMessage()));
 
+        filtr.prerun(bfile)
+
         #
         # pass the whole bibolamazifile to the filter. the filter can actually do
         # whatever it wants with it (!!)
@@ -225,25 +237,15 @@ def run_bibolamazi_args(args):
             continue
 
         #
-        # filter all the bibligraphy data in batch
-        #
-        if (action == BibFilter.BIB_FILTER_BIBLIOGRAPHYDATA):
-            bibliographydata = filtr.filter_bibliographydata(bfile.bibliographydata());
-            bfile.setBibliographyData(bibliographydata);
-
-            logger.debug('filter '+filtr.name()+' filtered the bibliography data.');
-            continue
-
-        #
         # filter all the bibentries one by one throught the filter. The filter can only
         # process a single bibentry at a time.
         #
         if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
 
-            bibdata = bfile.bibliographydata();
+            bibdata = bfile.bibliographyData();
 
-            for k,v in bibdata.entries.iteritems():
-                bibdata.entries[k] = filtr.filter_bibentry(v);
+            for (k, entry) in bibdata.entries.iteritems():
+                filtr.filter_bibentry(entry);
 
             bfile.setBibliographyData(bibdata);
 
@@ -253,7 +255,7 @@ def run_bibolamazi_args(args):
         raise ValueError("Bad value for BibFilter.action(): "+repr(action));
 
     # and output everything back to the original file.
-    bfile.save_to_file();
+    bfile.saveToFile();
 
 
     logger.debug('Done.');

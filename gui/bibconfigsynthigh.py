@@ -27,7 +27,7 @@ import re
 from collections import namedtuple
 
 # bibolamazi filters
-import filters
+from core.bibfilter import factory as filters_factory
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -82,8 +82,9 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(m.start('filter'), len(m.group('filter')), self.fmt_filter)
             fmtname = self.fmt_filtername
             try:
-                filtmodule = filters.get_module(m.group('filtername'))
-            except (filters.NoSuchFilter, filters.NoSuchFilterPackage):
+                # try to load the filter module to see if it exists
+                filtmodule = filters_factory.get_module(m.group('filtername'))
+            except (filters_factory.NoSuchFilter, filters_factory.NoSuchFilterPackage):
                 fmtname = self.fmt_filtername_nonex
 
             #pcache.add_filter(line=blockno, filtername=m.group('filtername'))

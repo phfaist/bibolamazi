@@ -19,21 +19,35 @@
 #                                                                              #
 ################################################################################
 
+"""
+Define utilities related to logging debug, information, warning and error messages.
+
+The only important thing here is the :py:data:`logger` object, which you can use to log
+messages.
+
+TODO: FIXME: Better implement logging mechanism with python's logging module and
+getLogger() etc..
+"""
 
 import logging
 from types import MethodType
 
 
 class ConditionalFormatter(logging.Formatter):
-    """A formatter class.
+    """
+    A formatter class.
 
     Very much like logging.Formatter, except that different formats can be specified for
     different log levels.
 
-    Specify the different formats to the constructor with keyword arguments. E.g.:
-      ConditionalFormatter('%(message)s', DEBUG='DEBUG: %(message)s', INFO='just some info... %(message)s')
-    This will use '%(message)s' as format for all messages except with level other thand DEBUG or INFO, for
-    which their respective formats are used.
+    Specify the different formats to the constructor with keyword arguments. E.g.::
+    
+      ConditionalFormatter('%(message)s',
+                           DEBUG='DEBUG: %(message)s',
+                           INFO='just some info... %(message)s')
+    
+    This will use `'%(message)s'` as format for all messages except with level other thand
+    DEBUG or INFO, for which their respective formats are used.
     """
     
     def __init__(self, defaultfmt=None, datefmt=None, **kwargs):
@@ -96,10 +110,19 @@ logging.addLevelName(LONGDEBUG, "LONGDEBUG");
 # DEBUG/LOGGING
 # create logger
 logger = logging.getLogger('bibolamazi');
+"""
+The main logger object. This is a :py:class:`logging.Logger` object.
+
+This object has an additional method `longdebug()` (which behaves similarly to `debug()`),
+for logging long debug output such as dumping the database during intermediate steps, etc. 
+This corresponds to bibolamazi command-line verbosity level 3.
+"""
 
 # add logger.longdebug() method
+# see http://stackoverflow.com/a/13638084/1694896
 def longdebug(l, msg, *args, **kwargs):
-    l.log(LONGDEBUG, msg, *args, **kwargs);
+    if l.isEnabledFor(LONGDEBUG):
+        l._log(LONGDEBUG, msg, *args, **kwargs)
 logger.longdebug = MethodType(longdebug, logger, logging.Logger)
 
 # create console handler

@@ -24,7 +24,14 @@ import re
 from urllib2 import URLError, HTTPError
 
 from core.blogger import logger
-from core.bibusercache import EntryFieldsTokenChecker
+from core.bibusercache import BibUserCacheAccessor, BibUserCacheError
+from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
+from core import butils
+
+
+class BibArxivApiFetchError(BibUserCacheError):
+    def __init__(self, msg):
+        super(BibArxivApiFetchError).__init__('arxiv_fetched_api_info', msg)
 
 
 # --- code to detect arXiv info ---
@@ -80,7 +87,8 @@ def detectEntryArXivInfo(entry):
     """
     Extract arXiv information from a `pybtex.database.Entry` bibliographic entry.
 
-    Returns upon success a dictionary of the form
+    Returns upon success a dictionary of the form::
+    
         { 'primaryclass': <primary class, if available>,
           'arxivid': <the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)>,
           'archiveprefix': value of the 'archiveprefix' field
@@ -91,7 +99,7 @@ def detectEntryArXivInfo(entry):
 
     Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
     filter handles this case separately and explicitly, the option there
-    -dThesesCountAsPublished=0 has no effect here.
+    `-dThesesCountAsPublished=0` has no effect here.
 
     If no arXiv information was detected, then this function returns None.
     """
@@ -238,160 +246,269 @@ def stripArXivInfoInNote(notestr):
 
 
 
-def reference_doi(ref):
-    try:
-        doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
-    except:
-        return None
-    if (doi):
-        return doi
-    return None
-
-def reference_category(ref):
-    try:
-        return ref.category;
-    except AttributeError:
-        # happens for ReferenceErrorInfo, for example
-        return None
-
-
-def fetch_arxiv_api_info(idlist, cache_entrydic, filterobj=None):
+class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
     """
-    Populates the given cache with information about the arXiv entries given in `idlist`.
-
-    cache_entrydic is expected to be the cache
-    `[filter/bibolamazifile].cache_for('arxiv_fetched_api_info')['fetched']`
+    A `BibUserCacheAccessor` for fetching and accessing information retrieved from the
+    arXiv API.
     """
+    def __init__(self, **kwargs):
+        super(ArxivFetchedAPIInfoCacheAccessor, self).__init__(
+            cache_name='arxiv_fetched_api_info',
+            **kwargs
+            )
 
-    missing_ids = [ aid for aid in idlist
-                    if (aid not in cache_entrydic  or
-                        cache_entrydic.get(aid) is None  or
-                        isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)) ]
-    
-    if not missing_ids:
-        logger.longdebug('nothing to fetch: no missing ids')
-        # nothing to fetch
+    def initialize(self, cache_obj, **kwargs):
+        dic = self.cacheDic()
+        dic.setdefault('fetched', {})
+        #logger.longdebug("dic is %r\n"
+        #                 "id(dic['fetched'])=%r", dic, id(dic['fetched']))
+
+        logger.debug("arxiv_fetched_api_info: adding validation checker; time valid is %r",
+                     cache_obj.cacheExpirationTokenChecker().time_valid)
+
+        # validate each entry with an expiration checker. Do this per entry, rather than
+        # globally on the full cache. (So don't use installCacheExpirationChecker())
+        dic['fetched'].set_validation(cache_obj.cacheExpirationTokenChecker())
+        
+
+
+    def fetchArxivApiInfo(self, idlist):
+        """
+        Populates the given cache with information about the arXiv entries given in
+        `idlist`. This must be, yes you guessed right, a list of arXiv identifiers that we
+        should fetch.
+
+        This function performs a query on the arXiv.org API, using the arxiv2bib library. 
+        Please note that you should avoid making rapid fire requests in a row (this should
+        normally not happen anyway thanks to our cache mechanism). However, beware that if
+        we get a ``403 Forbidden`` HTTP answer, we should not continue or else arXiv.org
+        might interpret our requests as a DOS attack. If a ``403 Forbidden`` HTTP answer
+        is received this function raises :py:exc:`BibArxivApiFetchError` with a meaningful
+        error text.
+
+        Only those entries in `idlist` which are not already in the cache are fetched.
+
+        `idlist` can be any iterable.
+        """
+
+        cache_entrydic = self.cacheDic()['fetched']
+        #logger.longdebug("fetchArxivApiInfo(): "
+        #                 "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
+        #                 "len(dic['fetched'])=%d",
+        #                 id(cache_entrydic), id(self.cacheObject().cachedic['arxiv_fetched_api_info']),
+        #                 len(cache_entrydic))
+
+        missing_ids = []
+        #debug_allids = []
+        for aid in idlist:
+            #debug_allids.append(aid)
+            if (aid not in cache_entrydic  or
+                cache_entrydic.get(aid) is None  or
+                isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)):
+                missing_ids.append(aid)
+
+        #logger.longdebug("fetchArxivApiInfo(): debug_allids=%r, missing_ids=%r", debug_allids, missing_ids)
+
+        if not missing_ids:
+            logger.longdebug('nothing to fetch: no missing ids')
+            # nothing to fetch
+            return True
+
+        logger.debug('fetching missing id list %r' %(missing_ids))
+        try:
+            arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
+            logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
+        except URLError as error:
+            if isinstance(error, HTTPError) and error.getcode() == 403:
+                raise BibArxivApiFetchError(
+                    textwrap.dedent("""\
+                    Error fetching ArXiv API Info: ** 403 Forbidden **
+
+                    This usually happens when you make many rapid fire requests in a
+                    row. If you continue to do this, arXiv.org may interpret your requests
+                    as a denial of service attack.
+
+                    For more information, see http://arxiv.org/help/robots.
+                    """))
+            else:
+                msg = (("%d: %s" %(error.code, error.reason)) if isinstance(error, HTTPError)
+                       else error.reason)
+                logger.warning("HTTP Connection Error: %s.", msg)
+                logger.warning("ArXiv API information will not be retreived, and your bibliography "
+                               "might be incomplete.")
+                return False
+                #
+                # Don't raise an error, in case the guy is running bibolamazi on his laptop on the
+                # train. In that case he might prefer some missing entries rather than a critical failure.
+                #
+                #            raise BibFilterError(
+                #                filtname,
+                #                "HTTP Connection Error: {0}".format(error.getcode())
+                #                )
+
+        for (k,ref) in arxivdict.iteritems():
+            logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
+            cache_entrydic[k]['reference'] = ref
+            bibtex = ref.bibtex()
+            cache_entrydic[k]['bibtex'] = bibtex
+
+
+        logger.longdebug("arxiv api info: Got all references. cacheDic() is now:  %r", self.cacheDic())
+        logger.longdebug("... and cacheObject().cachedic is now:  %r", self.cacheObject().cachedic)
+
         return True
 
-    logger.longdebug('fetching missing id list %r' %(missing_ids))
-    try:
-        arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
-        logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
-    except URLError as error:
-        filtname = filterobj.name() if filterobj else None;
-        if isinstance(error, HTTPError) and error.getcode() == 403:
-            raise BibFilterError(
-                filtname,
-                textwrap.dedent("""\
-                403 Forbidden error. This usually happens when you make many
-                rapid fire requests in a row. If you continue to do this, arXiv.org may
-                interpret your requests as a denial of service attack.
-                
-                For more information, see http://arxiv.org/help/robots.
-                """))
-        else:
-            msg = (("%d: %s" %(error.code, error.reason)) if isinstance(error, HTTPError)
-                   else error.reason)
-            logger.warning("HTTP Connection Error: %s.", msg)
-            logger.warning("ArXiv API information will not be retreived, and your bibliography "
-                           "might be incomplete.")
-            return False
-            #
-            # Don't raise an error, in case the guy is running bibolamazi on his laptop in the
-            # train. In that case he might prefer some missing entries rather than a huge complaint.
-            #
-            #            raise BibFilterError(
-            #                filtname,
-            #                "HTTP Connection Error: {0}".format(error.getcode())
-            #                )
 
-    for (k,ref) in arxivdict.iteritems():
-        logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
-        cache_entrydic[k]['reference'] = ref
-        bibtex = ref.bibtex()
-        cache_entrydic[k]['bibtex'] = bibtex
+    def getArxivApiInfo(self, arxivid):
+        """
+        Returns a dictionary::
 
-    return True
+            {
+              'reference':  <arxiv2bib.Reference>,
+              'bibtex': <bibtex string>
+            }
+
+        for the given arXiv id in the cache. If the information is not in the cache,
+        returns `None`.
+
+        Don't forget to first call :py:meth:`fetchArxivApiInfo()` to retrieve the
+        information in the first place.
+
+        Note the reference part may be a :py:class:`arxiv2bib.ReferenceErrorInfo`, if
+        there was an error retreiving the reference.
+        """
+        return self.cacheDic()['fetched'].get(arxivid, None)
 
 
 
 
 
+class ArxivInfoCacheAccessor(BibUserCacheAccessor):
+    """
+    A `BibUserCacheAccessor` for fetching and accessing information retrieved from the
+    arXiv API.
+    """
+    def __init__(self, **kwargs):
+        super(ArxivInfoCacheAccessor, self).__init__(
+            cache_name='arxiv_info',
+            **kwargs
+            )
+
+    def initialize(self, cache_obj, **kwargs):
+        cache_dic = self.cacheDic()
+        cache_dic['entries'].set_validation(
+            EntryFieldsTokenChecker(self.bibolamaziFile().bibliographyData(),
+                                    store_type=True,
+                                    fields=arxivinfo_from_bibtex_fields)
+            )
+        cache_dic.setdefault('cache_built', False)
 
 
+    def rebuild_cache(self, bibdata, arxiv_api_accessor):
+        """
+        Clear and rebuild the entry cache completely.
+        """
+        entrydic = self.cacheDic()['entries']
+        entrydic.clear()
+        self.complete_cache(bibdata, arxiv_api_accessor)
 
-# --- the cache mechanism ---
 
-class ArxivInfoCacheAccess:
-    def __init__(self, entrydic, bibolamazifile):
-        self.entrydic = entrydic;
-        self.bibolamazifile = bibolamazifile;
+    def complete_cache(self, bibdata, arxiv_api_accessor):
+        """
+        Makes sure the cache is complete for all items in `bibdata`.
+        """
 
-    def rebuild_cache(self):
-        self.entrydic.clear()
-        self.complete_cache()
+        entrydic = self.cacheDic()['entries']
 
-    def complete_cache(self):
-        bibdata = self.bibolamazifile.bibliographydata()
-
+        # A list if pairs (citekey, arxiv-id) of entries that still need to be completed
+        # with info from the arXiv API.
         needs_to_be_completed = []
+
+        #
+        # Do a first scan through all the bibdata entries, and detect the API information
+        # using only what we have. We'll do a query to the arXiv API in a second step
+        # below.
+        #
         for k,v in bibdata.entries.iteritems():
-            if (k in self.entrydic):
+            if (k in entrydic):
                 continue
             arinfo = detectEntryArXivInfo(v);
-            self.entrydic[k] = arinfo;
+            entrydic[k] = arinfo;
             logger.longdebug("got arXiv information for `%s': %r.", k, arinfo)
             
-            if (self.entrydic[k] is not None):
+            if (entrydic[k] is not None):
                 needs_to_be_completed.append( (k, arinfo['arxivid'],) )
 
-        # complete the entry arXiv info using fetched info from the arXiv API.
-        fetched_api_cache = self.bibolamazifile.cache_for('arxiv_fetched_api_info')['fetched'];
-        fetch_arxiv_api_info( (x[1] for x in needs_to_be_completed),
-                             fetched_api_cache)
+        logger.longdebug("complete_cache(): needs_to_be_completed=%r\nentrydic=%r\n",
+                         needs_to_be_completed,
+                         entrydic)
 
-
-        # ### BUG: if a fetch failed once, then we need to remove the cache file before it
-        #     will fetch it again...
+        #
+        # Complete the entry arXiv info using fetched info from the arXiv API.
+        #
+        arxiv_api_accessor.fetchArxivApiInfo( (x[1] for x in needs_to_be_completed), )
 
         for (k,aid) in needs_to_be_completed:
-            api_info = fetched_api_cache.get(aid)
+            api_info = arxiv_api_accessor.getArxivApiInfo(aid)
             if (api_info is None):
                 logger.warning("Failed to fetch arXiv information for %s", aid);
                 continue
             
-            self.entrydic[k]['primaryclass'] = reference_category(api_info['reference'])
-            self.entrydic[k]['doi'] = reference_doi(api_info['reference']);
-    
+            entrydic[k]['primaryclass'] = self._reference_category(api_info['reference'])
+            entrydic[k]['doi'] = self._reference_doi(api_info['reference']);
+
 
     def getArXivInfo(self, entrykey):
-        logger.longdebug("Getting arxiv info for key %r, possibly from cache.", entrykey)
-        if (entrykey not in self.entrydic):
-            self.complete_cache()
+        """
+        Get the arXiv information corresponding to entry citekey `entrykey`. If the entry
+        is not in the cache, returns `None`. Call `complete_cache()` first!
+        """
+        logger.longdebug("Getting arxiv info for key %r from cache.", entrykey)
 
-        return self.entrydic.get(entrykey, None)
+        entrydic = self.cacheDic()['entries']
+
+        if (entrykey not in entrydic):
+            return None
+
+        return entrydic.get(entrykey, None)
 
 
-_arxiv_info_validator = None
+    def _reference_doi(self, ref):
+        try:
+            doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
+        except:
+            return None
+        if (doi):
+            return doi
+        return None
 
+    def _reference_category(self, ref):
+        try:
+            return ref.category;
+        except AttributeError:
+            # happens for ReferenceErrorInfo, for example
+            return None
+
+
+
+
+
+def setup_and_get_arxiv_accessor(bibolamazifile):
+    arxivinfoaccessor = bibolamazifile.cacheAccessor(ArxivInfoCacheAccessor)
+    arxivinfoaccessor.complete_cache(
+        bibolamazifile.bibliographyData(),
+        bibolamazifile.cacheAccessor(ArxivFetchedAPIInfoCacheAccessor)
+        )
+    return arxivinfoaccessor
+
+
+
+# deprecated:
 def get_arxiv_cache_access(bibolamazifile):
-    global _arxiv_info_validator
-    
-    arxiv_info_cache = bibolamazifile.cache_for('arxiv_info', dont_expire=True)
-    
-    if _arxiv_info_validator is None:
-        _arxiv_info_validator = EntryFieldsTokenChecker(bibolamazifile.bibliographydata(),
-                                                        store_type=True,
-                                                        fields=arxivinfo_from_bibtex_fields)
-        arxiv_info_cache['entries'].set_validation(_arxiv_info_validator)
-
-    #logger.longdebug("ArXiv cache state is: %r" %(arxiv_info_cache))
-
-    arxivaccess = ArxivInfoCacheAccess(arxiv_info_cache['entries'], bibolamazifile);
-    
-    if not arxiv_info_cache['cache_built']:
-        arxivaccess.rebuild_cache()
-        arxiv_info_cache['cache_built'] = True
-
-    return arxivaccess
-
+    butils.warn_deprecated(None, "get_arxiv_cache_access()", "setup_and_get_arxiv_accessor()",
+                           modulename="arxivutil.py",
+                           explanation="We now use the new cache mechanism; your filter should "
+                           "also explicitly request the cache accessors ArxivInfoCacheAccessor "
+                           "and ArxivFetchedAPIInfoCacheAccessor so that the cache is correctly "
+                           "set up.")
+    return setup_and_get_arxiv_accessor(bibolamazifile)

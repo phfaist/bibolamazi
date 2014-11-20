@@ -20,6 +20,12 @@
 ################################################################################
 
 
+"""
+The Main bibolamazifile module: this contains the :py:class:`BibolamaziFile` class
+definition.
+"""
+
+
 import re;
 import io;
 import sys;
@@ -40,7 +46,7 @@ from core.blogger import logger;
 from core import butils;
 from core.butils import BibolamaziError;
 from core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-import filters;
+from core.bibfilter import factory
 
 
 class BibolamaziFileParseError(BibolamaziError):
@@ -55,6 +61,10 @@ class BibolamaziFileParseError(BibolamaziError):
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
+    """
+    This error is raised to signify that the file specified is not a bibolamazi
+    file---most probably, it does not contain a valid configuration section.
+    """
     def __init__(self, msg, fname=None, lineno=None):
         BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno);
 
@@ -131,7 +141,23 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 class BibolamaziFile(object):
-    def __init__(self, fname=None, create=False, use_cache=True):
+    """
+    Represents a Bibolamazi file.
+
+    This class provides an API to read and parse bibolamazi files, as well as load data
+    defined in its configuration section and interact with its filters.
+
+    Filter instances are automatically created upon loading, etc.
+
+    .......... TODO: MORE DOC ............
+
+    .......... TODO: DOCUMENT MEMBERS ...........
+    
+    """
+    def __init__(self, fname=None, create=False,
+                 load_to_state=BIBOLAMAZIFILE_LOADED,
+                 use_cache=True,
+                 default_cache_invalidation_time=None):
         """Create a BibolamaziFile object.
 
         If `fname` is provided, the file is fully loaded (unless `create` is also
@@ -139,12 +165,19 @@ class BibolamaziFile(object):
 
         If `create` is given and set to `True`, then an empty template is loaded and the
         internal file name is set to `fname`. The internal state will be set to ``LOADED''
-        and calling `save_to_file()` will result in writing this template to the file
+        and calling `saveToFile()` will result in writing this template to the file
         `fname`.
+
+        If `load_to_state` is given, then the file is only loaded up to the given state. 
+        See `load()` for more details. The state should be one of `BIBOLAMAZIFILE_INIT`,
+        `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or `BIBOLAMAZIFILE_LOADED`.
 
         If `use_cache` is `True` (default), then when loading this file, we'll attempt to
         load a corresponding cache file if it exists. Note that even if `use_cache` is
-        `False`, then cache will still be *written* when calling `save_to_file()`.
+        `False`, then cache will still be *written* when calling `saveToFile()`.
+
+        If `default_cache_invalidation_time` is given, then the default cache invalidation
+        time is set before loading the cache.
         """
         
         logger.debug("Opening bibolamazi file `%s'" %(fname));
@@ -157,11 +190,19 @@ class BibolamaziFile(object):
             self._fname = fname
             self._dir = os.path.dirname(os.path.realpath(fname));
         elif (fname):
-            self.load(fname=fname, to_state=BIBOLAMAZIFILE_LOADED)
+            # read the file, load settings
+            self.load(fname=fname, to_state=min(load_to_state, BIBOLAMAZIFILE_PARSED))
+            # set the default cache invalidation time to the given value, before we load
+            # all the data and cache.
+            if default_cache_invalidation_time is not None:
+                self.setDefaultCacheInvalidationTime(default_cache_invalidation_time)
+            # now load the data, if required.
+            if (load_to_state > BIBOLAMAZIFILE_PARSED):
+                self.load(to_state=load_to_state)
         else:
             logger.debug("No file given. Don't forget to set one with load()")
 
-    def loadstate(self):
+    def getLoadState(self):
         return self._load_state;
 
     def reset(self):
@@ -173,9 +214,11 @@ class BibolamaziFile(object):
         If `fname` is `None`, then resets the object to an empty state. If fname is not given or an
         empty list, then uses any previously loaded fname and its state.
 
-        If `to_state` is given, will only attempt to load the file up to that state. This can be
-        useful, e.g., in a config editor which needs to parse the sections of the file but does not
-        need to worry about syntax errors.
+        If `to_state` is given, will only attempt to load the file up to that state. This
+        can be useful, e.g., in a config editor which needs to parse the sections of the
+        file but does not need to worry about syntax errors. The state should be one of
+        `BIBOLAMAZIFILE_INIT`, `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or
+        `BIBOLAMAZIFILE_LOADED`.
         """
         
         if (fname or not isinstance(fname, list)):
@@ -192,6 +235,7 @@ class BibolamaziFile(object):
             self._sources = None
             self._source_lists = []
             self._filters = []
+            self._cache_accessors = {} # dict { class-type: class-instance }
             self._bibliographydata = None
             self._user_cache = BibUserCache(cache_version=butils.get_version())
             
@@ -209,19 +253,6 @@ class BibolamaziFile(object):
         if (to_state >= BIBOLAMAZIFILE_LOADED  and  self._load_state < BIBOLAMAZIFILE_LOADED):
             self._load_contents()
 
-            if self._use_cache:
-                # then, try to load the cache if possible
-                cachefname = self.cachefname()
-                try:
-                    with open(cachefname, 'rb') as f:
-                        logger.longdebug("Reading cache file %s" %(cachefname))
-                        self._user_cache.load_cache(f)
-                except (IOError, EOFError,):
-                    logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
-                    pass
-            else:
-                logger.debug("As requested, I have not attempted to load any existing cache file.")
-
         return True
 
 
@@ -231,16 +262,16 @@ class BibolamaziFile(object):
     def fdir(self):
         return self._dir;
 
-    def rawheader(self):
+    def rawHeader(self):
         return self._header;
 
-    def rawconfig(self):
+    def rawConfig(self):
         return self._config;
 
-    def config_data(self):
+    def configData(self):
         return self._config_data;
 
-    def rawstartconfigdatalineno(self):
+    def rawStartConfigDataLineNo(self):
         """Returns the line number on which the begin config tag `CONFIG_BEGIN_TAG` is located.
         Line numbers start at 1 at the top of the file like in any reasonable editor.
         """
@@ -270,35 +301,61 @@ class BibolamaziFile(object):
     def sources(self):
         return self._sources;
 
-    def source_lists(self):
+    def sourceLists(self):
         return self._source_lists;
 
     def filters(self):
         return self._filters;
 
-    def bibliographydata(self):
+    def bibliographyData(self):
         return self._bibliographydata;
 
-    def cachefname(self):
-        """The file name where the cache will be stored. You don't need to access this directly,
-        the cache will be loaded and saved automatically. You should normally only use the
-        function `cache_for()`.
+    def bibliographydata(self):
+        """
+        Deprecated: use `bibliographyData()` instead!
+        """
+        butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()")
+        return self.bibliographyData()
+
+    def cacheFileName(self):
+        """
+        The file name where the cache will be stored. You don't need to access this
+        directly, the cache will be loaded and saved automatically. You should normally
+        only access the cache through cache accessors. See `cacheAccessor()`.
         """
         return self._fname + '.bibolamazicache';
+        
 
-    def cache_for(self, namespace, **kwargs):
-        return self._user_cache.cache_for(namespace, **kwargs)
+    def cacheAccessor(self, klass):
+        """
+        Returns the cache accessor instance corresponding to the given class.
+        """
+        return self._cache_accessors.get(klass, None)
+        
 
-    def set_default_cache_invalidation_time(self, time_delta):
+    def setDefaultCacheInvalidationTime(self, time_delta):
         """
         A timedelta object giving the amount of time for which data in cache is consdered
         valid (by default).
+
+        Note that this function should be called BEFORE the data is loaded. If you just
+        call, for example the default constructor, this might be too late already. If you
+        use the `load()` function, set the default cache invalidation time before you load
+        up to the state `BIBOLAMAZIFILE_LOADED`.
+
+        Note that you may also use the option in the constructor
+        `default_cache_invalidation_time`, which has the same effect as this funtion
+        called at the appropriate time.
         """
-        if not self._use_cache or not self._user_cache:
-            logger.warning('set_default_cache_invalidation_time: No cache in use: ignoring new value.')
+
+        # Note that we set the invalidation anyway, even if we have
+        # `self._use_cache==False`, because in that case the cache is still saved.
+
+        if not self._user_cache:
+            logger.warning('BibolamaziFile.setDefaultCacheInvalidationTime(): Invalid cache object')
             return
 
-        self._user_cache.set_default_invalidation_time(time_delta)
+        self._user_cache.setDefaultInvalidationTime(time_delta)
 
     def setConfigData(self, configdata):
         # prefix every line by a percent sign.
@@ -324,15 +381,36 @@ class BibolamaziFile(object):
         self._load_state = BIBOLAMAZIFILE_READ
 
 
+    def resolveSourcePath(self, path):
+        """
+        Resolves a path (for example corresponding to a source file) to an absolute file
+        location.
+
+        This function expands '~/foo/bar' to e.g. '/home/someone/foo/bar', it expands
+        shell variables, e.g. '$HOME/foo/bar' or '${MYBIBDIR}/foo/bar.bib'.
+
+        If the path is relative, it is made absolute by interpreting it as relative to the
+        location of this bibolamazi file (see `fdir()`).
+
+        Note: `path` should not be an URL.
+        """
+        # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
+        path = os.path.expanduser(path);
+        path = os.path.expandvars(path);
+        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
+        # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
+        return os.path.join(self._dir, path)
+
+
     def _init_empty_template(self):
 
         # provide us an initialized instance
         self.load(None, to_state=BIBOLAMAZIFILE_INIT)
 
-        self._header = TEMPLATE_HEADER;
-        self._config = TEMPLATE_CONFIG;
-        self._config_data = self._config_data_from_block(TEMPLATE_CONFIG);
-        self._rest = '';#TEMPLATE_REST;
+        self._header = _TEMPLATE_HEADER;
+        self._config = _TEMPLATE_CONFIG;
+        self._config_data = self._config_data_from_block(_TEMPLATE_CONFIG);
+        self._rest = '';#_TEMPLATE_REST;
 
         # store raw cmds
         self._cmds = [];
@@ -341,6 +419,7 @@ class BibolamaziFile(object):
         self._sources = [];
         self._source_lists = [];
         self._filters = [];
+        self._cache_accessors = {};
 
         # cheat, we've loaded it manually
         self._load_state = BIBOLAMAZIFILE_LOADED
@@ -519,6 +598,7 @@ class BibolamaziFile(object):
         self._sources = [];
         self._source_lists = [];
         self._filters = [];
+        self._cache_accessors = {};
         for cmd in cmds:
             if (cmd.cmd == "src"):
                 thesrc_list = shlex.split(cmd.text);
@@ -531,18 +611,35 @@ class BibolamaziFile(object):
                 filname = cmd.info['filtername'];
                 filoptions = cmd.text;
                 try:
-                    filterinstance = filters.make_filter(filname, filoptions)
+                    filterinstance = factory.make_filter(filname, filoptions)
                     filterinstance.setBibolamaziFile(self)
+                    filterinstance.setInvokationName(filname)
                     self._filters.append(filterinstance)
-                except filters.NoSuchFilter as e:
+                except factory.NoSuchFilter as e:
                     self._raise_parse_error(str(e), lineno=cmd.lineno);
-                except filters.NoSuchFilterPackage as e:
+                except factory.NoSuchFilterPackage as e:
                     self._raise_parse_error(str(e), lineno=cmd.lineno);
-                except filters.FilterError as e:
+                except factory.FilterError as e:
                     import traceback
                     logger.debug("FilterError:\n" + traceback.format_exc())
                     self._raise_parse_error(unicode(e),
                                             lineno=cmd.lineno);
+
+                # see if we have to register a new cache accessor
+                for req_cache in list(filterinstance.requested_cache_accessors()):
+                    if req_cache not in self._cache_accessors:
+                        # construct a cache accessor for this cache.
+                        try:
+                            cache_accessor = req_cache(bibolamazifile=self)
+                            self._cache_accessors[req_cache] = cache_accessor
+                        except Exception as e:
+                            ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
+                            raise BibolamaziError(
+                                (u"Error in cache %s: Exception while instantiating the class:\n"
+                                 u"%s: %s")
+                                %( req_cache.__name__, e.__class__.__name__, unicode(e) )
+                                )
+                        
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
                 continue
 
@@ -556,6 +653,12 @@ class BibolamaziFile(object):
 
 
     def _load_contents(self):
+        """
+        Load the source data and the cache.
+        """
+
+        # Load the sources
+        # ----------------
 
         self._bibliographydata = None;
 
@@ -568,6 +671,45 @@ class BibolamaziFile(object):
             srclist = self._source_lists[k];
             src = self._populate_from_srclist(srclist);
             self._sources[k] = src;
+
+
+        # Now, try to load the cache
+        # --------------------------
+        if self._use_cache:
+            # then, try to load the cache if possible
+            cachefname = self.cacheFileName()
+            try:
+                with open(cachefname, 'rb') as f:
+                    logger.longdebug("Reading cache file %s" %(cachefname))
+                    self._user_cache.loadCache(f)
+            except (IOError, EOFError,):
+                logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
+                pass
+        else:
+            logger.debug("As requested, I have not attempted to load any existing cache file.")
+
+        # Finally, initialize the cache.
+        # ------------------------------
+
+        # this should be done independently of whether we are loading/saving cache and/or
+        # if the cache load succeeded. Remember that the cache is always there, and
+        # filters always use it. `self._use_cache` only tells us whether to load some
+        # initial data.
+
+        for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
+            #
+            # Ensure the existance of the cache dictionary instance in the cache
+            #
+            self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
+            #
+            # Set the accessor's pointer to the cache object
+            #
+            cacheaccessorinstance.setCacheObj(cache_obj=self._user_cache)
+            #
+            # and initialize the cache accessor
+            #
+            cacheaccessorinstance.initialize(self._user_cache)
+
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 
@@ -583,15 +725,6 @@ class BibolamaziFile(object):
                 return src
         logger.info("Ignoring nonexisting source list: %s" %(", ".join(srclist)));
         return None
-
-    def resolveSourcePath(self, path):
-        # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
-        path = os.path.expanduser(path);
-        path = os.path.expandvars(path);
-        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
-        # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
-        return os.path.join(self._dir, path)
-
 
     def _populate_from_src(self, src):
         bib_data = None;
@@ -657,7 +790,7 @@ class BibolamaziFile(object):
 
 
 
-    def save_to_file(self):
+    def saveToFile(self):
         with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header);
             f.write(self._config);
@@ -673,12 +806,12 @@ class BibolamaziFile(object):
             logger.info("Updated output file `"+self._fname+"'.");
 
         # if we have cache to save, save it
-        if (self._user_cache and self._user_cache.has_cache()):
-            cachefname = self.cachefname()
+        if (self._user_cache and self._user_cache.hasCache()):
+            cachefname = self.cacheFileName()
             try:
                 with open(cachefname, 'wb') as f:
-                    logger.longdebug("Writing our cache to file %s" %(cachefname))
-                    self._user_cache.save_cache(f)
+                    logger.debug("Writing cache to file %s" %(cachefname))
+                    self._user_cache.saveCache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file `%s'." %(cachefname))
                 pass
@@ -688,7 +821,7 @@ class BibolamaziFile(object):
 
 
 
-TEMPLATE_HEADER = """\
+_TEMPLATE_HEADER = """\
 
 
 .. Additionnal stuff here will not be managed by bibolamazi. It will also not be
@@ -698,7 +831,7 @@ TEMPLATE_HEADER = """\
 
 """
 
-TEMPLATE_CONFIG = """\
+_TEMPLATE_CONFIG = """\
 %%%-BIB-OLA-MAZI-BEGIN-%%%
 %
 % %% This bibliography database uses BIBOLAMAZI:
@@ -739,3 +872,4 @@ TEMPLATE_CONFIG = """\
 %
 %%%-BIB-OLA-MAZI-END-%%%
 """
+

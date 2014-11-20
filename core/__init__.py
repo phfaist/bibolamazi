@@ -19,3 +19,9 @@
 #                                                                              #
 ################################################################################
 
+"""
+Core bibolamazi module.
+
+See :py:mod:`core.bibfilter`, :py:mod:`core.bibolamazifile`, :py:mod:`core.bibusercache`
+for the main core modules.
+"""

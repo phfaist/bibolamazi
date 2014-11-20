@@ -89,18 +89,18 @@ class UrlNormalizeFilter(BibFilter):
         logger.debug('url filter constructor')
         
 
-    def name(self):
-        return "url"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+
+    def prerun(self, bibolamazifile):
+        arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
 
     def filter_bibentry(self, entry):
         #
         # entry is a pybtex.database.Entry object
         #
 
-        arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
+        arxivinfo = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).getArXivInfo(entry.key);
 
         # --- prepare urls[] list ---
         if ('url' in entry.fields):
@@ -166,7 +166,7 @@ class UrlNormalizeFilter(BibFilter):
         else:
             entry.fields.pop('url', None)
 
-        return entry
+        return
 
 
 def bibolamazi_filter_class():

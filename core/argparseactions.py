@@ -19,6 +19,12 @@
 #                                                                              #
 ################################################################################
 
+"""
+This module defines callbacks and actions for parsing the command-line arguments for
+bibolamazi. You're most probably not interested in this API. (Not mentioning that it might
+change if I feel the need for it.)
+"""
+
 import re
 import os
 import sys
@@ -231,15 +237,15 @@ class opt_action_help(argparse.Action):
 
         thefilter = values
 
-        import filters;
+        from core.bibfilter import factory
         try:
-            helptext = filters.format_filter_help(thefilter);
+            helptext = factory.format_filter_help(thefilter);
             pydoc.pager(helptext);
             parser.exit();
-        except filters.NoSuchFilter as e:
+        except factory.NoSuchFilter as e:
             logger.error(unicode(e))
             parser.exit();
-        except filters.NoSuchFilterPackage as e:
+        except factory.NoSuchFilterPackage as e:
             logger.error(unicode(e))
             parser.exit();
 
@@ -288,7 +294,7 @@ Package `%(filterpackage)s':
 def help_list_filters():
 
     import textwrap;
-    import filters;
+    from core.bibfilter import factory
 
     #DEBUG
     #logger.setVerbosity(3)
@@ -297,14 +303,14 @@ def help_list_filters():
 
         nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
         return ( "  %-13s " %(f) +
-                 nlindentstr.join(textwrap.wrap(filters.get_filter_class(f, filterpackage=fp)
+                 nlindentstr.join(textwrap.wrap(factory.get_filter_class(f, filterpackage=fp)
                                                 .getHelpDescription(),
                                                 (80-16) # 80 line width, -16 indent chars
                                                 ))
                  )
 
     full_filter_list = []
-    for (fp,fplist) in filters.detect_filter_package_listings().iteritems():
+    for (fp,fplist) in factory.detect_filter_package_listings().iteritems():
         filter_list = [
             fmt_filter_helpline(f, fp)
             for f in fplist
@@ -357,7 +363,7 @@ class opt_init_empty_template(argparse.Action):
             parser.exit(9);
 
         bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.save_to_file();
+        bfile.saveToFile();
 
         parser.exit();
 

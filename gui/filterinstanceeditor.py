@@ -27,10 +27,10 @@ import os
 import os.path
 import re
 
-import filters
-from filters import NoSuchFilter, NoSuchFilterPackage, FilterError
+from core.bibfilter import factory as filters_factory
+from core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
 from core import butils
-from core.bibfilter import EnumArgType, CommaStrList
+from core.bibfilter.argtypes import EnumArgType, CommaStrList
 
 
 from PyQt4.QtCore import *
@@ -42,7 +42,7 @@ import overlistbuttonwidget
 
 
 def get_filter_list():
-    filter_pkg_list = filters.detect_filter_package_listings()
+    filter_pkg_list = filters_factory.detect_filter_package_listings()
     filter_list = []
     for (fpkg, flist) in filter_pkg_list.items():
         if fpkg == 'filters':
@@ -121,8 +121,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._fopts = None
         try:
             # remember: filter_uses_default_arg_parser() may also raise NoSuchFilter
-            if (filtername and filters.filter_uses_default_arg_parser(filtername)):
-                self._fopts = filters.DefaultFilterOptions(filtername)
+            if (filtername and filters_factory.filter_uses_default_arg_parser(filtername)):
+                self._fopts = filters_factory.DefaultFilterOptions(filtername)
         except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
             print "No such filter, no such filter package or filtererror: %s"%(unicode(e))
             pass
@@ -210,7 +210,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     #def _make_empty_type(self, arg):
     #    if (arg.argtypename is not None):
-    #        fmodule = filters.get_module(self._filtername, False)
+    #        fmodule = filters_factory.get_module(self._filtername, False)
     #        typ = butils.resolve_type(arg.argtypename, fmodule)
     #        return typ()
     #    return str('')
@@ -264,7 +264,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             # request editing value of argument
             if (role == Qt.EditRole):
                 if (arg.argtypename is not None):
-                    fmodule = filters.get_module(self._filtername, False)
+                    fmodule = filters_factory.get_module(self._filtername, False)
                     typ = butils.resolve_type(arg.argtypename, fmodule)
                 else:
                     typ = str
@@ -346,7 +346,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # validate type
         typ = None
         if (arg.argtypename is not None):
-            typ = butils.resolve_type(arg.argtypename, filters.get_module(self._filtername, False))
+            typ = butils.resolve_type(arg.argtypename, filters_factory.get_module(self._filtername, False))
         if (typ == None):
             typ = str
             

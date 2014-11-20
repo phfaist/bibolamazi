@@ -84,9 +84,6 @@ class NameInitialsFilter(BibFilter):
         logger.debug('NameInitialsFilter constructor')
         
 
-    def name(self):
-        return "nameinitials"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
 
@@ -124,7 +121,7 @@ class NameInitialsFilter(BibFilter):
                 entry.persons[role][k] = pnew
                 #logger.debug("nameinitials: %r became %r" % (p, pnew));
 
-        return entry
+        return
 
 
 def bibolamazi_filter_class():

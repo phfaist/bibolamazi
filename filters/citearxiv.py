@@ -28,7 +28,8 @@ from urllib2 import HTTPError
 from pybtex.database import BibliographyData;
 import pybtex.database.input.bibtex as inputbibtex;
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList;
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.butils import getbool;
 from core.blogger import logger;
 
@@ -103,9 +104,6 @@ class CiteArxivFilter(BibFilter):
         logger.debug('citearxiv: jobname=%r' % (jobname,));
 
 
-    def name(self):
-        return "citearxiv"
-
     def getRunningMessage(self):
         return u"citearxiv: parsing & fetching relevant arxiv citations ..."
 
@@ -113,16 +111,16 @@ class CiteArxivFilter(BibFilter):
     def action(self):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
 
     def filter_bibolamazifile(self, bibolamazifile):
 
-        arxiv_fetched_cache = self.cache_for('arxiv_fetched_api_info')['fetched'];
-        citearxiv_cachebase = self.cache_for('citearxiv_uselist');
-        citearxiv_cachebase.setdefault('idlist', [])
-        citearxiv_uselist = citearxiv_cachebase['idlist'];
+        arxiv_api_accessor = self.cacheAccessor(arxivutil.ArxivFetchedAPIInfoCacheAccessor)
 
-        logger.longdebug('fetched arxiv citations cache: %r: %r' %(arxiv_fetched_cache.keys(),
-                                                                   arxiv_fetched_cache))
+        citearxiv_uselist = []
 
         #
         # find and analyze jobname.aux. Look for \citation{...}'s and collect them.
@@ -157,29 +155,26 @@ class CiteArxivFilter(BibFilter):
 
         # if there are missing ids, fetch them
         if (missing_ids):
-            arxivutil.fetch_arxiv_api_info(missing_ids, arxiv_fetched_cache, self)
-
-        logger.longdebug('fetched arxiv citations cache: %r' %(arxiv_fetched_cache))
+            arxiv_api_accessor.fetchArxivApiInfo(missing_ids)
 
         #
-        # Now, include all the entries of arxiv_fetched_cache into our database.
+        # Now, include all the entries in citearxiv_uselist
         #
         # Variable bibdata is a pybtex.database.BibliographyData object
         #
 
-        thebibdata = bibolamazifile.bibliographydata();
+        thebibdata = bibolamazifile.bibliographyData();
 
-        # join all the bibtex blocks of all the cached entries
-        allbibtex = "\n".join( [ val['bibtex'] for k,val in arxiv_fetched_cache.iteritems() ] );
 
         for arxivid in citearxiv_uselist:
-            dat = arxiv_fetched_cache.get(arxivid)
+            dat = arxiv_api_accessor.getArxivApiInfo(arxivid)
             if (dat is None):
-                errref = arxiv2bib.ReferenceErrorInfo('ArXiv info for `%s''not in cache' %(arxivid),
+                errref = arxiv2bib.ReferenceErrorInfo("ArXiv info for `%s' not in cache"%(arxivid),
                                                       arxivid)
-                dat = {'reference': errref,
-                       'bibtex': errref.bibtex(),
-                       }
+                dat = {
+                    'reference': errref,
+                    'bibtex': errref.bibtex(),
+                    }
 
             # parse bibtex
             parser = inputbibtex.Parser();

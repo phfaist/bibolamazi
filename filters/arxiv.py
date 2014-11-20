@@ -25,7 +25,8 @@ import re
 from pybtex.utils import CaseInsensitiveDict
 
 from core import bibfilter
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList, enum_class
 from core.blogger import logger
 from core import butils
 
@@ -138,7 +139,7 @@ _modes = [
     ];
 #_modes_dict = dict(_modes)
 
-Mode = bibfilter.enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
+Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
 
 
 
@@ -215,11 +216,21 @@ class ArxivNormalizeFilter(BibFilter):
         logger.debug('arxiv filter constructor: mode=%s; unpublished_mode=%s' % (self.mode, self.unpublished_mode));
 
 
-    def name(self):
-        return "arxiv"
-
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
+
+    def prerun(self, bibolamazifile):
+        #
+        # Make sure all entries are in the cache.
+        #
+        arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
+
 
     def filter_bibentry(self, entry):
         #
@@ -228,7 +239,10 @@ class ArxivNormalizeFilter(BibFilter):
         
         #import pdb;pdb.set_trace()
 
-        arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
+        #arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
+        arxivinfoaccessor = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor)
+
+        arxivinfo = arxivinfoaccessor.getArXivInfo(entry.key)
 
         if (arxivinfo is None):
             # no arxiv info--don't do anything
@@ -257,8 +271,8 @@ class ArxivNormalizeFilter(BibFilter):
                            entry.key, arxivinfo['doi'])
 
         if (mode == MODE_NONE):
-            # don't change the entry, return it as is.
-            return entry;
+            # don't change the entry, leave it as is.
+            return
 
         # start by stripping all arxiv info.
         entry.fields.pop('archiveprefix', None);
@@ -284,8 +298,8 @@ class ArxivNormalizeFilter(BibFilter):
             entry.type = u'article';
             
         if (mode == MODE_STRIP):
-            # directly return stripped entry.
-            return entry
+            # directly leave entry stripped.
+            return
 
         origentryfields = CaseInsensitiveDict(entry.fields.iteritems())
 
@@ -324,7 +338,7 @@ class ArxivNormalizeFilter(BibFilter):
             # save arxiv information in the note={} field, without changing entry type
             add_note(entry, arxivinfo)
             
-            return entry
+            return
 
         if (mode == MODE_EPRINT):
             if (arxivinfo['published'] == False):
@@ -355,7 +369,7 @@ class ArxivNormalizeFilter(BibFilter):
                 if ok:
                     entry.fields['primaryclass'] = arxivinfo['primaryclass']
 
-            return entry
+            return
         
         raise BibFilterError('arxiv', "Unknown mode: %s" % mode );
 

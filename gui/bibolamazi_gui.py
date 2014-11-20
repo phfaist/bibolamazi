@@ -34,7 +34,7 @@ import bibolamazi_init
 from core import bibolamazifile
 from core import main
 from core.butils import BibolamaziError
-import filters
+from core.bibfilter import factory as filters_factory
 import core.version
 
 from PyQt4.QtCore import *
@@ -218,26 +218,40 @@ class MainWidget(QWidget):
     @pyqtSlot()
     def on_btnOpenFile_clicked(self):
         fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
-                                                'Bibolamazi Files (*.bib);;All Files (*)'))
+                                                'Bibolamazi Files (*.bibolamazi.bib);;All Files (*)'))
         if (fname):
             self.openFile(fname)
         
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        newfilename = str(QFileDialog.getSaveFileName(self, 'Create Bibolamazi File', QString(),
-                                                      'Bibolamazi Files (*.bib);;All Files (*)'))
+        saveFileDialog = QFileDialog(self, "Create Bibolamazi File", QString(),
+                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)");
+        if sys.platform.startswith('darwin'):
+            # NOTE: BUG: OS X' file selection dialog is so stupid it won't understand the
+            # .bibolamazi.bib extension and will force some silly warning dialong and mess up
+            # the extension completely. So use Qt's file dialog.
+            saveFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
+        
+        saveFileDialog.setDefaultSuffix("bibolamazi.bib")
+        saveFileDialog.setAcceptMode(QFileDialog.AcceptSave)
+        saveFileDialog.setFileMode(QFileDialog.AnyFile)
+        if not saveFileDialog.exec_():
+            return
+        
+        newfilename = [unicode(x) for x in saveFileDialog.selectedFiles()][0]
+            
         if (not newfilename):
             # cancelled
             return
 
         if (os.path.exists(newfilename)):
             QMessageBox.critical(self, "File Exists",
-                                 "Cowardly refusing to overwrite existing file `%s'. Remove it first."
+                                 "Cowardly refusing to overwrite existing file `%s'. Please remove it first."
                                  %(newfilename))
             return
 
         bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.save_to_file();
+        bfile.saveToFile();
 
         self.openFile(newfilename)
 
@@ -332,7 +346,7 @@ def run_main():
     # load precompiled filters, if we've got any
     try:
         import bibolamazi_compiled_filter_list as pc
-        filters.load_precompiled_filters('filters', dict([
+        filters_factory.load_precompiled_filters('filters', dict([
             (fname, pc.__dict__[fname])  for fname in pc.filter_list
             ]))
     except ImportError:
@@ -348,7 +362,7 @@ def run_main():
         main.setup_filterpackages_from_env()
         # ... and from settings.
         settingswidget.setup_filterpackages_from_settings(QSettings())
-    except (filters.NoSuchFilter, filters.NoSuchFilterPackage, BibolamaziError):
+    except (filters_factory.NoSuchFilter, filters_factory.NoSuchFilterPackage, BibolamaziError):
         QMessageBox.warning(None, "Filter packages error",
                             "An error was detected in the filter packages configuration. "
                             "Please edit your settings.")

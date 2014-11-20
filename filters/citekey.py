@@ -32,7 +32,8 @@ import textwrap
 from pybtex.database import BibliographyData, Entry;
 
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList;
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger;
 from core import butils
 from core.pylatexenc import latex2text
@@ -177,9 +178,6 @@ class CiteKeyFilter(BibFilter):
         logger.debug('citekey: fmt=%r', self.fmt)
 
 
-    def name(self):
-        return "citekey"
-
     def getRunningMessage(self):
         return u"Generating standard citekeys"
     
@@ -188,13 +186,20 @@ class CiteKeyFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
 
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
+
+
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
-        bibdata = bibolamazifile.bibliographydata();
+        bibdata = bibolamazifile.bibliographyData();
 
-        arxivaccess = arxivutil.get_arxiv_cache_access(bibolamazifile)
+        arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 
         # first, find required fields and apply possible "filters"
 

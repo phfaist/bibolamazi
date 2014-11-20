@@ -24,7 +24,8 @@ import re
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
@@ -152,7 +153,7 @@ class FixesFilter(BibFilter):
         self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
-            raise FilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
+            raise BibFilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
 
@@ -200,9 +201,6 @@ class FixesFilter(BibFilter):
                         self.remove_fields, self.remove_doi_prefix
                         ));
         
-
-    def name(self):
-        return "fixes"
 
     def action(self):
         return BibFilter.BIB_FILTER_SINGLE_ENTRY;
@@ -292,7 +290,7 @@ class FixesFilter(BibFilter):
             if 'doi' in entry.fields:
                 entry.fields['doi'] = re.sub(r'^\s*doi:\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
-        return entry;
+        return
     
 
 def bibolamazi_filter_class():

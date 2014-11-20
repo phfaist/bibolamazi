@@ -22,7 +22,8 @@
 
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from core.bibfilter import BibFilter, BibFilterError, CommaStrList;
+from core.bibfilter import BibFilter, BibFilterError
+from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger;
 
 from .util import auxfile
@@ -87,9 +88,6 @@ class OnlyUsedFilter(BibFilter):
         logger.debug('only_used: jobname=%r' % (jobname,));
 
 
-    def name(self):
-        return "only_used"
-
     def getRunningMessage(self):
         return u"only_used: filtering entries ..."
 
@@ -108,7 +106,7 @@ class OnlyUsedFilter(BibFilter):
         logger.longdebug("set of citations: %r"%(citations))
 
 
-        bibdata = bibolamazifile.bibliographydata()
+        bibdata = bibolamazifile.bibliographyData()
         
         newentries = OrderedCaseInsensitiveDict()
 

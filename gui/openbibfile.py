@@ -37,7 +37,6 @@ from core.blogger import logger
 from core import bibolamazifile
 from core import butils
 from core.butils import BibolamaziError
-import filters
 
 
 from PyQt4.QtCore import *
@@ -263,7 +262,7 @@ class OpenBibFile(QWidget):
         
         # change the config block.
         self.bibolamaziFile.setConfigData(config_data)
-        self.bibolamaziFile.save_to_file()
+        self.bibolamaziFile.saveToFile()
 
         self._set_modified(False)
 
@@ -364,7 +363,7 @@ class OpenBibFile(QWidget):
 
         with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
             cursorpos = self.ui.txtConfig.textCursor().position()
-            self.ui.txtConfig.setPlainText(self.bibolamaziFile.config_data())
+            self.ui.txtConfig.setPlainText(self.bibolamaziFile.configData())
             cur = self.ui.txtConfig.textCursor()
             cur.setPosition(cursorpos)
             self.ui.txtConfig.setTextCursor(cur)
@@ -382,7 +381,7 @@ class OpenBibFile(QWidget):
             return 'file:///'+s;
 
         sources = []
-        for srcline in self.bibolamaziFile.source_lists():
+        for srcline in self.bibolamaziFile.sourceLists():
             if (isinstance(srcline, list)):
                 srclist = srcline
             else:
@@ -477,7 +476,7 @@ class OpenBibFile(QWidget):
                     self.ui.tabs.setCurrentWidget(self.ui.pageLog)
                     # block notifications for file contents updates that we generate ourselves...
                     self.fwatcher.blockSignals(True)
-                    core.main.run_bibolamazi(outputbibfile=self.bibolamaziFileName,
+                    core.main.run_bibolamazi(bibolamazifile=self.bibolamaziFileName,
                                              verbosity=self.ui.cbxVerbosity.currentIndex())
                     log2txtLog.addtolog(" --> Finished successfully. <--")
                 except butils.BibolamaziError as e:

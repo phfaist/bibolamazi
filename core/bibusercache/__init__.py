@@ -21,167 +21,13 @@
 
 import collections
 import inspect
-import datetime
 import pickle
-import hashlib
+import traceback
 
 from pybtex.database import Entry, Person
 from core.blogger import logger
-from core.butils import call_with_args
-
-
-class TokenChecker(object):
-    def __init__(self, **kwargs):
-        super(TokenChecker, self).__init__(**kwargs)
-
-    def new_token(self, key, value, **kwargs):
-        return True
-
-    def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        # by default, compare for equality.
-        try:
-            newtoken = self.new_token(key=key, value=value, **kwargs)
-            if newtoken == oldtoken:
-                #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> OK", newtoken, oldtoken)
-                return True
-            #logger.longdebug("Basic cmp_tokens: newtoken=%r, oldtoken=%r ---> DIFFERENT", newtoken, oldtoken)
-            return False
-        except Exception as e:
-            logger.debug("Got exception in TokenChecker.cmp_tokens: ignoring and invalidating: %s", e)
-            return False
-
-
-class TokenCheckerDate(TokenChecker):
-    def __init__(self, time_valid=datetime.timedelta(days=3), **kwargs):
-        super(TokenCheckerDate, self).__init__(**kwargs)
-        self.time_valid = time_valid
-
-    def set_time_valid(self, time_valid):
-        self.time_valid = time_valid
-
-    def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        now = datetime.datetime.now()
-        #logger.longdebug("Comparing %r with %r; time_valid=%r", now, oldtoken, self.time_valid)
-        if oldtoken is None:
-            return False
-        try:
-            return ((now - oldtoken) < self.time_valid)
-        except Exception as e:
-            logger.debug("Got exception in TokenCheckerDate.cmp_tokens: ignoring and invalidating: %s", e)
-            return False
-
-    def new_token(self, **kwargs):
-        return datetime.datetime.now()
-
-
-class TokenCheckerCombine(TokenChecker):
-    def __init__(self, *args, **kwargs):
-        super(TokenCheckerCombine, self).__init__(**kwargs)
-        self.subcheckers = args
-
-    def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        try:
-            for k in range(len(self.subcheckers)):
-                chk = self.subcheckers[k]
-                #logger.longdebug("TokenCheckerCombine: cmp_tokens(): #%d: %r : key=%s value=... oldtoken=%r",
-                #                 k, chk, key, oldtoken[k])
-                if not chk.cmp_tokens(key=key, value=value, oldtoken=oldtoken[k], **kwargs):
-                    return False
-            return True
-        except Exception as e:
-            logger.debug("Got exception in TokenCheckerCombine.cmp_tokens: ignoring and invalidating: %s", e)
-            return False
-
-    def new_token(self, key, value, **kwargs):
-        return  tuple( (chk.new_token(key=key, value=value, **kwargs) for chk in self.subcheckers) )
-
-
-class TokenCheckerPerEntry(TokenChecker):
-    def __init__(self, checkers={}, **kwargs):
-        super(TokenCheckerPerEntry, self).__init__(**kwargs)
-        self.checkers = checkers
-
-    def add_entry_check(self, key, checker):
-        """
-        Add an entry-specific checker.
-
-        Note that no explicit validation is performed. (This can't be done because we
-        don't even have a pointer to the cache dict.) So you should call manually
-        `BibUserCacheDict.validate_item()`
-        """
-        if not checker:
-            raise ValueError("add_entry_check(): may not provide `None`")
-        if key in self.checkers:
-            if self.checkers[key] is checker:
-                return # already set
-            logger.warning("TokenCheckerPerEntry: Replacing checker for `%s'", key)
-        self.checkers[key] = checker
-
-    def has_entry_for(self, key):
-        return (key in self.checkers)
-
-    def checker_for(self, key):
-        return self.checkers.get(key, None)
-
-    def remove_entry_check(self, key):
-        if not key in self.checkers:
-            return
-        del self.checkers[key]
-
-    def cmp_tokens(self, key, value, oldtoken, **kwargs):
-        try:
-            if not key in self.checkers:
-                return True # no validation if we have no checkers
-            return self.checkers[key].cmp_tokens(key=key, value=value, oldtoken=oldtoken, **kwargs)
-        except Exception as e:
-            logger.debug("Got exception in TokenCheckerPerEntry.cmp_tokens: ignoring and invalidating: %s", e)
-            return False
-
-    def new_token(self, key, value, **kwargs):
-        if not key in self.checkers:
-            return True # no validation if we have no checkers
-        return self.checkers[key].new_token(key=key, value=value, **kwargs)
-
-
-
-
-class EntryFieldsTokenChecker(TokenChecker):
-    def __init__(self, bibdata, fields=[], store_type=False, store_persons=[], **kwargs):
-        self.bibdata = bibdata
-        self.fields = fields
-        self.store_type = store_type
-        if (isinstance(store_persons, bool)):
-            self.store_persons = Person.valid_roles
-        else:
-            self.store_persons = [x for x in store_persons]
-
-        super(EntryFieldsTokenChecker, self).__init__(**kwargs)
-
-    def new_token(self, key, value, **kwargs):
-        entry = self.bibdata.entries.get(key,Entry('misc'))
-        
-        data = "\n\n".join( (entry.fields.get(fld, '').encode('utf-8')
-                         for fld in self.fields) )
-        if self.store_type:
-            data += "\n\n" + entry.type.encode('utf-8')
-        if self.store_persons:
-            data += "".join([
-                ("\n\n"+p+":"+";".join([unicode(pers) for pers in entry.persons.get(p, [])]))
-                for p in self.store_persons ]).encode('utf-8')
-        
-        return hashlib.md5(data).digest()
-
-
-
-class VersionTokenChecker(TokenChecker):
-    def __init__(self, this_version, **kwargs):
-        super(VersionTokenChecker, self).__init__(**kwargs)
-        self.this_version = this_version
-
-    def new_token(self, key, value, **kwargs):
-        return self.this_version
-
-
+from core.butils import call_with_args, BibolamaziError
+from core.bibusercache import tokencheckers
 
 
 
@@ -247,8 +93,8 @@ class BibUserCacheDic(collections.MutableMapping):
         Set a function that will calculate the `token' for a given entry, for cache
         validation. The function `fn` shall compute a value based on a key (and possibly
         cache value) of the cache, such that comparision with `fncmp` (by default
-        equality) will tell us if the entry is out of date. *********TODO: BETTER DOC
-        **************
+        equality) will tell us if the entry is out of date. See the documentation for the
+        :py:mod:`tokencheckers` modules for more information about cache validation.
 
         If `validate` is `True`, then we immediately validate the contents of the cache.
         """
@@ -284,6 +130,8 @@ class BibUserCacheDic(collections.MutableMapping):
 
         If the value is valid, and happens to be a BibUserCacheDic, then that dictionary
         is also validated.
+
+        Invalid entries are deleted.
 
         Returns `True` if have valid item, otherwise `False`.
         """
@@ -472,18 +320,28 @@ class BibUserCacheList(collections.MutableSequence):
 
 
 class BibUserCache(object):
+    """
+    The basic root cache object.
+
+    This object stores the corresponding cache dictionaries for each cache. (See
+    :py:meth:`cacheFor`.)
+
+    (Internally, the caches are stored in one root :py:class:`BibUserCacheDic`.)
+    """
     def __init__(self, cache_version=None):
+        logger.longdebug("BibUserCache: Constructor!")
         self.cachedic = BibUserCacheDic({})
-        self.entry_validation_checker = TokenCheckerPerEntry()
-        self.comb_validation_checker = TokenCheckerCombine(VersionTokenChecker(cache_version),
-                                                           self.entry_validation_checker,
-                                                           )
+        self.entry_validation_checker = tokencheckers.TokenCheckerPerEntry()
+        self.comb_validation_checker = tokencheckers.TokenCheckerCombine(
+            tokencheckers.VersionTokenChecker(cache_version),
+            self.entry_validation_checker,
+            )
         self.cachedic.set_validation(self.comb_validation_checker)
         # an instance of an expiry_checker that several entries might share in
         # self.entry_validation_checker.
-        self.expiry_checker = TokenCheckerDate()
+        self.expiry_checker = tokencheckers.TokenCheckerDate()
 
-    def set_default_invalidation_time(self, time_delta):
+    def setDefaultInvalidationTime(self, time_delta):
         """
         A timedelta object giving the amount of time for which data in cache is consdered
         valid (by default).
@@ -491,42 +349,268 @@ class BibUserCache(object):
         self.expiry_checker.set_time_valid(time_delta)
 
 
-    def cache_for(self, cachename, dont_expire=False):
-        if (self.cachedic is None):
-            return None
+    def cacheFor(self, cache_name):
+        """
+        Returns the cache dictionary object for the given cache name. If the cache
+        dictionary does not exist, it is created.
+        """
+        if not cache_name in self.cachedic:
+            self.cachedic[cache_name] = {}
 
-        #logger.longdebug("cache_for(%r, dont_expire=%r)", cachename, dont_expire)
-
-        if not dont_expire:
-            # normal thing, i.e. the cache expires after N days
-            if not self.entry_validation_checker.has_entry_for(cachename):
-                logger.longdebug("Adding expiry checker for %s", cachename)
-                self.entry_validation_checker.add_entry_check(cachename, self.expiry_checker)
-                self.cachedic.validate_item(cachename)
-        elif self.entry_validation_checker.has_entry_for(cachename):
-            # conflict: twice cache requested with conflicting values of dont_expire
-            raise RuntimeError("Conflicting values of dont_expire given for cache `%s'"%(cachename))
-
-        return self.cachedic[cachename]
+        return self.cachedic[cache_name]
 
 
-    def has_cache(self):
+    def cacheExpirationTokenChecker(self):
+        """
+        Returns a cache expiration token checker validator which is configured with the
+        default cache invalidation time.
+
+        This object may be used by subclasses as a token checker for sub-caches that need
+        regular invalidation (typically several days in the default configuration).
+
+        Consider using though `installCacheExpirationChecker()`, which simply applies a
+        general validator to your full cache; this is generally what you might want.
+        """
+        return self.expiry_checker
+    
+
+    def installCacheExpirationChecker(self, cache_name):
+        """
+        Installs a cache expiration checker on the given cache.
+
+        This is a utility that is at the disposal of the cache accessors to easily set up
+        an expiration validator on their caches. Also, a single instance of an expiry
+        token checker (see `TokenCheckerDate`) is shared between the different sub-caches
+        and handled by this main cache object.
+
+        The duration of the expiry is typically several days; because the token checker
+        instance is shared this cannot be changed easily nor should it be relied upon. If
+        you have custom needs or need more control over this, create your own token
+        checker.
+
+        Returns: the cache dictionary. This may have changed to a new empty object if the
+        cache didn't validate!
+
+        WARNING: the cache dictionary may have been altered with the validation of the
+        cache! Use the return value of this function, or call
+        :py:meth:`BibUserCacheAccessor.cacheDic` again!
+
+        Note: this validation will not validate individual items in the cache dictionary,
+        but the dictionary as a whole. Depending on your use case, it might be worth
+        introducing per-entry validation. For that, check out the various token checkers
+        in :py:mod:`.tokencheckers` and call
+        :py:meth:`~core.bibusercache.BibUserCacheDic.set_validation` to install a
+        specific validator instance.
+        """
+        if not cache_name in self.cachedic:
+            raise ValueError("Invalid cache name: %s"%(cache_name))
+        
+        # normal thing, i.e. the cache expires after N days
+        if not self.entry_validation_checker.has_entry_for(cache_name):
+            logger.longdebug("Adding expiry checker for %s", cache_name)
+            self.entry_validation_checker.add_entry_check(cache_name, self.expiry_checker)
+            self.cachedic.validate_item(cache_name)
+
+        return self.cacheFor(cache_name)
+
+
+
+    def hasCache(self):
+        """
+        Returns `True` if we have any cache at all. This only returns `False` if there are
+        no cache dictionaries defined.
+        """
         return bool(self.cachedic)
 
-    def load_cache(self, cachefobj):
+    def loadCache(self, cachefobj):
+        """
+        Load the cache from a file-like object `cachefobj`.
+
+        This tries to unpickle the data and restore the cache. If the loading fails, e.g. 
+        because of an I/O error, the exception is logged but ignored, and an empty cache
+        is initialized.
+
+        Note that at this stage
+        only the basic validation is performed; the cache accessors should then each
+        initialize their own subcaches with possibly their own specialized validators.
+        """
         try:
             data = pickle.load(cachefobj);
             self.cachedic = data['cachedic']
         except Exception as e:
+            logger.longdebug("EXCEPTION IN pickle.load():\n%s", traceback.format_exc())
             logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
+            self.cachedic = BibUserCacheDic({})
             pass
         
         self.cachedic.set_validation(self.comb_validation_checker)
 
-    def save_cache(self, cachefobj):
+    def saveCache(self, cachefobj):
+        """
+        Saves the cache to the file-like object `cachefobj`. This dumps a pickle-d version
+        of the cache information into the stream.
+        """
         data = {
-            'cachepickleversion': 1,
+            # cache pickle versions for Bibolamazi versions:
+            #   --1.4:  <no information saved, incompatible>
+            #   1.5+:   1
+            #   2.x :   2
+            'cachepickleversion': 2,
             'cachedic': self.cachedic,
             }
+        logger.longdebug("Saving cache. Cache keys are: %r", self.cachedic.dic.keys())
         pickle.dump(data, cachefobj, protocol=2);
 
+
+
+
+
+
+# ------------------------------------------------------------------------------
+
+
+class BibUserCacheError(BibolamaziError):
+    """
+    An exception which occurred when handling user caches. Usually, problems in the cache
+    are silently ignored, because the cache can usually be safely regenerated.
+
+    However, if there is a serious error which prevents the cache from being regenerated,
+    for example, then this error should be raised.
+    """
+
+    def __init__(self, cache_name, message):
+        if (not isinstance(cache_name, basestring)):
+            cache_name = '<unknown>'
+        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+u"': "+unicode(message))
+        self.cache_name = cache_name
+        self.message = message
+
+
+
+
+class BibUserCacheAccessor(object):
+    """
+    Base class for a cache accessor.
+
+    Filters should access the bibolamazi cache through a *cache accessor*. A cache
+    accessor organizes how the caches are used and maintained. This is needed since
+    several filters may want to access the same cache (e.g. fetched arXiv info from the
+    arxiv.org API), so it is necessary to abstract out the cache object and how it is
+    maintained out of the filter. This also avoids issues such as which filter is
+    responsible for creating/refreshing the cache, etc.
+
+    A unique accessor instance is attached to a particular cache name
+    (e.g. 'arxiv_info'). It is instantiated by the BibolamaziFile. It is instructed to
+    initialize the cache, possibly install token checkers, etc. at the beginning, before
+    running any filters. The accessor is free to handle the cache as it prefers--build it
+    right away, refresh it on demand only, etc.
+
+    Filters access the cache by requesting an instance to the accessor. This is done by
+    calling :py:meth:`~core.bibolamazifile.BibolamaziFile.cache_accessor` (you can use
+    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile` to get a pointer to the
+    `bibolamazifile` object.). Filters should declare in advance which caches they would
+    like to have access to by reimplementing the
+    :py:meth:`~core.bibfilter.BibFilter.requested_cache_accessors` method.
+
+    Accessors are free to implement their public API how they deem it best. There is no
+    obligation or particular structure to follow. (Although `refresh_cache()`,
+    `fetch_missing_items(list)`, or similar function names may be typical.)
+
+    Cache accessor objects are instantiated by the bibolamazi file. Their constructors
+    should accept a keyword argument `bibolamazifile` and pass it on to the superclass
+    constructor. Constructors should also accept `**kwargs` for possible compatibility
+    with future additions and pass it on to the parent constructor. The `cache_name`
+    argument of this constructor should be a fixed string passed by the subclass,
+    identifying this cache (e.g. 'arxiv_info').
+    """
+    def __init__(self, cache_name, bibolamazifile, **kwargs):
+        super(BibUserCacheAccessor, self).__init__(**kwargs)
+        self._cache_name = cache_name
+        self._bibolamazifile = bibolamazifile
+        self._cache_obj = None
+
+
+    def initialize(self, cache_obj):
+        """
+        Initialize the cache.
+
+        Subclasses should perform any initialization tasks, such as install *token
+        checkers*. This function should not return anything.
+
+        Note that it is *strongly* recommended to install some form of cache invalidation,
+        would it be just even an expiry validator. You may want to call
+        :py:meth:`~core.bibusercache.BibUserCache.installCacheExpirationChecker` on
+        `cache_obj`.
+
+        Note that the order in which the `initialize()` method of the various caches is
+        called is undefined.
+
+        Use the :py:meth:`cacheDic` method to access the cache dictionary. Note that if
+        you install token checkers on this cache, e.g. with
+        `cache_obj.installCacheExpirationChecker()`, then the cache dictionary object may
+        have changed! (To be sure, call :py:meth:`cacheDic` again.)
+
+        The default implementation raises a `NotImplemented` exception.
+        """
+        raise NotImplemented("Subclasses of BibUserCacheAccess must reimplement initialize()")
+
+
+    def cacheName(self):
+        """
+        Return the cache name, as set in the constructor.
+
+        Subclasses do not need to reimplement this function.
+        """
+        return self._cache_name
+
+
+    def cacheDic(self):
+        """
+        Returns the cache dictionary. This is meant as a 'protected' method for the
+        accessor only. Objects that query the accessor should use the accessor-specific
+        API to access data.
+
+        The cache dictionary is a :py:class:`BibUserCacheDic` object. In particular,
+        subcaches may want to set custom token checkers for proper cache invalidation
+        (this should be done in the :py:meth:`initialize` method).
+
+        This returns the data in the cache object that was set internally by the
+        :py:class:`BibolamaziFile` via the method :py:meth:`setCacheObj`. Don't call
+        that manually, though, unless you're implementing an alternative
+        :py:class:`BibolamaziFile` class !
+        """
+        return self._cache_obj.cacheFor(self.cacheName())
+
+
+    def cacheObject(self):
+        """
+        Returns the parent :py:class:`BibUserCache` object in which :py:meth:`cacheDic`
+        is a sub-cache. This is provided FOR CONVENIENCE! Don't abuse this!
+
+        You should never need to access the object directly. Maybe just read-only to get
+        some standard attributes such as the root cache version. If you're writing
+        directly to the root cache object, there is most likely a design flaw in your
+        code!
+
+        Most of all, don't write into other sub-caches!!
+        """
+        return self._cache_obj
+
+
+    def setCacheObj(self, cache_obj):
+        """
+        Sets the cache dictionary and cache object that will be returned by `cacheDic()`
+        and `cacheObject()`, respectively. Accessors and filters should not call (nor
+        reimplement) this function. This function gets called by the `BibolamaziFile`.
+        """
+        self._cache_obj = cache_obj
+
+    def bibolamaziFile(self):
+        """
+        Returns the parent bibolamazifile of this cache accessor. This may be useful,
+        e.g. to initialize a token cache validator in `initialize()`.
+
+        Returns the object given in the constructor argument. Do not reimplement this
+        function.
+        """
+        return self._bibolamazifile

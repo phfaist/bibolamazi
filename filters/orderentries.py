@@ -12,6 +12,7 @@ from pybtex.database import BibliographyData;
 from core import bibfilter
 from core import butils
 from core.bibfilter import BibFilter, BibFilterError;
+from core.bibfilter.argtypes import enum_class
 from core.blogger import logger;
 
 from .util import arxivutil
@@ -57,12 +58,12 @@ ORDER_CITATION_KEY_ALPHA = 1
 ORDER_DATE = 2
 
 
-OrderMode = bibfilter.enum_class('OrderMode', [('raw', ORDER_RAW),
-                                               ('alphabetical', ORDER_CITATION_KEY_ALPHA),
-                                               ('date', ORDER_DATE),
-                                               ],
-                                 default_value='alphabetical',
-                                 value_attr_name='ordermode')
+OrderMode = enum_class('OrderMode', [('raw', ORDER_RAW),
+                                     ('alphabetical', ORDER_CITATION_KEY_ALPHA),
+                                     ('date', ORDER_DATE),
+                                     ],
+                       default_value='alphabetical',
+                       value_attr_name='ordermode')
 
 
 
@@ -87,14 +88,11 @@ class OrderEntriesFilter(BibFilter):
 
         logger.debug('orderentries: self.order=%r' % self.order);
 
-    def name(self):
-        return "orderentries"
-
     def action(self):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
     def getRunningMessage(self):
-        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographydata().entries))
+        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographyData().entries))
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
@@ -105,7 +103,7 @@ class OrderEntriesFilter(BibFilter):
 
         if (self.order == ORDER_CITATION_KEY_ALPHA):
             
-            bibdata = bibolamazifile.bibliographydata();
+            bibdata = bibolamazifile.bibliographyData();
 
             #newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
             entries = bibdata.entries;
@@ -120,9 +118,11 @@ class OrderEntriesFilter(BibFilter):
 
         elif (self.order == ORDER_DATE):
 
-            bibdata = bibolamazifile.bibliographydata();
+            bibdata = bibolamazifile.bibliographyData();
 
             entries = bibdata.entries;
+
+            arxivaccessor = arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
 
             def getpubdate(key):
                 entry = entries.get(key)
@@ -130,7 +130,7 @@ class OrderEntriesFilter(BibFilter):
                     return datetime.today()
                 fields = entry.fields
 
-                arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(key);
+                arxivinfo = arxivaccessor.getArXivInfo(key);
                 if arxivinfo is not None and not arxivinfo['published']:
                     # use arxiv ID information only if entry is not published--otherwise,
                     # try to get actual publication date.

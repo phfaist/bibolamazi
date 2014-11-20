@@ -20,6 +20,17 @@
 ################################################################################
 
 
+
+#
+# NOTE: THIS WAS WRITTEN FOR THE OLD CACHE API !!!
+#
+# THIS WILL NOT WORK WITH THE NEW API!!!
+#
+
+
+
+
+
 import re
 import datetime
 import hashlib
