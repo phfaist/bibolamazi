@@ -45,6 +45,6 @@ Contact
 
 Please contact me for any bug reports, or if you want to contribute.
 
-    @: (philippe) dot (faist) [at] (bluewin) dot (ch)
+.. image:: phf.png
 
 
