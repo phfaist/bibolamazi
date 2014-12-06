@@ -39,6 +39,40 @@ import filterinstanceeditor
 from qtauto.ui_helpbrowser import Ui_HelpBrowser
 
 
+
+
+
+_HOME_TAB_STYLESHEET = '''
+QWidget {
+}
+
+#wFilters {
+    padding: 10px 50px 10px 50px;
+    background-color: white;
+}
+
+
+QPushButton {
+    color: rgba(255,255,255,255);
+    padding: 8px 2px;
+}
+QPushButton {
+    /* light blue */
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0, 113, 188, 255), stop:0.9 rgba(64, 91, 110, 255));
+}
+QPushButton[bibolamaziHelpButtonType="filter"] {
+    /* bordeau */
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(158, 0, 93, 255), stop:0.9 rgba(82, 55, 71, 255));
+}
+QPushButton[bibolamaziHelpButtonType="intro"] {
+    /* dark blue */
+	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(27, 20, 100, 255), stop:0.9 rgba(77, 75, 99, 255));
+}
+'''
+
+
+
+
 class HelpBrowser(QWidget):
     def __init__(self):
         super(HelpBrowser, self).__init__()
@@ -52,14 +86,47 @@ class HelpBrowser(QWidget):
 
         self.openTabs = []
 
+
+        # home buttons
+        # ------------
+
+        self.ui.lytHomeButtons.setContentsMargins(60, 30, 60, 30)
+
+        vspc1 = QSpacerItem(20, 5, QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.ui.lytHomeButtons.addItem(vspc1, 1, 0)
+
+        offsetlineno = 2 # start at 1, because the first row has the 'welcome' and 'filter list' buttons.
+        n = 0 # count how many filters we've treated already.
+        ncols = 2
+
         for filt in filterinstanceeditor.get_filter_list():
             fbutton = QPushButton('%s' % (filt), self)
             fbutton.setProperty('helppath', 'filters/%s' %(filt))
+            fbutton.setProperty('bibolamaziHelpButtonType', 'filter')
             fbutton.setToolTip(filters_factory.get_filter_class(filt).getHelpDescription())
-            self.ui.lytHomeFilterButtons.addWidget(fbutton)
+            self.ui.lytHomeButtons.addWidget(fbutton, offsetlineno + int(n / ncols), n % ncols)
+            n += 1
 
             QObject.connect(fbutton, SIGNAL('clicked()'), self.openHelpTopicBySender)
 
+        newrow = None
+        if n % ncols == 0:
+            newrow = offsetlineno + n / ncols
+        else:
+            newrow = offsetlineno + (1 + int(n / ncols))
+
+        vspc3 = QSpacerItem(20, 5, QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.ui.lytHomeButtons.addItem(vspc3, newrow, 0)
+
+        self.ui.lytHomeButtons.addWidget(self.ui.btnCmdLineHelp, newrow+1, 0)
+        self.ui.lytHomeButtons.addWidget(self.ui.btnVersion, newrow+1, 1)
+        vspc2 = QSpacerItem(20, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.ui.lytHomeButtons.addItem(vspc2, newrow+2, 0)
+
+        # avoid python garbage collection
+        self.vspcButtons = [vspc1, vspc2]
+
+        self.ui.tabHome.setStyleSheet(_HOME_TAB_STYLESHEET)
 
         static_help_btns = [ self.ui.btnWelcome,
                              self.ui.btnVersion,
