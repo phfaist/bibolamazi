@@ -254,7 +254,7 @@ class HelpBrowser(QWidget):
 
 
 
-HELP_WELCOME = u"""
+HELP_WELCOME = ur"""
 
 ======================================================================
 Bibolamazi -- Prepare consistent BibTeX files for your LaTeX documents
