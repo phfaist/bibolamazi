@@ -15,6 +15,12 @@ bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 
 
 ##
+## Make sure some modules are accessible.
+##
+import updater4pyi
+
+
+##
 ## set up our import paths well first of all for this same script.
 ##
 sys.path += [bibolamazi_path];
