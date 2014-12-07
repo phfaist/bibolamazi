@@ -254,7 +254,7 @@ class HelpBrowser(QWidget):
 
 
 
-HELP_WELCOME = """
+HELP_WELCOME = u"""
 
 ======================================================================
 Bibolamazi -- Prepare consistent BibTeX files for your LaTeX documents
@@ -262,7 +262,7 @@ Bibolamazi -- Prepare consistent BibTeX files for your LaTeX documents
 
 Bibolamazi lets you prepare consistent and uniform BibTeX files for your LaTeX
 documents. It lets you prepare your BibTeX entries as you would like them to
-be—adding missing or dropping irrelevant information, capitalizing names or
+be---adding missing or dropping irrelevant information, capitalizing names or
 turning them into initials, converting unicode characters to latex escapes, etc.
 
 
