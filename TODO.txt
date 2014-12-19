@@ -1,0 +1,16 @@
+
+TODO LIST & THOUGHTS
+====================
+
+
+- Flags for bibolamazifile? e.g. what to do when one gets a repeated key name
+
+  * one should be able to set flags in the bibolamazi file. Add cmd e.g. `flag:` or
+    `config:` ?
+
+
+- Think about directly accessing Mendeley library (via API)? Is this possible?
+
+  * Note: this would hinder collaborations, if the required library cannot be accessed by
+    other people
+
