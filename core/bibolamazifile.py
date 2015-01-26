@@ -139,6 +139,11 @@ BIBOLAMAZIFILE_LOADED = 3
 
 
 
+_key_duplsuffix = '.dupl.'
+_rx_repl_key_duplsuffix = re.compile(r'($|'+re.escape(_key_duplsuffix)+r'(?P<num>\d+)$)',
+                                     flags=re.IGNORECASE)
+
+
 
 class BibolamaziFile(object):
     """
@@ -775,6 +780,18 @@ class BibolamaziFile(object):
             if (key in self._bibliographydata.entries):
                 logger.warn('Repeated bibliography entry: %s. Keeping first encountered entry.', key)
                 continue
+            
+            # TODO: Do this cleverly?
+            #
+            #if (key in self._bibliographydata.entries):
+            #    oldkey = key
+            #    duplcounter = 1
+            #    while key in self._bibliographydata.entries:
+            #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
+            #        duplcounter += 1
+            #
+            #    logger.warn('Repeated bibliography entry: %s. Renamed duplicate occurence to %s.', oldkey, key)
+
             self._bibliographydata.add_entry(key, entry)
 
         return True

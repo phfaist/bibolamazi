@@ -700,14 +700,20 @@ class DuplicatesFilter(BibFilter):
             # set the new bibdata, without the duplicates
             bibolamazifile.setBibliographyData(newbibdata);
             # and write definitions to the dupfile
-            dupfilepath = os.path.join(bibolamazifile.fdir(),self.dupfile);
+            dupfilepath = os.path.join(bibolamazifile.fdir(), self.dupfile);
             check_overwrite_dupfile(dupfilepath);
             dupstrlist = [];
+            
             with codecs.open(dupfilepath, 'w', 'utf-8') as dupf:
+                
                 dupf.write(BIBALIAS_HEADER.replace('####DUP_FILE_NAME####', self.dupfile));
+                
                 if not self.custom_bibalias:
                     dupf.write(BIBALIAS_LATEX_DEFINITIONS)
-                for (dupalias, duporiginal) in duplicates:
+                    
+                # Note: Sort entries in some way (e.g. alphabetically according to
+                # (alias, original)), to avoid diffs in VCS's
+                for (dupalias, duporiginal) in sorted(duplicates, key=lambda x: (x[0],x[1])):
                     dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n");
                     dupstrlist.append("\t%s is an alias of %s" % (dupalias,duporiginal)) ;
 
