@@ -122,7 +122,8 @@ This corresponds to bibolamazi command-line verbosity level 3.
 # see http://stackoverflow.com/a/13638084/1694896
 def longdebug(l, msg, *args, **kwargs):
     if l.isEnabledFor(LONGDEBUG):
-        l._log(LONGDEBUG, msg, *args, **kwargs)
+        # Yes, _log takes its args as 'args', not '*args'
+        l._log(LONGDEBUG, msg, args, **kwargs)
 logger.longdebug = MethodType(longdebug, logger, logging.Logger)
 
 # create console handler
@@ -144,19 +145,21 @@ logger.addHandler(ch);
 
 
 
-def _set_verbosity(l, value):
-    if (value == 0):
-        l.setLevel(logging.ERROR);
-    elif (value == 1):
-        l.setLevel(logging.INFO);
-    elif (value == 2):
-        l.setLevel(logging.DEBUG);
-    elif (value >= 3):
-        l.setLevel(LONGDEBUG);
-    else:
-        raise ValueError("Bad verbosity level: %r" %(value))
+def verbosity_logger_level(verbosity):
+    if verbosity == 0:
+        return logging.ERROR
+    elif verbosity == 1:
+        return logging.INFO
+    elif verbosity == 2:
+        return logging.DEBUG
+    elif verbosity >= 3:
+        return LONGDEBUG
 
-    l.longdebug("set verbosity level to %d" %(value))
+    raise ValueError("Bad verbosity level: %r" %(verbosity))
+
+def _set_verbosity(l, verbosity):
+    l.setLevel(verbosity_logger_level(verbosity));
+    l.longdebug("set verbosity level to %d", verbosity)
 
 
 logger.setVerbosity = MethodType(_set_verbosity, logger, logging.Logger);
