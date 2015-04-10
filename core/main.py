@@ -125,7 +125,8 @@ def get_args_parser():
                         " 'filterpackage=/path/to/it'. You may specify this option multiple times; last"
                         " specified filter packages are searched first.")
 
-    parser.add_argument('--verbosity', action='store', dest='verbosity', nargs=1, default=1,
+    parser.add_argument('--verbosity', action='store', dest='verbosity', default=1, type=int,
+                        # nargs=1, # don't provide nargs to avoid getting list
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)")
     parser.add_argument('-q', '-v0', '--quiet', action='store_const', dest='verbosity', const=0,
                         help="Don't display any messages (same as --verbosity=0)");

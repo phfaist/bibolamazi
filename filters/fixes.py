@@ -29,6 +29,7 @@ from core.bibfilter.argtypes import CommaStrList
 from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
+from core.pylatexenc import latexwalker
 from core.pylatexenc import latex2text
 
 
@@ -45,10 +46,10 @@ Perform some various fixes for bibtex entries.
 
 For now, the implemented fixes are:
 
-  -dFixSwedishA
-    Changes "\\AA berg" to "\\AA{}berg" to prevent bibtex/revtex from inserting
-    a blank after the "\\AA". (This fix is needed for, e.g., the bibtex that
-    Mendeley generates)
+  -dFixSpaceAfterEscape
+    Removes any space after a LaTeX escape and replaces it by a pair of braces. 
+    Indeed, some bibtex styles wrongfully split a word into two halves in such
+    cases. For example, \"\\AA berg\" is replaced by \"\\AA{}berg\".
 
   -dEncodeUtf8ToLatex
     Encodes known non-ascii special characters, e.g. accented characters, into
@@ -87,23 +88,33 @@ For now, the implemented fixes are:
     preserve the capitalization of nouns in German titles.
 
   -sProtectNames=Name1,Name2...
-    A list of names that should be protected within most fields. Whenever a field
-    contains one of the given names (as full word), then the name is wrapped in
-    braces (e.g. "On Bell Experiments" -> "On {Bell} Experiments") in order to
-    protect the possible upper casing. This applies to all fields except 'url',
-    'file', and people (authors and editors).
+    A list of names that should be protected within most fields. Whenever a
+    field contains one of the given names (as full word), then the name is
+    wrapped in braces (e.g. \"On Bell Experiments\" -> \"On {Bell}
+    Experiments\") in order to protect the possible upper casing. This applies
+    to all fields except 'url', 'file', and people (authors and editors).
 
   -dRemoveFileField
-    Removes the field file={...} (that e.g. Mendeley introduces) from all entries. (This
-    option is kept for compatibility, consider the newer and more flexible option
-    -sRemoveFields below)
+    Removes the field file={...} (that e.g. Mendeley introduces) from all
+    entries. (This option is kept for compatibility, consider the newer and more
+    flexible option -sRemoveFields below)
 
   -sRemoveFields=field1,field2...
-    Removes the given fields from *all entries*. `fieldN` are BibTeX field names of fields
-    to remove from all entries, e.g. `file', `issn', `note', etc.
+    Removes the given fields from *all entries*. `fieldN` are BibTeX field names
+    of fields to remove from all entries, e.g. `file', `issn', `note', etc.
 
   -dRemoveDoiPrefix
     Removes `doi:' prefix from all DOIs, if present.
+
+
+The following switch is OBSOLETE, but is still accepted for backwards
+compatibility:
+
+  -dFixSwedishA [use -dFixSpaceAfterEscape instead]
+    Changes \"\\AA berg\" to \"\\AA{}berg\" and \"M\\o lmer\" to \"M\\o{}lmer\"
+    to prevent bibtex/revtex from inserting a blank after the \"\\AA\" or
+    \"\\o\". (This fix is needed for, e.g., the bibtex that Mendeley generates)
+
 
 """
 
@@ -116,7 +127,7 @@ class FixesFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self,
-                 fix_swedish_a=False,
+                 fix_space_after_escape=False,
                  encode_utf8_to_latex=False,
                  encode_latex_to_utf8=False,
                  remove_type_from_phd=False,
@@ -125,13 +136,14 @@ class FixesFilter(BibFilter):
                  protect_names=None,
                  remove_file_field=False,
                  remove_fields=[],
-                 remove_doi_prefix=False):
+                 remove_doi_prefix=False,
+                 fix_swedish_a=False):
         """
         Constructor method for FixesFilter
 
         Filter Arguments:
-          - fix_swedish_a(bool): transform `\\AA berg' into `\\AA{}berg' (the former is generated e.g. by Mendeley
-                        automatically); revtex tends to insert a blank after the `\\AA' otherwise.
+          - fix_space_after_escape(bool): transform `\\AA berg' and `M\\o ller' into `\\AA{}berg',
+               `M\\o{}ller' to avoid bibtex styles from wrongfully splitting these words.
           - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
           - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
           - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
@@ -143,11 +155,22 @@ class FixesFilter(BibFilter):
           - remove_file_field(bool): removes file={...} fields from all entries.
           - remove_fields(CommaStrList): removes given fields from all entries.
           - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
+          - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
+                transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
+                problem occurs in files generated e.g. by Mendeley); revtex tends to
+                insert a blank after the `\\AA' or `\\o' otherwise.
         """
         
         BibFilter.__init__(self);
 
-        self.fix_swedish_a = butils.getbool(fix_swedish_a);
+        self.fix_space_after_escape = butils.getbool(fix_space_after_escape);
+        self.fix_swedish_a = butils.getbool(fix_swedish_a); # OBSOLETE
+
+        if (self.fix_swedish_a):
+            logger.warning("Fixes Filter: option -dFixSwedishA is now obsolete, in favor of the more"
+                           " general and better option -dFixSpaceAfterEscape. The old option will"
+                           " still work for backwards compatibility, but please consider changing to"
+                           " the new option.")
 
         self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex);
         self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
@@ -187,18 +210,18 @@ class FixesFilter(BibFilter):
         self.remove_doi_prefix = butils.getbool(remove_doi_prefix)
 
 
-        logger.debug(('fixes filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
+        logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r],'
                       ' protect_names=%r, remove_file_field=%r'
-                      'remove_fields=%r, remove_doi_prefix=%r')
-                     % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
+                      'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r')
+                     % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
                         self.remove_full_braces_not_lang,
                         self.protect_names,
                         self.remove_file_field,
-                        self.remove_fields, self.remove_doi_prefix
+                        self.remove_fields, self.remove_doi_prefix, self.fix_swedish_a
                         ));
         
 
@@ -213,8 +236,12 @@ class FixesFilter(BibFilter):
         # first apply filters that are applied to all fields of the entry
 
         def thefilter(x):
+            if (self.fix_space_after_escape):
+                x = do_fix_space_after_escape(x)
             if (self.fix_swedish_a):
+                # OBSOLETE, but still accepted for backwards compatibility
                 x = re.sub(r'\\AA\s+', r'\AA{}', x);
+                x = re.sub(r'\\o\s+', r'\o{}', x);
             if (self.encode_utf8_to_latex):
                 x = latexencode.utf8tolatex(x, non_ascii_only=True);
             if (self.encode_latex_to_utf8):
@@ -293,6 +320,100 @@ class FixesFilter(BibFilter):
         return
     
 
+# used to store variables in a way we can access from inner functions
+class _Namespace:
+    pass
+
+
+# helper function
+def do_fix_space_after_escape(x):
+
+    logger.longdebug("fixes filter: do_fix_space_after_escape(`%s')", x)
+
+    def deal_with_escape(x, m): # helper
+        macroname = m.group('macroname')
+        if macroname not in latexwalker.macro_dict:
+            logger.longdebug("fixes filter: Unknown macro \\%s for -dFixSpaceAfterEscape, assuming no arguments.",
+                             macroname)
+            replacexstr = '\\' + macroname + "{}"
+            return (x[:m.start()] + replacexstr + x[m.end():], m.start() + len(replacexstr))
+
+        macrodef = latexwalker.macro_dict[macroname]
+
+        ns = _Namespace()
+        ns.pos = m.end()
+        ns.args = ""
+        # now, ns.pos and ns.args can be seen and modified from the following inner nested
+        # functions. (see https://www.python.org/dev/peps/pep-3104/)
+
+        def addoptarg():
+            optarginfotuple = latexwalker.get_latex_maybe_optional_arg(x, ns.pos,
+                                                                       strict_braces=False,
+                                                                       tolerant_parsing=True)
+            if (optarginfotuple is not None):
+                # recursively fix the arguments, in case they themselves have escapes with spaces
+                ns.args += do_fix_space_after_escape(ns.x[optargpos : optargpos+optarglen])
+                ns.pos = optargpos+optarglen;
+
+        def addarg():
+            (nodearg, npos, nlen) = latexwalker.get_latex_expression(x, ns.pos, strict_braces=False,
+                                                                     tolerant_parsing=True)
+            argstr = x[npos : npos+nlen]
+            if not (argstr[:1] == '{' and argstr[-1:] == '}'):
+                argstr = "{" + argstr + "}"
+
+            # recursively fix the arguments, in case they themselves have escapes with spaces
+            ns.args += do_fix_space_after_escape(argstr)
+            ns.pos = npos+nlen;
+
+        if (macrodef.optarg):
+            addoptarg()
+
+        if (isinstance(macrodef.numargs, basestring)):
+            # specific argument specification
+            for arg in macrodef.numargs:
+                if (arg == '{'):
+                    addarg()
+                elif (arg == '['):
+                    addoptarg()
+                else:
+                    logger.debug("Unknown macro argument kind for macro %s: %s"
+                                 % (macrodef.macname, arg));
+        else:
+            for n in range(macrodef.numargs):
+                addarg()
+
+        # now that we got all the args as a string, replace that in the string
+
+        replacexstr = '\\'+macrodef.macname + ns.args
+        finalx = x[:m.start()] + replacexstr + x[ns.pos:]
+        logger.longdebug("fix_space_after_escape: Replaced `%s' by `%s', remaining=`%s'",
+                         m.group(), replacexstr, x[ns.pos:])
+        return (finalx, m.start() + len(replacexstr))
+
+    #
+    # do_fix_space_after_escape function body:
+    #
+
+    # iterate all matches & replace them appropriately
+    # we are looking for a named macro (not \' or \&, but e.g. \c), followed by some space.
+    rxesc = re.compile(r'\\(?P<macroname>[A-Za-z]+)\s+')
+    m = rxesc.search(x)
+    newx = x
+    while m:
+        (newx, newpos) = deal_with_escape(newx, m)
+        logger.longdebug("\t\tMatched `%s', newx=`%s'", m.group(), newx)
+        m = rxesc.search(newx, newpos)
+
+    logger.longdebug("\t\t--> `%s'", newx)
+
+    return newx
+
+
+
+
 def bibolamazi_filter_class():
     return FixesFilter;
+
+
 
