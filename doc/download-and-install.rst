@@ -43,7 +43,7 @@ to run the graphical user interface: the command-line version will happily run w
     > cd somewhere/where/Ill-keep-bibolamazi/
     ...> git clone --recursive https://github.com/phfaist/bibolamazi
 
-  Note the `--recursive` switch which will also retrieve all required submodules.
+  Note the ``--recursive`` switch which will also retrieve all required submodules.
 
   Then, link the executable(s) to somewhere in your path::
 
