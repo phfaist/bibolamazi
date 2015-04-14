@@ -3,6 +3,9 @@ TODO LIST & THOUGHTS
 ====================
 
 
+- Sources & filters --> combine into "plugins"
+
+
 - Centralize duplicate detection mechanism, like the arXiv accessor, so that several
   filters can use the functionality if required.
 
