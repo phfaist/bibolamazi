@@ -3,6 +3,9 @@
 # Copyright (c) 2012, Nathan Grigg
 # All rights reserved.
 #
+# Copyright (c) 2015, Philippe Faist
+#  --> modification marked as '### PhF:' below
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -50,7 +53,8 @@ ATOM = '{http://www.w3.org/2005/Atom}'
 ARXIV = '{http://arxiv.org/schemas/atom}'
 
 # regular expressions to check if arxiv id is valid
-NEW_STYLE = re.compile(r'^\d{4}\.\d{4}(v\d+)?$')
+# ### PhF: updated to 4-6 digits in second part (\d{4} --> \d{4,6})
+NEW_STYLE = re.compile(r'^\d{4}\.\d{4,6}(v\d+)?$')
 OLD_STYLE = re.compile(r"""(?x)
 ^(
    math-ph
