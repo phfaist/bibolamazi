@@ -37,12 +37,13 @@ Additionally, the graphical user interface requires PyQt4_. If you're on a linux
 distribution, it's most probably in your distribution packages. Note you only need PyQt4
 to run the graphical user interface: the command-line version will happily run without.
 
-- First, clone this repository on your computer, or download it as
-  a ZIP file and uncompress it somewhere (cloning is preferred, as it makes updating much
-  easier with ``git pull``)::
+- First, clone this repository on your computer (don't download the prepackaged
+  ZIP/Tarball proposed by github, because there will be missing submodules)::
 
     > cd somewhere/where/Ill-keep-bibolamazi/
     ...> git clone --recursive https://github.com/phfaist/bibolamazi
+
+  Note the `--recursive` switch which will also retrieve all required submodules.
 
   Then, link the executable(s) to somewhere in your path::
 

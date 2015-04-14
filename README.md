@@ -18,8 +18,8 @@ Download the application from our github releases page:
 These binaries don't need any installation, you can just download them, place
 them wherever you want, and run them.
 
-If you prefer to use the command-line interface, you may clone this repository;
-check out [the docs][thedocsdownloadandinstall].
+If you prefer to use the command-line interface, you should clone this
+repository; check out [the docs][thedocsdownloadandinstall].
 
 [thedocsdownloadandinstall]: http://bibolamazi.readthedocs.org/en/latest/download-and-install/
 
