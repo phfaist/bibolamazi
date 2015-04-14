@@ -3,14 +3,34 @@ TODO LIST & THOUGHTS
 ====================
 
 
-- Flags for bibolamazifile? e.g. what to do when one gets a repeated key name
+- Centralize duplicate detection mechanism, like the arXiv accessor, so that several
+  filters can use the functionality if required.
+
+
+- loggers should be cleaned up -- modules should request their logger with
+  `logging.getLogger("...")`, and the log handler should only be set up in `core/main.py`.
+
+  * Messages produced in the GUI should also use python loggers.
+
+
+- What to do for repeated key names in different sources?
+
+  * Idea: detect duplicates silently, but report error if entries are different. 
+    (configurable with flag? see below?)
+
+
+- Flags for bibolamazifile? e.g. what to do when one gets a repeated key name?
 
   * one should be able to set flags in the bibolamazi file. Add cmd e.g. `flag:` or
     `config:` ?
 
+  * On second thought, is this really necessary? One unique behavior might be preferrable.
+
 
 - Think about directly accessing Mendeley library (via API)? Is this possible?
 
+  * How to store credentials? In a private hidden `~/.bibolamazi/` file? Don't store?
+    --> might be unsafe/hinder usability/...
+
   * Note: this would hinder collaborations, if the required library cannot be accessed by
     other people
-
