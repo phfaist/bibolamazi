@@ -165,7 +165,9 @@ class store_key_bool(argparse.Action):
                 storeval = getbool(key[eqindex+1:])
                 key = key[:eqindex];
             except ValueError as e:
-                raise self.exception(unicode(e))
+                exc = self.exception(unicode(e))
+                exc.opt_dest = self.dest
+                raise exc
 
         if (not self.dest):
             setattr(namespace, key, self.const);

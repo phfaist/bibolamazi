@@ -96,6 +96,17 @@ class FilterOptionsParseError(FilterError):
     def fmt(self, name):
         return "Can't parse options for filter %s: %s" %(name, self.errorstr)
 
+
+class FilterOptionsParseErrorHintSInstead(FilterOptionsParseError):
+    """
+    As FilterOptionsParseError, but hinting that maybe -sOption=Value was meant instead of
+    -dOption=Value.
+    """
+    def fmt(self, name):
+        return (super(FilterOptionsParseErrorHintSInstead, self).fmt(name)
+                + " (was -sKEY=VAL meant instead of -dKEY=VAL?)")
+
+
 class FilterCreateError(FilterError):
     """
     There was an error instantiating the filter. This could be due because the filter
@@ -674,7 +685,7 @@ class DefaultFilterOptions:
                                    exception=FilterOptionsParseError,
                                    help="-sKey=Value sets parameter values");
         group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args',
-                                   metavar='Switch[=<value>]', exception=FilterOptionsParseError,
+                                   metavar='Switch[=<value>]', exception=FilterOptionsParseErrorHintSInstead,
                                    help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default "
                                    "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
 
