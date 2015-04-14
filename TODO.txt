@@ -34,3 +34,6 @@ TODO LIST & THOUGHTS
 
   * Note: this would hinder collaborations, if the required library cannot be accessed by
     other people
+
+
+- Other bibliography managers?
