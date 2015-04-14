@@ -7,6 +7,12 @@ TODO LIST & THOUGHTS
   filters can use the functionality if required.
 
 
+- Empty line in config section terminates the command
+
+  --> otherwise if one forgets the 'src:' or 'filter:', the given sources or command are
+      interpreted as further options to the previous command, which can be very confusing.
+
+
 - loggers should be cleaned up -- modules should request their logger with
   `logging.getLogger("...")`, and the log handler should only be set up in `core/main.py`.
 
