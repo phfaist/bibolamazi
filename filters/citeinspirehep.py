@@ -25,7 +25,6 @@ import os.path
 import io
 
 import requests
-from requests.packages.urllib3.exceptions import SSLError
 from bs4 import BeautifulSoup
 
 from pybtex.database import BibliographyData
@@ -85,7 +84,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         """
 
         def invenio_query(term, value):
-            return term+':"' + re.sub(r'"', '', value) + '"'
+            return term + ":" + value
 
         def remember_key(userkey, key, p):
             self.user_keys_parsed[key] = {
@@ -98,27 +97,41 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         key = re.sub(r'--.*$', '', userkey)
 
         if key.startswith('inspire:'):
-            key = key[len('inspire:'):]
+            key = key[len('inspire:'):].strip()
+            allowedchars = r'A-Za-z0-9_.-'
+            if re.match(r'[^'+allowedchars+r']', key):
+                # Report error rather than removing the spaces and special characters,
+                # otherwise the user might spend hours figuring out why "PhysRev 47 777"
+                # doesn't work (because it would have been collapsed to "PhysRev47777")
+                logger.warning("Key `%s' may not contain any characters other than `%s'", key, allowedchars)
+                return None
             ref_type = None
+            queryval = key
 
             # auto detect reference type
-            if re.search(r'.*\:\d{4}\w\w\w?', key):
+            if re.search(r'^.*\:\d{4}\w\w\w?$', key):
                 ref_type = 'texkey'
-            elif re.search(r'.*\/\d{7}', key):
+            elif re.search(r'^.*\/\d{7}$', key):
                 ref_type = 'eprint'
-            elif re.search(r'\d{4}\.\d{4,5}', key):
+            elif re.search(r'^\d{4}\.\d{4,6}$', key):
                 ref_type = 'eprint'
-            elif re.search(r'\w\.\w+\.\w', key):
+            elif re.search(r'^\w\.\w+\.\w$', key):
                 ref_type = 'j'
-                key = key.replace('.', ',')
+                queryval = key.replace('.', ',')
+            elif re.search(r'^doi:.*', key):
+                ref_type = 'doi'
+                queryval = key[len('doi:'):]
             elif re.search(r'\w\-\w', key):
                 ref_type = 'r'
             else:
                 logger.warning("Could not guess reference type for key `%s'", key)
                 return None
 
+            # NOTE: The returned `key` must identify uniquely the given entry. So it may
+            # be different from the queryval.
+
             # all keys can be saved in the same way using INSPIRE
-            remember_key(userkey, key=key, p=invenio_query(ref_type, key))
+            remember_key(userkey, key=key, p=invenio_query(ref_type, queryval))
             return key
 
         return None
@@ -147,7 +160,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # nothing to fetch
             return True
 
-        logger.debug('fetching missing id list %r' %(missing_keys))
+        logger.longdebug('fetching missing id list %r' %(missing_keys))
         for key in missing_keys:
             pk = self.user_keys_parsed[key]
             qs = { 'p': pk['p_query'],
@@ -159,12 +172,21 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             logger.longdebug("fetching for key=%s: %r", key, qs)
             for tries in range(5):
                 try:
+                    exc = None
                     r = requests.get('https://inspirehep.net/search', params=qs)
-                except SSLError:
+                except Exception as e:
+                    # meant to catch SSLError -- we can't rely on
+                    #    ``from requests.packages.urllib3.exceptions import SSLError``
+                    # because that doesn't always exist, depending on the `requests`
+                    # version/edition/installation
+                    logger.debug("Got exception in requests(), tries=%d: %s", tries, e)
+                    exc = e
                     continue
                 break
+            if exc is not None:
+                raise exc
             if r.status_code != 200:
-                logger.warning("Could not fetch reference information for key `%s' (%d):\n\t%s",
+                logger.warning("Could not fetch reference information for key `%s' (HTTP %d):\n\t%s",
                                key, r.status_code, r.text)
                 continue
 
