@@ -111,7 +111,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # auto detect reference type
             if re.search(r'^.*\:\d{4}\w\w\w?$', key):
                 ref_type = 'texkey'
-            elif re.search(r'^.*\/\d{7}$', key):
+            elif re.search(r'^[a-zX\-]*\/\d{7}$', key):
                 ref_type = 'eprint'
             elif re.search(r'^\d{4}\.\d{4,6}$', key):
                 ref_type = 'eprint'
@@ -121,15 +121,15 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             elif re.search(r'^ISBN-.*', key):
                 ref_type = 'isbn'
                 queryval = key[len('ISBN-'):]
-            elif re.search(r'^doi:.*', key):
+            elif re.search(r'^\d+\.\d+\/.+', key):
                 ref_type = 'doi'
-                queryval = key[len('doi:'):]
             elif re.search(r'\w\-\w', key):
                 ref_type = 'r'
             else:
                 logger.warning("Could not guess reference type for key `%s'", key)
                 return None
 
+            print ref_type, key
             # NOTE: The returned `key` must identify uniquely the given entry. So it may
             # be different from the queryval.
 
