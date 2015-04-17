@@ -118,6 +118,9 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             elif re.search(r'^\w\.\w+\.\w$', key):
                 ref_type = 'j'
                 queryval = key.replace('.', ',')
+            elif re.search(r'^ISBN-.*', key):
+                ref_type = 'isbn'
+                queryval = key[len('ISBN-'):]
             elif re.search(r'^doi:.*', key):
                 ref_type = 'doi'
                 queryval = key[len('doi:'):]
