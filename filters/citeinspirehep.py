@@ -281,8 +281,8 @@ specify where to look for the aux file with the option `-sSearchDirs=...'.
 
 Example of recognized citations:
 
-    \cite{inspire:doi:10.1103/PhysRev.47.777}
-    \cite{inspire:doi:10.1103/PhysRev.47.777--EPR-paper}
+    \cite{inspire:10.1103/PhysRev.47.777}
+    \cite{inspire:10.1103/PhysRev.47.777--EPR-paper}
     \cite{inspire:1408.4546}
     \cite{inspire:1305.1258--WWgg}
     \cite{Nakamura:2010zzi}
