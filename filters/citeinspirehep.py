@@ -129,7 +129,6 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                 logger.warning("Could not guess reference type for key `%s'", key)
                 return None
 
-            print ref_type, key
             # NOTE: The returned `key` must identify uniquely the given entry. So it may
             # be different from the queryval.
 
