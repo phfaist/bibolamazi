@@ -111,9 +111,9 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # auto detect reference type
             if re.search(r'^.*\:\d{4}\w\w\w?$', key):
                 ref_type = 'texkey'
-            elif re.search(r'^[a-zX\-]*\/\d{7}$', key):
+            elif re.search(arxiv2bib.OLD_STYLE, key):
                 ref_type = 'eprint'
-            elif re.search(r'^\d{4}\.\d{4,6}$', key):
+            elif re.search(arxiv2bib.NEW_STYLE, key):
                 ref_type = 'eprint'
             elif re.search(r'^\w\.\w+\.\w$', key):
                 ref_type = 'j'
