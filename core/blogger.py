@@ -163,3 +163,9 @@ def _set_verbosity(l, verbosity):
 
 
 logger.setVerbosity = MethodType(_set_verbosity, logger, logging.Logger);
+
+
+
+def getLogger(name):
+    # ### TODO: generate per-module logger for more fine-grained debug level setting
+    return logger

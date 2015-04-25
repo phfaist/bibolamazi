@@ -137,12 +137,12 @@ class BibUserCacheDic(collections.MutableMapping):
         """
         if not key in self.dic:
             # not valid anyway.
-            #logger.longdebug("validate_item(): %s: no such key %s", self._guess_name_for_dbg(), key)
+            logger.longdebug("validate_item(): %s: no such key %s", self._guess_name_for_dbg(), key)
             return False
         
         if not self.tokenchecker:
             # no validation
-            #logger.longdebug("validate_item(): %s[%s]: no validation set", self._guess_name_for_dbg(), key)
+            logger.longdebug("validate_item(): %s[%s]: no validation set", self._guess_name_for_dbg(), key)
             return True
 
         logger.longdebug("Validating item `%s' in `%s', ...", key, self._guess_name_for_dbg())
@@ -194,6 +194,7 @@ class BibUserCacheDic(collections.MutableMapping):
 
         if self.tokenchecker:
             self.tokens[key] = self.tokenchecker.new_token(key=key, value=self.dic.get(key))
+            logger.longdebug("value changed in cache (key=%s), new value=%r, new token=%r", key, self.dic.get(key), self.tokens[key])
         if self.parent:
             self.parent.child_notify_changed(self)
                 

@@ -310,7 +310,7 @@ class EntryFieldsTokenChecker(TokenChecker):
 
     def new_token(self, key, value, **kwargs):
         entry = self.bibdata.entries.get(key,Entry('misc'))
-        
+
         data = "\n\n".join( (entry.fields.get(fld, '').encode('utf-8')
                          for fld in self.fields) )
         if self.store_type:

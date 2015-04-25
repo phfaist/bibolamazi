@@ -230,21 +230,28 @@ class ArxivNormalizeFilter(BibFilter):
         # Make sure all entries are in the cache.
         #
         arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
+        #
+        # NEEDED TO PREVENT PERVERT BUG: make sure the arxiv information is
+        # up-to-date. For example, if the duplicates filter aliased two entries, one WITH
+        # arxiv info and one without, then make sure that if we query the key with the one
+        # without that we still DO get the arxiv info.
+        #
+        logger.debug("arxiv prerun(): re-validating arxiv info cache")
+        bibolamazifile.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).revalidate(bibolamazifile)
 
 
     def filter_bibentry(self, entry):
         #
         # entry is a pybtex.database.Entry object
         #
-        
-        #import pdb;pdb.set_trace()
 
-        #arxivinfo = arxivutil.get_arxiv_cache_access(self.bibolamaziFile()).getArXivInfo(entry.key);
+        logger.longdebug('arxiv: processing entry %s', entry.key)
+
         arxivinfoaccessor = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor)
-
         arxivinfo = arxivinfoaccessor.getArXivInfo(entry.key)
 
         if (arxivinfo is None):
+            logger.longdebug("    -> couldn't find any arxivinfo [from cache].")
             # no arxiv info--don't do anything
             return entry
 
@@ -269,6 +276,8 @@ class ArxivNormalizeFilter(BibFilter):
             # could be because the authors published their paper in the meantime.
             logger.warning("arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
                            entry.key, arxivinfo['doi'])
+
+        logger.longdebug("arXiv: entry %s: published=%r, mode=%r", entry.key, we_are_published, mode)
 
         if (mode == MODE_NONE):
             # don't change the entry, leave it as is.

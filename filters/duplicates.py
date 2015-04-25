@@ -30,11 +30,11 @@ import textwrap
 
 
 from pybtex.database import BibliographyData, Entry;
-
+from pybtex.utils import OrderedCaseInsensitiveDict
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
-from core.blogger import logger
+from core import blogger
 from core.pylatexenc import latex2text
 from core import butils
 from core import bibusercache
@@ -42,6 +42,8 @@ from core.bibusercache import tokencheckers
 
 from .util import arxivutil
 from .util import auxfile
+
+logger = blogger.getLogger(__name__)
 
 ### DON'T CHANGE THIS STRING. IT IS THE STRING THAT IS SEARCHED FOR IN AN EXISTING
 ### DUPFILE TO PREVENT OVERWRITING OF WRONG FILES.
@@ -205,7 +207,7 @@ def normstr(x, lower=True):
     #x2 = re.sub(r'\\([a-zA-Z]+|.)', '', x2);
     x2 = re.sub(r'''[\{\}\|\.\+\?\*\,\'\"\\]''', '', x2);
     x2 = re.sub(r'-+', '-', x2);
-    logger.longdebug("Normalized string: %r -> %r", x, x2)
+    #logger.longdebug("Normalized string: %r -> %r", x, x2)
     return x2
 
 def getlast(pers, lower=True):
@@ -458,13 +460,13 @@ class DuplicatesFilter(BibFilter):
 
         # compare author list first
 
-        logger.longdebug('Comparing entries %s and %s', a.key, b.key)
+        #logger.longdebug('Comparing entries %s and %s', a.key, b.key)
 
         apers = cache_a['pers']
         bpers = cache_b['pers']
 
         if (len(apers) != len(bpers)):
-            logger.longdebug("  Author list lengths %d and %d differ", len(apers), len(bpers))
+            #logger.longdebug("  Author list lengths %d and %d differ", len(apers), len(bpers))
             return False
 
         for k in range(len(apers)):
@@ -473,7 +475,7 @@ class DuplicatesFilter(BibFilter):
             # use Levenshtein distance to detect possible typos or alternative spellings
             # (e.g. Koenig vs Konig). Allow approx. one such typo per 8 characters.
             if (levenshtein(lasta, lastb) > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
-                logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
+                #logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
                 return False
 
         #print "Author list matches! %r and %r "%(apers,bpers);
@@ -494,17 +496,17 @@ class DuplicatesFilter(BibFilter):
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
-            logger.longdebug("  Years %r and %r differ", a.fields.get('year', None), b.fields.get('year', None))
+            #logger.longdebug("  Years %r and %r differ", a.fields.get('year', None), b.fields.get('year', None))
             return False
 
         if (compare_neq_fld(a.fields, b.fields, 'month')):
-            logger.longdebug("  Months %r and %r differ", a.fields.get('month', None), b.fields.get('month', None))
+            #logger.longdebug("  Months %r and %r differ", a.fields.get('month', None), b.fields.get('month', None))
             return False
 
         doi_a = a.fields.get('doi')
         doi_b = b.fields.get('doi')
         if (doi_a and doi_b and doi_a != doi_b):
-            logger.longdebug("  DOI's %r and %r differ", doi_a, doi_b)
+            #logger.longdebug("  DOI's %r and %r differ", doi_a, doi_b)
             return False
         if (doi_a and doi_a == doi_b):
             logger.longdebug("  DOI's %r and %r are the same --> DUPLICATES", doi_a, doi_b)
@@ -518,7 +520,7 @@ class DuplicatesFilter(BibFilter):
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
-            logger.longdebug("  arXiv IDS %r and %r differ", arxiv_a['arxivid'], arxiv_b['arxivid'])
+            #logger.longdebug("  arXiv IDS %r and %r differ", arxiv_a['arxivid'], arxiv_b['arxivid'])
             return False
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
@@ -531,29 +533,29 @@ class DuplicatesFilter(BibFilter):
         note_cl_a = cache_a['note_cleaned']
         note_cl_b = cache_b['note_cleaned']
         if (note_cl_a and note_cl_b and note_cl_a != note_cl_b):
-            logger.longdebug("  Notes (cleaned up) %r and %r differ", note_cl_a, note_cl_b)
+            #logger.longdebug("  Notes (cleaned up) %r and %r differ", note_cl_a, note_cl_b)
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
         j_abbrev_a = cache_a['j_abbrev']
         j_abbrev_b = cache_b['j_abbrev']
         if (j_abbrev_a and j_abbrev_b and j_abbrev_a != j_abbrev_b):
-            logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
+            #logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
-            logger.longdebug("  Volumes %r and %r differ", a.fields.get('volume', None), b.fields.get('volume', None))
+            #logger.longdebug("  Volumes %r and %r differ", a.fields.get('volume', None), b.fields.get('volume', None))
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
-            logger.longdebug("  Numbers %r and %r differ", a.fields.get('numbers', None), b.fields.get('numbers', None))
+            #logger.longdebug("  Numbers %r and %r differ", a.fields.get('numbers', None), b.fields.get('numbers', None))
             return False
 
         titlea = cache_a['title_clean']
         titleb = cache_b['title_clean']
 
         if (titlea and titleb and titlea != titleb):
-            logger.longdebug("  Titles %r and %r differ.", titlea, titleb)
+            #logger.longdebug("  Titles %r and %r differ.", titlea, titleb)
             return False
 
         # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
@@ -645,7 +647,7 @@ class DuplicatesFilter(BibFilter):
             #
             # search the newbibdata object, in case this entry already exists.
             #
-            logger.longdebug('inspecting new entry %s ...', key);
+            #logger.longdebug('inspecting new entry %s ...', key);
             is_duplicate_of = None
             duplicate_original_is_unused = False
             for (nkey, nentry) in newbibdata.entries.iteritems():
@@ -697,8 +699,6 @@ class DuplicatesFilter(BibFilter):
         # output duplicates to the duplicates file
 
         if (self.dupfile):
-            # set the new bibdata, without the duplicates
-            bibolamazifile.setBibliographyData(newbibdata);
             # and write definitions to the dupfile
             dupfilepath = os.path.join(bibolamazifile.fdir(), self.dupfile);
             check_overwrite_dupfile(dupfilepath);
@@ -775,6 +775,21 @@ class DuplicatesFilter(BibFilter):
                                      ])  +
                            DUPL_WARN_BOTTOM % {'num_dupl': len(duplicates)});
 
+        if self.dupfile:
+            # ### TODO: do this not only if we are given a dupfile?
+            #
+            # set the new bibdata, without the duplicates
+            # DON'T DO THIS, BECAUSE CACHES MAY HAVE KEPT A POINTER TO THE BIBDATA.
+            #bibolamazifile.setBibliographyData(newbibdata);
+            #
+            # Instead, update bibolamazifile's bibliographyData() object itself.
+            #
+            thebibdata = bibolamazifile.bibliographyData()
+            thebibdata.entries = OrderedCaseInsensitiveDict()
+            for (k, entry) in newbibdata.entries.iteritems():
+                thebibdata.add_entry(k, entry)
+                
+            
         return
 
 

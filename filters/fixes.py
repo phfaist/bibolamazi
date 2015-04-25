@@ -283,8 +283,20 @@ class FixesFilter(BibFilter):
                 if (fieldlist is None or k in fieldlist):
                     val = v.strip();
                     if (len(val) and val[0] == '{' and val[-1] == '}'):
-                        # remove the extra braces.
-                        entry.fields[k] = val[1:-1];
+                        # remove the extra braces. But first, check that the braces
+                        # enclose the full field, and we don't have e.g. "{Maxwell}'s
+                        # demon versus {Szilard}", in which case a dumb algorithm would
+                        # leave the invalid LaTeX string "Maxwell}'s demon versus
+                        # {Szilard"
+                        try:
+                            (nodes,pos,length) = latexwalker.get_latex_braced_group(val, 0,
+                                                                                    tolerant_parsing=True)
+                            if (pos + length == len(val)):
+                                # yes, all fine: the braces are one block for the field
+                                entry.fields[k] = val[1:-1];
+                        except LatexWalkerError:
+                            logger.longdebug("LatexWalkerError while checking enclosing braces for key %s,"
+                                             " for field %s = `%s' --ignoring", entry.key, k, val)
 
         if self.remove_full_braces:
             if entry.fields.get('language','').lower() not in self.remove_full_braces_not_lang:
@@ -297,7 +309,7 @@ class FixesFilter(BibFilter):
                     continue
                 newval = val;
                 for n,r in self.protect_names.iteritems():
-                    newval = r.sub('{'+n+'}', newval);
+                    newval = r.sub(lambda m: '{'+n+'}', newval);
                 if (newval != val):
                     entry.fields[key] = newval;
 
@@ -316,6 +328,10 @@ class FixesFilter(BibFilter):
         if (self.remove_doi_prefix):
             if 'doi' in entry.fields:
                 entry.fields['doi'] = re.sub(r'^\s*doi:\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
+
+        logger.longdebug("fixes filter, result: %s -> Authors=%r, fields=%r",
+                         entry.key, entry.persons.get('author', None),
+                         entry.fields)
 
         return
     

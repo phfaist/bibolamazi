@@ -41,7 +41,7 @@ _RX_AFTER = r'(?:\s*[;,]?\s*|$)'
 
 _RX_PRIMARY_CLASS_PAT = r'[-a-zA-Z0-9\._]+'
 
-_RX_ARXIVID_NUM_PAT = r'(?:\d{4}\.\d{4,}|\d{7})(?:v\d+)?' # only the numerical arxiv ID (+possible version)
+_RX_ARXIVID_NUM_PAT = r'(?<!\d)(?:\d{4}\.\d{4,}|\d{7})(?:v\d+)?' # only the numerical arxiv ID (+possible version)
 _RX_ARXIVID_NUM = r'(?P<arxivid>'+_RX_ARXIVID_NUM_PAT+r')' 
 _RX_ARXIVID_TOL = r'(?P<arxivid>(?:'+_RX_PRIMARY_CLASS_PAT+r'/)?'+_RX_ARXIVID_NUM_PAT+r')' # allow primary-class/ etc.
 
@@ -62,7 +62,7 @@ _rxarxiv = (
         r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
         )
     + _mk_braced_pair_rx(
-        r'arXiv[-.:/\s]+((?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r'/)?' + _RX_ARXIVID_NUM + r')'
+        r'(?:arXiv[-.:/\s]+)?((?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r'/)?' + _RX_ARXIVID_NUM + r')'
         )
     );
 
@@ -413,6 +413,17 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         self.complete_cache(bibdata, arxiv_api_accessor)
 
 
+    def revalidate(self, bibolamazifile):
+        """
+        Re-validates the cache (with validate()), and calls again complete_cache()
+        to fetch all missing or out-of-date entries.
+        """
+        self.cacheDic()['entries'].validate()
+        self.complete_cache(
+            bibolamazifile.bibliographyData(),
+            bibolamazifile.cacheAccessor(ArxivFetchedAPIInfoCacheAccessor)
+        )
+
     def complete_cache(self, bibdata, arxiv_api_accessor):
         """
         Makes sure the cache is complete for all items in `bibdata`.
@@ -468,6 +479,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         entrydic = self.cacheDic()['entries']
 
         if (entrykey not in entrydic):
+            logger.longdebug("    --> not found :(")
             return None
 
         return entrydic.get(entrykey, None)
