@@ -799,11 +799,44 @@ class BibolamaziFile(object):
 
 
     def setBibliographyData(self, bibliographydata):
+        """
+        Set the `bibliographydata` database object directly.
+
+        The object `bibliographydata` should be of instance
+        :py:class:`pybtex.database.BibliographyData`.
+
+        .. warning:: Filters should NOT set a different bibliographydata object:
+                     caches might have kept a pointer to this object (see, for
+                     example
+                     :py:class:`~core.bibusercache.tokencheckers.EntryFieldsTokenChecker`). Please
+                     use :py:meth:`setEntries()` instead.
+        """
         self._bibliographydata = bibliographydata;
 
     def setEntries(self, bibentries):
-        self._bibliographydata = pybtex.database.BibliographyData();
-        self._bibliographydata.add_entries(bibentries);
+        """
+        Replace all the entries in the current bibliographydata object by the given
+        entries.
+
+        Arguments:
+
+            - `bibentries`: the new entries to set. `bibentries` should be an
+              iterable of `(key, entry)` (or, more precisely, any valid argument
+              for :py:meth:`pybtex.database.BibliographyData.add_entries()`).
+
+        .. warning:: This will remove any existing entries in the database.
+
+        This function alters the current :py:meth:`bibliographyData()` object,
+        and does not replace it by a new object. (I.e., if you kept a reference
+        to the `bibliographyData()` object, the reference is still valid after
+        calling this function.)
+        """
+
+        # NOTE: Don't just set _bibliographydata to a new object, see warning in
+        # doc of setBibliographyData().
+        
+        self._bibliographydata.entries = OrderedCaseInsensitiveDict()
+        self._bibliographydata.add_entries(bibentries)
 
 
 

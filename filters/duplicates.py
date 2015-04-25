@@ -784,10 +784,7 @@ class DuplicatesFilter(BibFilter):
             #
             # Instead, update bibolamazifile's bibliographyData() object itself.
             #
-            thebibdata = bibolamazifile.bibliographyData()
-            thebibdata.entries = OrderedCaseInsensitiveDict()
-            for (k, entry) in newbibdata.entries.iteritems():
-                thebibdata.add_entry(k, entry)
+            bibolamazifile.setEntries(newbibdata.entries)
                 
             
         return
