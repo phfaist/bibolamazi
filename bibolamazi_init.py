@@ -20,3 +20,8 @@ base_dir = os.path.dirname(os.path.realpath(__file__));
 # ----------------------------------
 sys.path += [base_dir]
 sys.path += [os.path.join(base_dir, '3rdparty', x) for x in third_party]
+
+
+# Make sure logging mechanism is set up (logger class correct)
+# ------------------------------------------------------------
+import core.blogger
