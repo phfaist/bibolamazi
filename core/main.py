@@ -38,17 +38,56 @@ from collections import namedtuple
 # import all the parts we need from our own application.
 # ------------------------------------------------------
 
+# first of all, set up logging mechanism for other modules
+import logging
+import core.blogger
+core.blogger.setup_simple_console_logging() # root logger
+# rest of the modules
 from core import version
 from core.bibolamazifile import BibolamaziFile
 from core.bibfilter import BibFilter
-from core.blogger import logger
-from core.argparseactions import store_or_count, opt_list_filters, opt_action_help, opt_action_version, opt_init_empty_template
+from core.argparseactions import (store_or_count, opt_list_filters, opt_action_help,
+                                  opt_action_version, opt_init_empty_template)
 from core import butils
 from core.butils import BibolamaziError
 
 # for list of filters
 from bibfilter import factory as filterfactory
 
+
+# our logger for the main module
+logger = logging.getLogger(__name__)
+
+
+# ------------------------------------------------------------------------------
+
+
+# code to set up logging mechanism, if run by command-line
+
+def verbosity_logger_level(verbosity):
+    """
+    Simple mapping of 'verbosity level' (used, for example for command line
+    options) to correspondig logging level (:py:const:`logging.DEBUG`,
+    :py:const:`logging.ERROR`, etc.).
+    """
+    if verbosity == 0:
+        return logging.ERROR
+    elif verbosity == 1:
+        return logging.INFO
+    elif verbosity == 2:
+        return logging.DEBUG
+    elif verbosity >= 3:
+        return core.blogger.LONGDEBUG
+
+    raise ValueError("Bad verbosity level: %r" %(verbosity))
+
+
+
+
+
+
+
+# ------------------------------------------------------------------------------
 
 
 class BibolamaziNoSourceEntriesError(BibolamaziError):
@@ -174,7 +213,10 @@ def run_bibolamazi_args(args):
     # args is supposed to be the parsed arguments from main()
     #
 
-    logger.setVerbosity(args.verbosity);
+    # act on the root logger
+    rootlogger = logging.getLogger()
+    rootlogger.setLevel(verbosity_logger_level(args.verbosity));
+    
     logger.longdebug('Set verbosity: %d' %(args.verbosity));
 
     logger.debug(textwrap.dedent("""

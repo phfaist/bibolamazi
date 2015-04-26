@@ -5,6 +5,8 @@ import re
 import codecs
 import datetime
 import calendar
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import BibliographyData;
 
@@ -13,7 +15,6 @@ from core import bibfilter
 from core import butils
 from core.bibfilter import BibFilter, BibFilterError;
 from core.bibfilter.argtypes import enum_class
-from core.blogger import logger;
 
 from .util import arxivutil
 

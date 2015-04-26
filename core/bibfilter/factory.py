@@ -32,9 +32,10 @@ import argparse
 import textwrap
 import types
 from collections import namedtuple, OrderedDict
+import logging
+logger = logging.getLogger(__name__)
 
 from core.argparseactions import store_key_val, store_key_const, store_key_bool
-from core.blogger import logger
 from core import butils
 
 

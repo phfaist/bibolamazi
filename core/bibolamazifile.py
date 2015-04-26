@@ -26,25 +26,26 @@ definition.
 """
 
 
-import re;
-import io;
-import sys;
-import os;
-import os.path;
-import codecs;
-import shlex;
-import urllib;
-import cPickle as pickle;
-from datetime import datetime;
+import re
+import io
+import sys
+import os
+import os.path
+import codecs
+import shlex
+import urllib
+import cPickle as pickle
+from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
 
-import pybtex.database;
-import pybtex.database.input.bibtex as inputbibtex;
-import pybtex.database.output.bibtex as outputbibtex;
+import pybtex.database
+import pybtex.database.input.bibtex as inputbibtex
+import pybtex.database.output.bibtex as outputbibtex
+from pybtex.utils import OrderedCaseInsensitiveDict
 
-from core.blogger import logger;
-
-from core import butils;
-from core.butils import BibolamaziError;
+from core import butils
+from core.butils import BibolamaziError
 from core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
 from core.bibfilter import factory
 
@@ -317,9 +318,9 @@ class BibolamaziFile(object):
 
     def bibliographydata(self):
         """
-        Deprecated: use `bibliographyData()` instead!
+        .. deprecated 2.0:: use `bibliographyData()` instead!
         """
-        butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()")
+        butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()", __name__)
         return self.bibliographyData()
 
     def cacheFileName(self):

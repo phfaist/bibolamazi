@@ -27,14 +27,13 @@ import codecs
 import unicodedata
 import string
 import textwrap
-
+import logging
 
 from pybtex.database import BibliographyData, Entry;
 from pybtex.utils import OrderedCaseInsensitiveDict
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
-from core import blogger
 from core.pylatexenc import latex2text
 from core import butils
 from core import bibusercache
@@ -43,7 +42,7 @@ from core.bibusercache import tokencheckers
 from .util import arxivutil
 from .util import auxfile
 
-logger = blogger.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 ### DON'T CHANGE THIS STRING. IT IS THE STRING THAT IS SEARCHED FOR IN AN EXISTING
 ### DUPFILE TO PREVENT OVERWRITING OF WRONG FILES.
@@ -784,7 +783,7 @@ class DuplicatesFilter(BibFilter):
             #
             # Instead, update bibolamazifile's bibliographyData() object itself.
             #
-            bibolamazifile.setEntries(newbibdata.entries)
+            bibolamazifile.setEntries(newbibdata.entries.iteritems())
                 
             
         return

@@ -21,10 +21,11 @@
 
 
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from core.butils import getbool;
 from core.bibfilter import BibFilter, BibFilterError;
-from core.blogger import logger;
 
 # for the arxiv info parser tool
 from .util import arxivutil

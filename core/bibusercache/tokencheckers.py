@@ -51,9 +51,10 @@ class :py:class:`~tokencheckers.TokenChecker`.
 
 import datetime
 import hashlib
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import Entry, Person
-from core.blogger import logger
 
 
 

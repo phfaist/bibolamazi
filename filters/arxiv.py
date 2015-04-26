@@ -21,13 +21,14 @@
 
 
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.utils import CaseInsensitiveDict
 
 from core import bibfilter
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList, enum_class
-from core.blogger import logger
 from core import butils
 
 from .util import arxivutil

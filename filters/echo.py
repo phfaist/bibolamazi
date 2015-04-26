@@ -21,12 +21,15 @@
 
 
 import re
+import logging
 
 from core.butils import getbool
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import enum_class
+from core.main import verbosity_logger_level
 from core import blogger
-from core.blogger import logger
+
+logger = logging.getLogger(__name__)
 
 # for the arxiv info parser tool
 from .util import arxivutil
@@ -64,6 +67,16 @@ EchoFormat = enum_class('EchoFormat',
                        default_value='default',
                        value_attr_name='msgformat')
 
+LogLevel = enum_class('LogLevel',
+                      [('LONGDEBUG', blogger.LONGDEBUG),
+                       ('DEBUG', logging.DEBUG),
+                       ('WARNING', logging.WARNING),
+                       ('INFO', logging.INFO),
+                       ('ERROR', logging.ERROR),
+                       ('CRITICAL', logging.CRITICAL)],
+                      default_value='INFO',
+                      value_attr_name='levelno')
+
 class EchoFilter(BibFilter):
     
     helpauthor = HELP_AUTHOR
@@ -75,13 +88,23 @@ class EchoFilter(BibFilter):
 
         Arguments:
           - message: the message to echo
-          - verbosity(int): the verbosity level required to display the message
+          - level(LogLevel): the logger level required to display the message (one of 'LONGDEBUG',
+            'DEBUG', 'WARNING', 'INFO', 'ERROR' or 'CRITICAL')
           - format(EchoFormat): how to display the message (one of 'default', 'simple' or 'warn')
+          - warn(bool): short for '-sFormat=warn -sLevel=WARNING'
         """
         BibFilter.__init__(self);
 
         self.message = message
-        self.verbosity = kwargs.get('verbosity', 1)
+
+        iswarn = kwargs.get('warn', None)
+        if iswarn is not None and getbool(iswarn):
+            if 'level' not in kwargs:
+                kwargs['level'] = 'WARNING'
+            if 'format' not in kwargs:
+                kwargs['format'] = 'warn'
+
+        self.loglevel = LogLevel(kwargs.get('level', logging.INFO))
 
         f = EchoFormat(kwargs.get('format', FMT_DEFAULT))
         self.fmt = msgformats[f.msgformat]
@@ -92,7 +115,7 @@ class EchoFilter(BibFilter):
 
     def filter_bibolamazifile(self, bibolamazifile):
 
-        logger.log(blogger.verbosity_logger_level(self.verbosity),
+        logger.log(self.loglevel.levelno,
                    self.fmt,
                    self.message)
 

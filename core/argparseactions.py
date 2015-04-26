@@ -30,6 +30,8 @@ import os
 import sys
 import os.path
 import argparse
+import logging
+logger = logging.getLogger(__name__)
 
 # pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
 # it should automatically.
@@ -37,7 +39,7 @@ import pydoc
 
 import butils;
 from butils import getbool
-from blogger import logger
+
 
 
 

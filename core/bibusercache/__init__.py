@@ -23,9 +23,10 @@ import collections
 import inspect
 import pickle
 import traceback
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import Entry, Person
-from core.blogger import logger
 from core.butils import call_with_args, BibolamaziError
 from core.bibusercache import tokencheckers
 

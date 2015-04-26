@@ -21,12 +21,13 @@
 
 
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
-from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
 from core.pylatexenc import latexwalker

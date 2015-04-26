@@ -22,8 +22,9 @@
 import arxiv2bib
 import re
 from urllib2 import URLError, HTTPError
+import logging
+logger = logging.getLogger(__name__)
 
-from core.blogger import logger
 from core.bibusercache import BibUserCacheAccessor, BibUserCacheError
 from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
 from core import butils

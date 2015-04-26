@@ -164,9 +164,10 @@ class BibFilter(object):
         should be updated according to the filter's action and purpose.
 
         The return value of this function is ignored. Subclasses should report warnings
-        and logging through :py:data:`core.blogger.logger` and should raise errors as
-        :py:class:`BibFilterError` (preferrably, a subclass). Other raised exceptions will
-        be interpreted as internal errors and will open a debugger.
+        and logging through Python's logging mechanism (see doc of
+        :py:module:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
+        (preferrably, a subclass). Other raised exceptions will be interpreted as internal
+        errors and will open a debugger.
         """
         raise BibFilterError(self.name(), 'filter_bibentry() not implemented !')
 
@@ -182,9 +183,10 @@ class BibFilter(object):
         instance, which should be updated according to the filter's action and purpose.
 
         The return value of this function is ignored. Subclasses should report warnings
-        and logging through :py:data:`core.blogger.logger` and should raise errors as
-        :py:class:`BibFilterError` (preferrably, a subclass). Other raised exceptions will
-        be interpreted as internal errors and will open a debugger.
+        and logging through Python's logging mechanism (see doc of
+        :py:module:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
+        (preferrably, a subclass). Other raised exceptions will be interpreted as internal
+        errors and will open a debugger.
         """
         raise BibFilterError(self.name(), 'filter_bibolamazifile() not implemented !')
 

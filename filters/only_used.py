@@ -19,12 +19,13 @@
 #                                                                              #
 ################################################################################
 
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.utils import OrderedCaseInsensitiveDict
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
-from core.blogger import logger;
 
 from .util import auxfile
 

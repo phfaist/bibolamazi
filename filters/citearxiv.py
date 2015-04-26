@@ -24,6 +24,8 @@ import os
 import os.path
 import io
 from urllib2 import HTTPError
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import BibliographyData;
 import pybtex.database.input.bibtex as inputbibtex;
@@ -31,7 +33,6 @@ import pybtex.database.input.bibtex as inputbibtex;
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
 from core.butils import getbool;
-from core.blogger import logger;
 
 import arxiv2bib
 from .util import arxivutil

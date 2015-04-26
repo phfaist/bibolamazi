@@ -20,19 +20,164 @@
 ################################################################################
 
 """
-Define utilities related to logging debug, information, warning and error messages.
-
-The only important thing here is the :py:data:`logger` object, which you can use to log
+Set up a logging framework for logging debug, information, warning and error
 messages.
 
-TODO: FIXME: Better implement logging mechanism with python's logging module and
-getLogger() etc..
+Modules should get their logger using Python's standard :py:module:`logging`
+mechanism::
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+This allows for the user to be rather specific about which type of messages
+she/he would like to see.
 """
 
+import sys
 import logging
-from types import MethodType
 
 
+
+# ------------------------------------------------------------------------------
+
+# New Level: LONGDEBUG
+
+
+# note: DEBUG=10, INFO=20, WARNING=30 etc.
+LONGDEBUG = 5
+logging.addLevelName(LONGDEBUG, "LONGDEBUG");
+
+
+
+# ------------------------------------------------------------------------------
+
+# our Logger class
+
+class BibolamaziLogger(logging.getLoggerClass()):
+    """
+    A Logger used in Bibolamazi.
+
+    This logger class knows about an additional log level,
+    :py:const:`LONGDEBUG`.
+    """
+    
+    def longdebug(self, msg, *args, **kwargs):
+        """
+        Produce a log message at level LONGDEBUG.
+        """
+        if self.isEnabledFor(LONGDEBUG):
+            # Yes, _log takes its args as 'args', not '*args'
+            self._log(LONGDEBUG, msg, args, **kwargs)
+
+            
+logging.setLoggerClass(BibolamaziLogger)
+
+
+# ------------------------------------------------------------------------------
+
+# # utility: "inverse" of logging.getLevelName
+# def getLevelByName(levelname):
+#     levelname = levelname.upper()
+#     if levelname == 'LONGDEBUG':
+#         return LONGDEBUG
+#     if levelname == 'DEBUG':
+#         return logging.DEBUG
+#     if levelname == 'INFO':
+#         return logging.INFO
+#     if levelname == 'WARNING':
+#         return logging.WARNING
+#     if levelname == 'ERROR':
+#         return logging.ERROR
+
+#     raise ValueError("Invalid level name: %s"%(levelname))
+
+
+
+
+
+# ==============================================================================
+# LOG FORMATTER.
+# ==============================================================================
+
+
+class BibolamaziConsoleFormatter(logging.Formatter):
+    """
+    Format log messages for console output. Customized for bibolamazi.
+    """
+    def __init__(self, ttycolors=False, **kwargs):
+        self.ttycolors = ttycolors
+        return logging.Formatter.__init__(self, **kwargs)
+
+    def format(self, record):
+        #
+        # taken from logging.Formatter.format() source code
+        #
+        message = record.getMessage()
+
+        head = ""
+        indent = ' '*4
+        ttycolorstart = ''
+        ttycolorend = ''
+        if record.levelno == logging.CRITICAL:
+            head = 'CRITICAL: '
+            ttycolorstart = '\033[31;1m'
+            ttycolorend = '\033[0m'
+        elif record.levelno == logging.ERROR:
+            head = 'ERROR: '
+            ttycolorstart = '\033[31;1m'
+            ttycolorend = '\033[0m'
+        elif record.levelno == logging.WARNING:
+            head = 'WARNING: '
+            ttycolorstart = '\033[35;1m'
+            ttycolorend = '\033[0m'
+        elif record.levelno == logging.INFO:
+            head = ''
+            indent = ''
+            ttycolorstart = '\033[32m'
+            ttycolorend = '\033[0m'
+        elif record.levelno == logging.DEBUG:
+            #asctime = self.formatTime(record, self.datefmt)
+            head = '-- [%s]: '%(record.name)
+            indent = ' '*min(8, len(head))
+        elif record.levelno == LONGDEBUG:
+            #asctime = self.formatTime(record, self.datefmt)
+            #indent = ' '*6
+            head = '  -- [%s]: '%(record.name)
+            indent = ' '*min(8, len(head))
+
+        msg = message.replace('\n', '\n'+indent)
+
+        s = head + msg
+        
+        if record.exc_info:
+            # Cache the traceback text to avoid converting it multiple times
+            # (it's constant anyway)
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+
+        if record.exc_text:
+            s = s.rstrip() + "\n"+indent
+            exc_text = record.exc_text.replace('\n', '\n'+indent)
+            try:
+                s = s + exc_text
+            except UnicodeError:
+                # Sometimes filenames have non-ASCII chars, which can lead
+                # to errors when s is Unicode and record.exc_text is str
+                # See issue 8924.
+                # We also use replace for when there are multiple
+                # encodings, e.g. UTF-8 for the filesystem and latin-1
+                # for a script. See issue 13232.
+                s = s + exc_text.decode(sys.getfilesystemencoding(),
+                                        'replace')
+        if self.ttycolors:
+            s = ttycolorstart + s + ttycolorend
+        return s
+
+
+#
+# Since 2.1, we don't use this ConditionalFormatter, but our new
+# BibolamaziConsoleFormatter instaad.
+#
 class ConditionalFormatter(logging.Formatter):
     """
     A formatter class.
@@ -102,70 +247,55 @@ class ConditionalFormatter(logging.Formatter):
 
 
 
-
-# note: DEBUG=10, INFO=20, WARNING=30 etc.
-LONGDEBUG = 5
-logging.addLevelName(LONGDEBUG, "LONGDEBUG");
-
 # DEBUG/LOGGING
 # create logger
-logger = logging.getLogger('bibolamazi');
+logger = logging.getLogger('old_bibolamazi_logger');
 """
-The main logger object. This is a :py:class:`logging.Logger` object.
+(OBSOLETE) The main logger object. This is a :py:class:`logging.Logger` object.
 
-This object has an additional method `longdebug()` (which behaves similarly to `debug()`),
-for logging long debug output such as dumping the database during intermediate steps, etc. 
-This corresponds to bibolamazi command-line verbosity level 3.
+.. deprecated:: 2.2
+
+   This object is still here to keep old code functioning. New code should use
+   the following idiom somewhere at the top of their module::
+   
+     import logging
+     logger = logging.getLogger(__name__)
+
+   (Just make sure the logging mechanism has been set up correctly already, see
+   doc for :py:module:`~core.blogger` module.
+
+This object has an additional method `longdebug()` (which behaves similarly to
+`debug()`), for logging long debug output such as dumping the database during
+intermediate steps, etc.  This corresponds to bibolamazi command-line verbosity
+level 3.
 """
 
-# add logger.longdebug() method
-# see http://stackoverflow.com/a/13638084/1694896
-def longdebug(l, msg, *args, **kwargs):
-    if l.isEnabledFor(LONGDEBUG):
-        # Yes, _log takes its args as 'args', not '*args'
-        l._log(LONGDEBUG, msg, args, **kwargs)
-logger.longdebug = MethodType(longdebug, logger, logging.Logger)
 
-# create console handler
-ch = logging.StreamHandler();
-ch.setLevel(logging.NOTSET); # propagate all messages
+def setup_simple_console_logging(logger=logging.getLogger()):
+    """
+    Sets up the given logger object for simple console output.
 
-# create formatter and add it to the handlers
+    The main program module may for example invoke this function on the root
+    logger to provide a basic logging mechanism.
+    """
 
-#formatter = logging.Formatter('%(name)s - %(asctime)-15s %(levelname)s: %(message)s');
-formatter = ConditionalFormatter('%(message)s',
-                                 DEBUG='-- %(message)s',
-                                 LONGDEBUG='  -- %(message)s',
-                                 WARNING='WARNING: %(message)s',
-                                 ERROR='ERROR: %(message)s',
-                                 CRITICAL='CRITICAL: %(message)s');
-ch.setFormatter(formatter);
-# add the handlers to the logger
-logger.addHandler(ch);
+    # create console handler
+    ch = logging.StreamHandler();
+    ch.setLevel(logging.NOTSET); # propagate all messages
 
+    # create formatter and add it to the handlers
 
-
-def verbosity_logger_level(verbosity):
-    if verbosity == 0:
-        return logging.ERROR
-    elif verbosity == 1:
-        return logging.INFO
-    elif verbosity == 2:
-        return logging.DEBUG
-    elif verbosity >= 3:
-        return LONGDEBUG
-
-    raise ValueError("Bad verbosity level: %r" %(verbosity))
-
-def _set_verbosity(l, verbosity):
-    l.setLevel(verbosity_logger_level(verbosity));
-    l.longdebug("set verbosity level to %d", verbosity)
+    #formatter = logging.Formatter('%(name)s - %(asctime)-15s %(levelname)s: %(message)s');
+    #formatter = ConditionalFormatter('%(message)s',
+    #                                 DEBUG='-- [%(name)s] \n   %(message)s',
+    #                                 LONGDEBUG='  -- %(message)s',
+    #                                 WARNING='WARNING: %(message)s',
+    #                                 ERROR='ERROR: %(message)s',
+    #                                 CRITICAL='CRITICAL: %(message)s');
+    formatter = BibolamaziConsoleFormatter(ttycolors=sys.stderr.isatty())
+    
+    ch.setFormatter(formatter);
+    # add the handlers to the logger
+    logger.addHandler(ch);
 
 
-logger.setVerbosity = MethodType(_set_verbosity, logger, logging.Logger);
-
-
-
-def getLogger(name):
-    # ### TODO: generate per-module logger for more fine-grained debug level setting
-    return logger

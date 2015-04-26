@@ -27,6 +27,8 @@ import codecs
 import unicodedata
 import string
 import textwrap
+import logging
+logger = logging.getLogger(__name__)
 
 
 from pybtex.database import BibliographyData, Entry;
@@ -34,7 +36,6 @@ from pybtex.database import BibliographyData, Entry;
 
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
-from core.blogger import logger;
 from core import butils
 from core.pylatexenc import latex2text
 

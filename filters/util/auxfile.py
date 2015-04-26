@@ -27,9 +27,10 @@ Utilities (actually for now, utility) to parse .aux files from LaTeX documents.
 import os
 import os.path
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from core.bibfilter import BibFilter, BibFilterError;
-from core.blogger import logger;
 
 
 

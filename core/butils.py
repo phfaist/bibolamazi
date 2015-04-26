@@ -28,8 +28,9 @@ import re
 import types
 import math
 import datetime
+import logging
+logger = logging.getLogger(__name__)
 
-from blogger import logger
 import version
 
 
@@ -232,7 +233,13 @@ def parse_timedelta(in_s):
 
 def warn_deprecated(classname, oldname, newname, modulename=None, explanation=None):
     import traceback
-    logger.warning(
+
+    if modulename is not None:
+        warnlogger = logging.getLogger(modulename)
+    else:
+        warnlogger = logger
+
+    warnlogger.warning(
         ("%(modulenamecolon)s%(classnamedot)s%(oldname)s is deprecated. Please use "
          "%(modulenamecolon)s%(classnamedot)s%(newname)s instead. %(explanationspace)s"
          "at:\n"
