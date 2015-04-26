@@ -22,6 +22,8 @@
 ################################################################################
 
 import os.path
+import logging
+logger = logging.getLogger(__name__)
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -117,7 +119,7 @@ class MyOrderedDictModel(QAbstractTableModel):
         if col in (0,1,):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
 
-        print "MyOrderedDictModel.flags(): BAD COLUMN: %d" %(col)
+        logger.warning("MyOrderedDictModel.flags(): MyOrderedDictModel.flags(): BAD COLUMN: %d", col)
         return 0
     
 
@@ -140,7 +142,7 @@ class MyOrderedDictModel(QAbstractTableModel):
         if (isinstance(value, QString)):
             value = unicode(value); # make sure we're dealing with Python strings and not Qt strings
 
-        print "Got value: %r" %(value)
+        logger.debug("Got value: %r", value)
 
         if col == 0:
             self._dic.set_at(row, value, self._dic.item_at(row)[1])
@@ -175,7 +177,7 @@ class SettingsWidget(QDialog):
     def __init__(self, swu_interface, swu_sourcefilter_devel, mainwin=None):
         super(SettingsWidget, self).__init__(parent=mainwin)
 
-        print "swu_interface=%r, swu_sourcefilter_devel=%r" %(swu_interface, swu_sourcefilter_devel)
+        logger.debug("swu_interface=%r, swu_sourcefilter_devel=%r", swu_interface, swu_sourcefilter_devel)
 
         self.swu_interface = swu_interface
         self.swu_sourcefilter_devel = swu_sourcefilter_devel

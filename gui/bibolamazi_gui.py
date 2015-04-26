@@ -27,9 +27,17 @@ import sys
 import os
 import os.path
 import re
+import logging
 
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 import bibolamazi_init
+
+# set up basic logging
+import core.blogger
+core.blogger.setup_simple_console_logging()
+
+# default level: set to root logger
+logging.getLogger().setLevel(logging.DEBUG)
 
 from core import bibolamazifile
 from core import main
@@ -47,6 +55,9 @@ import settingswidget
 from favorites import FavoriteCmdsList
 
 from qtauto.ui_mainwidget import Ui_MainWidget
+
+
+logger = logging.getLogger(__name__)
 
 
 app = None
@@ -75,10 +86,10 @@ class BibolamaziApplication(QApplication):
 
     def event(self, event):
         if (event.type() == QEvent.FileOpen):
-            print "Opening file %s" %(event.file())
+            logger.info("Opening file %s", event.file())
             # request to open file
             if (self.main_widget is None):
-                print "ERROR: CAN'T OPEN FILE: MAIN WIDGET IS NONE!"
+                logger.error("ERROR: CAN'T OPEN FILE: MAIN WIDGET IS NONE!")
             else:
                 self.main_widget.openFile(event.file())
             return True
@@ -280,13 +291,13 @@ class MainWidget(QWidget):
     def bibFileClosed(self):
         sender = self.sender()
         if (not sender in self.openbibfiles):
-            print "WARNING: Widget sender of fileClosed() not in our openbibfiles list!!"
+            logger.warning("Widget sender of fileClosed() not in our openbibfiles list!!")
             return
-        print "file is closed."
+        logger.debug("file is closed.")
         self.openbibfiles.remove(sender)
 
     def closeEvent(self, event):
-        print "Close!!"
+        logger.debug("Close!!")
 
         for w in self.openbibfiles:
             ans = w.close()
@@ -353,7 +364,7 @@ def run_main():
         pass
 
 
-    print "starting application"
+    logger.debug("starting application")
 
     app = BibolamaziApplication();
 
@@ -374,10 +385,10 @@ def run_main():
         fn = str(args[k])
         if (_rxscript.search(fn)):
             # our own script, bug on windows?
-            print "skipping own arg: %s" %(fn)
+            logger.debug("skipping own arg: %s", fn)
             continue
         
-        print "opening arg: %s" % (fn)
+        logger.debug("opening arg: %s", fn)
         app.main_widget.openFile(fn);
 
     sys.exit(app.exec_())

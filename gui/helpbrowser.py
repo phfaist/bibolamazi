@@ -28,6 +28,8 @@ from core import blogger
 from core.blogger import logger
 from core import butils
 import core.argparseactions
+import logging
+logger = logging.getLogger(__name__)
 
 from core.bibfilter import factory as filters_factory
 
@@ -163,7 +165,7 @@ class HelpBrowser(QWidget):
         sender = self.sender()
         path = str(sender.property('helppath').toString())
         if (not path):
-            print "Bad help topic path: %r" %(path)
+            logger.warning("Bad help topic path: %r", path)
             return
 
         self.openHelpTopic(path)
@@ -197,7 +199,7 @@ class HelpBrowser(QWidget):
 
     def makeHelpTopicTab(self, pathitems):
         if (not len(pathitems)):
-            print "No Path specified!"
+            logger.warning("makeHelpTopicTab(): No Path specified!")
             return
 
         font = self.font()
@@ -206,7 +208,7 @@ class HelpBrowser(QWidget):
 
         if (pathitems[0] == 'filters'):
             if (len(pathitems) < 2):
-                print "No filter specified!!"
+                logger.warning("makeHelpTopicTab(): No filter specified!!")
                 return
             filtname = pathitems[1]
 
@@ -220,7 +222,7 @@ class HelpBrowser(QWidget):
 
         if (pathitems[0] == 'general'):
             if (len(pathitems) < 2):
-                print "No help topic general page specified!!"
+                logger.warning("makeHelpTopicTab(): No help topic general page specified!!")
                 return
 
             tb = QTextBrowser(self.ui.tabs)
@@ -246,7 +248,7 @@ class HelpBrowser(QWidget):
             tb.setProperty('HelpTabToolTip', '')
             return tb
                 
-        print "Unknown help topic: %r" %("/".join(pathitems))
+        logger.warning("makeHelpTopicTab(): Unknown help topic: %r", "/".join(pathitems))
         return None
 
 

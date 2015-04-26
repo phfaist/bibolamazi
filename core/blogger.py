@@ -104,9 +104,13 @@ class BibolamaziConsoleFormatter(logging.Formatter):
     """
     Format log messages for console output. Customized for bibolamazi.
     """
-    def __init__(self, ttycolors=False, **kwargs):
+    def __init__(self, ttycolors=False, show_pos_info_level=None, **kwargs):
         self.ttycolors = ttycolors
+        self.show_pos_info_level = show_pos_info_level
         return logging.Formatter.__init__(self, **kwargs)
+
+    def setShowPosInfoLevel(self, level):
+        self.show_pos_info_level = level
 
     def format(self, record):
         #
@@ -116,38 +120,62 @@ class BibolamaziConsoleFormatter(logging.Formatter):
 
         head = ""
         indent = ' '*4
+        ttycolorheadstart = ''
         ttycolorstart = ''
         ttycolorend = ''
+
+        if self.ttycolors:
+            thettycolorheadstart = lambda : ttycolorheadstart
+            thettycolorstart = lambda : ttycolorstart
+            thettycolorend = lambda : ttycolorend
+        else:
+            thettycolorheadstart = lambda : ''
+            thettycolorstart = lambda : ''
+            thettycolorend = lambda : ''
+
+        if self.show_pos_info_level is not None and record.levelno <= self.show_pos_info_level:
+            head = '[%s l.%d]: %s():\n'%(record.name, record.lineno, record.funcName)
+
         if record.levelno == logging.CRITICAL:
-            head = 'CRITICAL: '
+            #head += 'CRITICAL: '
+            # so that 'CRITICAL' also gets the message tty color, not the head color
+            message = 'CRITICAL: '+message
+            ttycolorheadstart = '\033[31m'
             ttycolorstart = '\033[31;1m'
             ttycolorend = '\033[0m'
         elif record.levelno == logging.ERROR:
-            head = 'ERROR: '
+            #head += 'ERROR: '
+            # so that 'ERROR' also gets the message tty color, not the head color
+            message = 'ERROR: '+message
+            ttycolorheadstart = '\033[31m'
             ttycolorstart = '\033[31;1m'
             ttycolorend = '\033[0m'
         elif record.levelno == logging.WARNING:
-            head = 'WARNING: '
+            #head += 'WARNING: '
+            message = 'WARNING: '+message
+            ttycolorheadstart = '\033[35m'
             ttycolorstart = '\033[35;1m'
             ttycolorend = '\033[0m'
         elif record.levelno == logging.INFO:
-            head = ''
             indent = ''
-            ttycolorstart = '\033[32m'
+            ttycolorheadstart = '\033[32m'
+            ttycolorstart = '\033[32;1m'
             ttycolorend = '\033[0m'
         elif record.levelno == logging.DEBUG:
             #asctime = self.formatTime(record, self.datefmt)
-            head = '-- [%s]: '%(record.name)
-            indent = ' '*min(8, len(head))
+            indent = '-- '+ ' '*2
+            head   = '-- '+head.replace('\n', '\n'+indent)
         elif record.levelno == LONGDEBUG:
             #asctime = self.formatTime(record, self.datefmt)
-            #indent = ' '*6
-            head = '  -- [%s]: '%(record.name)
-            indent = ' '*min(8, len(head))
+            indent = '  -- '+ ' '*2
+            head   = '  -- '+head.replace('\n', '\n'+indent)
+            #ttycolorheadstart = '\033[0m'
+            #ttycolorstart = '\033[0m'
+            #ttycolorend = '\033[0m'
 
         msg = message.replace('\n', '\n'+indent)
 
-        s = head + msg
+        s = thettycolorheadstart() + head + thettycolorend() + thettycolorstart() + msg
         
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
@@ -169,8 +197,9 @@ class BibolamaziConsoleFormatter(logging.Formatter):
                 # for a script. See issue 13232.
                 s = s + exc_text.decode(sys.getfilesystemencoding(),
                                         'replace')
-        if self.ttycolors:
-            s = ttycolorstart + s + ttycolorend
+
+        s += thettycolorend()
+
         return s
 
 
@@ -298,4 +327,27 @@ def setup_simple_console_logging(logger=logging.getLogger()):
     # add the handlers to the logger
     logger.addHandler(ch);
 
+    # for accessing the bibolamazi formatter. This is so that the main module
+    # can set the level at which the logrecord position info (module, line no,
+    # function) is reproduced
+    logger.bibolamazi_formatter = formatter
 
+
+
+
+
+# ------------------------------------------------------------------------------
+
+# utility: enum_class for a log level
+
+from core.bibfilter.argtypes import enum_class
+
+LogLevel = enum_class('LogLevel',
+                      [('LONGDEBUG', LONGDEBUG),
+                       ('DEBUG', logging.DEBUG),
+                       ('WARNING', logging.WARNING),
+                       ('INFO', logging.INFO),
+                       ('ERROR', logging.ERROR),
+                       ('CRITICAL', logging.CRITICAL)],
+                      default_value='INFO',
+                      value_attr_name='levelno')

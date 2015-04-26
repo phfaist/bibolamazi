@@ -26,6 +26,8 @@
 import os
 import os.path
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from core.bibfilter import factory as filters_factory
 from core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
@@ -68,7 +70,7 @@ class RegisteredArgInputType:
 
             return cbx
 
-        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
 
     def setEditorData(self, editor):
@@ -79,16 +81,16 @@ class RegisteredArgInputType:
                     return
             return
 
-        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
 
     def valueOf(self, editor):
         if (isinstance(self.type_arg_input, EnumArgType)):
             val = str(editor.itemText(editor.currentIndex()))
-            print "GOT VALUE: %r" %(val)
+            logger.debug("GOT VALUE: %r", val)
             return val
 
-        print "Unknown type: type_arg_input=%r" %(self.type_arg_input)
+        logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
     
 
@@ -124,7 +126,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if (filtername and filters_factory.filter_uses_default_arg_parser(filtername)):
                 self._fopts = filters_factory.DefaultFilterOptions(filtername)
         except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
-            print "No such filter, no such filter package or filtererror: %s"%(unicode(e))
+            logger.warning("No such filter, no such filter package or filtererror: %s", unicode(e))
             pass
 
         if (reset_optionstring):
@@ -164,7 +166,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             # this parg corresponds to a kwarg.
             arg = argoptlist[i]
             if (arg.argname in kwargs):
-                print "Warning: argument `%s' already given." %(arg.argname)
+                logger.warning("argument `%s' already given.", arg.argname)
                 # don't pass this argument; stop argument parsing.
                 break
             kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
@@ -180,11 +182,11 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def removeArgument(self, argname):
         argname = str(argname)
         
-        print 'remove argument: %r' %(argname)
+        logger.debug('remove argument: %r', argname)
         
         if (argname in self._kwargs):
 
-            print 'really removing argument!'
+            logger.debug('really removing argument!')
             
             del self._kwargs[argname]
             
@@ -311,7 +313,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (col == 1):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
 
-        print "DefaultFilterOptionsModel.flags(): BAD COLUMN: %d" %(col)
+        logger.debug("DefaultFilterOptionsModel.flags(): BAD COLUMN: %d", col)
         return 0
     
 
@@ -341,7 +343,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (isinstance(value, QString)):
             value = unicode(value); # make sure we're dealing with Python strings and not Qt strings
 
-        print "Got value: %r" %(value)
+        logger.debug("Got value: %r", value)
 
         # validate type
         typ = None
@@ -352,7 +354,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             
         value = typ(value)
 
-        print "Got final value: %r ; typ=%r" %(value, typ)
+        logger.debug("Got final value: %r ; typ=%r", value, typ)
 
         self._kwargs[arg.argname] = value
 
@@ -362,7 +364,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         self._emitOptionStringChanged()
 
-        print '%r' %(self._kwargs)
+        logger.debug("_kwargs is %r", self._kwargs)
         return True
 
     def findArgByName(self, argname):
@@ -401,7 +403,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         self._optionstring = " ".join(slist)
 
-        print "option string is now %r" %(self._optionstring)
+        logger.debug("option string is now %r", self._optionstring)
             
 
     def _emitOptionStringChanged(self):
@@ -511,7 +513,7 @@ class FilterInstanceEditor(QWidget):
     @pyqtSlot(QString, bool)
     @pyqtSlot(QString)
     def setFilterName(self, filtername, noemit=False, force=False, reset_optionstring=True):
-        print "setFilterName(%r)"%(filtername)
+        logger.debug("setFilterName(%r)", filtername)
         if (not force and self.ui.cbxFilter.currentText() == filtername):
             return
         
@@ -543,7 +545,7 @@ class FilterInstanceEditor(QWidget):
     def emitFilterNameChanged(self):
         if (self._is_updating):
             return
-        print "emitting!"
+        logger.debug("emitting filterNameChanged! filterName=%s", self.filterName())
         self.filterNameChanged.emit(QString(self.filterName()))
 
     @pyqtSlot(QString)

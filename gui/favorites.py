@@ -23,6 +23,9 @@
 ################################################################################
 
 from collections import namedtuple
+import logging
+logger = logging.getLogger(__name__)
+
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -67,7 +70,7 @@ class FavoriteCmdsList(QObject):
 
         ok = settings.contains("has_favorites") and settings.value("has_favorites").toBool()
         if not ok:
-            print "Loading defaults for favorites"
+            logger.debug("Loading defaults for favorites")
             self.loadDefaults()
             return
 
@@ -235,20 +238,21 @@ class FavoritesModel(QAbstractTableModel):
         return QStringList() << "application/x-bibolamazi-internalmove-favorites";
 
     def mimeData(self, indexes):
-        #print "indexes=%r" %(indexes)
+        logger.longdebug("indexes=%r", indexes)
         if len(indexes) != 1:
             return None
 
         mimeData = QMimeData()
         mimeData.setData('application/x-bibolamazi-internalmove-favorites',
                          QByteArray(str('%d' %(indexes[0].row()))))
-        #print "mimeData=%r" %(mimeData)
+        logger.longdebug("mimeData=%r", mimeData)
         return mimeData
 
     def dropMimeData(self, data, action, row, column, parent):
-        #print "Drop! data=%r (formats=%r), action=%r, row=%r, column=%r, parent=%r (%d,%d)" %(
-        #    data, list(data.formats()), action, row, column, parent, parent.row(), parent.column()
-        #    )
+        logger.longdebug(
+            "Drop! data=%r (formats=%r), action=%r, row=%r, column=%r, parent=%r (%d,%d)",
+            data, list(data.formats()), action, row, column, parent, parent.row(), parent.column()
+        )
 
         if not data.hasFormat('application/x-bibolamazi-internalmove-favorites'):
             return False
@@ -257,7 +261,7 @@ class FavoritesModel(QAbstractTableModel):
             return False
 
         oldrow = int(data.data("application/x-bibolamazi-internalmove-favorites"))
-        print "oldrow: %r" %(oldrow)
+        logger.longdebug("oldrow: %r", oldrow)
 
         self._favcmds.moveFavorite(oldrow, row);
         return True

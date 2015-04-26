@@ -92,7 +92,7 @@ class SourceListEditor(QWidget):
     def emitSourceListChanged(self):
         if (self._is_updating):
             return
-        print "emitting!"
+        logger.debug("emitting sourceListChanged()!")
         self.sourceListChanged.emit(QStringList(self.sourceList()))
 
 
@@ -107,10 +107,10 @@ class SourceListEditor(QWidget):
     def on_btnRemoveSource_clicked(self):
         row = self.ui.lstSources.currentRow()
         if (row < 0):
-            print "No row selected"
+            logger.debug("No row selected")
             return
 
-        print 'removing row %d' %(row)
+        logger.debug('removing row %d', row)
         item = self.ui.lstSources.takeItem(row)
         # ###TODO: FIXME: delete item?!?
 
@@ -119,18 +119,18 @@ class SourceListEditor(QWidget):
     @pyqtSlot()
     def update_stuff_moved(self):
         # user moved stuff around
-        print "Stuff moved around!"
+        logger.debug("Stuff moved around!")
 
         self.emitSourceListChanged()
         
     @pyqtSlot('QListWidgetItem*')
     def on_lstSources_itemDoubleClicked(self, item):
-        print 'double-clicked!!'
+        logger.debug('double-clicked!!')
         self.ui.txtFile.setFocus()
 
     @pyqtSlot(int)
     def on_lstSources_currentRowChanged(self, row):
-        print "current row changed.. row=%d" %(row)
+        logger.debug("current row changed.. row=%d", row)
         if (self.ui.lstSources.count() == 0  or  row < 0):
             self.ui.txtFile.setText("")
             self.ui.btnRemoveSource.setEnabled(False)
@@ -145,7 +145,7 @@ class SourceListEditor(QWidget):
     def on_txtFile_textChanged(self, text):
         row = self.ui.lstSources.currentRow()
         if (row < 0):
-            print "No row selected"
+            logger.debug("No row selected")
             return
 
         item = self.ui.lstSources.item(row);
@@ -157,12 +157,12 @@ class SourceListEditor(QWidget):
     def on_btnBrowse_clicked(self):
         row = self.ui.lstSources.currentRow()
         if (row < 0):
-            print "No row selected"
+            logger.debug("No row selected")
             return
         
         fname = str(QFileDialog.getOpenFileName(self, 'Select BibTeX File', QString(),
                                                 'BibTeX Files (*.bib);;All Files (*)'))
-        print "fname=%r." %(fname)
+        logger.debug("fname=%r.", fname)
         if (not fname):
             return
 

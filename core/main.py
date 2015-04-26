@@ -40,8 +40,8 @@ from collections import namedtuple
 
 # first of all, set up logging mechanism for other modules
 import logging
-import core.blogger
-core.blogger.setup_simple_console_logging() # root logger
+from core import blogger
+blogger.setup_simple_console_logging() # root logger
 # rest of the modules
 from core import version
 from core.bibolamazifile import BibolamaziFile
@@ -166,7 +166,7 @@ def get_args_parser():
 
     parser.add_argument('--verbosity', action='store', dest='verbosity', default=1, type=int,
                         # nargs=1, # don't provide nargs to avoid getting list
-                        help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)")
+                        help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
     parser.add_argument('-q', '-v0', '--quiet', action='store_const', dest='verbosity', const=0,
                         help="Don't display any messages (same as --verbosity=0)");
     parser.add_argument('-v1', action='store_const', dest='verbosity', default=1, const=1,
@@ -175,6 +175,11 @@ def get_args_parser():
                         help='Set verbose mode (same as --verbosity=2)')
     parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
+    parser.add_argument('--fine-log-levels', action='store', dest='fine_log_levels', default='',
+                        help='Fine-grained logger control: useful for debugging bibolamazi itself. This is a '
+                        'comma-separated list of modules and corresponding log levels to set, e.g. '
+                        '"core=1,core.bibolamazifile=3,filters=2,filters.arxiv=3", where if in an item '
+                        'no module is given, then the root logger is addressed.')
 
     parser.add_argument('bibolamazifile',
                         help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
@@ -201,10 +206,12 @@ def main(argv=sys.argv[1:]):
     return run_bibolamazi_args(args)
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache', 'cache_timeout' ));
+# ### TODO: should 'verbosity' and 'fine_log_levels' really be parameters here?
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache', 'cache_timeout',
+                                       'fine_log_levels'));
 
-def run_bibolamazi(bibolamazifile, verbosity=1, use_cache=True, cache_timeout=None):
-    args = ArgsStruct(bibolamazifile, verbosity, use_cache, cache_timeout)
+def run_bibolamazi(bibolamazifile, **kwargs):
+    args = ArgsStruct(bibolamazifile, **kwargs)
     return run_bibolamazi_args(args)
 
 
@@ -214,10 +221,43 @@ def run_bibolamazi_args(args):
     #
 
     # act on the root logger
+    loglevel = verbosity_logger_level(args.verbosity)
     rootlogger = logging.getLogger()
-    rootlogger.setLevel(verbosity_logger_level(args.verbosity));
-    
+    rootlogger.setLevel(loglevel);
+
     logger.longdebug('Set verbosity: %d' %(args.verbosity));
+
+    #
+    # If there are some more fine-grained debug levels to set, go for it. Useful for
+    # debugging bibolamazi components.
+    #
+    has_set_fine_levels = False
+    if args.fine_log_levels:
+        lvlrx = re.compile(
+            r'^\s*(?P<modname>[A-Za-z0-9_.]+)=(?P<level>\d+|(LONG)?DEBUG|WARNING|INFO|ERROR|CRITICAL)\s*$'
+            )
+        for lvl in args.fine_log_levels.split(','):
+            m = lvlrx.match(lvl)
+            if not m:
+                logger.warning("Bad fine-grained log level setting: `%s'", lvl)
+                continue
+            thelogger = logging.getLogger(m.group('modname'))
+            try:
+                thelevel = blogger.LogLevel(m.group('level')).levelno
+            except ValueError as e:
+                logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
+                continue
+            thelogger.setLevel(thelevel)
+            has_set_fine_levels = True
+
+    # finally, see if we should display information about where messages originated from
+    if hasattr(rootlogger, 'bibolamazi_formatter'):
+        # show log-record-position-info (`[module lineno]: function():') for all messages
+        # if our log level is at least DEBUG, or don't show such info at all.
+        rootlogger.bibolamazi_formatter.setShowPosInfoLevel(
+            logging.CRITICAL if has_set_fine_levels or loglevel <= logging.DEBUG else None
+        )
+            
 
     logger.debug(textwrap.dedent("""
     Bibolamazi Version %(ver)s by Philippe Faist (C) 2014

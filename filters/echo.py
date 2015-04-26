@@ -22,17 +22,15 @@
 
 import re
 import logging
+logger = logging.getLogger(__name__)
 
 from core.butils import getbool
 from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import enum_class
 from core.main import verbosity_logger_level
-from core import blogger
 
-logger = logging.getLogger(__name__)
+from core.blogger import LogLevel
 
-# for the arxiv info parser tool
-from .util import arxivutil
 
 
 HELP_AUTHOR = u"""\
@@ -67,15 +65,7 @@ EchoFormat = enum_class('EchoFormat',
                        default_value='default',
                        value_attr_name='msgformat')
 
-LogLevel = enum_class('LogLevel',
-                      [('LONGDEBUG', blogger.LONGDEBUG),
-                       ('DEBUG', logging.DEBUG),
-                       ('WARNING', logging.WARNING),
-                       ('INFO', logging.INFO),
-                       ('ERROR', logging.ERROR),
-                       ('CRITICAL', logging.CRITICAL)],
-                      default_value='INFO',
-                      value_attr_name='levelno')
+
 
 class EchoFilter(BibFilter):
     

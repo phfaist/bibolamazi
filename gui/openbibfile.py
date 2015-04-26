@@ -30,6 +30,8 @@ import os.path
 import re
 import textwrap
 import shlex
+import logging
+logger = logging.getLogger(__name__)
 
 import core.main
 from core import blogger
@@ -272,7 +274,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def fileModifiedExternally(self):
-        print "File modified externally!!"
+        logger.debug("File modified externally!!")
         self._flag_modified_externally = True
         #self.delayedUpdateFileContents
 
@@ -328,7 +330,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def reloadFile(self):
-        print "reloading file"
+        logger.debug("reloading file")
 
         self._flag_modified_externally = False
 
@@ -440,7 +442,7 @@ class OpenBibFile(QWidget):
 
         self.ui.txtInfo.setHtml(thehtml)
 
-        print "file contents updated!"
+        logger.debug("file contents updated!")
         
 
     @pyqtSlot(int)
@@ -521,10 +523,10 @@ class OpenBibFile(QWidget):
                 self.ui.txtConfig.setTextCursor(cur)
                 return
 
-            print "ERROR: Unknown action: %s" %(str(url.toString()))
+            logger.warning("Unknown action: %s", str(url.toString()))
             return
 
-        print "Opening URL %r" %(str(url.toString()))
+        logger.debug("Opening URL %r", str(url.toString()))
         QDesktopServices.openUrl(url)
         
 
@@ -535,10 +537,10 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_txtConfig_textChanged(self):
-        print "text changed! fwatcher signals blocked=%d" %(self.fwatcher.signalsBlocked())
+        logger.debug("text changed! fwatcher signals blocked=%d", self.fwatcher.signalsBlocked())
 
         if self._flag_modified_externally:
-            print "Modified externally!"
+            logger.debug("Modified externally!")
             
             revertbtn = None
             box = None
@@ -562,7 +564,7 @@ class OpenBibFile(QWidget):
             box.exec_()
             clickedbtn = box.clickedButton()
             if (clickedbtn == revertbtn):
-                print "Reverting!!"
+                logger.debug("Reverting!!")
                 # reload the file
                 self.reloadFile()
                 return
@@ -570,11 +572,11 @@ class OpenBibFile(QWidget):
             self._flag_modified_externally = False
 
         if not self.bibolamaziFile:
-            print "No file loaded."
+            logger.debug("No file loaded.")
             return
 
         self._set_modified(True)
-        print 'modified!!'
+        logger.debug('modified!!')
 
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
         self._bibolamazifile_reparse();
@@ -608,14 +610,14 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):
-        print "cursor position changed!"
+        logger.debug("cursor position changed!")
         
         self._do_update_edittools()
 
 
     @pyqtSlot()
     def on_btnAddFilter_clicked(self):
-        print 'add filter: clicked'
+        logger.debug('add filter: clicked')
 
         filter_list = filterinstanceeditor.get_filter_list()
 
@@ -630,7 +632,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnAddSourceList_clicked(self):
-        print 'add source list: clicked'
+        logger.debug('add source list: clicked')
 
         self._insert_new_cmd('src: ')
 
@@ -657,7 +659,7 @@ class OpenBibFile(QWidget):
     def _get_current_bibolamazi_cmd(self):
 
         if (not self.bibolamaziFile):
-            print "No bibolamazi file open"
+            logger.warning("No bibolamazi file open")
             return
 
         cmds = self.bibolamaziFile.rawcmds();
@@ -671,12 +673,12 @@ class OpenBibFile(QWidget):
 
         thisline = self.bibolamaziFile.fileLineNo(thisline)
 
-        #print "searching for cmd... at file line=%d" %(thisline)
+        logger.longdebug("searching for cmd... at file line=%d", thisline)
         for cmd in cmds:
-            #print "\t -- testing cmd %r" %(cmd)
+            logger.longdebug("\t -- testing cmd %r", cmd)
             if cmd.lineno <= thisline and cmd.linenoend >= thisline:
                 # got the current cmd
-                #print "\tGot cmd: %r" %(cmd)
+                logger.longdebug("\tGot cmd: %r", cmd)
                 return cmd
 
         return None
@@ -706,20 +708,20 @@ class OpenBibFile(QWidget):
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
             return
 
-        print "Unknown command: %r" %(cmd)
+        logger.warning("Unknown command: %r", cmd)
         return
 
 
     def _replace_current_cmd(self, repltext, forcecheckcmd):
-        print '_replace_current_cmd(%r,%r)' %(repltext, forcecheckcmd)
+        logger.debug('_replace_current_cmd(%r,%r)', repltext, forcecheckcmd)
         
         cmd = self._get_current_bibolamazi_cmd()
 
         if (cmd is None or cmd.cmd != forcecheckcmd):
-            print "Expected to currently be in cmd %s!!" %(forcecheckcmd)
+            logger.debug("Expected to currently be in cmd %s!!", forcecheckcmd)
             return
 
-        print 'About to change cmd %s on lines=%d--%d' %(cmd.cmd, cmd.lineno, cmd.linenoend)
+        logger.debug('About to change cmd %s on lines=%d--%d', cmd.cmd, cmd.lineno, cmd.linenoend)
 
         configlineno = self.bibolamaziFile.configLineNo(cmd.lineno)
         configlinenoend = self.bibolamaziFile.configLineNo(cmd.linenoend)
@@ -758,7 +760,8 @@ class OpenBibFile(QWidget):
         filtername = self.ui.filterInstanceEditor.filterName()
         optionstring = self.ui.filterInstanceEditor.optionString()
 
-        print 'on_filterInstanceEditor_filterInstanceDefinitionChanged() filtername=%r, optionstring=%r' %(filtername, optionstring)
+        logger.debug('on_filterInstanceEditor_filterInstanceDefinitionChanged() '
+                     'filtername=%r, optionstring=%r', filtername, optionstring)
 
         cmdtext = "filter: " + filtername + ' ' + optionstring + "\n"
 
@@ -775,10 +778,10 @@ class OpenBibFile(QWidget):
         cmd = self._get_current_bibolamazi_cmd()
 
         if (cmd is None):
-            print "No command to add to favorites!"
+            logger.warning("No command to add to favorites!")
             return
 
-        print "Adding command %s on lines %d--%d to favorites: %r" %(cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
+        logger.debug("Adding command %s on lines %d--%d to favorites: %r", cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
 
         cmdtext = []
         doc = self.ui.txtConfig.document();
