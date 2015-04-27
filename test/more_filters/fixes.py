@@ -21,11 +21,12 @@
 
 
 import re
+import logging
+logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 
 from core.bibfilter import BibFilter, BibFilterError
-from core.blogger import logger
 from core import butils
 from core.pylatexenc import latexencode
 from core.pylatexenc import latex2text
@@ -182,5 +183,10 @@ class UselessFixesFilter(BibFilter):
     
 
 def bibolamazi_filter_class():
+
+    logger.warning("This fixes.py is part of the `more_filters' testing filter package. It is\n"
+                   "meant to test how filter names can shadow each other from different filter\n"
+                   "packages.")
+
     return UselessFixesFilter;
 

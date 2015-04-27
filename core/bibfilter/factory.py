@@ -56,7 +56,7 @@ class NoSuchFilterPackage(Exception):
     """
     def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
         Exception.__init__(self, "No such filter package or import error: `"+ fpname + "'"
-                           + (" (dir=%s)"%(fpdir) if fpdir is not None else "")
+                           + (" (dir=`%s')"%(fpdir) if fpdir is not None else "")
                            + (": "+errorstr if errorstr else ""));
         
 
@@ -270,7 +270,14 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         logger.longdebug("Attempting to load filter %s from package %s", name, filterpackname)
 
         mod = None
+
+        def dirstradd(filterdir):
+            return " (dir `%s')"%(filterdir) if filterdir else ""
         
+        def remember_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e):
+            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s: %s\n > %s"
+                                 %(name, filterpackname, dirstradd(filterdir), exctypestr, unicode(e)))
+            
         # first, search the actual module.
         oldsyspath = sys.path
         filterdir = filterpath[filterpackname]
@@ -279,14 +286,17 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         try:
             mod = importlib.import_module('.'+name, package=filterpackname);
         except ImportError as e:
-            logger.debug("Failed to import module %s from package %s (dir %r): %s",
-                         name, filterpackname, filterdir, unicode(e))
-            import_errors.append(u"Import module %s in package %s (dir %s) failed: %s"
-                                 %(name, filterpackname, filterdir, unicode(e)))
+            logger.debug("Failed to import module `%s' from package %s%s: %s",
+                         name, filterpackname, dirstradd(filterdir), unicode(e))
+            #import_errors.append(u"Attempted import module %s in package `%s'%s failed:\n > %s"
+            #                     %(name, filterpackname, "(dir `%s')"%(filterdir) if filterdir else "",
+            #                       unicode(e)))
+            remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
             mod = None
         except Exception as e:
-            logger.error("Failed to import module %s from package %s (dir %r): %s: %s",
-                         name, filterpackname, filterdir, e.__class__.__name__, unicode(e))
+            logger.warning("Failed to import module `%s' from package %s%s:\n > %s: %s\n",
+                           name, filterpackname, dirstradd(filterdir), e.__class__.__name__, unicode(e))
+            remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
             mod = None
         finally:
             sys.path = oldsyspath
@@ -313,7 +323,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         if mod is None and raise_nosuchfilter:
             extrainfo = ""
             if import_errors:
-                extrainfo = ". Messages: \n" + "\n".join(import_errors)
+                extrainfo = "\n\n" + "\n".join(import_errors) + "\n"
             raise NoSuchFilter(name, "Can't find module defining the filter" + extrainfo)
 
         return mod
@@ -337,7 +347,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
     if mod is None and raise_nosuchfilter:
         extrainfo = ""
         if import_errors:
-            extrainfo = ". Messages: \n" + "\n".join(import_errors)
+            extrainfo = "\n\n" + "\n".join(import_errors) + "\n"
         raise NoSuchFilter(name, "Can't find module that defines the filter" + extrainfo);
 
     if mod is not None:

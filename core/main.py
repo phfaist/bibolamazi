@@ -116,8 +116,10 @@ def setup_filterpackage_from_argstr(argstr):
                               "Did you get the filterpackage syntax wrong? "
                               "Syntax: '<packagename>[=<path>]'." %(fpname))
 
-    if not filterfactory.validate_filter_package(fpname, fpdir, raise_exception=False):
-        raise BibolamaziError("Invalid filter package `%s' [in directory `%s']" % (fpname, fpdir))
+    try:
+        ok = filterfactory.validate_filter_package(fpname, fpdir, raise_exception=True)
+    except filterfactory.NoSuchFilterPackage as e:
+        raise BibolamaziError(unicode(e))
 
     filterfactory.filterpath[fpname] = fpdir
     
@@ -135,10 +137,13 @@ class AddFilterPackageAction(argparse.Action):
 
 def get_args_parser():
 
-    parser = argparse.ArgumentParser(description='Collect bibliographic entries from BibTeX files and'
-                                     ' apply rules or filters to them.',
-                                     prog='bibolamazi',
-                                     add_help=False);
+    parser = argparse.ArgumentParser(
+        description='Collect bibliographic entries from BibTeX files and'
+        ' apply rules or filters to them.',
+        prog='bibolamazi',
+        epilog="Log messages will be produced in color by default if outputting to a TTY. To override "
+        "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.\n",
+        add_help=False);
 
     parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
                         help="Create a new bibolamazi file with a template configuration.");
@@ -178,8 +183,11 @@ def get_args_parser():
     parser.add_argument('--fine-log-levels', action='store', dest='fine_log_levels', default='',
                         help='Fine-grained logger control: useful for debugging bibolamazi itself. This is a '
                         'comma-separated list of modules and corresponding log levels to set, e.g. '
-                        '"core=1,core.bibolamazifile=3,filters=2,filters.arxiv=3", where if in an item '
-                        'no module is given, then the root logger is addressed.')
+                        '"core=INFO,filters=DEBUG,filters.arxiv=LONGDEBUG", where if in an item '
+                        'no module is given (but just a level or number), then the root logger is addressed. '
+                        'Possible levels are (%s)'%(
+                            ", ".join( (x[0] for x in blogger.LogLevel.levelnos) )
+                        ))
 
     parser.add_argument('bibolamazifile',
                         help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
@@ -234,19 +242,26 @@ def run_bibolamazi_args(args):
     has_set_fine_levels = False
     if args.fine_log_levels:
         lvlrx = re.compile(
-            r'^\s*(?P<modname>[A-Za-z0-9_.]+)=(?P<level>\d+|(LONG)?DEBUG|WARNING|INFO|ERROR|CRITICAL)\s*$'
+            r'^\s*((?P<modname>[A-Za-z0-9_.]+)=)?(?P<level>(LONG)?DEBUG|WARNING|INFO|ERROR|CRITICAL)\s*$'
             )
         for lvl in args.fine_log_levels.split(','):
             m = lvlrx.match(lvl)
             if not m:
                 logger.warning("Bad fine-grained log level setting: `%s'", lvl)
                 continue
-            thelogger = logging.getLogger(m.group('modname'))
+            modname = m.group('modname')
+            getloggerargs = {}
+            if modname:
+                getloggerargs['name'] = modname
+            thelogger = logging.getLogger(**getloggerargs)
             try:
                 thelevel = blogger.LogLevel(m.group('level')).levelno
             except ValueError as e:
                 logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
                 continue
+            print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
+                modname, getloggerargs, thelogger, thelevel
+            )
             thelogger.setLevel(thelevel)
             has_set_fine_levels = True
 

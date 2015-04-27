@@ -33,6 +33,7 @@ This allows for the user to be rather specific about which type of messages
 she/he would like to see.
 """
 
+import os
 import sys
 import logging
 
@@ -100,6 +101,17 @@ logging.setLoggerClass(BibolamaziLogger)
 # ==============================================================================
 
 
+_ttycolors = {
+    LONGDEBUG: ('', '', ''),
+    logging.DEBUG: ('', '', ''),
+    logging.INFO: ('\033[34m', '\033[34;1m', '\033[0m'), # 32 == green, 34 == blue, 36 == cyan
+    logging.WARNING: ('\033[35m', '\033[35;1m', '\033[0m'), # 33 == yellow, 35 == magenta
+    logging.ERROR: ('\033[31m', '\033[31;1m', '\033[0m'), # 31 == red
+    logging.CRITICAL: ('\033[31m', '\033[31;1m', '\033[0m'),
+    }
+
+
+
 class BibolamaziConsoleFormatter(logging.Formatter):
     """
     Format log messages for console output. Customized for bibolamazi.
@@ -120,14 +132,14 @@ class BibolamaziConsoleFormatter(logging.Formatter):
 
         head = ""
         indent = ' '*4
-        ttycolorheadstart = ''
-        ttycolorstart = ''
-        ttycolorend = ''
+        #ttycolorheadstart = ''
+        #ttycolorstart = ''
+        #ttycolorend = ''
 
         if self.ttycolors:
-            thettycolorheadstart = lambda : ttycolorheadstart
-            thettycolorstart = lambda : ttycolorstart
-            thettycolorend = lambda : ttycolorend
+            thettycolorheadstart = lambda : _ttycolors.get(record.levelno, ('','',''))[0]
+            thettycolorstart = lambda : _ttycolors.get(record.levelno, ('','',''))[1]
+            thettycolorend = lambda : _ttycolors.get(record.levelno, ('','',''))[2]
         else:
             thettycolorheadstart = lambda : ''
             thettycolorstart = lambda : ''
@@ -140,27 +152,27 @@ class BibolamaziConsoleFormatter(logging.Formatter):
             #head += 'CRITICAL: '
             # so that 'CRITICAL' also gets the message tty color, not the head color
             message = 'CRITICAL: '+message
-            ttycolorheadstart = '\033[31m'
-            ttycolorstart = '\033[31;1m'
-            ttycolorend = '\033[0m'
+            #ttycolorheadstart = '\033[31m'
+            #ttycolorstart = '\033[31;1m'
+            #ttycolorend = '\033[0m'
         elif record.levelno == logging.ERROR:
             #head += 'ERROR: '
             # so that 'ERROR' also gets the message tty color, not the head color
             message = 'ERROR: '+message
-            ttycolorheadstart = '\033[31m'
-            ttycolorstart = '\033[31;1m'
-            ttycolorend = '\033[0m'
+            #ttycolorheadstart = '\033[31m'
+            #ttycolorstart = '\033[31;1m'
+            #ttycolorend = '\033[0m'
         elif record.levelno == logging.WARNING:
             #head += 'WARNING: '
             message = 'WARNING: '+message
-            ttycolorheadstart = '\033[35m'
-            ttycolorstart = '\033[35;1m'
-            ttycolorend = '\033[0m'
+            # 35 == magenta
+            # 33 == yellow
         elif record.levelno == logging.INFO:
             indent = ''
-            ttycolorheadstart = '\033[32m'
-            ttycolorstart = '\033[32;1m'
-            ttycolorend = '\033[0m'
+            # 32 == green
+            #ttycolorheadstart = '\033[32m'
+            #ttycolorstart = '\033[32;1m'
+            #ttycolorend = '\033[0m'
         elif record.levelno == logging.DEBUG:
             #asctime = self.formatTime(record, self.datefmt)
             indent = '-- '+ ' '*2
@@ -169,10 +181,8 @@ class BibolamaziConsoleFormatter(logging.Formatter):
             #asctime = self.formatTime(record, self.datefmt)
             indent = '  -- '+ ' '*2
             head   = '  -- '+head.replace('\n', '\n'+indent)
-            #ttycolorheadstart = '\033[0m'
-            #ttycolorstart = '\033[0m'
-            #ttycolorend = '\033[0m'
 
+            
         msg = message.replace('\n', '\n'+indent)
 
         s = thettycolorheadstart() + head + thettycolorend() + thettycolorstart() + msg
@@ -314,14 +324,24 @@ def setup_simple_console_logging(logger=logging.getLogger()):
 
     # create formatter and add it to the handlers
 
-    #formatter = logging.Formatter('%(name)s - %(asctime)-15s %(levelname)s: %(message)s');
-    #formatter = ConditionalFormatter('%(message)s',
-    #                                 DEBUG='-- [%(name)s] \n   %(message)s',
-    #                                 LONGDEBUG='  -- %(message)s',
-    #                                 WARNING='WARNING: %(message)s',
-    #                                 ERROR='ERROR: %(message)s',
-    #                                 CRITICAL='CRITICAL: %(message)s');
-    formatter = BibolamaziConsoleFormatter(ttycolors=sys.stderr.isatty())
+    force_ttycolors = os.environ.get("BIBOLAMAZI_TTY_COLORS", None)
+    if force_ttycolors is not None:
+        if force_ttycolors.strip().lower() == 'yes':
+            force_ttycolors = True
+        elif force_ttycolors.strip().lower() == 'no':
+            force_ttycolors = False
+        elif force_ttycolors.strip().lower() == 'auto':
+            force_ttycolors = None
+        else:
+            sys.stderr.write("Warning: Can't parse value of env['BIBOLAMAZI_TTY_COLORS']. "
+                             "Expected 'yes', 'no', or 'auto'")
+
+    if force_ttycolors is not None:
+        ttycolors = force_ttycolors
+    else:
+        ttycolors = sys.stderr.isatty()
+
+    formatter = BibolamaziConsoleFormatter(ttycolors=ttycolors)
     
     ch.setFormatter(formatter);
     # add the handlers to the logger

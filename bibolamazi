@@ -47,7 +47,10 @@ if __name__ == "__main__":
         raise
 
     except BibolamaziError as e:
-        print "BIBOLAMAZI ERROR:", unicode(e)
+        import core.blogger
+        import logging
+        logger = logging.getLogger("bibolamazi")
+        logger.error("[BIBOLAMAZI ERROR]\n" + unicode(e))
 
     except:
         
