@@ -23,6 +23,8 @@ import re
 import os
 import os.path
 import io
+import logging
+logger = logging.getLogger(__name__)
 
 import requests
 from bs4 import BeautifulSoup
@@ -35,7 +37,6 @@ from core.bibfilter import BibFilter, BibFilterError
 from core.bibfilter.argtypes import CommaStrList
 from core.bibusercache import BibUserCacheAccessor
 from core.butils import getbool
-from core.blogger import logger
 
 from filters.util import auxfile
 
@@ -121,14 +122,19 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             elif re.search(r'^ISBN-.*', key):
                 ref_type = 'isbn'
                 queryval = key[len('ISBN-'):]
-            elif re.search(r'^\d+\.\d+\/.+', key):
+            elif re.search(r'10[.][0-9]{3,}(?:[.][0-9]+)*/.*', key):
                 ref_type = 'doi'
             elif re.search(r'\w\-\w', key):
+                # ### PhF: there doesn't seem to be any standard format for report
+                # ### numbers. Let's keep this general regexp for now, and hope it doesn't
+                # ### clash with anything else. Keep this elif: last before the else:.
                 ref_type = 'r'
             else:
                 logger.warning("Could not guess reference type for key `%s'", key)
                 return None
 
+            logger.longdebug("resolved %s to reftype=%r (queryval=%r)", key, ref_type, queryval)
+            
             # NOTE: The returned `key` must identify uniquely the given entry. So it may
             # be different from the queryval.
 
@@ -161,6 +167,8 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             logger.longdebug('nothing to fetch: no missing keys')
             # nothing to fetch
             return True
+
+        logger.info("citeinspirehep: Fetching missing information from InspireHEP...")
 
         logger.longdebug('fetching missing id list %r' %(missing_keys))
         for key in missing_keys:

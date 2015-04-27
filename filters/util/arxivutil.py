@@ -315,6 +315,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # nothing to fetch
             return True
 
+        logger.info("Fetching missing information from the arXiv API...")
         logger.debug('fetching missing id list %r' %(missing_ids))
         try:
             arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
