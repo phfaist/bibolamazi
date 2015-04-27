@@ -50,8 +50,12 @@ def _mk_braced_pair_rx(mid):
     return [ re.compile(_RX_BEFORE + r'\{\s*' + mid + r'\s*\}' + _RX_AFTER, re.IGNORECASE) ,
              re.compile(_RX_BEFORE + mid + _RX_AFTER, re.IGNORECASE) ]
 
-# a list of regexes that we will need often
-_rxarxiv = (
+# a list of regexes that we will need often.
+#
+# The following are regexes we check for in url fields. Don't include all regexes, because
+# some DOI or parts of URLs may contain sequences of chars which match the easier arXiv
+# regexes.
+_rxarxiv_in_url = (# not tuple, just a multiline expression
     []
     + _mk_braced_pair_rx(
         r'\\href\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
@@ -59,13 +63,17 @@ _rxarxiv = (
     + _mk_braced_pair_rx(
         r'\\(?:url|href)\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
         )
-    + _mk_braced_pair_rx(
+    )
+# And these regexes are the most tolerant ones, we'll check for these more or less
+# everywhere except in the URL fields.
+_rxarxiv = _rxarxiv_in_url + (# not tuple, just a multiline expression
+    _mk_braced_pair_rx(
         r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
         )
     + _mk_braced_pair_rx(
         r'(?:arXiv[-.:/\s]+)?((?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r'/)?' + _RX_ARXIVID_NUM + r')'
         )
-    );
+    )
 
 # getting "pure" arxiv ID means the arxiv ID (with primary class for old IDs only), without version information.
 _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|'+
@@ -173,9 +181,14 @@ def detectEntryArXivInfo(entry):
         d['archiveprefix'] = fields['archiveprefix'];
 
 
-    def processNoteField(notefield, d):
+    def processNoteField(notefield, d, isurl=False):
 
-        for rx in _rxarxiv:
+        if isurl:
+            rxlist = _rxarxiv_in_url
+        else:
+            rxlist = _rxarxiv
+
+        for rx in rxlist:
             m = rx.search(notefield);
             if m:
                 if (not d['arxivid']):
@@ -203,7 +216,7 @@ def detectEntryArXivInfo(entry):
         processNoteField(fields['annote'], d);
 
     if ('url' in fields):
-        processNoteField(fields['url'], d);
+        processNoteField(fields['url'], d, isurl=True);
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -293,11 +306,14 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         """
 
         cache_entrydic = self.cacheDic()['fetched']
-        #logger.longdebug("fetchArxivApiInfo(): "
-        #                 "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
-        #                 "len(dic['fetched'])=%d",
-        #                 id(cache_entrydic), id(self.cacheObject().cachedic['arxiv_fetched_api_info']),
-        #                 len(cache_entrydic))
+        logger.longdebug("fetchArxivApiInfo(): "
+                         "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
+                         "len(dic['fetched'])=%d",
+                         id(cache_entrydic), id(self.cacheObject().cachedic['arxiv_fetched_api_info']),
+                         len(cache_entrydic))
+
+        logger.longdebug("fetchArxivApiInfo(): in the cache, we have keys %r",
+                         cache_entrydic.keys())
 
         missing_ids = []
         #debug_allids = []

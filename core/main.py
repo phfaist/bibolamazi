@@ -77,7 +77,7 @@ def verbosity_logger_level(verbosity):
     elif verbosity == 2:
         return logging.DEBUG
     elif verbosity >= 3:
-        return core.blogger.LONGDEBUG
+        return blogger.LONGDEBUG
 
     raise ValueError("Bad verbosity level: %r" %(verbosity))
 

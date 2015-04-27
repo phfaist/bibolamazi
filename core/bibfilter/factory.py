@@ -274,9 +274,12 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         def dirstradd(filterdir):
             return " (dir `%s')"%(filterdir) if filterdir else ""
         
-        def remember_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e):
-            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s: %s\n > %s"
-                                 %(name, filterpackname, dirstradd(filterdir), exctypestr, unicode(e)))
+        def remember_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e, fmt_exc=''):
+            if fmt_exc:
+                fmt_exc = '\n > ' + fmt_exc.replace('\n', '\n > ')
+            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s%s"
+                                 %(name, filterpackname, dirstradd(filterdir), exctypestr,
+                                   unicode(e), fmt_exc))
             
         # first, search the actual module.
         oldsyspath = sys.path
@@ -291,11 +294,15 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             #import_errors.append(u"Attempted import module %s in package `%s'%s failed:\n > %s"
             #                     %(name, filterpackname, "(dir `%s')"%(filterdir) if filterdir else "",
             #                       unicode(e)))
+            #import traceback
             remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
             mod = None
         except Exception as e:
-            logger.warning("Failed to import module `%s' from package %s%s:\n > %s: %s\n",
-                           name, filterpackname, dirstradd(filterdir), e.__class__.__name__, unicode(e))
+            import traceback
+            fmt_exc = '\n > ' + traceback.format_exc(5).replace('\n', '\n > ')
+            logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
+                           name, filterpackname, dirstradd(filterdir), e.__class__.__name__,
+                           unicode(e), fmt_exc)
             remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
             mod = None
         finally:

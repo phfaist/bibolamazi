@@ -122,7 +122,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             elif re.search(r'^ISBN-.*', key):
                 ref_type = 'isbn'
                 queryval = key[len('ISBN-'):]
-            elif re.search(r'10[.][0-9]{3,}(?:[.][0-9]+)*/.*', key):
+            elif re.search(r'^10[.][0-9]{3,}(?:[.][0-9]+)*/.*', key):
                 ref_type = 'doi'
             elif re.search(r'\w\-\w', key):
                 # ### PhF: there doesn't seem to be any standard format for report
