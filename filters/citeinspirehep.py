@@ -111,16 +111,18 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # auto detect reference type
             if re.search(r'^.*\:\d{4}\w\w\w?$', key):
                 ref_type = 'texkey'
-            elif re.search(r'^.*\/\d{7}$', key):
+            elif re.search(arxiv2bib.OLD_STYLE, key):
                 ref_type = 'eprint'
-            elif re.search(r'^\d{4}\.\d{4,6}$', key):
+            elif re.search(arxiv2bib.NEW_STYLE, key):
                 ref_type = 'eprint'
             elif re.search(r'^\w\.\w+\.\w$', key):
                 ref_type = 'j'
                 queryval = key.replace('.', ',')
-            elif re.search(r'^doi:.*', key):
+            elif re.search(r'^ISBN-.*', key):
+                ref_type = 'isbn'
+                queryval = key[len('ISBN-'):]
+            elif re.search(r'^\d+\.\d+\/.+', key):
                 ref_type = 'doi'
-                queryval = key[len('doi:'):]
             elif re.search(r'\w\-\w', key):
                 ref_type = 'r'
             else:
@@ -279,8 +281,8 @@ specify where to look for the aux file with the option `-sSearchDirs=...'.
 
 Example of recognized citations:
 
-    \cite{inspire:doi:10.1103/PhysRev.47.777}
-    \cite{inspire:doi:10.1103/PhysRev.47.777--EPR-paper}
+    \cite{inspire:10.1103/PhysRev.47.777}
+    \cite{inspire:10.1103/PhysRev.47.777--EPR-paper}
     \cite{inspire:1408.4546}
     \cite{inspire:1305.1258--WWgg}
     \cite{Nakamura:2010zzi}
