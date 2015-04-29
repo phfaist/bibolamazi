@@ -164,10 +164,11 @@ def get_args_parser():
                         help='Show bibolamazi version number and exit.')
 
     parser.add_argument('--filterpackage', action=AddFilterPackageAction,
-                        help="Add a package name in which to search for filters. Optionally you may also"
-                        " add a corresponding python path where to find the package, in the format"
-                        " 'filterpackage=/path/to/it'. You may specify this option multiple times; last"
-                        " specified filter packages are searched first.")
+                        help="Add a package name in which to search for filters. You may specify this "
+                        "option multiple times; last specified filter packages are searched first. Valid "
+                        "values for this option are a simple python package name (if it is in the "
+                        "PYTHONPATH), or a pair 'package=/some/location' where package is the python "
+                        "package name, which will be loaded with the given path prepended to sys.path.")
 
     parser.add_argument('--verbosity', action='store', dest='verbosity', default=1, type=int,
                         # nargs=1, # don't provide nargs to avoid getting list
