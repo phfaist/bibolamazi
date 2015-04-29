@@ -259,9 +259,9 @@ def run_bibolamazi_args(args):
             except ValueError as e:
                 logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
                 continue
-            print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
-                modname, getloggerargs, thelogger, thelevel
-            )
+            #print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
+            #    modname, getloggerargs, thelogger, thelevel
+            #)
             thelogger.setLevel(thelevel)
             has_set_fine_levels = True
 

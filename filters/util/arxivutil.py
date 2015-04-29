@@ -63,6 +63,9 @@ _rxarxiv_in_url = (# not tuple, just a multiline expression
     + _mk_braced_pair_rx(
         r'\\(?:url|href)\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
         )
+    + _mk_braced_pair_rx(
+        r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*'
+        )
     )
 # And these regexes are the most tolerant ones, we'll check for these more or less
 # everywhere except in the URL fields.
