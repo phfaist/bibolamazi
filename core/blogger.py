@@ -105,7 +105,7 @@ _ttycolors = {
     LONGDEBUG: ('', '', ''),
     logging.DEBUG: ('', '', ''),
     logging.INFO: ('', '', ''), #('\033[34m', '\033[34;1m', '\033[0m'), # 32 == green, 34 == blue, 36 == cyan
-    logging.WARNING: ('\033[33m', '\033[33;1m', '\033[0m'), # 33 == yellow, 35 == magenta
+    logging.WARNING: ('\033[35m', '\033[35;1m', '\033[0m'), # 33 == yellow, 35 == magenta
     logging.ERROR: ('\033[31m', '\033[31;1m', '\033[0m'), # 31 == red
     logging.CRITICAL: ('\033[31m', '\033[31;1m', '\033[0m'),
     }
