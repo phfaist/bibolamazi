@@ -365,11 +365,11 @@ def setup_simple_console_logging(logger=logging.getLogger()):
 from core.bibfilter.argtypes import enum_class
 
 LogLevel = enum_class('LogLevel',
-                      [('LONGDEBUG', LONGDEBUG),
-                       ('DEBUG', logging.DEBUG),
+                      [('CRITICAL', logging.CRITICAL),
+                       ('ERROR', logging.ERROR),
                        ('WARNING', logging.WARNING),
                        ('INFO', logging.INFO),
-                       ('ERROR', logging.ERROR),
-                       ('CRITICAL', logging.CRITICAL)],
+                       ('DEBUG', logging.DEBUG),
+                       ('LONGDEBUG', LONGDEBUG)],
                       default_value='INFO',
                       value_attr_name='levelno')

@@ -138,11 +138,10 @@ class AddFilterPackageAction(argparse.Action):
 def get_args_parser():
 
     parser = argparse.ArgumentParser(
-        description='Collect bibliographic entries from BibTeX files and'
-        ' apply rules or filters to them.',
+        description='Prepare consistent BibTeX files for your LaTeX documents',
         prog='bibolamazi',
         epilog="Log messages will be produced in color by default if outputting to a TTY. To override "
-        "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.\n",
+        "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
         add_help=False);
 
     parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
@@ -182,11 +181,14 @@ def get_args_parser():
     parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
     parser.add_argument('--fine-log-levels', action='store', dest='fine_log_levels', default='',
-                        help='Fine-grained logger control: useful for debugging bibolamazi itself. This is a '
-                        'comma-separated list of modules and corresponding log levels to set, e.g. '
-                        '"core=INFO,filters=DEBUG,filters.arxiv=LONGDEBUG", where if in an item '
-                        'no module is given (but just a level or number), then the root logger is addressed. '
-                        'Possible levels are (%s)'%(
+                        help=textwrap.dedent('''\
+                        Fine-grained logger control: useful for debugging filters or
+                        bibolamazi itself. This is a comma-separated list of modules and
+                        corresponding log levels to set, e.g.
+                        "core=INFO,filters=DEBUG,filters.arxiv=LONGDEBUG", where if in an
+                        item no module is given (but just a level or number), then the
+                        root logger is addressed. Possible levels are (%s)
+                        ''')%(
                             ", ".join( (x[0] for x in blogger.LogLevel.levelnos) )
                         ))
 
