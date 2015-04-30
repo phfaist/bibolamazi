@@ -243,7 +243,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
 
 HELP_AUTHOR = u"""\
-Cite InspireHEP References filter by Philippe Faist & Romain M\u00FCller, (C) 2015, GPL 3+
+Cite Inspire-HEP References filter by Philippe Faist & Romain M\u00FCller, (C) 2015, GPL 3+
 """
 
 HELP_DESC = u"""\
@@ -251,7 +251,7 @@ Filter that fills BibTeX files with relevant entries to cite with e.g.
 \cite{inspire:PhysRev.47.777--EPR+paper}
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = u"""\
 This filter scans a LaTeX document for citations of the form
 \cite{inspire:some-form-of-identifier.99} or \cite{inspire:some-form-of-identifier.99--some-comment} and
 adds the corresponding bibtex items in the combined bibtex database. The bibtex entry is
@@ -264,25 +264,27 @@ The general form of the identifiers is:
 
 where the possible identifiers <id> are:
 
-    - hep-th/0001001 or any eprint number (archive id can usually be omitted)
+    - hep-th/0001001 or 1408.4546 or any eprint number / arXiv ID which is known to
+      INSPIRE-HEP (the `archive/' prefix may be omitted for new-style arXiv ids)
 
     - PHRVA.D66.010001 or any journal reference in INSPIRE' citation form (Note the 
       periods separating the pieces!)
 
     - Phys.Rev.D66.010001 or any journal reference using typical abbreviations for 
-      the journal name Hagiwara:2002fs or any INSPIRE LaTeX key for the paper
+      the journal name
 
-    - Nakamura:2010zzi, or any bibtex reference that can be fetched by INSPIRE
+    - Hagiwara:2002fs or any INSPIRE LaTeX/bibtex key for the paper
 
 The optional '--comment' may help you remember which reference you meant, e.g. 
 'PhysRev.47.777--EPR-paper'. If, in addition, you use the 'duplicates' filter, then you
 don't even need to worry about different ways to refer to the same paper.
 
-
 You should provide the base file name of the LaTeX document, e.g. if your document is
 named `mydoc.tex', then you should specify the option `-sJobname=mydoc'. Note that the AUX
 file (`mydoc.aux') is actually scanned, and not the LaTeX document itself; this means that
-you need to run (Pdf)LaTeX *before* running bibolamazi.
+you need to run (Pdf)LaTeX *before* running bibolamazi. This also means that your document
+may be spread across several latex source files; you only have to specify the master
+document name.
 
 If the `mydoc.aux' file is in a different directory than the bibolamazi file, you may
 specify where to look for the aux file with the option `-sSearchDirs=...'.
@@ -293,7 +295,7 @@ Example of recognized citations:
     \cite{inspire:10.1103/PhysRev.47.777--EPR-paper}
     \cite{inspire:1408.4546}
     \cite{inspire:1305.1258--WWgg}
-    \cite{Nakamura:2010zzi}
+    \cite{inspire:Nakamura:2010zzi}
 
 """
 
