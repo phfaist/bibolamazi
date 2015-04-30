@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2015 by Philippe Faist                                       #
+#   Copyright (C) 2015 by Philippe Faist & Romain Mueller                      #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -243,7 +243,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
 
 HELP_AUTHOR = u"""\
-Cite InspireHEP References filter by Philippe Faist, (C) 2015, GPL 3+
+Cite InspireHEP References filter by Philippe Faist & Romain M\u00FCller, (C) 2015, GPL 3+
 """
 
 HELP_DESC = u"""\

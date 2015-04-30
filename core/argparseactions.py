@@ -30,6 +30,7 @@ import os
 import sys
 import os.path
 import argparse
+import locale
 import logging
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,14 @@ import butils;
 from butils import getbool
 
 
+def run_pager(text):
+    """
+    Call `pydoc.pager()` in a unicode-safe way.
+    """
+    encoding = locale.getpreferredencoding()
+    if not encoding:
+        encoding = "utf-8"
+    return pydoc.pager(text.encode(encoding, 'ignore'))
 
 
 class store_or_count(argparse.Action):
@@ -236,7 +245,7 @@ class opt_action_help(argparse.Action):
             helptext = helptext_prolog()
             helptext += parser.format_help()
 
-            pydoc.pager(helptext)
+            run_pager(helptext)
             parser.exit()
 
         thefilter = values
@@ -244,7 +253,7 @@ class opt_action_help(argparse.Action):
         from core.bibfilter import factory
         try:
             helptext = factory.format_filter_help(thefilter);
-            pydoc.pager(helptext);
+            run_pager(helptext);
             parser.exit();
         except factory.NoSuchFilter as e:
             logger.error(unicode(e))
@@ -339,7 +348,7 @@ class opt_list_filters(argparse.Action):
 
         all_text = help_list_filters()
 
-        pydoc.pager(all_text);
+        run_pager(all_text);
         parser.exit();
 
 
