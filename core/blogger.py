@@ -294,7 +294,7 @@ logger = logging.getLogger('old_bibolamazi_logger');
 """
 (OBSOLETE) The main logger object. This is a :py:class:`logging.Logger` object.
 
-.. deprecated:: 2.2
+.. deprecated:: 2.1
 
    This object is still here to keep old code functioning. New code should use
    the following idiom somewhere at the top of their module::
@@ -303,7 +303,7 @@ logger = logging.getLogger('old_bibolamazi_logger');
      logger = logging.getLogger(__name__)
 
    (Just make sure the logging mechanism has been set up correctly already, see
-   doc for :py:mod:`~core.blogger` module.
+   doc for :py:mod:`~core.blogger` module.)
 
 This object has an additional method `longdebug()` (which behaves similarly to
 `debug()`), for logging long debug output such as dumping the database during

@@ -1,12 +1,14 @@
 
 import random # for example purposes
 
+# use this for logging output
+import logging
+logger = logging.getLogger(__name__)
+
 # core filter classes
 from core.bibfilter import BibFilter, BibFilterError
 # types for passing arguments to the filter
 from core.bibfilter.argtypes import CommaStrList, enum_class
-# use this for logging output
-from core.blogger import logger
 # utility to parse boolean values
 from core.butils import getbool
 
