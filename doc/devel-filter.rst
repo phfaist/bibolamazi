@@ -43,13 +43,16 @@ There are two main objects your module should define at the very least:
 * a filter class, subclass of :py:class:`~core.bibfilter.BibFilter`.
 
 * a method called ``bibolamazi_filter_class()``, which should return the filter class
-  object. For example,::
+  object. For example::
 
     def bibolamazi_filter_class():
         return ArxivNormalizeFilter;
 
 You may want to have a look at :ref:`devel-filter-example` for an example of a custom
 filter.
+
+Your filter should log error, warning, information and debug messages to a logger obtained
+via Python's `logging mechanism <https://docs.python.org/2/library/logging.html>`_.
 
 There are several other functions the module may define, although they are not mandatory.
 

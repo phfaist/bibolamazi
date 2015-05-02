@@ -1,8 +1,8 @@
 
-.. _using-bibolamazi:
+.. _using-bibolamazi-app:
 
-Using Bibolamazi
-================
+Using the Bibolamazi Application
+================================
 
 Bibolamazi Operating Mode
 -------------------------
@@ -27,6 +27,7 @@ in your document with a LaTeX command similar to::
 
     \bibliography{main.bibolamazi}
 
+.. _bibolamazi-configuration-section:
 
 The Bibolamazi Configuration Section
 ------------------------------------

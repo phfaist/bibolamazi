@@ -25,7 +25,7 @@ These binaries don't need any installation, you can just download them, place th
 wherever you want, and run them.
 
 You may now start using Bibolamazi normally. To read more on bibolamazi, skip to
-:ref:`using-bibolamazi`.
+:ref:`using-bibolamazi-app`.
 
 
 Installing the Command-Line Interface

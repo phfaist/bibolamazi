@@ -48,7 +48,13 @@ in the configuration body with two additional percent signs, e.g.::
     % %% This is a comment
 
 
+Content of the Configuration Section
+------------------------------------
 
+The content of the configuration section is the same as described in
+:ref:`bibolamazi-configuration-section`. Of course, you'll probably want to prefix all
+lines by an additional '%' to make sure it gets interpreted as a bibtex comment (see
+example below).
 
 
 Example Full Bibolamazi File
