@@ -23,7 +23,7 @@
 Set up a logging framework for logging debug, information, warning and error
 messages.
 
-Modules should get their logger using Python's standard :py:module:`logging`
+Modules should get their logger using Python's standard :py:mod:`logging`
 mechanism::
 
     import logging
@@ -303,7 +303,7 @@ logger = logging.getLogger('old_bibolamazi_logger');
      logger = logging.getLogger(__name__)
 
    (Just make sure the logging mechanism has been set up correctly already, see
-   doc for :py:module:`~core.blogger` module.
+   doc for :py:mod:`~core.blogger` module.
 
 This object has an additional method `longdebug()` (which behaves similarly to
 `debug()`), for logging long debug output such as dumping the database during

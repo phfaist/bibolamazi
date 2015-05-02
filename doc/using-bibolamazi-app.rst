@@ -27,6 +27,7 @@ in your document with a LaTeX command similar to::
 
     \bibliography{main.bibolamazi}
 
+.. _bibolamazi-configuration-section:
 
 The Bibolamazi Configuration Section
 ------------------------------------
