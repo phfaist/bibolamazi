@@ -202,6 +202,16 @@ def get_args_parser():
 
 def main(argv=sys.argv[1:]):
 
+    # load precompiled filters, if we've got any
+    # ------------------------------------------
+    try:
+        import bibolamazi_compiled_filter_list as pc
+        filters_factory.load_precompiled_filters('filters', dict([
+            (fname, pc.__dict__[fname])  for fname in pc.filter_list
+            ]))
+    except ImportError:
+        pass
+
     # set up extra filter packages from environment variables
     # -------------------------------------------------------
 
