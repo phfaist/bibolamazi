@@ -4,6 +4,7 @@
 import sys
 import os
 import os.path
+import re
 
 from hooks import hookutils
 
@@ -95,25 +96,28 @@ if (sys.platform.startswith('darwin')):
                  name=os.path.join('dist', 'Bibolamazi.app'),
                  icon='bibolamazi_icon.icns',
                  )
-##     exe = EXE(pyz,
-##               a.scripts,
-##               exclude_binaries=True,
-##               name=os.path.join('dist', 'bibolamazi_gui_exe'),
-##               debug=True,
-##               strip=None,
-##               upx=False,
-##               console=True )
-##     coll = COLLECT(exe,
-##                    a.binaries,
-##                    a.zipfiles,
-##                    a.datas,
-##                    strip=None,
-##                    upx=False,
-##                    name=os.path.join('dist', 'bibolamazi_gui'))
-##     app = BUNDLE(exe,
-##                  name=os.path.join('dist', 'Bibolamazi.app'),
-##                  icon='bibolamazi_icon.icns',
-##                  )
+    # --------------------------------------------
+    # edit Info.plist for Retina displays
+    bundlename = app.name
+    plistname = os.path.join(bundlename, 'Contents', 'Info.plist')
+    with open(plistname, 'r') as f:
+        infoplistdata = f.read()
+    # insert defs for hi-res displays
+    (infoplistdata, nsubs) = re.subn('</dict>\s*</plist>', '''\
+<key>NSPrincipalClass</key>
+<string>NSApplication</string>
+<key>NSHighResolutionCapable</key>
+<string>True</string>
+</dict>
+</plist>
+''', infoplistdata);
+    if nsubs != 1:
+        print "WARNING: COULDN'T MODIFY INFO.PLIST!!"
+    else:
+        with open(plistname, 'w') as f:
+            f.write(infoplistdata)
+    # --------------------------------------------
+
 else:
     kwargs = {}
     if (sys.platform.startswith('win')):

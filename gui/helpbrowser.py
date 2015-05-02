@@ -23,6 +23,7 @@
 ################################################################################
 
 
+import sys
 import core.main
 from core import blogger
 from core.blogger import logger
@@ -203,7 +204,12 @@ class HelpBrowser(QWidget):
             return
 
         font = self.font()
-        font.setFamily("Courier 10 Pitch")
+        font.setStyleHint(QFont.TypeWriter)
+        if sys.platform.startswith("darwin"):
+            font.setFamily("Menlo")
+            font.setPointSize(12)
+        else:
+            font.setFamily("Courier")
         font.setStyleHint(QFont.TypeWriter)
 
         if (pathitems[0] == 'filters'):

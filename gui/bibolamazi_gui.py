@@ -28,6 +28,7 @@ import os
 import os.path
 import re
 import logging
+import subprocess
 
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
 # this will also set up basic logging
@@ -38,8 +39,8 @@ import bibolamazi_init
 #core.blogger.setup_simple_console_logging()
 
 # default level: set to root logger
-#logging.getLogger().setLevel(logging.DEBUG)
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.INFO)
 
 from core import bibolamazifile
 from core import main
@@ -99,6 +100,23 @@ class BibolamaziApplication(QApplication):
 
 
 
+def find_retina_resolution():
+    try:
+        output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType'])
+    except Exception as e:
+        logger.info("Couldn't check for retina display: %s", e)
+        return
+    logger.debug("Got display information:\n%s", output)
+    m = re.search(r'Retina:\s*(?P<answer>Yes|No)', output, flags=re.IGNORECASE)
+    if not m:
+        return None
+    if m.group('answer').lower() != 'yes':
+        return None
+    m2 = re.search(r'Resolution:\s*(?P<resX>\d+)\s*x\s*(?P<resY>\d+)', output, flags=re.IGNORECASE)
+    if not m:
+        logger.info("Couldn't find resolution information for retina display.")
+        return None
+    return (int(m2.group('resX')), int(m2.group('resY')))
 
 class MainWidget(QWidget):
     def __init__(self):
@@ -106,6 +124,24 @@ class MainWidget(QWidget):
 
         self.ui = Ui_MainWidget()
         self.ui.setupUi(self)
+
+        # set up nice vector graphics on retina displays
+        if sys.platform.startswith("darwin") and QT_VERSION_STR.startswith("4.8."):
+            # use high-res SVG for retina displays
+            retinaresolution = find_retina_resolution()
+            if retinaresolution is not None:
+                mydesktop = QApplication.desktop()
+                # seems that myratio is not reliable (I get 1.77777..), so just use 2x
+                #myratio = float(retinaresolution[0]) / mydesktop.width()
+                myratio = 2
+                print 'myratio=', myratio
+                #if myratio > 1.01:
+                self.mypict = QPicture()
+                mypaint = QPainter(self.mypict)
+                self.myicon = QIcon(":pic/bibolamazi.svg")
+                mysize = QSize(375, 150)
+                mypaint.drawPixmap(QRect(QPoint(0,0),mysize), self.myicon.pixmap(myratio*mysize))
+                self.ui.lblMain.setPicture(self.mypict)
 
         self.openbibfiles = []
 
@@ -263,8 +299,12 @@ class MainWidget(QWidget):
                                  %(newfilename))
             return
 
-        bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.saveToFile();
+        try:
+            bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
+            bfile.saveToFile();
+        except Exception as e:
+            QMessageBox.critical(self, "Error", "Error: Can't create file: %s"%(e))
+            return
 
         self.openFile(newfilename)
 
