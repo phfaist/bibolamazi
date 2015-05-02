@@ -24,12 +24,12 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
-from core.butils import getbool
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import enum_class
-from core.main import verbosity_logger_level
+from bibolamazi.core.butils import getbool
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import enum_class
+from bibolamazi.core.main import verbosity_logger_level
 
-from core.blogger import LogLevel
+from bibolamazi.core.blogger import LogLevel
 
 
 

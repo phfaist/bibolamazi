@@ -32,12 +32,12 @@ import logging
 from pybtex.database import BibliographyData, Entry;
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
-from core.pylatexenc import latex2text
-from core import butils
-from core import bibusercache
-from core.bibusercache import tokencheckers
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.pylatexenc import latex2text
+from bibolamazi.core import butils
+from bibolamazi.core import bibusercache
+from bibolamazi.core.bibusercache import tokencheckers
 
 from .util import arxivutil
 from .util import auxfile

@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 from pybtex.database import BibliographyData;
 
 
-from core import bibfilter
-from core import butils
-from core.bibfilter import BibFilter, BibFilterError;
-from core.bibfilter.argtypes import enum_class
+from bibolamazi.core import bibfilter
+from bibolamazi.core import butils
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
+from bibolamazi.core.bibfilter.argtypes import enum_class
 
 from .util import arxivutil
 

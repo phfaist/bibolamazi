@@ -21,7 +21,8 @@
 
 
 """
-This module contains the code that implements Bibolamazi's command-line interface.
+This module contains the code that implements Bibolamazi's main functionality. It also
+provides the basic tools for the command-line interface.
 """
 
 
@@ -33,33 +34,30 @@ import argparse
 import textwrap
 import types
 from collections import namedtuple
+import logging
 
 
 # import all the parts we need from our own application.
 # ------------------------------------------------------
 
 import bibolamazi.init
-
-# first of all, set up logging mechanism for other modules
-import logging
-from core import blogger
-blogger.setup_simple_console_logging() # root logger
-
 # rest of the modules
-from bibolamazi.core import version
-from bibolamazi.core.bibolamazifile import BibolamaziFile
-from bibolamazi.core.bibfilter import BibFilter
-from bibolamazi.core.argparseactions import (store_or_count, opt_list_filters, opt_action_help,
-                                  opt_action_version, opt_init_empty_template)
-from bibolamazi.core import butils
-from bibolamazi.core.butils import BibolamaziError
+from . import blogger
+from . import version
+from .bibolamazifile import BibolamaziFile
+from .bibfilter import BibFilter
+from .argparseactions import (store_or_count, opt_list_filters, opt_action_help,
+                                             opt_action_version, opt_init_empty_template)
+from . import butils
+from .butils import BibolamaziError
 
 # for list of filters
-from bibolamazi.core.bibfilter import factory as filterfactory
+from .bibfilter import factory as filterfactory
 
 
 # our logger for the main module
 logger = logging.getLogger(__name__)
+
 
 
 # ------------------------------------------------------------------------------
@@ -83,9 +81,6 @@ def verbosity_logger_level(verbosity):
         return blogger.LONGDEBUG
 
     raise ValueError("Bad verbosity level: %r" %(verbosity))
-
-
-
 
 
 
@@ -209,17 +204,19 @@ def main(argv=sys.argv[1:]):
     # ------------------------------------------
     try:
         import bibolamazi.bibolamazi_compiled_filter_list as pc
-        filters_factory.load_precompiled_filters('filters', dict([
+        filters_factory.load_precompiled_filters('bibolamazi.filters', dict([
             (fname, pc.__dict__[fname])  for fname in pc.filter_list
             ]))
     except ImportError:
         pass
 
+    
     # set up extra filter packages from environment variables
     # -------------------------------------------------------
 
     setup_filterpackages_from_env()
 
+    
     # parse the command line arguments
     # --------------------------------
 
@@ -227,29 +224,19 @@ def main(argv=sys.argv[1:]):
 
     args = parser.parse_args(args=argv);
 
-    return run_bibolamazi_args(args)
+    
+    # Set up the logger according to the user's wishes
+    # ------------------------------------------------
 
-
-# ### TODO: should 'verbosity' and 'fine_log_levels' really be parameters here?
-ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache', 'cache_timeout',
-                                       'fine_log_levels'));
-
-def run_bibolamazi(bibolamazifile, **kwargs):
-    args = ArgsStruct(bibolamazifile, **kwargs)
-    return run_bibolamazi_args(args)
-
-
-def run_bibolamazi_args(args):
-    #
-    # args is supposed to be the parsed arguments from main()
-    #
-
+    # simple logging to console, with formatted output
+    setup_simple_console_logging()
+    
     # act on the root logger
     loglevel = verbosity_logger_level(args.verbosity)
     rootlogger = logging.getLogger()
-    rootlogger.setLevel(loglevel);
+    rootlogger.setLevel(loglevel)
 
-    logger.longdebug('Set verbosity: %d' %(args.verbosity));
+    logger.longdebug('Set verbosity: %d', args.verbosity)
 
     #
     # If there are some more fine-grained debug levels to set, go for it. Useful for
@@ -289,6 +276,24 @@ def run_bibolamazi_args(args):
             logging.CRITICAL if has_set_fine_levels or loglevel <= logging.DEBUG else None
         )
             
+    
+
+    return run_bibolamazi_args(args)
+
+
+# ### TODO: should 'verbosity' and 'fine_log_levels' really be parameters here?
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout'));
+
+def run_bibolamazi(bibolamazifile, **kwargs):
+    args = ArgsStruct(bibolamazifile, **kwargs)
+    return run_bibolamazi_args(args)
+
+
+def run_bibolamazi_args(args):
+    #
+    # args is supposed to be the parsed arguments from main()
+    #
+
 
     logger.debug(textwrap.dedent("""
     Bibolamazi Version %(ver)s by Philippe Faist (C) 2014

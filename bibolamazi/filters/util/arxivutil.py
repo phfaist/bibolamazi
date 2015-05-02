@@ -25,9 +25,9 @@ from urllib2 import URLError, HTTPError
 import logging
 logger = logging.getLogger(__name__)
 
-from core.bibusercache import BibUserCacheAccessor, BibUserCacheError
-from core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
-from core import butils
+from bibolamazi.core.bibusercache import BibUserCacheAccessor, BibUserCacheError
+from bibolamazi.core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
+from bibolamazi.core import butils
 
 
 class BibArxivApiFetchError(BibUserCacheError):

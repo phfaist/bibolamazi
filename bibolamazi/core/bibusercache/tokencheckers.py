@@ -52,11 +52,11 @@ class :py:class:`~tokencheckers.TokenChecker`.
 import datetime
 import hashlib
 import logging
-logger = logging.getLogger(__name__)
 
 import bibolamazi.init
 from pybtex.database import Entry, Person
 
+logger = logging.getLogger(__name__)
 
 
 

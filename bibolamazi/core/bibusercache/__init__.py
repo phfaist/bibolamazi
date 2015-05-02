@@ -24,13 +24,13 @@ import inspect
 import pickle
 import traceback
 import logging
-logger = logging.getLogger(__name__)
 
 import bibolamazi.init
 from pybtex.database import Entry, Person
 from bibolamazi.core.butils import call_with_args, BibolamaziError
 from bibolamazi.core.bibusercache import tokencheckers
 
+logger = logging.getLogger(__name__)
 
 
 

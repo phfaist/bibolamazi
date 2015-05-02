@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 from pybtex.database import BibliographyData;
 import pybtex.database.input.bibtex as inputbibtex;
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
-from core.butils import getbool;
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.butils import getbool;
 
 import arxiv2bib
 from .util import arxivutil

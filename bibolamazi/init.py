@@ -20,15 +20,22 @@
 ################################################################################
 
 
-#
-# Initializations for bibolamazi.
-#
+"""
+Initialization module
+
+This module is imported before any other bibolamazi module, just to make sure we have
+all the proper dependent modules set up, or to include our pre-packaged versions if need
+be.
+
+In fact, all bibolamazi modules import this module, so you don't even have to worry
+about importing it first.
+"""
 
 
 import sys
 
 if sys.hexversion < 0x02070000:
-    sys.stderr.write("FATAL ERROR: Python 2.7 or later is required.\n")
+    sys.stderr.write("FATAL ERROR: Python 2.7 or later is required to run bibolamazi.\n")
     sys.exit(254);
 
 
@@ -41,7 +48,8 @@ third_party = ['pybtex',
                'arxiv2bib']
 
 # This base dir of bibolamazi
-base_dir = os.path.dirname(__file__);
+base_dir = os.path.dirname(__file__)
+
 
 # setup python path correctly.
 # ----------------------------
@@ -51,5 +59,12 @@ for mod in third_party:
         continue
     except ImportError:
         # no such package--attempt to use pre-packaged version
-        sys.path += os.path.join(base_dir, '3rdparty', mod)
+        sys.path += [os.path.abspath(os.path.join(base_dir, '..', '3rdparty', mod))]
+        importlib.import_module(mod)
+
+
+
+# add the LONGDEBUG level, and set our custom logger class
+# --------------------------------------------------------
+import bibolamazi.core.blogger
 

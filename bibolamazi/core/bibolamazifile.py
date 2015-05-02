@@ -37,7 +37,6 @@ import urllib
 import cPickle as pickle
 from datetime import datetime
 import logging
-logger = logging.getLogger(__name__)
 
 import bibolamazi.init
 
@@ -50,6 +49,8 @@ from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
 from bibolamazi.core.bibfilter import factory
+
+logger = logging.getLogger(__name__)
 
 
 class BibolamaziFileParseError(BibolamaziError):

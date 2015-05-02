@@ -45,7 +45,6 @@ import bibolamazi.init
 
 # New Level: LONGDEBUG
 
-
 # note: DEBUG=10, INFO=20, WARNING=30 etc.
 LONGDEBUG = 5
 logging.addLevelName(LONGDEBUG, "LONGDEBUG");
@@ -74,26 +73,6 @@ class BibolamaziLogger(logging.getLoggerClass()):
 
             
 logging.setLoggerClass(BibolamaziLogger)
-
-
-# ------------------------------------------------------------------------------
-
-# # utility: "inverse" of logging.getLevelName
-# def getLevelByName(levelname):
-#     levelname = levelname.upper()
-#     if levelname == 'LONGDEBUG':
-#         return LONGDEBUG
-#     if levelname == 'DEBUG':
-#         return logging.DEBUG
-#     if levelname == 'INFO':
-#         return logging.INFO
-#     if levelname == 'WARNING':
-#         return logging.WARNING
-#     if levelname == 'ERROR':
-#         return logging.ERROR
-
-#     raise ValueError("Invalid level name: %s"%(levelname))
-
 
 
 
@@ -292,7 +271,7 @@ class ConditionalFormatter(logging.Formatter):
 
 # DEBUG/LOGGING
 # create logger
-logger = logging.getLogger('old_bibolamazi_logger');
+logger = logging.getLogger('bibolamazi.old_logger');
 """
 (OBSOLETE) The main logger object. This is a :py:class:`logging.Logger` object.
 
@@ -314,7 +293,7 @@ level 3.
 """
 
 
-def setup_simple_console_logging(logger=logging.getLogger()):
+def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
     """
     Sets up the given logger object for simple console output.
 
@@ -323,31 +302,35 @@ def setup_simple_console_logging(logger=logging.getLogger()):
     """
 
     # create console handler
-    ch = logging.StreamHandler();
+    ch = logging.StreamHandler(stream=stream);
     ch.setLevel(logging.NOTSET); # propagate all messages
 
     # create formatter and add it to the handlers
 
-    force_ttycolors = os.environ.get("BIBOLAMAZI_TTY_COLORS", None)
-    if force_ttycolors is not None:
-        if force_ttycolors.strip().lower() == 'yes':
-            force_ttycolors = True
-        elif force_ttycolors.strip().lower() == 'no':
-            force_ttycolors = False
-        elif force_ttycolors.strip().lower() == 'auto':
-            force_ttycolors = None
-        else:
-            sys.stderr.write("Warning: Can't parse value of env['BIBOLAMAZI_TTY_COLORS']. "
-                             "Expected 'yes', 'no', or 'auto'")
-
-    if force_ttycolors is not None:
-        ttycolors = force_ttycolors
-    else:
-        ttycolors = sys.stderr.isatty()
-
-    formatter = BibolamaziConsoleFormatter(ttycolors=ttycolors)
+    ttycolors = None
     
+    if sys.platform.startswith('win32'):
+        ttycolors = False
+    else:
+        s_ttycolors = os.environ.get("BIBOLAMAZI_TTY_COLORS", None)
+        if s_ttycolors is not None:
+            if s_ttycolors.strip().lower() == 'yes':
+                ttycolors = True
+            elif s_ttycolors.strip().lower() == 'no':
+                ttycolors = False
+            elif s_ttycolors.strip().lower() == 'auto':
+                ttycolors = None
+            else:
+                sys.stderr.write("Warning: Can't parse value of env['BIBOLAMAZI_TTY_COLORS']. "
+                                 "Expected 'yes', 'no', or 'auto'")
+
+        if ttycolors is None:
+            ttycolors = stream.isatty()
+
+    # instance of our personalized log messages formatter
+    formatter = BibolamaziConsoleFormatter(ttycolors=ttycolors)
     ch.setFormatter(formatter);
+    
     # add the handlers to the logger
     logger.addHandler(ch);
 
@@ -356,7 +339,7 @@ def setup_simple_console_logging(logger=logging.getLogger()):
     # function) is reproduced
     logger.bibolamazi_formatter = formatter
 
-
+    
 
 
 

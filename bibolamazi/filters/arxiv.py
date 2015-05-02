@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 
 from pybtex.utils import CaseInsensitiveDict
 
-from core import bibfilter
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList, enum_class
-from core import butils
+from bibolamazi.core import bibfilter
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList, enum_class
+from bibolamazi.core import butils
 
 from .util import arxivutil
 

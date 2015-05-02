@@ -33,10 +33,10 @@ from pybtex.database import BibliographyData
 import pybtex.database.input.bibtex as inputbibtex
 import arxiv2bib # arxiv id regex'es
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
-from core.bibusercache import BibUserCacheAccessor
-from core.butils import getbool
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.bibusercache import BibUserCacheAccessor
+from bibolamazi.core.butils import getbool
 
 from filters.util import auxfile
 

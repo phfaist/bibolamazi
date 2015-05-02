@@ -34,10 +34,10 @@ logger = logging.getLogger(__name__)
 from pybtex.database import BibliographyData, Entry;
 
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
-from core import butils
-from core.pylatexenc import latex2text
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core import butils
+from bibolamazi.core.pylatexenc import latex2text
 
 from .util import arxivutil
 

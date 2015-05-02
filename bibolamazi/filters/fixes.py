@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from core import butils
-from core.pylatexenc import latexencode
-from core.pylatexenc import latexwalker
-from core.pylatexenc import latex2text
+from bibolamazi.core.pylatexenc import latexencode
+from bibolamazi.core.pylatexenc import latexwalker
+from bibolamazi.core.pylatexenc import latex2text
 
 
 HELP_AUTHOR = u"""\

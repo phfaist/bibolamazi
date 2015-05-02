@@ -29,10 +29,12 @@ import types
 import math
 import datetime
 import logging
-logger = logging.getLogger(__name__)
 
 import bibolamazi.init
-import bibolamazi.core.version
+from . import version
+
+logger = logging.getLogger(__name__)
+
 
 
 def get_version():

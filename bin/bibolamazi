@@ -25,20 +25,27 @@
 import os
 import os.path
 import sys
+import logging
+
+try:
+    import bibolamazi.init
+except ImportError:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    import bibolamazi.init
 
 
-import bibolamazi_init
-
-
-from core.butils import BibolamaziError
+from bibolamazi.core.butils import BibolamaziError
 
 
 if __name__ == "__main__":
+    
+    logger = logging.getLogger("bibolamazi")
+
     try:
 
         # run main program
-        import core.main
-        core.main.main()
+        from bibolamazi.core import main
+        main.main()
         
     except SystemExit:
         raise
@@ -47,9 +54,6 @@ if __name__ == "__main__":
         raise
 
     except BibolamaziError as e:
-        import core.blogger
-        import logging
-        logger = logging.getLogger("bibolamazi")
         logger.error("[BIBOLAMAZI ERROR]\n" + unicode(e))
 
     except:

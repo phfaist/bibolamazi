@@ -32,15 +32,16 @@ import os.path
 import argparse
 import locale
 import logging
-logger = logging.getLogger(__name__)
 
 # pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
 # it should automatically.
 import pydoc
 
 import bibolamazi.init
-import .butils;
+from . import butils
 from .butils import getbool
+
+logger = logging.getLogger(__name__)
 
 
 def run_pager(text):
@@ -364,7 +365,7 @@ class opt_init_empty_template(argparse.Action):
         
     def __call__(self, parser, namespace, values, option_string):
 
-        import .bibolamazifile;
+        from . import bibolamazifile
 
         try:
             newfilename = values[0];

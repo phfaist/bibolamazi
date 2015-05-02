@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
 
 from .util import auxfile
 

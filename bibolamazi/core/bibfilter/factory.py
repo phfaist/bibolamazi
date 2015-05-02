@@ -33,12 +33,12 @@ import textwrap
 import types
 from collections import namedtuple, OrderedDict
 import logging
-logger = logging.getLogger(__name__)
 
 import bibolamazi.init
 from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
 from bibolamazi.core import butils
 
+logger = logging.getLogger(__name__)
 
 
 
