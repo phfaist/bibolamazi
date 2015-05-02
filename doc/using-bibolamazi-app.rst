@@ -1,8 +1,8 @@
 
-.. _using-bibolamazi:
+.. _using-bibolamazi-app:
 
-Using Bibolamazi
-================
+Using the Bibolamazi Application
+================================
 
 Bibolamazi Operating Mode
 -------------------------
