@@ -222,7 +222,15 @@ ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'verbosity', 'use_cache
                                        'fine_log_levels'));
 
 def run_bibolamazi(bibolamazifile, **kwargs):
-    args = ArgsStruct(bibolamazifile, **kwargs)
+    # defaults
+    kwargs2 = {
+        'verbosity': 1,
+        'use_cache': True,
+        'cache_timeout': None,
+        'fine_log_levels': ''
+        }
+    kwargs2.update(kwargs);
+    args = ArgsStruct(bibolamazifile, **kwargs2)
     return run_bibolamazi_args(args)
 
 

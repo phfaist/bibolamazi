@@ -201,9 +201,9 @@ class SettingsWidget(QDialog):
         # software updates
 
         if (self.swu_interface is None or self.swu_sourcefilter_devel is None):
-            self.ui.frmUpdates.setEnabled(False)
+            self.ui.tabUpdates.setEnabled(False)
         else:
-            self.ui.frmUpdates.setEnabled(True)
+            self.ui.tabUpdates.setEnabled(True)
             self.ui.chkUpdates.setChecked(self.swu_interface.checkForUpdatesEnabled())
             self.ui.chkDevelUpdates.setChecked(self.swu_sourcefilter_devel.includeDevelReleases())
             self.swu_interface.checkForUpdatesEnabledChanged.connect(self.ui.chkUpdates.setChecked)

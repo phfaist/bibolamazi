@@ -30,14 +30,16 @@ import re
 import logging
 
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
+# this will also set up basic logging
 import bibolamazi_init
 
-# set up basic logging
-import core.blogger
-core.blogger.setup_simple_console_logging()
+# set up basic logging -- already done in bibolamazi_init
+#import core.blogger
+#core.blogger.setup_simple_console_logging()
 
 # default level: set to root logger
-logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 from core import bibolamazifile
 from core import main
@@ -332,7 +334,8 @@ def setup_software_updater():
     from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
     from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
 
-    upd_log.setup_logger(logging.DEBUG)
+    # updater4pyi's logger will use our main logger anyway.
+    #upd_log.setup_logger(logging.DEBUG)
 
     # DEBUG:
     #upd_iface.DEFAULT_INIT_CHECK_DELAY = 3 # seconds

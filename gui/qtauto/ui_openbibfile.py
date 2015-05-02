@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-# Created: Wed Apr 23 11:24:46 2014
+# Created: Sat May  2 13:10:37 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -54,9 +54,6 @@ class Ui_OpenBibFile(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.txtConfig.sizePolicy().hasHeightForWidth())
         self.txtConfig.setSizePolicy(sizePolicy)
-        font = QtGui.QFont()
-        font.setFamily(_fromUtf8("Courier 10 Pitch"))
-        self.txtConfig.setFont(font)
         self.txtConfig.setAcceptRichText(False)
         self.txtConfig.setObjectName(_fromUtf8("txtConfig"))
         self.stackEditTools = QtGui.QStackedWidget(self.splitEditConfig)
@@ -146,14 +143,14 @@ class Ui_OpenBibFile(object):
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.txtLog = QtGui.QTextBrowser(self.pageLog)
         font = QtGui.QFont()
-        font.setFamily(_fromUtf8("Courier 10 Pitch"))
+        font.setFamily(_fromUtf8("Courier New"))
         self.txtLog.setFont(font)
         self.txtLog.setTabChangesFocus(True)
         self.txtLog.setHtml(_fromUtf8("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Courier 10 Pitch\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"))
+"</style></head><body style=\" font-family:\'Courier New\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Courier 10 Pitch\';\"><br /></p></body></html>"))
         self.txtLog.setAcceptRichText(False)
         self.txtLog.setObjectName(_fromUtf8("txtLog"))
         self.gridLayout.addWidget(self.txtLog, 0, 0, 1, 2)

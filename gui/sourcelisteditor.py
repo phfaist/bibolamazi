@@ -25,6 +25,8 @@
 
 import os
 import os.path
+import logging
+logger = logging.getLogger(__name__)
 
 
 from PyQt4.QtCore import *

@@ -56,17 +56,36 @@ class LogToTextBrowserHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.textEdit = textEdit
 
-    def addtolog(self, txt):
+    def addtolog(self, txt, levelno=logging.INFO):
+        chfmt = QTextCharFormat()
+        if levelno == logging.ERROR or levelno == logging.CRITICAL:
+            chfmt.setForeground(QColor(255,0,0));
+            chfmt.setFontWeight(QFont.Bold);
+        elif levelno == logging.WARNING:
+            chfmt.setForeground(QColor(204, 102, 0));
+            chfmt.setFontWeight(QFont.Bold);
+        elif levelno == logging.INFO:
+            chfmt.setForeground(QColor(0,0,0));
+            chfmt.setFontWeight(QFont.Normal);
+        elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
+            chfmt.setForeground(QColor(127,127,127));
+            chfmt.setFontWeight(QFont.Normal);
+        else:
+            # unknown level
+            chfmt.setForeground(QColor(127,127,127));
+            chfmt.setFontWeight(QFont.Normal);
+
+        self.textEdit.setCurrentCharFormat(chfmt)
         self.textEdit.append(txt)
         self.textEdit.update()
         QApplication.instance().processEvents()
 
     def emit(self, record):
-        self.addtolog(self.format(record))
+        self.addtolog(self.format(record), record.levelno)
 
 
 class LogToTextBrowser:
-    def __init__(self, textedit, thelogger=logger):
+    def __init__(self, textedit, thelogger=logging.getLogger()):
         self.ch = LogToTextBrowserHandler(textedit);
         self.ch.setLevel(logging.NOTSET); # propagate all messages
 
@@ -159,8 +178,13 @@ class OpenBibFile(QWidget):
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
 
-        font = self.ui.txtConfig.font() # font given by Qt Designer (e.g. Courier 10 Pitch)
+        font = self.ui.txtConfig.font() # default widget font
         font.setStyleHint(QFont.TypeWriter)
+        if sys.platform.startswith("darwin"):
+            font.setFamily("Menlo")
+            font.setPointSize(12)
+        else:
+            font.setFamily("Courier")
         self.ui.txtConfig.setFont(font)
         self.ui.txtLog.setFont(font)
         self.ui.txtBibEntries.setFont(font)

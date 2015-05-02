@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'favoritesoverbtns.ui'
 #
-# Created: Wed Apr 23 11:24:46 2014
+# Created: Sat May  2 13:10:38 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!

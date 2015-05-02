@@ -312,6 +312,8 @@ level 3.
 """
 
 
+_simple_console_logging_setup_done = False
+
 def setup_simple_console_logging(logger=logging.getLogger()):
     """
     Sets up the given logger object for simple console output.
@@ -319,6 +321,14 @@ def setup_simple_console_logging(logger=logging.getLogger()):
     The main program module may for example invoke this function on the root
     logger to provide a basic logging mechanism.
     """
+
+    global _simple_console_logging_setup_done
+
+    if _simple_console_logging_setup_done:
+        logger.warning("Simple console logging already set up!")
+        return
+    
+    _simple_console_logging_setup_done = True
 
     # create console handler
     ch = logging.StreamHandler();

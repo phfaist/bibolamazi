@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'helpbrowser.ui'
 #
-# Created: Sat Dec  6 20:19:56 2014
+# Created: Sat May  2 13:10:38 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
