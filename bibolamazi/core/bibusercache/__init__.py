@@ -26,9 +26,10 @@ import traceback
 import logging
 logger = logging.getLogger(__name__)
 
+import bibolamazi.init
 from pybtex.database import Entry, Person
-from core.butils import call_with_args, BibolamaziError
-from core.bibusercache import tokencheckers
+from bibolamazi.core.butils import call_with_args, BibolamaziError
+from bibolamazi.core.bibusercache import tokencheckers
 
 
 

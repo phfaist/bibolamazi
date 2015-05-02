@@ -39,15 +39,17 @@ from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
 
+import bibolamazi.init
+
 import pybtex.database
 import pybtex.database.input.bibtex as inputbibtex
 import pybtex.database.output.bibtex as outputbibtex
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from core import butils
-from core.butils import BibolamaziError
-from core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-from core.bibfilter import factory
+from bibolamazi.core import butils
+from bibolamazi.core.butils import BibolamaziError
+from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
+from bibolamazi.core.bibfilter import factory
 
 
 class BibolamaziFileParseError(BibolamaziError):

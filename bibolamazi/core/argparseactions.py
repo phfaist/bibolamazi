@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 # it should automatically.
 import pydoc
 
-import butils;
-from butils import getbool
+import bibolamazi.init
+import .butils;
+from .butils import getbool
 
 
 def run_pager(text):
@@ -250,7 +251,7 @@ class opt_action_help(argparse.Action):
 
         thefilter = values
 
-        from core.bibfilter import factory
+        from bibolamazi.core.bibfilter import factory
         try:
             helptext = factory.format_filter_help(thefilter);
             run_pager(helptext);
@@ -307,7 +308,7 @@ Package `%(filterpackage)s':
 def help_list_filters():
 
     import textwrap;
-    from core.bibfilter import factory
+    from bibolamazi.core.bibfilter import factory
 
     #DEBUG
     #logger.setVerbosity(3)
@@ -363,7 +364,7 @@ class opt_init_empty_template(argparse.Action):
         
     def __call__(self, parser, namespace, values, option_string):
 
-        import bibolamazifile;
+        import .bibolamazifile;
 
         try:
             newfilename = values[0];

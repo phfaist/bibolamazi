@@ -38,21 +38,24 @@ from collections import namedtuple
 # import all the parts we need from our own application.
 # ------------------------------------------------------
 
+import bibolamazi.init
+
 # first of all, set up logging mechanism for other modules
 import logging
 from core import blogger
 blogger.setup_simple_console_logging() # root logger
+
 # rest of the modules
-from core import version
-from core.bibolamazifile import BibolamaziFile
-from core.bibfilter import BibFilter
-from core.argparseactions import (store_or_count, opt_list_filters, opt_action_help,
+from bibolamazi.core import version
+from bibolamazi.core.bibolamazifile import BibolamaziFile
+from bibolamazi.core.bibfilter import BibFilter
+from bibolamazi.core.argparseactions import (store_or_count, opt_list_filters, opt_action_help,
                                   opt_action_version, opt_init_empty_template)
-from core import butils
-from core.butils import BibolamaziError
+from bibolamazi.core import butils
+from bibolamazi.core.butils import BibolamaziError
 
 # for list of filters
-from bibfilter import factory as filterfactory
+from bibolamazi.core.bibfilter import factory as filterfactory
 
 
 # our logger for the main module
@@ -205,7 +208,7 @@ def main(argv=sys.argv[1:]):
     # load precompiled filters, if we've got any
     # ------------------------------------------
     try:
-        import bibolamazi_compiled_filter_list as pc
+        import bibolamazi.bibolamazi_compiled_filter_list as pc
         filters_factory.load_precompiled_filters('filters', dict([
             (fname, pc.__dict__[fname])  for fname in pc.filter_list
             ]))

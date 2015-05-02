@@ -35,8 +35,9 @@ from collections import namedtuple, OrderedDict
 import logging
 logger = logging.getLogger(__name__)
 
-from core.argparseactions import store_key_val, store_key_const, store_key_bool
-from core import butils
+import bibolamazi.init
+from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
+from bibolamazi.core import butils
 
 
 
@@ -176,11 +177,11 @@ class PrependOrderedDict(OrderedDict):
 
 
 
-# list of packages providing bibolamazi filters. `filters` is the core bibolamazi filters
-# package. The value is the path to add when looking for the package, or None to add no
-# path.
+# list of packages providing bibolamazi filters. `bibolamazi.filters` is the core
+# bibolamazi filters package. The value is the path to add when looking for the package,
+# or None to add no path.
 filterpath = PrependOrderedDict([
-    ('filters', None,),
+    ('bibolamazi.filters', None,),
     ])
 
 

@@ -31,7 +31,8 @@ import datetime
 import logging
 logger = logging.getLogger(__name__)
 
-import version
+import bibolamazi.init
+import bibolamazi.core.version
 
 
 def get_version():

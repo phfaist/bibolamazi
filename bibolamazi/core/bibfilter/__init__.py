@@ -21,7 +21,8 @@
 
 import re
 
-from ..butils import BibolamaziError
+import bibolamazi.init
+from bibolamazi.core.butils import BibolamaziError
 
 
 class BibFilterError(BibolamaziError):

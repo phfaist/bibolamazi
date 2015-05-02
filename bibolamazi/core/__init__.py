@@ -22,6 +22,8 @@
 """
 Core bibolamazi module.
 
-See :py:mod:`core.bibfilter`, :py:mod:`core.bibolamazifile`, :py:mod:`core.bibusercache`
-for the main core modules.
+See :py:mod:`bibolamazi.core.bibfilter`, :py:mod:`bibolamazi.core.bibolamazifile`,
+:py:mod:`bibolamazi.core.bibusercache` for the main core modules.
 """
+
+import bibolamazi.init

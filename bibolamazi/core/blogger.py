@@ -37,6 +37,8 @@ import os
 import sys
 import logging
 
+import bibolamazi.init
+
 
 
 # ------------------------------------------------------------------------------
@@ -362,7 +364,7 @@ def setup_simple_console_logging(logger=logging.getLogger()):
 
 # utility: enum_class for a log level
 
-from core.bibfilter.argtypes import enum_class
+from bibolamazi.core.bibfilter.argtypes import enum_class
 
 LogLevel = enum_class('LogLevel',
                       [('CRITICAL', logging.CRITICAL),
