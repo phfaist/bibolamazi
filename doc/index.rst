@@ -14,7 +14,7 @@ Table of Contents:
 
    introduction-to-bibolamazi
    download-and-install
-   using-bibolamazi
+   using-bibolamazi-app
    using-bibolamazi-cmdl
    devel-filter
    core

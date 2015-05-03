@@ -23,7 +23,7 @@
 Set up a logging framework for logging debug, information, warning and error
 messages.
 
-Modules should get their logger using Python's standard :py:module:`logging`
+Modules should get their logger using Python's standard :py:mod:`logging`
 mechanism::
 
     import logging
@@ -275,7 +275,7 @@ logger = logging.getLogger('bibolamazi.old_logger');
 """
 (OBSOLETE) The main logger object. This is a :py:class:`logging.Logger` object.
 
-.. deprecated:: 2.2
+.. deprecated:: 2.1
 
    This object is still here to keep old code functioning. New code should use
    the following idiom somewhere at the top of their module::
@@ -284,7 +284,7 @@ logger = logging.getLogger('bibolamazi.old_logger');
      logger = logging.getLogger(__name__)
 
    (Just make sure the logging mechanism has been set up correctly already, see
-   doc for :py:module:`~core.blogger` module.
+   doc for :py:mod:`~core.blogger` module.)
 
 This object has an additional method `longdebug()` (which behaves similarly to
 `debug()`), for logging long debug output such as dumping the database during
@@ -293,6 +293,8 @@ level 3.
 """
 
 
+_simple_console_logging_setup_done = False
+
 def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
     """
     Sets up the given logger object for simple console output.
@@ -300,6 +302,14 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
     The main program module may for example invoke this function on the root
     logger to provide a basic logging mechanism.
     """
+
+    global _simple_console_logging_setup_done
+
+    if _simple_console_logging_setup_done:
+        logger.warning("Simple console logging already set up!")
+        return
+    
+    _simple_console_logging_setup_done = True
 
     # create console handler
     ch = logging.StreamHandler(stream=stream);

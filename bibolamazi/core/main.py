@@ -198,6 +198,8 @@ def get_args_parser():
 
 
 
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout'));
+
 def main(argv=sys.argv[1:]):
 
     # load precompiled filters, if we've got any
@@ -228,9 +230,8 @@ def main(argv=sys.argv[1:]):
     # Set up the logger according to the user's wishes
     # ------------------------------------------------
 
-    # simple logging to console, with formatted output
     blogger.setup_simple_console_logging()
-    
+
     # act on the root logger
     loglevel = verbosity_logger_level(args.verbosity)
     rootlogger = logging.getLogger()
@@ -276,16 +277,18 @@ def main(argv=sys.argv[1:]):
             logging.CRITICAL if has_set_fine_levels or loglevel <= logging.DEBUG else None
         )
             
-    
-
     return run_bibolamazi_args(args)
 
 
-# ### TODO: should 'verbosity' and 'fine_log_levels' really be parameters here?
-ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout'));
 
 def run_bibolamazi(bibolamazifile, **kwargs):
-    args = ArgsStruct(bibolamazifile, **kwargs)
+    # defaults
+    kwargs2 = {
+        'use_cache': True,
+        'cache_timeout': None,
+        }
+    kwargs2.update(kwargs);
+    args = ArgsStruct(bibolamazifile, **kwargs2)
     return run_bibolamazi_args(args)
 
 
@@ -293,7 +296,6 @@ def run_bibolamazi_args(args):
     #
     # args is supposed to be the parsed arguments from main()
     #
-
 
     logger.debug(textwrap.dedent("""
     Bibolamazi Version %(ver)s by Philippe Faist (C) 2014

@@ -166,7 +166,7 @@ class BibFilter(object):
 
         The return value of this function is ignored. Subclasses should report warnings
         and logging through Python's logging mechanism (see doc of
-        :py:module:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
+        :py:mod:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
         (preferrably, a subclass). Other raised exceptions will be interpreted as internal
         errors and will open a debugger.
         """
@@ -185,7 +185,7 @@ class BibFilter(object):
 
         The return value of this function is ignored. Subclasses should report warnings
         and logging through Python's logging mechanism (see doc of
-        :py:module:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
+        :py:mod:`core.blogger`) and should raise errors as :py:class:`BibFilterError`
         (preferrably, a subclass). Other raised exceptions will be interpreted as internal
         errors and will open a debugger.
         """

@@ -2,7 +2,11 @@
 
 # Form implementation generated from reading ui file 'mainwidget.ui'
 #
+<<<<<<< HEAD:bibolamazi_gui/qtauto/ui_mainwidget.py
 # Created: Sun May  3 12:48:20 2015
+=======
+# Created: Sat May  2 13:56:43 2015
+>>>>>>> master:gui/qtauto/ui_mainwidget.py
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
