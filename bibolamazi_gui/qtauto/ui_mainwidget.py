@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwidget.ui'
 #
-# Created: Sat Feb 15 16:07:27 2014
+# Created: Sun May  3 12:48:20 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -91,4 +91,4 @@ class Ui_MainWidget(object):
         self.btnHelp.setText(_translate("MainWidget", "Help && Reference Browser", None))
         self.btnQuit.setText(_translate("MainWidget", "Quit", None))
 
-import bibolamazi_res_rc
+from . import bibolamazi_res_rc

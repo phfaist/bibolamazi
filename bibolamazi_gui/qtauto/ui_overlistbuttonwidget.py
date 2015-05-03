@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'overlistbuttonwidget.ui'
 #
-# Created: Sun Oct 27 13:45:08 2013
+# Created: Sun May  3 12:48:20 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -58,4 +58,4 @@ class Ui_OverListButtonWidget(object):
     def retranslateUi(self, OverListButtonWidget):
         pass
 
-import bibolamazi_res_rc
+from . import bibolamazi_res_rc

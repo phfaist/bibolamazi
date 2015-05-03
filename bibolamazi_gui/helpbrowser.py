@@ -22,24 +22,24 @@
 #                                                                              #
 ################################################################################
 
-
-import core.main
-from core import blogger
-from core.blogger import logger
-from core import butils
-import core.argparseactions
 import logging
-logger = logging.getLogger(__name__)
 
-from core.bibfilter import factory as filters_factory
+import bibolamazi.init
+from bibolamazi.core import main as bibolamazimain
+from bibolamazi.core import blogger
+from bibolamazi.core.blogger import logger
+from bibolamazi.core import butils
+from bibolamazi.core import argparseactions
+from bibolamazi.core.bibfilter import factory as filters_factory
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-import filterinstanceeditor
+from . import filterinstanceeditor
 
-from qtauto.ui_helpbrowser import Ui_HelpBrowser
+from .qtauto.ui_helpbrowser import Ui_HelpBrowser
 
+logger = logging.getLogger(__name__)
 
 
 
@@ -232,14 +232,14 @@ class HelpBrowser(QWidget):
                 tb.setPlainText(HELP_WELCOME)
                 tb.setProperty('HelpTabTitle', 'Welcome')
             elif pathitems[1] == 'version':
-                tb.setPlainText(core.argparseactions.helptext_prolog())
+                tb.setPlainText(argparseactions.helptext_prolog())
                 tb.setProperty('HelpTabTitle', 'Version')
             elif pathitems[1] == 'cmdline':
-                tb.setPlainText(core.argparseactions.helptext_prolog() +
-                                core.main.get_args_parser().format_help())
+                tb.setPlainText(argparseactions.helptext_prolog() +
+                                bibolamazimain.get_args_parser().format_help())
                 tb.setProperty('HelpTabTitle', 'Command-Line Help')
             elif pathitems[1] == 'filter-list':
-                tb.setPlainText(core.argparseactions.help_list_filters())
+                tb.setPlainText(argparseactions.help_list_filters())
                 tb.setProperty('HelpTabTitle', 'Filter List')
             else:
                 tb.setPlainText('<Unknown help page>')

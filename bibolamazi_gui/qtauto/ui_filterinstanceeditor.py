@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'filterinstanceeditor.ui'
 #
-# Created: Mon Apr 21 21:21:39 2014
+# Created: Sun May  3 12:48:20 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -85,4 +85,4 @@ class Ui_FilterInstanceEditor(object):
         self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "Help: Filter Reference", None))
         self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites", None))
 
-import bibolamazi_res_rc
+from . import bibolamazi_res_rc

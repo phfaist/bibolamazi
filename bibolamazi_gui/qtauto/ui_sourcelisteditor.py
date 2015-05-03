@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'sourcelisteditor.ui'
 #
-# Created: Mon Apr 21 21:21:39 2014
+# Created: Sun May  3 12:48:20 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -97,4 +97,4 @@ class Ui_SourceListEditor(object):
         self.label.setText(_translate("SourceListEditor", "Source List: (first accessible will be used)", None))
         self.btnAddFavorite.setToolTip(_translate("SourceListEditor", "Add this source list to your favorites", None))
 
-import bibolamazi_res_rc
+from . import bibolamazi_res_rc

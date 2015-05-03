@@ -28,10 +28,11 @@ logger = logging.getLogger(__name__)
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from core.bibfilter import factory as filters_factory
-from core import main
+import bibolamazi.init
+from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core import main
 
-from qtauto.ui_settingswidget import Ui_SettingsWidget
+from .qtauto.ui_settingswidget import Ui_SettingsWidget
 
 
 # Model to interface a python dictionary with a `set_at()' method, like our

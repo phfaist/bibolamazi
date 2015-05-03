@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-# Created: Wed Apr 23 11:24:46 2014
+# Created: Sun May  3 12:50:55 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_OpenBibFile(object):
     def setupUi(self, OpenBibFile):
         OpenBibFile.setObjectName(_fromUtf8("OpenBibFile"))
-        OpenBibFile.resize(897, 538)
+        OpenBibFile.resize(787, 501)
         self.lyt = QtGui.QGridLayout(OpenBibFile)
         self.lyt.setObjectName(_fromUtf8("lyt"))
         self.btnGo = QtGui.QPushButton(OpenBibFile)
@@ -153,7 +153,7 @@ class Ui_OpenBibFile(object):
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'Courier 10 Pitch\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"></p></body></html>"))
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
         self.txtLog.setAcceptRichText(False)
         self.txtLog.setObjectName(_fromUtf8("txtLog"))
         self.gridLayout.addWidget(self.txtLog, 0, 0, 1, 2)
@@ -235,6 +235,6 @@ class Ui_OpenBibFile(object):
         self.tabs.setTabText(self.tabs.indexOf(self.pageLog), _translate("OpenBibFile", "Messages", None))
         self.lblFileName.setText(_translate("OpenBibFile", "some text here", None))
 
-from sourcelisteditor import SourceListEditor
-from filterinstanceeditor import FilterInstanceEditor
-import bibolamazi_res_rc
+from ..filterinstanceeditor import FilterInstanceEditor
+from ..sourcelisteditor import SourceListEditor
+from . import bibolamazi_res_rc

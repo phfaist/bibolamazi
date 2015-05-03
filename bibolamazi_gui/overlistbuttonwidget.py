@@ -26,8 +26,8 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-
-from qtauto.ui_overlistbuttonwidget import Ui_OverListButtonWidget
+import bibolamazi.init
+from .qtauto.ui_overlistbuttonwidget import Ui_OverListButtonWidget
 
 
 ROLE_OVERBUTTON = Qt.UserRole + 137

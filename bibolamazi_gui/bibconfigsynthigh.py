@@ -26,8 +26,9 @@
 import re
 from collections import namedtuple
 
+import bibolamazi.init
 # bibolamazi filters
-from core.bibfilter import factory as filters_factory
+from bibolamazi.core.bibfilter import factory as filters_factory
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *

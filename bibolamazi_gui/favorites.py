@@ -24,14 +24,15 @@
 
 from collections import namedtuple
 import logging
-logger = logging.getLogger(__name__)
-
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from overlistbuttonwidget import OverListButtonWidgetBase
-from qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
+import bibolamazi.init
+from .overlistbuttonwidget import OverListButtonWidgetBase
+from .qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
+
+logger = logging.getLogger(__name__)
 
 
 class FavoriteCmd:

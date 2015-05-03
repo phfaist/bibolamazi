@@ -29,38 +29,31 @@ import os.path
 import re
 import logging
 
-sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__),'..'))]
-import bibolamazi_init
-
-# set up basic logging
-import core.blogger
-core.blogger.setup_simple_console_logging()
-
-# default level: set to root logger
-logging.getLogger().setLevel(logging.DEBUG)
-
-from core import bibolamazifile
-from core import main
-from core.butils import BibolamaziError
-from core.bibfilter import factory as filters_factory
-import core.version
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
+import bibolamazi.init
+
+# set up basic logging
+from bibolamazi.core import blogger
+
+from bibolamazi.core import bibolamazifile
+from bibolamazi.core import main
+from bibolamazi.core.butils import BibolamaziError
+from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core import version as bibolamaziversion
 
 import openbibfile
 import helpbrowser
 import settingswidget
 
-from favorites import FavoriteCmdsList
+from .favorites import FavoriteCmdsList
 
-from qtauto.ui_mainwidget import Ui_MainWidget
+from .qtauto.ui_mainwidget import Ui_MainWidget
 
 
 logger = logging.getLogger(__name__)
 
-
-app = None
 
 
 class BibolamaziApplication(QApplication):
@@ -71,7 +64,7 @@ class BibolamaziApplication(QApplication):
         
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
         self.setApplicationName('Bibolamazi')
-        self.setApplicationVersion(core.version.version_str)
+        self.setApplicationVersion(bibolamaziversion.version_str)
         self.setOrganizationDomain('org.bibolamazi')
         self.setOrganizationName('Bibolamazi Project')
 
@@ -343,7 +336,7 @@ def setup_software_updater():
     swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False);
     swu_source.add_release_filter(swu_sourcefilter_devel)
 
-    swu_updater = upd_core.Updater(current_version=core.version.version_str, #'0.9', ## DEBUG!!! 
+    swu_updater = upd_core.Updater(current_version=bibolamaziversion.version_str, #'0.9', ## DEBUG!!! 
                                    update_source=swu_source)
 
     swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
@@ -353,6 +346,11 @@ def setup_software_updater():
 
 
 def run_main():
+
+    blogger.setup_simple_console_logging()
+
+    # default level: set to root logger
+    logging.getLogger().setLevel(logging.DEBUG)
 
     # load precompiled filters, if we've got any
     try:
@@ -395,4 +393,5 @@ def run_main():
     
 
 if __name__ == '__main__':
+
     run_main()

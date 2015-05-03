@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'favoritesoverbtns.ui'
 #
-# Created: Wed Apr 23 11:24:46 2014
+# Created: Sun May  3 12:48:21 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -87,4 +87,4 @@ class Ui_FavoritesOverBtns(object):
         self.btnInsert.setToolTip(_translate("FavoritesOverBtns", "Insert this favorite command at current position in config", None))
         self.btnInsert.setText(_translate("FavoritesOverBtns", "insert", None))
 
-import bibolamazi_res_rc
+from . import bibolamazi_res_rc

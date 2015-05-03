@@ -30,7 +30,8 @@ import os.path
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from qtauto.ui_sourcelisteditor import Ui_SourceListEditor
+import bibolamazi.init
+from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
 
 
 class SourceListEditor(QWidget):

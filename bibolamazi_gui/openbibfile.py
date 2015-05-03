@@ -31,24 +31,25 @@ import re
 import textwrap
 import shlex
 import logging
-logger = logging.getLogger(__name__)
 
-import core.main
-from core import blogger
-from core.blogger import logger
-from core import bibolamazifile
-from core import butils
-from core.butils import BibolamaziError
-
+import bibolamazi.init
+from bibolamazi.core import main as bibolamazimain
+from bibolamazi.core import blogger
+from bibolamazi.core.blogger import logger
+from bibolamazi.core import bibolamazifile
+from bibolamazi.core import butils
+from bibolamazi.core.butils import BibolamaziError
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
-from favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
-import filterinstanceeditor
+from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
+from .favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
+from . import filterinstanceeditor
 
-from qtauto.ui_openbibfile import Ui_OpenBibFile
+from .qtauto.ui_openbibfile import Ui_OpenBibFile
+
+logger = logging.getLogger(__name__)
 
 
 class LogToTextBrowserHandler(logging.Handler):
@@ -478,8 +479,8 @@ class OpenBibFile(QWidget):
                     self.ui.tabs.setCurrentWidget(self.ui.pageLog)
                     # block notifications for file contents updates that we generate ourselves...
                     self.fwatcher.blockSignals(True)
-                    core.main.run_bibolamazi(bibolamazifile=self.bibolamaziFileName,
-                                             verbosity=self.ui.cbxVerbosity.currentIndex())
+                    bibolamazimain.run_bibolamazi(bibolamazifile=self.bibolamaziFileName,
+                                                  verbosity=self.ui.cbxVerbosity.currentIndex())
                     log2txtLog.addtolog(" --> Finished successfully. <--")
                 except butils.BibolamaziError as e:
                     logger.error(unicode(e))

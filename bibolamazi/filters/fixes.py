@@ -28,7 +28,7 @@ from pybtex.database import Person
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
-from core import butils
+from bibolamazi.core import butils
 from bibolamazi.core.pylatexenc import latexencode
 from bibolamazi.core.pylatexenc import latexwalker
 from bibolamazi.core.pylatexenc import latex2text

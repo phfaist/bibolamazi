@@ -27,20 +27,21 @@ import os
 import os.path
 import re
 import logging
-logger = logging.getLogger(__name__)
 
-from core.bibfilter import factory as filters_factory
-from core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
-from core import butils
-from core.bibfilter.argtypes import EnumArgType, CommaStrList
-
+import bibolamazi.init
+from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
+from bibolamazi.core import butils
+from bibolamazi.core.bibfilter.argtypes import EnumArgType, CommaStrList
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
+from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
-import overlistbuttonwidget
+from . import overlistbuttonwidget
+
+logger = logging.getLogger(__name__)
 
 
 def get_filter_list():

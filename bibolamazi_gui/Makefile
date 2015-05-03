@@ -25,4 +25,4 @@ $(QTAUTODIR)/%_rc.py: %.qrc
 	pyrcc4 -o $@ $<
 
 $(QTAUTODIR)/ui_%.py: %.ui
-	pyuic4 -o $@ $<
+	pyuic4 --from-imports -o $@ $<

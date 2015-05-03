@@ -229,7 +229,7 @@ def main(argv=sys.argv[1:]):
     # ------------------------------------------------
 
     # simple logging to console, with formatted output
-    setup_simple_console_logging()
+    blogger.setup_simple_console_logging()
     
     # act on the root logger
     loglevel = verbosity_logger_level(args.verbosity)
