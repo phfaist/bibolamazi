@@ -110,6 +110,9 @@ class store_or_count(argparse.Action):
 rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL);
 
 class store_key_val(argparse.Action):
+    """
+    Handles an ghostscript-style option of the type '-sBoolKey=some-value'.
+    """
     def __init__(self, option_strings, dest, nargs=1, exception=ValueError, **kwargs):
         # some checks
         if nargs != 1:
@@ -149,6 +152,9 @@ class store_key_val(argparse.Action):
 
 
 class store_key_bool(argparse.Action):
+    """
+    Handles an ghostscript-style option of the type '-dBoolKey' or '-dBoolKey=0'.
+    """
     def __init__(self, option_strings, dest, nargs=1, const=True,
                  exception=ValueError, **kwargs):
         

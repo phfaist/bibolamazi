@@ -222,6 +222,7 @@ class OpenBibFile(QWidget):
         self._needs_update_txtbibentries = False
         self._set_modified(False)
 
+        logger.longdebug("finished OpenBibFile constructor!")
 
     def setFavoriteCmdsList(self, favoriteCmdsList):
         self.favoriteCmdsList = favoriteCmdsList
@@ -311,7 +312,7 @@ class OpenBibFile(QWidget):
 
 
 
-    def _set_win_state(self, file_is_loaded, errormessagehtml=None):
+    def _set_win_state(self, file_is_loaded, errormessagehtml=None, ifOkSetConfigTab=False):
 
         # enable/disable these GUI widgets/buttons
         
@@ -349,7 +350,8 @@ class OpenBibFile(QWidget):
         self.setWindowTitle(os.path.basename(self.bibolamaziFileName))
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
-        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+        if ifOkSetConfigTab:
+            self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
         self.ui.txtConfig.setFocus()
 
 
@@ -498,18 +500,22 @@ class OpenBibFile(QWidget):
                 return
 
             logs = None
-            with LogToTextBrowser(self.ui.txtLog) as log2txtLog:
-                try:
-                    self.ui.tabs.setCurrentWidget(self.ui.pageLog)
-                    # block notifications for file contents updates that we generate ourselves...
-                    self.fwatcher.blockSignals(True)
-                    bibolamazimain.run_bibolamazi(bibolamazifile=self.bibolamaziFileName,
-                                                  verbosity=self.ui.cbxVerbosity.currentIndex())
-                    log2txtLog.addtolog(" --> Finished successfully. <--")
-                except butils.BibolamaziError as e:
-                    logger.error(unicode(e))
-                    log2txtLog.addtolog(" --> Finished with errors. <--")
-                    QMessageBox.warning(self, "Bibolamazi error", unicode(e))
+            rootlogger = logging.getLogger()
+            setloggerlevel = bibolamazimain.verbosity_logger_level(self.ui.cbxVerbosity.currentIndex())
+            with ContextAttributeSetter( (lambda : rootlogger.level, rootlogger.setLevel,
+                                          setloggerlevel),
+                                         (self.ui.tabs.currentWidget, self.ui.tabs.setCurrentWidget,
+                                          self.ui.pageLog) ):
+                with LogToTextBrowser(self.ui.txtLog) as log2txtLog:
+                    try:
+                        # block notifications for file contents updates that we generate ourselves...
+                        self.fwatcher.blockSignals(True)
+                        bibolamazimain.run_bibolamazi(bibolamazifile=self.bibolamaziFileName)
+                        log2txtLog.addtolog(" --> Finished successfully. <--")
+                    except butils.BibolamaziError as e:
+                        logger.error(unicode(e))
+                        log2txtLog.addtolog(" --> Finished with errors. <--")
+                        QMessageBox.warning(self, "Bibolamazi error", unicode(e))
 
         self.delayedUpdateFileContents()
                     

@@ -546,7 +546,7 @@ def make_filter(name, optionstring):
 
     # and finally, instantiate the filter.
 
-    logger.debug('calling fclass('+','.join([repr(x) for x in pargs])+', '+
+    logger.debug(name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
                   ','.join([repr(k)+'='+repr(v) for k,v in kwargs.iteritems()]) + ')');
 
     # exceptions caught here are those thrown from the filter constructor itself.
@@ -605,7 +605,8 @@ class DefaultFilterOptions:
         self._fclass = fclass
 
         # find out what the arguments to the filter constructor are
-        (fargs, varargs, keywords, defaults) = inspect.getargspec(fclass.__init__);
+        self.fclass_arg_defs = inspect.getargspec(fclass.__init__)
+        (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
 
         # get some doc about the parameters
         doc = fclass.__init__.__doc__;
@@ -623,7 +624,9 @@ class DefaultFilterOptions:
             thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc))
             # adjust whitespace in docstr
             docstr = doc[m.end():thisend].strip()
-            docstr = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(docstr)
+            # just format whitespace, don't fill. This is for the GUI. we'll fill to a
+            # certain width only when specifying this as the argparse help argument.
+            docstr = textwrap.TextWrapper(width=sys.maxint, replace_whitespace=True, drop_whitespace=True).fill(docstr)
             argdoclist.append(_ArgDoc(argname=m.group('argname'),
                                       argtypename=m.group('argtypename'),
                                       doc=docstr))
@@ -653,9 +656,7 @@ class DefaultFilterOptions:
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,
                                  description=fclass.getHelpDescription(),
-                                 epilog=
-                                 "------------------------------\n\n"+
-                                 fclass.getHelpText()+"\n"+_add_epilog,
+                                 epilog=_add_epilog,
                                  add_help=False,
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  );
@@ -664,6 +665,14 @@ class DefaultFilterOptions:
 
         # add option for all arguments
 
+        # memo for later, whether to show info about boolean args in help text. Wrap this
+        # in a class so that we can access this from member functions.
+        class Store:
+            pass
+        ns = Store()
+        ns.has_a_boolean_arg = False
+        ns.seen_types = []
+
         self._filteroptions = []
         self._filtervaroptions = []
 
@@ -671,16 +680,42 @@ class DefaultFilterOptions:
             fopt = farg.replace('_', '-');
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
             argdocdoc = (argdoc.doc.replace('%', '%%') if argdoc.doc is not None else None)
-            group_filter.add_argument('--'+fopt, action='store', dest=farg,
-                                      help=argdocdoc);
+            argdocdoc = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(argdocdoc)
+            optkwargs = {
+                'action': 'store',
+                'dest': farg,
+                'help': argdocdoc,
+                }
+            if argdoc.argtypename == 'bool':
+                # boolean switch
+                optkwargs['metavar'] = '<BOOLEAN ARG>'
+                if not fopt.startswith('no-'):
+                    optkwargs['help'] = '' # only provide help for second option
+                group_filter.add_argument('--'+fopt, nargs='?', default=None, const=True,
+                                          type=butils.getbool, **optkwargs)
+                if not fopt.startswith('no-'):
+                    optkwargs['help'] = argdocdoc # only provide help for second option
+                    group_filter.add_argument('--no-'+fopt, nargs='?', default=None, const=False,
+                                              type=lambda val: not butils.getbool(val), **optkwargs)
+                # remember that we've seen a bool arg
+                ns.has_a_boolean_arg = True
+            else:
+                if argdoc.argtypename:
+                    if (argdoc.argtypename not in ns.seen_types):
+                        ns.seen_types.append(argdoc.argtypename)
+                    optkwargs['metavar'] = '<%s>'%(argdoc.argtypename)
+                else:
+                    optkwargs['metavar'] = '<ARG>'
+                group_filter.add_argument('--'+fopt, **optkwargs)
             return argdoc
 
 
         argdocs_left = [ x.argname for x in argdoclist ];
-        for farg in fargs:
-            # skip 'self'
-            if (farg == 'self'):
+        for n in xrange(len(fargs)):
+            if n == 0: # Skip 'self' argument. Don't use "farg == 'self'" because in
+                       # theory the argument could have any name.
                 continue
+            farg = fargs[n]
             # normalize name
             argdoc = make_filter_option(farg)
             if farg in argdocs_left:
@@ -697,7 +732,7 @@ class DefaultFilterOptions:
             argdoc = make_filter_option(farg)
             self._filtervaroptions.append(argdoc)
 
-        group_general = p.add_argument_group('Other Options')
+        group_general = p.add_argument_group('Alternative Option Syntax')
 
         # a la ghostscript: -sOutputFile=blahblah -sKey=Value
         group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
@@ -709,20 +744,55 @@ class DefaultFilterOptions:
                                    "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
 
         # allow also to give arguments without the keywords.
-        group_general.add_argument('_args', nargs='*', metavar='<arg>',
-                                   help="Additional arguments will be passed as is to the filter--see "
-                                   "documentation below");
+        if varargs:
+            group_general.add_argument('_args', nargs='*', metavar='<arg>',
+                                       help="Additional arguments will be passed as is to the filter--see "
+                                       "documentation below");
 
-        p.add_argument_group(u"Python filter syntax",
-                             textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
+        #p.add_argument_group(u"Python filter syntax",
+        #                     textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
 
-        p.add_argument_group(u'Note', textwrap.dedent(u"""\
+        filter_options_syntax_help = textwrap.dedent(
+            u"""
             For passing option values, you may use either the `--key value' syntax, or the
-            (ghostscript-like) `-sKey=Value' syntax. For switches, use -dSwitch to set the
-            given option to True. When using the -s or -d syntax, the option names are
-            camel-cased, i.e. an option like `--add-description arxiv' can be specified as
-            `-sAddDescription=arxiv'. Likewise, `--preserve-ids 1' can provided as
-            `-dPreserveIds' or `-dPreserveIds=yes'."""));
+            (ghostscript-like) `-sKey=Value' syntax. For boolean switches, use -dSwitch to
+            set the given option to True. When using the -s or -d syntax, the option names
+            are camel-cased, i.e. an option like `--add-description arxiv' can be
+            specified as `-sAddDescription=arxiv'. Likewise, `--preserve-ids' can provided
+            as `-dPreserveIds' or `-dPreserveIds=yes'.""")
+
+        if ns.has_a_boolean_arg:
+            filter_options_syntax_help += textwrap.dedent(u"""
+
+            The argument to options which accept a <BOOLEAN ARG> may be omitted. <BOOL
+            ARG> may be one of ("t", "true", "y", "yes", "1", "on") to activate the
+            switch, or ("f", "false", "n", "no", "0", "off") to disable it (case
+            insensitive). If you specify an argument to the variant '--no-<SWITCH>' of the
+            option, that argument negates the negative effect of the switch.""")
+
+        for (typname, typ) in ((y, x) for (y, x) in
+                               ((y, butils.resolve_type(y, self._fmodule)) for y in ns.seen_types)
+                               if hasattr(x, '__doc__')):
+            if not typ.__doc__: # e.g., is None
+                continue
+            docstr = typ.__doc__.strip()
+            if not len(docstr):
+                continue
+            docstr = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True,
+                                          subsequent_indent='    ').fill(
+                "TYPE %s: "%(typname) + docstr
+            )
+            filter_options_syntax_help += "\n\n" + docstr
+
+        if varargs:
+            filter_options_syntax_help += textwrap.dedent(u"""
+
+            This filter accepts additional positional arguments. See the documentation
+            below for more information.""")
+
+        p.add_argument_group(u'NOTE ON FILTER OPTIONS SYNTAX', filter_options_syntax_help)
+
+        p.add_argument_group(u'FILTER DESCRIPTION', "\n" + fclass.getHelpText())
 
 
         self._parser = p
@@ -775,6 +845,10 @@ class DefaultFilterOptions:
 
         p = self._parser
 
+        (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
+        if defaults is None:
+            defaults = []
+
         try:
             parts = shlex.split(optionstring);
         except ValueError as e:
@@ -806,7 +880,7 @@ class DefaultFilterOptions:
                 kwargs[argname] = argval # raw type if we can't figure one out (could be extra kwargs argument)
 
         for (arg, argval) in dargs.iteritems():
-            if (arg == '_args'):
+            if (varargs and arg == '_args'):
                 pargs = argval;
                 continue
             if (arg == '_d_args' and argval is not None):
@@ -835,6 +909,44 @@ class DefaultFilterOptions:
 
             set_kw_arg(kwargs, arg, argval)
 
+
+        # The following bit of code is only important for filters with varargs. However to
+        # uniformize behavior (and error messages), we'll do this for all filters (there
+        # should be no harm for non-varargs filters).
+        #
+        #if varargs:
+        #
+        # if we have varargs, make sure we provide a value for all declared parameters. We
+        # want to forbid *pargs to fill the declared parameters of the filter constructor,
+        # because it's confusing for the user. The *pargs should only be captured in the
+        # filter's explicit *args argument. So we need to pass all declared arguments as
+        # positional arguments.
+        #
+        # This is the index of first argument with a default value. See
+        # https://docs.python.org/2/library/inspect.html#inspect.getargspec
+        n_deflts_offset = len(fargs)-len(defaults)
+        #
+        fdeclpargs = []
+        for n in xrange(len(fargs)):
+            if n == 0: # Skip 'self' argument. Don't use "farg == 'self'" because in
+                       # theory the argument could have any name.
+                continue
+            farg = fargs[n]
+            if farg in kwargs:
+                fdeclpargs.append(kwargs.pop(farg))
+            else:
+                # add explicit default argument for this farg, if any, or report error
+                # if no value given.
+                if n < n_deflts_offset:
+                    raise FilterOptionsParseError("No value provided for mandatory option `%s'"%(farg),
+                                                  self._filtername)
+                defaultval = defaults[n - n_deflts_offset]
+                logger.longdebug("filter %s: adding argument #%d with default value %s=%r", self._filtername,
+                                 n, farg, defaultval)
+                fdeclpargs.append(defaultval)
+        # ensure that all filter-declared arguments have values, then add all remaining args for *args.
+        pargs = fdeclpargs + pargs
+                    
         return (pargs, kwargs);
 
 

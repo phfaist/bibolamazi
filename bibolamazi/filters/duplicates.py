@@ -396,7 +396,8 @@ class DuplicatesFilter(BibFilter):
 
 
     def __init__(self, dupfile=None, warn=False, custom_bibalias=False,
-                 keep_only_used_in_jobname=None, jobname_search_dirs=None):
+                 keep_only_used_in_jobname=None, jobname_search_dirs=None,
+                 *args):
         r"""DuplicatesFilter constructor.
 
         *dupfile: the name of a file to write latex code for defining duplicates to. This file
@@ -418,6 +419,16 @@ class DuplicatesFilter(BibFilter):
         self.dupfile = dupfile
         self.warn = butils.getbool(warn)
         self.custom_bibalias = butils.getbool(custom_bibalias)
+
+        if len(args) == 1:
+            if self.dupfile is None:
+                self.dupfile = args[0]
+            else:
+                raise BibFilterError("duplicates", "Repeated values given for dupfile: one as an option (`%s'), "
+                                     "the other as a positional argument (`%s')"%(self.dupfile, args[0]))
+        elif len(args) != 0:
+            raise BibFilterError("duplicates", "Received unexpected positional arguments (at most one expected, "
+                                 "the dupfile name): [%s]"%(",".join(["%s"%(x) for x in args])))
 
         if not keep_only_used_in_jobname:
             keep_only_used_in_jobname = None

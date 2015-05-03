@@ -116,6 +116,18 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
 
     thecls = ThisEnumArgClass
     thecls.__name__ = class_name
+    # add docstring
+    mapped_vals_list = [ "`%s'"%(x) for x in thecls._values_list ]
+    if len(mapped_vals_list) > 1:
+        show_vals_list = ", ".join(mapped_vals_list[:-1]) + ", or "+mapped_vals_list[-1]
+    elif len(mapped_vals_list) == 1:
+        show_vals_list = mapped_vals_list[0]
+    else:
+        show_vals_list = '<no values>'
+    thecls.__doc__ = "An enumeration type which may have one of the following values: %s."%(
+        show_vals_list
+        )
+    # for the gui
     thecls.type_arg_input = EnumArgType(thecls._values_list)
     # provide e.g. 'Mode.modes', 'Mode.modes_list', 'Mode.modes_dict' (or 'values_list' etc.)
     setattr(thecls, value_attr_name+'s', thecls._values)
@@ -147,6 +159,9 @@ def _escape(x):
 _rx_unescape = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
 
 class CommaStrList(list):
+    """
+    A list of values, specified as a comma-separated string.
+    """
     def __init__(self, iterable=[]):
         if (isinstance(iterable, basestring)):
             fullstr = iterable

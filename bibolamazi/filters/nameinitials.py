@@ -64,7 +64,7 @@ class NameInitialsFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, *roles, **kwargs):
+    def __init__(self, only_single_letter_firsts=False, names_to_utf8=True, *roles, **kwargs):
         """
         Arguments:
           - only_single_letter_firsts(bool): Make proper initials (e.g. C. H. Bennett)
@@ -79,8 +79,8 @@ class NameInitialsFilter(BibFilter):
         if not self.roles:
             self.roles = ['author'];
 
-        self._names_to_utf8 = getbool(kwargs.pop('names_to_utf8', True))
-        self._only_single_letter_firsts = getbool(kwargs.pop('only_single_letter_firsts', False))
+        self._names_to_utf8 = getbool(names_to_utf8)#kwargs.pop('names_to_utf8', True))
+        self._only_single_letter_firsts = getbool(only_single_letter_firsts)#kwargs.pop('only_single_letter_firsts', False))
 
         logger.debug('NameInitialsFilter constructor')
         

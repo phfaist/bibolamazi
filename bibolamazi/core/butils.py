@@ -115,8 +115,11 @@ def resolve_type(typename, in_module=None):
     """
 
     if (in_module is not None):
+        logger.longdebug("Resolving type %s in module %s", typename, in_module)
         if (typename in in_module.__dict__):
             return in_module.__dict__.get(typename)
+
+    logger.longdebug("Resolving type %s (no module)", typename)
 
     if (typename == 'str'):
         return types.StringType

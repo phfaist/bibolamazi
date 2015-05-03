@@ -2,11 +2,7 @@
 
 # Form implementation generated from reading ui file 'openbibfile.ui'
 #
-<<<<<<< HEAD:bibolamazi_gui/qtauto/ui_openbibfile.py
-# Created: Sun May  3 12:50:55 2015
-=======
-# Created: Sat May  2 13:51:42 2015
->>>>>>> master:gui/qtauto/ui_openbibfile.py
+# Created: Sun May  3 13:05:04 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -150,13 +146,8 @@ class Ui_OpenBibFile(object):
         self.txtLog.setHtml(_fromUtf8("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-<<<<<<< HEAD:bibolamazi_gui/qtauto/ui_openbibfile.py
-"</style></head><body style=\" font-family:\'Courier 10 Pitch\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
-=======
 "</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Courier 10 Pitch\';\"><br /></p></body></html>"))
->>>>>>> master:gui/qtauto/ui_openbibfile.py
         self.txtLog.setAcceptRichText(False)
         self.txtLog.setObjectName(_fromUtf8("txtLog"))
         self.gridLayout.addWidget(self.txtLog, 0, 0, 1, 2)

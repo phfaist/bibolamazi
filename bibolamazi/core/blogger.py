@@ -63,6 +63,14 @@ class BibolamaziLogger(logging.getLoggerClass()):
     :py:const:`LONGDEBUG`.
     """
     
+    def getSelfLevel(self):
+        """
+        Returns the level that was set on this logger. If no specific level was set, then
+        returns `logging.NOTSET`. In this respect, this is NOT the same as
+        `getEffectiveLevel()`.
+        """
+        return self.level # hacked from logging.py source... better way?
+
     def longdebug(self, msg, *args, **kwargs):
         """
         Produce a log message at level LONGDEBUG.

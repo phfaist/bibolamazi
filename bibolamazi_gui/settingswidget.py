@@ -167,6 +167,10 @@ def setup_filterpackages_from_settings(s):
     fpstr = str(s.value("filterpath").toString())
 
     for fp in reversed(fpstr.split(os.pathsep)):
+        # if we had 'filters=' from some old version, then replace that by 'bibolamazi.filters='
+        if fp == 'filters=':
+            fp = 'bibolamazi.filters='
+
         main.setup_filterpackage_from_argstr(fp)
 
     s.endGroup()
