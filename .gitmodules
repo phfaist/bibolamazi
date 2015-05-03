@@ -1,3 +1,6 @@
 [submodule "core/pylatexenc"]
 	path = bibolamazi/core/pylatexenc
 	url = https://github.com/phfaist/pylatexenc.git
+[submodule "3rdparty/arxiv2bib"]
+	path = 3rdparty/arxiv2bib
+	url = https://github.com/nathangrigg/arxiv2bib.git
