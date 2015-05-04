@@ -202,6 +202,9 @@ ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_tim
 
 def main(argv=sys.argv[1:]):
 
+    # get some basic logging mechanism running
+    blogger.setup_simple_console_logging()
+
     # load precompiled filters, if we've got any
     # ------------------------------------------
     try:
@@ -229,8 +232,6 @@ def main(argv=sys.argv[1:]):
     
     # Set up the logger according to the user's wishes
     # ------------------------------------------------
-
-    blogger.setup_simple_console_logging()
 
     # act on the root logger
     loglevel = verbosity_logger_level(args.verbosity)

@@ -73,7 +73,7 @@ class EchoFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, message, **kwargs):
+    def __init__(self, message=None, *args, **kwargs):
         """Echo a custom message into the bibolamazi logger.
 
         Arguments:
@@ -86,6 +86,13 @@ class EchoFilter(BibFilter):
         BibFilter.__init__(self);
 
         self.message = message
+        if len(args) > 0:
+            if self.message is None:
+                self.message = " ".join(args)
+            else:
+                raise BibFilterError(self.name(), "Got unexpected additional arguments: %s"%(
+                        ", ".join( ('"'+s+'"' for s in args) )
+                        ))
 
         iswarn = kwargs.get('warn', None)
         if iswarn is not None and getbool(iswarn):

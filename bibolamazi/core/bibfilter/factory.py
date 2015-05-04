@@ -679,8 +679,13 @@ class DefaultFilterOptions:
         def make_filter_option(farg):
             fopt = farg.replace('_', '-');
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
-            argdocdoc = (argdoc.doc.replace('%', '%%') if argdoc.doc is not None else None)
-            argdocdoc = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(argdocdoc)
+            if argdoc.doc is not None:
+                argdocdoc = argdoc.doc.replace('%', '%%')
+                argdocdoc = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(
+                    argdocdoc
+                    )
+            else:
+                argdocdoc = None
             optkwargs = {
                 'action': 'store',
                 'dest': farg,

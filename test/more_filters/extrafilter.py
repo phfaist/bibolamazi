@@ -24,11 +24,11 @@ import re
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError
-from core.blogger import logger
-from core import butils
-from core.pylatexenc import latexencode
-from core.pylatexenc import latex2text
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.blogger import logger
+from bibolamazi.core import butils
+from bibolamazi.core.pylatexenc import latexencode
+from bibolamazi.core.pylatexenc import latex2text
 
 
 HELP_AUTHOR = u"""\

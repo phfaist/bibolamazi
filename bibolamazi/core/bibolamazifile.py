@@ -587,7 +587,7 @@ class BibolamaziFile(object):
             info = { };
             if (cmd == "filter"):
                 # extract filter name
-                mfiltername = re.match('^\s*(?P<filtername>(?:\w+:)?\w+)(\s|$)', rest);
+                mfiltername = re.match('^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest);
                 if (not mfiltername):
                     self._raise_parse_error("Expected filter name", lineno=thislineno);
                 filtername = mfiltername.group('filtername');
