@@ -292,6 +292,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         except ImportError as e:
             logger.debug("Failed to import module `%s' from package %s%s: %s",
                          name, filterpackname, dirstradd(filterdir), unicode(e))
+            logger.debug("sys.path was: %r", sys.path)
             #import_errors.append(u"Attempted import module %s in package `%s'%s failed:\n > %s"
             #                     %(name, filterpackname, "(dir `%s')"%(filterdir) if filterdir else "",
             #                       unicode(e)))

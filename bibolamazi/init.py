@@ -44,8 +44,11 @@ import importlib
 
 
 # subfolders of 3rdparty/ which we add to sys.path
-third_party = ['pybtex',
-               'arxiv2bib']
+third_party = [
+    'pybtex',
+    'arxiv2bib',
+    'pylatexenc',
+]
 
 # This base dir of bibolamazi
 base_dir = os.path.dirname(__file__)

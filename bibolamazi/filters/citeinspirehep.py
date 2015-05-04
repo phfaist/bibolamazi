@@ -38,7 +38,7 @@ from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core.bibusercache import BibUserCacheAccessor
 from bibolamazi.core.butils import getbool
 
-from filters.util import auxfile
+from .util import auxfile
 
 
 
