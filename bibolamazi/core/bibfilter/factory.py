@@ -772,8 +772,8 @@ class DefaultFilterOptions:
             The argument to options which accept a <BOOLEAN ARG> may be omitted. <BOOL
             ARG> may be one of ("t", "true", "y", "yes", "1", "on") to activate the
             switch, or ("f", "false", "n", "no", "0", "off") to disable it (case
-            insensitive). If you specify an argument to the variant '--no-<SWITCH>' of the
-            option, that argument negates the negative effect of the switch.""")
+            insensitive). If you specify a false argument to the variant '--no-<SWITCH>'
+            of the option, that argument negates the negative effect of the switch.""")
 
         for (typname, typ) in ((y, x) for (y, x) in
                                ((y, butils.resolve_type(y, self._fmodule)) for y in ns.seen_types)
