@@ -29,7 +29,8 @@ import sys
 try:
     import bibolamazi.init
 except ImportError:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    # realpath() needed for resolving executable symlink
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')))
     import bibolamazi.init
 
 

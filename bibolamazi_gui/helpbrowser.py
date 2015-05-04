@@ -22,6 +22,7 @@
 #                                                                              #
 ################################################################################
 
+import sys
 import logging
 
 import bibolamazi.init
@@ -36,6 +37,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from . import filterinstanceeditor
+from . import settingswidget
 
 from .qtauto.ui_helpbrowser import Ui_HelpBrowser
 
@@ -202,14 +204,7 @@ class HelpBrowser(QWidget):
             logger.warning("makeHelpTopicTab(): No Path specified!")
             return
 
-        font = self.font()
-        font.setStyleHint(QFont.TypeWriter)
-        if sys.platform.startswith("darwin"):
-            font.setFamily("Menlo")
-            font.setPointSize(12)
-        else:
-            font.setFamily("Courier")
-        font.setStyleHint(QFont.TypeWriter)
+        font = settingswidget.get_typewriter_font(self)
 
         if (pathitems[0] == 'filters'):
             if (len(pathitems) < 2):

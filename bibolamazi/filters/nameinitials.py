@@ -42,12 +42,13 @@ Name Initials filter: Turn full first names into only initials for all entries.
 HELP_TEXT = u"""
 In all entries, turn the first and middle names of people into initials.
 
-Warning: this filter only works well with the option -dNamesToUtf8, which is by default. If you
-want LaTeX-formatted names, use the filter `fixes' AFTERWARDS with the option -dEncodeUtf8ToLatex.
+Warning: this filter only works well with the option -dNamesToUtf8, which is by
+default. If you want LaTeX-formatted names, use the filter `fixes' AFTERWARDS
+with the option -dEncodeUtf8ToLatex.
 
-This filter does not take any options. Any additional arguments given are interpreted
-as roles to consider (see pybtex API), one or more among ['author', 'editor'] (WARNING:
-EXPERIMENTAL), e.g.
+The additional positional arguments which may be provided are interpreted as
+roles to consider (see pybtex API), one or more among ['author', 'editor']
+(WARNING: EXPERIMENTAL), e.g.
 
   %% only process author fields
   nameinitials
@@ -79,8 +80,8 @@ class NameInitialsFilter(BibFilter):
         if not self.roles:
             self.roles = ['author'];
 
-        self._names_to_utf8 = getbool(names_to_utf8)#kwargs.pop('names_to_utf8', True))
-        self._only_single_letter_firsts = getbool(only_single_letter_firsts)#kwargs.pop('only_single_letter_firsts', False))
+        self._names_to_utf8 = getbool(names_to_utf8)
+        self._only_single_letter_firsts = getbool(only_single_letter_firsts)
 
         logger.debug('NameInitialsFilter constructor')
         

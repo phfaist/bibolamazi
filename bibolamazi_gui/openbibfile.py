@@ -46,6 +46,7 @@ from PyQt4.QtGui import *
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from .favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
 from . import filterinstanceeditor
+from . import settingswidget
 
 from .qtauto.ui_openbibfile import Ui_OpenBibFile
 
@@ -179,13 +180,7 @@ class OpenBibFile(QWidget):
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
 
-        font = self.ui.txtConfig.font() # default widget font
-        font.setStyleHint(QFont.TypeWriter)
-        if sys.platform.startswith("darwin"):
-            font.setFamily("Menlo")
-            font.setPointSize(12)
-        else:
-            font.setFamily("Courier")
+        font = settingswidget.get_typewriter_font(self.ui.txtConfig)
         self.ui.txtConfig.setFont(font)
         self.ui.txtLog.setFont(font)
         self.ui.txtBibEntries.setFont(font)

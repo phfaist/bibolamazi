@@ -48,7 +48,7 @@ def get_filter_list():
     filter_pkg_list = filters_factory.detect_filter_package_listings()
     filter_list = []
     for (fpkg, flist) in filter_pkg_list.items():
-        if fpkg == 'filters':
+        if fpkg == 'bibolamazi.filters':
             # built-in, ignore the filter package prefix.
             filter_list += flist
         else:
@@ -153,25 +153,34 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         # parse the options
         try:
-            (pargs, kwargs) = self._fopts.parse_optionstring(optionstring)
+            optspec = self._fopts.parse_optionstring_to_optspec(optionstring)
         except FilterError:
             return
 
         self._optionstring = optionstring
 
-        # treat pargs as arguments to the function. These are usually declared arguments, simply
-        # provided without the key.
-        i = 0
-        argoptlist = self._fopts.filterDeclOptions()
-        while (len(pargs) and i < len(argoptlist)):
-            # this parg corresponds to a kwarg.
-            arg = argoptlist[i]
-            if (arg.argname in kwargs):
-                logger.warning("argument `%s' already given.", arg.argname)
-                # don't pass this argument; stop argument parsing.
-                break
-            kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
-            i = i + 1 # next declared argument in argoptlist
+        pargs = optspec['_args']
+        if pargs is None:
+            pargs = []
+        kwargs = optspec['kwargs']
+
+        # NEW IN BIBOLAMAZI v3 : NO. pargs are ONLY given to the *args of the filter, and
+        # never distributed to declared arguments as for a python function call. (That was
+        # unnatural and confusing behavior.)
+        #
+        # # treat pargs as arguments to the function. These are usually declared arguments, simply
+        # # provided without the key.
+        # i = 0
+        # argoptlist = self._fopts.filterDeclOptions()
+        # while (len(pargs) and i < len(argoptlist)):
+        #     # this parg corresponds to a kwarg.
+        #     arg = argoptlist[i]
+        #     if (arg.argname in kwargs):
+        #         logger.warning("argument `%s' already given.", arg.argname)
+        #         # don't pass this argument; stop argument parsing.
+        #         break
+        #     kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
+        #     i = i + 1 # next declared argument in argoptlist
 
         self._pargs = pargs
         self._kwargs = kwargs

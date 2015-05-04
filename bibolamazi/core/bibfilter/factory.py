@@ -843,8 +843,34 @@ class DefaultFilterOptions:
         return self._parser
 
 
-    def parse_optionstring(self, optionstring):
+    def parse_optionstring_to_optspec(self, optionstring):
+        """
+        Parses the optionstring, and returns a description of which options where
+        specified, which which values.
 
+        This doesn't go as far as :py:meth:`parse_optionstring()`, which returns pretty
+        much exactly how to call the filter constructor. This function is meant for
+        example for the GUI, who needs to parse what the user specified, and not
+        necessarily how to construct the filter itself.
+
+        Return a dictionary::
+
+            {
+              "_args": <additional *pargs positional arguments>
+              "kwargs": <keyword arguments>
+            }
+
+        The value of ``_args`` is either `None`, or a list of additional positional
+        arguments if the filter accepts `*args` (and hence the option parser too). These
+        will only be passed to `*args` and NOT be distributed to the declared arguments of
+        the filter constructor.
+
+        The value of ``kwargs`` is a dictionary of all options specified by keywords,
+        either with the ``--keyword=value`` syntax or with the syntax ``-sKey=Value``. The
+        corresponding value is converted to the type the filter expects, in each case
+        whenever possible (i.e. documented by the filter).
+        """
+        
         logger.debug("parse_optionstring: "+self._filtername+"; fclass="+repr(self._fclass)
                      +"; optionstring="+optionstring);
 
@@ -869,8 +895,14 @@ class DefaultFilterOptions:
         # parse and collect arguments now
 
         dargs = vars(args);
-        pargs = [];
-        kwargs = {};
+
+        optspec = {
+            '_args': None,
+            'kwargs': {}
+            }
+
+        if varargs:
+            optspec['_args'] = []
 
         def set_kw_arg(kwargs, argname, argval):
             # set the type correctly, too.
@@ -882,18 +914,19 @@ class DefaultFilterOptions:
                     typ = str
                 kwargs[argname] = typ(argval)
             else:
-                kwargs[argname] = argval # raw type if we can't figure one out (could be extra kwargs argument)
+                kwargs[argname] = argval # raw type if we can't figure one out (could be
+                                         # extra kwargs argument, or not documented)
 
         for (arg, argval) in dargs.iteritems():
             if (varargs and arg == '_args'):
-                pargs = argval;
+                optspec['_args'] = argval;
                 continue
             if (arg == '_d_args' and argval is not None):
                 # get all the defined args
                 for (thekey, theval) in argval:
                     # store this definition
                     therealkey = self.getArgNameFromSOpt(thekey);
-                    kwargs[therealkey] = theval
+                    optspec['kwargs'][therealkey] = theval
 
                     logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
 
@@ -903,7 +936,7 @@ class DefaultFilterOptions:
                 # get all the set args
                 for (key, v) in argval:
                     thekey = self.getArgNameFromSOpt(key);
-                    set_kw_arg(kwargs, thekey, v)
+                    set_kw_arg(optspec['kwargs'], thekey, v)
 
                     logger.debug("Set option `%s' to `%s'" %(thekey, v))
 
@@ -912,8 +945,28 @@ class DefaultFilterOptions:
             if (argval is None):
                 continue
 
-            set_kw_arg(kwargs, arg, argval)
+            set_kw_arg(optspec['kwargs'], arg, argval)
 
+        return optspec
+
+
+    def parse_optionstring(self, optionstring):
+        """
+        Parse the given option string (one raw string, which may contain quotes, escapes
+        etc.) into arguments which can be directly provided to the filter constructor.
+        """
+
+        optspec = self.parse_optionstring_to_optspec(optionstring)
+
+        (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
+        if defaults is None:
+            defaults = []
+
+        pargs = optspec["_args"]
+        kwargs = optspec["kwargs"]
+
+        if pargs is None:
+            pargs = []
 
         # The following bit of code is only important for filters with varargs. However to
         # uniformize behavior (and error messages), we'll do this for all filters (there

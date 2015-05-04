@@ -21,6 +21,7 @@
 #                                                                              #
 ################################################################################
 
+import sys
 import os.path
 import logging
 logger = logging.getLogger(__name__)
@@ -33,6 +34,22 @@ from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import main
 
 from .qtauto.ui_settingswidget import Ui_SettingsWidget
+
+
+def get_typewriter_font(widget):
+    """
+    Return a `QFont` with a typewriter font such as Courier. Use some educated guesses for
+    choosing a nice font.
+    """
+    font = widget.font() # default widget font
+    font.setStyleHint(QFont.TypeWriter)
+    if sys.platform.startswith("darwin"):
+        font.setFamily("Menlo")
+        font.setPointSize(12)
+    else:
+        font.setFamily("Monospace")
+
+    return font
 
 
 # Model to interface a python dictionary with a `set_at()' method, like our
