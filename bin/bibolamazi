@@ -40,30 +40,6 @@ from bibolamazi.core.butils import BibolamaziError
 
 if __name__ == "__main__":
     
-    logger = logging.getLogger("bibolamazi")
-
-    try:
-
-        # run main program
-        from bibolamazi.core import main
-        main.main()
-        
-    except SystemExit:
-        raise
-    
-    except KeyboardInterrupt:
-        raise
-
-    except BibolamaziError as e:
-        logger.error("[BIBOLAMAZI ERROR]\n" + unicode(e))
-
-    except:
-        
-        print
-        print " -- EXCEPTION --"
-        print
-
-        # debugging post-mortem
-        import traceback; traceback.print_exc()
-        import pdb; pdb.post_mortem();
-
+    # run main program
+    from bibolamazi.core import main
+    main.main()

@@ -4,7 +4,7 @@ import bibolamazi.init
 from bibolamazi.core import version as bibolamaziversion
 
 setup(
-    name = "Bibolamazi",
+    name = "bibolamazi",
     version = bibolamaziversion.version_str,
 
     # metadata for upload to PyPI
@@ -18,9 +18,7 @@ setup(
         'Development Status :: 5 - Stable',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX :: Linux',
+        'Operating System :: OS Independent',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering',
         'Topic :: Text Editors :: Text Processing',
@@ -29,16 +27,16 @@ setup(
 
     # could also include long_description, download_url, classifiers, etc.
 
-    packages = find_packages(),
-    scripts = ['bin/bibolamazi', 'bin/bibolamazi_gui'],
+    packages = ['bibolamazi'],
+    scripts = ['bin/bibolamazi'],
 
     install_requires = [],
 
     package_data = {
         # If any package contains *.txt or *.rst files, include them:
-        '': ['*.txt', '*.rst'],
+        #'': ['*.txt', '*.rst'],
         # And include any *.msg files found in the 'hello' package, too:
-        'hello': ['*.msg'],
+        #'hello': ['*.msg'],
     },
 
     

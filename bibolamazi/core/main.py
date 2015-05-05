@@ -200,7 +200,39 @@ def get_args_parser():
 
 ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout'));
 
+
+
 def main(argv=sys.argv[1:]):
+
+    logger = logging.getLogger("bibolamazi")
+
+    try:
+
+        # run main program
+        _main_helper(argv)
+        
+    except SystemExit:
+        raise
+    
+    except KeyboardInterrupt:
+        raise
+
+    except BibolamaziError as e:
+        logger.error("[BIBOLAMAZI ERROR]\n" + unicode(e))
+
+    except:
+        
+        print
+        print " -- EXCEPTION --"
+        print
+
+        # debugging post-mortem
+        import traceback; traceback.print_exc()
+        import pdb; pdb.post_mortem();
+
+    
+
+def _main_helper(argv):
 
     # get some basic logging mechanism running
     blogger.setup_simple_console_logging()
@@ -383,3 +415,9 @@ def run_bibolamazi_args(args):
     logger.debug('Done.');
 
     return None
+
+
+
+if __name__ == "__main__":
+    
+    main()
