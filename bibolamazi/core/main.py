@@ -46,8 +46,7 @@ from . import blogger
 from . import version
 from .bibolamazifile import BibolamaziFile
 from .bibfilter import BibFilter
-from .argparseactions import (store_or_count, opt_list_filters, opt_action_help,
-                                             opt_action_version, opt_init_empty_template)
+from . import argparseactions
 from . import butils
 from .butils import BibolamaziError
 
@@ -142,9 +141,10 @@ def get_args_parser():
         "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
         add_help=False);
 
-    parser.add_argument('-N', '--new', action=opt_init_empty_template, nargs=1, metavar="[new_filename.bib]",
+    parser.add_argument('-N', '--new', action=argparseactions.opt_init_empty_template, nargs=1,
+                        metavar="[new_filename.bib]",
                         help="Create a new bibolamazi file with a template configuration.");
-    parser.add_argument('-F', '--list-filters', action=opt_list_filters, dest='list_filters',
+    parser.add_argument('-F', '--list-filters', action=argparseactions.opt_list_filters, dest='list_filters',
                         help="Show a list of available filters along with their description, and exit.");
     parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
                         help="Bypass and ignore any existing cache file, and regenerate the cache. If "
@@ -154,10 +154,11 @@ def get_args_parser():
                         help="The default timeout after which to consider items in cache to be invalid. "
                         "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s");
 
-    parser.add_argument('--help', '-h', action=opt_action_help, nargs='?', metavar='filter',
+    parser.add_argument('--help', '-h', action=argparseactions.opt_action_help, nargs='?',
+                        metavar='filter',
                         help='Show this help message and exit. If filter is given, show information and '
                         'help text for that filter. See --list-filters for a list of available filters.')
-    parser.add_argument('--version', action=opt_action_version, nargs=0,
+    parser.add_argument('--version', action=argparseactions.opt_action_version, nargs=0,
                         help='Show bibolamazi version number and exit.')
 
     parser.add_argument('--filterpackage', action=AddFilterPackageAction,
@@ -167,18 +168,17 @@ def get_args_parser():
                         "PYTHONPATH), or a pair 'package=/some/location' where package is the python "
                         "package name, which will be loaded with the given path prepended to sys.path.")
 
-    parser.add_argument('--verbosity', action='store', dest='verbosity', default=1, type=int,
-                        # nargs=1, # don't provide nargs to avoid getting list
+    parser.add_argument('--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
-    parser.add_argument('-q', '-v0', '--quiet', action='store_const', dest='verbosity', const=0,
+    parser.add_argument('-q', '-v0', '--quiet', action=argparseactions.opt_set_verbosity, nargs=0, const=0,
                         help="Don't display any messages (same as --verbosity=0)");
-    parser.add_argument('-v1', action='store_const', dest='verbosity', default=1, const=1,
+    parser.add_argument('-v1', action=argparseactions.opt_set_verbosity, nargs=0, const=1,
                         help='Set normal verbosity mode (same as --verbosity=1)')
-    parser.add_argument('-v', '-v2', '--verbose', action='store_const', dest='verbosity', const=2,
+    parser.add_argument('-v', '-v2', '--verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=2,
                         help='Set verbose mode (same as --verbosity=2)')
-    parser.add_argument('-vv', '-v3', '--long-verbose', action='store_const', dest='verbosity', const=3,
+    parser.add_argument('-vv', '-v3', '--long-verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
-    parser.add_argument('--fine-log-levels', action='store', dest='fine_log_levels', default='',
+    parser.add_argument('--fine-log-levels', action=argparseactions.opt_set_fine_log_levels,
                         help=textwrap.dedent('''\
                         Fine-grained logger control: useful for debugging filters or
                         bibolamazi itself. This is a comma-separated list of modules and
@@ -203,8 +203,6 @@ ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_tim
 
 
 def main(argv=sys.argv[1:]):
-
-    logger = logging.getLogger("bibolamazi")
 
     try:
 
@@ -236,16 +234,18 @@ def _main_helper(argv):
 
     # get some basic logging mechanism running
     blogger.setup_simple_console_logging()
+    # start with level INFO
+    logging.getLogger().setLevel(logging.INFO)
 
     # load precompiled filters, if we've got any
     # ------------------------------------------
-    try:
-        import bibolamazi.bibolamazi_compiled_filter_list as pc
-        filters_factory.load_precompiled_filters('bibolamazi.filters', dict([
-            (fname, pc.__dict__[fname])  for fname in pc.filter_list
-            ]))
-    except ImportError:
-        pass
+    #try:
+    #    import bibolamazi.bibolamazi_compiled_filter_list as pc
+    #    filters_factory.load_precompiled_filters('bibolamazi.filters', dict([
+    #        (fname, pc.__dict__[fname])  for fname in pc.filter_list
+    #        ]))
+    #except ImportError:
+    #    pass
 
     
     # set up extra filter packages from environment variables
@@ -261,55 +261,6 @@ def _main_helper(argv):
 
     args = parser.parse_args(args=argv);
 
-    
-    # Set up the logger according to the user's wishes
-    # ------------------------------------------------
-
-    # act on the root logger
-    loglevel = verbosity_logger_level(args.verbosity)
-    rootlogger = logging.getLogger()
-    rootlogger.setLevel(loglevel)
-
-    logger.longdebug('Set verbosity: %d', args.verbosity)
-
-    #
-    # If there are some more fine-grained debug levels to set, go for it. Useful for
-    # debugging bibolamazi components.
-    #
-    has_set_fine_levels = False
-    if args.fine_log_levels:
-        lvlrx = re.compile(
-            r'^\s*((?P<modname>[A-Za-z0-9_.]+)=)?(?P<level>(LONG)?DEBUG|WARNING|INFO|ERROR|CRITICAL)\s*$'
-            )
-        for lvl in args.fine_log_levels.split(','):
-            m = lvlrx.match(lvl)
-            if not m:
-                logger.warning("Bad fine-grained log level setting: `%s'", lvl)
-                continue
-            modname = m.group('modname')
-            getloggerargs = {}
-            if modname:
-                getloggerargs['name'] = modname
-            thelogger = logging.getLogger(**getloggerargs)
-            try:
-                thelevel = blogger.LogLevel(m.group('level')).levelno
-            except ValueError as e:
-                logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
-                continue
-            #print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
-            #    modname, getloggerargs, thelogger, thelevel
-            #)
-            thelogger.setLevel(thelevel)
-            has_set_fine_levels = True
-
-    # finally, see if we should display information about where messages originated from
-    if hasattr(rootlogger, 'bibolamazi_formatter'):
-        # show log-record-position-info (`[module lineno]: function():') for all messages
-        # if our log level is at least DEBUG, or don't show such info at all.
-        rootlogger.bibolamazi_formatter.setShowPosInfoLevel(
-            logging.CRITICAL if has_set_fine_levels or loglevel <= logging.DEBUG else None
-        )
-            
     return run_bibolamazi_args(args)
 
 
@@ -369,6 +320,16 @@ def run_bibolamazi_args(args):
     # ---------------------------------------------------------
 
     for filtr in bfile.filters():
+        #
+        # For debugging: dump the library at each filter step on level longdebug()
+        #
+        if logger.isEnabledFor(blogger.LONGDEBUG):
+            s = "========== Dumping Bibliography Database ==========\n"
+            for key, entry in bibdata.entries.iteritems():
+                s += "  %10s: %r\n\n"%(key, entry)
+            s += "===================================================\n"
+            logger.longdebug(s)
+
         #
         # See how the filter acts. It can act on the full bibolamazifile object, it can act on the
         # full list of entries (possibly adding/deleting entries etc.), or it can act on a single

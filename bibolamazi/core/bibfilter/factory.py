@@ -31,8 +31,10 @@ import inspect
 import argparse
 import textwrap
 import types
+import pkgutil
 from collections import namedtuple, OrderedDict
 import logging
+import traceback
 
 import bibolamazi.init
 from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
@@ -275,12 +277,21 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         def dirstradd(filterdir):
             return " (dir `%s')"%(filterdir) if filterdir else ""
         
-        def remember_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e, fmt_exc=''):
+        def deal_with_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e,
+                                   fmt_exc='', is_caused_by_module=True):
             if fmt_exc:
                 fmt_exc = '\n > ' + fmt_exc.replace('\n', '\n > ')
-            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s%s"
+            if is_caused_by_module:
+                # if the module itself caused the error, we'll report it as a
+                # warning. This is really useful for filter developers.
+                logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
+                               name, filterpackname, dirstradd(filterdir), e.__class__.__name__,
+                               unicode(e), fmt_exc)
+            # and log the error for if, at the end, filter loading failed everywhere:
+            # useful as additional information for debugging.
+            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
                                  %(name, filterpackname, dirstradd(filterdir), exctypestr,
-                                   unicode(e), fmt_exc))
+                                   unicode(e)))
             
         # first, search the actual module.
         oldsyspath = sys.path
@@ -289,23 +300,50 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             sys.path = [filterdir] + sys.path
         try:
             mod = importlib.import_module('.'+name, package=filterpackname);
-        except ImportError as e:
-            logger.debug("Failed to import module `%s' from package %s%s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicode(e))
+        except ImportError:
+            exc_type, exc_value, tb_root = sys.exc_info()
+
+            logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
+                         name, filterpackname, dirstradd(filterdir), unicode(exc_type.__name__), unicode(exc_value))
             logger.debug("sys.path was: %r", sys.path)
-            #import_errors.append(u"Attempted import module %s in package `%s'%s failed:\n > %s"
-            #                     %(name, filterpackname, "(dir `%s')"%(filterdir) if filterdir else "",
-            #                       unicode(e)))
-            #import traceback
-            remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
+
+            # Attempt to understand whether the ImportError was due to a missing module
+            # (e.g. invalid module name), or if the module was found but the code had an
+            # invalid import statement. For that, see hack at:
+            # http://lucumr.pocoo.org/2011/9/21/python-import-blackbox/
+            caused_by_module = True
+            logger.longdebug("[was caused by module?] will inspect stack frames:\n%s",
+                             "".join(traceback.format_tb(tb_root)))
+            tb1 = traceback.extract_tb(tb_root)[-1]
+            logger.longdebug("tb1 = %r", tb1)
+            if 'importlib/__init__' in tb1[0]: # or:  tb1[2] == 'import_module':
+                caused_by_module = False
+            ##tb_last_frame_mod_name = tb.tb_frame.f_globals.get('__name__')
+            ##if tb_last_frame_mod_name == 'importlib':
+            ##    # it is importlib that raised the exception, not the filter module
+            ##    caused_by_module = False
+            #tb = tb_root
+            #while tb is not None:
+            #    tb_frame_mod_name = tb.tb_frame.f_globals.get('__name__')
+            #    logger.longdebug("[was caused by module?] checking frame: __name__ is %s", tb_frame_mod_name)
+            #    if tb_frame_mod_name == (filterpackname+'.'+name):
+            #        caused_by_module = True
+            #        break
+            #    tb = tb.tb_next
+
+            # and so, now deal with the exception. Maybe log a warning for the user in
+            # case the module has an erroneous import statement.
+            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
+                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   is_caused_by_module=caused_by_module)
             mod = None
         except Exception as e:
-            import traceback
-            fmt_exc = '\n > ' + traceback.format_exc(5).replace('\n', '\n > ')
-            logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
-                           name, filterpackname, dirstradd(filterdir), e.__class__.__name__,
-                           unicode(e), fmt_exc)
-            remember_import_error(import_errors, name, filterpackname, filterdir, e.__class__.__name__, e)
+            exc_type, exc_value, tb_root = sys.exc_info()
+            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
+                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   is_caused_by_module=True)
             mod = None
         finally:
             sys.path = oldsyspath
@@ -381,68 +419,60 @@ def detect_filters(force_redetect=False):
         return _filter_list;
     
 
-    def detect_filters_in_dir(thisdir, filterpackagename, filterpackage):
+    def detect_filters_in_module(filterpackage, filterpackname):
         """
-        thisdir: the directory corresponding to the filter package (inside the package)
-        filterpackage: the module object
+        Explores the module `filterpackage` (to which one refers by the name `filterpackname`)
+        for available filters.
         """
 
         global _filter_list
         global _filter_package_listings
         global filterpath
 
-        logger.debug('looking for filters in package %r in directory %r', filterpackagename, thisdir)
+        logger.debug('looking for filters in package %r (%s) in %s',
+                     filterpackage, filterpackname, filterpackage.__path__)
 
-        if not filterpackagename in _filter_package_listings:
-            _filter_package_listings[filterpackagename] = []
+        if not filterpackname in _filter_package_listings:
+            _filter_package_listings[filterpackname] = []
 
-        def tomodname(x):
-            if (os.sep):
-                x = x.replace(os.sep, '.')
-            if (os.altsep):
-                x = x.replace(os.altsep, '.')
-            return x
-        def startswithdotslash(x):
-            if (os.sep and x.startswith('.'+os.sep)):
-                return True
-            if (os.altsep and x.startswith('.'+os.altsep)):
-                return True
-            return False
+        def ignore(x):
+            logger.debug("Ignoring import error of %s", x)
+            pass
 
-        for (root, dirs, files) in os.walk(thisdir):
-            if (not '__init__.py' in files and
-                not '__init__.pyc' in files and
-                not '__init__.pyo' in files):
-                # skip this directory, not a python module. also skip all subdirectories.
-                dirs[:] = []
+        filterpackprefix = filterpackname+'.'
+
+        for importer, modname, ispkg in pkgutil.walk_packages(path=filterpackage.__path__,
+                                                              prefix=filterpackprefix,
+                                                              onerror=ignore):
+            logger.longdebug("Recursively exploring package %s: Found submodule %s (is a package: %s)",
+                             filterpackname, modname, ispkg)
+
+            if not modname.startswith(filterpackprefix):
+                logger.debug("found module '%s' which doesn't begin with '%s' -- seems to happen e.g. for packages...",
+                               modname, filterpackprefix)
+            else:
+                # just the module name, relative to the filter package
+                modname = modname[len(filterpackprefix):]
+
+            ## seems the module needs to be imported for recursive walk to work...
+            #try:
+            #    mjunk = importer.find_module(module_name).load_module(module_name)
+            #except Exception as e:
+            #    # ignore exception -- e.g. syntax error in py -- let get_module() re-capture it
+            #    pass
+
+            # is a filter module? -- re-load with get_module() for proper handling of import errors
+            m = get_module(modname, raise_nosuchfilter=False, filterpackage=filterpackage)
+            if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
+                logger.longdebug("Module %s: failed to load or doesn't have bibolamazi_filter_class()", modname)
                 continue
 
-            for fname in sorted(files):
-                # make sure this is a .py or .pyc file
-                if (_rxpysuffix.search(fname) is None):
-                    continue
-                if (fname.startswith('__init__.')):
-                    continue
+            # yes, _is_ a filter module.
+            if modname not in _filter_package_listings[filterpackname]:
+                _filter_package_listings[filterpackname].append(modname)
 
-                # deduce the module name relative to here
-                modname = os.path.join(os.path.relpath(root, thisdir), fname)
-                modname = _rxpysuffix.sub('', modname)
-                if (startswithdotslash(modname)):
-                    modname = modname[2:]
-                modname = tomodname(modname)
-
-                # is a filter module?
-                m = get_module(modname, raise_nosuchfilter=False, filterpackage=filterpackage)
-                if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
-                    continue
-
-                # yes, _is_ a filter module.
-                
-                if modname not in _filter_package_listings[filterpackagename]:
-                    _filter_package_listings[filterpackagename].append(modname)
-
-                if modname not in _filter_list:
-                    _filter_list.append(modname)
+            if modname not in _filter_list:
+                _filter_list.append(modname)
 
     # ----
     
@@ -462,9 +492,8 @@ def detect_filters(force_redetect=False):
             except ImportError as e:
                 logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicode(e))
                 continue
-            thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
-            
-            detect_filters_in_dir(thisdir, filterpack, filterpackage)
+            #thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
+            detect_filters_in_module(filterpackage, filterpack)
 
             if filterpack in _filter_precompiled_cache:
                 for (fname,fmod) in _filter_precompiled_cache[filterpack].iteritems():

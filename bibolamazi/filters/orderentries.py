@@ -89,6 +89,13 @@ class OrderEntriesFilter(BibFilter):
 
         logger.debug('orderentries: self.order=%r' % self.order);
 
+    
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
+
     def action(self):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 

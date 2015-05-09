@@ -854,6 +854,18 @@ class BibolamaziFile(object):
                 }));
 
             if (self._bibliographydata):
+                #
+                # Pybtex 0.18: bibtex writer uses entry.original_type instead of
+                # entry.type. (Why?? no idea)
+                #
+                # So if any filters changed entry.type, reflect that in
+                # entry.original_type.
+                for key, entry in self._bibliographydata.entries.iteritems():
+                    entry.original_type = entry.type
+
+                #
+                # Write to bibtex output
+                #
                 w = outputbibtex.Writer();
                 w.write_stream(self._bibliographydata, f);
             

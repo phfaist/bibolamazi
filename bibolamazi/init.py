@@ -38,7 +38,7 @@ if sys.hexversion < 0x02070000:
     sys.stderr.write("FATAL ERROR: Python 2.7 or later is required to run bibolamazi.\n")
     sys.exit(254);
 
-
+import re
 import os.path
 import importlib
 
@@ -65,6 +65,44 @@ for mod in third_party:
         sys.path += [os.path.abspath(os.path.join(base_dir, '..', '3rdparty', mod))]
         importlib.import_module(mod)
 
+
+#
+# Patch for pybtex. Bug in pybtex/bibtex/utils.py in split_tex_string
+# (https://sourceforge.net/p/pybtex/bugs/65/)
+#
+import pybtex.bibtex.utils as _pybtex_bibtex_utils
+def _split_tex_string(string, sep=None, strip=True, filter_empty=False):
+    if sep is None:
+        sep = r'(?:\s|(?<!\\)~)+' ### PhF: FIX TO NOT MATCH e.g. Brand\~{a}o
+        filter_empty = True
+    sep_re = re.compile(sep)
+    brace_level = 0
+    name_start = 0
+    result = []
+    string_len = len(string)
+    pos = 0
+    for pos, char in enumerate(string):
+        if char == '{':
+            brace_level += 1
+        elif char == '}':
+            brace_level -= 1
+        elif brace_level == 0 and pos > 0:
+            ### PhF: FIX TO NOT TRUNCATE THE STRING, TO ENABLE THE LOOKBEHIND ASSERTION IN REGEX.
+            match = sep_re.match(string, pos=pos)
+            if match:
+                sep_len = len(match.group())
+                if pos + sep_len < string_len:
+                    result.append(string[name_start:pos])
+                    name_start = pos + sep_len
+    if name_start < string_len:
+        result.append(string[name_start:])
+    if strip:
+        result = [part.strip() for part in result]
+    if filter_empty:
+        result = [part for part in result if part]
+    return result
+#
+_pybtex_bibtex_utils.split_tex_string = _split_tex_string
 
 #
 # Patch for pybtex. Add __delitem__ to a OrderedCaseInsensitiveDict so that we can erase

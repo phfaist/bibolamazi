@@ -27,7 +27,8 @@ setup(
 
     # could also include long_description, download_url, classifiers, etc.
 
-    packages = ['bibolamazi'],
+    packages = find_packages(exclude=['bibolamazi_gui', 'bibolamazi_gui.*']),
+    zip_safe = True,
     scripts = ['bin/bibolamazi'],
 
     install_requires = [],

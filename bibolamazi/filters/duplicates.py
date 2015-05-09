@@ -27,9 +27,10 @@ import codecs
 import unicodedata
 import string
 import textwrap
+import copy
 import logging
 
-from pybtex.database import BibliographyData, Entry;
+from pybtex.database import BibliographyData, Entry, FieldDict
 from pybtex.utils import OrderedCaseInsensitiveDict
 
 from pylatexenc import latex2text
@@ -262,10 +263,11 @@ Produces LaTeX rules to make duplicate entries aliases of one another.
 HELP_TEXT = ur"""
 This filter works by writing a LaTeX file (the ``dupfile''), which contains the
 commands needed to define the bibtex aliases. You may then use the LaTeX `\cite'
-command with either key; a single citation will be produced in the bibliography.
+command with either key; duplicate entries are merged and a single entry will be
+produced in the bibliography.
 
-Note that the dupfile option is mandatory in order to create the file with
-duplicate definitions. This file is specifed via the `--dupfile' option as
+The dupfile, which contains the necessary definitions to make keys aliases of
+their duplicate entries, is specifed via the `--dupfile' option as
 `--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
 
 In your main LaTeX document, you need to add the following command in the
@@ -276,8 +278,9 @@ preamble:
 where of couse yourdupfile.tex is the file that you specified to this filter.
 
 Alternatively, if you just set the warn flag on, then a duplicate file is not
-created (unless the dupfile option is given), and a warning is displayed for
-each duplicate found.
+created (unless the dupfile option is also given), and a warning is displayed
+for each duplicate found. The duplicates *ARE* however still removed and merged
+in the final bibfile.
 
 Duplicates are detected based on several heuristics and quite extensive
 testing. Recently I've been pretty much satisfied with the results, but there is
@@ -633,12 +636,16 @@ class DuplicatesFilter(BibFilter):
 
         newbibdata = BibliographyData();
         unused = BibliographyData();
-        unused_respawned = set() # because del unused.entries[key] is not implemented ... :(
+        #unused_respawned = set() # because del unused.entries[key] is not implemented ... :(
 
         def copy_entry(entry):
+            #return copy.deepcopy(entry) # too deep ...
+            newpers = {}
+            for role, plist in entry.persons.iteritems():
+                newpers[role] = [copy.deepcopy(p) for p in plist]
             return Entry(type_=entry.type,
-                         fields=entry.fields,
-                         persons=entry.persons,
+                         fields=entry.fields.items(), # will create own Fielddict
+                         persons=newpers,
                          collection=entry.collection
                          )
 
@@ -668,8 +675,8 @@ class DuplicatesFilter(BibFilter):
                     is_duplicate_of = nkey;
                     break
             for (nkey, nentry) in unused.entries.iteritems():
-                if nkey in unused_respawned:
-                    continue
+                #if nkey in unused_respawned:
+                #    continue
                 if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                              dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
                     logger.longdebug('    ... matches existing entry %s!', nkey);
@@ -697,15 +704,16 @@ class DuplicatesFilter(BibFilter):
                     # alias, then respawn the original to the newbibdata so we can refer
                     # to it. Bonus: use the name with which we have referred to it, so we
                     # don't need to register any duplicate.
-                    newbibdata.add_entry(key, copy_entry(unused.entries[is_duplicate_of]))
-                    unused_respawned.add(is_duplicate_of)
+                    newbibdata.add_entry(key, unused.entries[is_duplicate_of])
+                    #unused_respawned.add(is_duplicate_of)
+                    del unused.entries[is_duplicate_of]
             else:
                 if used_citations is not None and key not in used_citations:
                     # new entry, but we don't want it. So add it to the unused list.
-                    unused.add_entry(key, copy_entry(entry))
+                    unused.add_entry(key, entry)
                 else:
                     # new entry and we want it. So add it to the main newbibdata list.
-                    newbibdata.add_entry(key, copy_entry(entry))
+                    newbibdata.add_entry(key, entry)
 
         # output duplicates to the duplicates file
 
@@ -786,18 +794,19 @@ class DuplicatesFilter(BibFilter):
                                      ])  +
                            DUPL_WARN_BOTTOM % {'num_dupl': len(duplicates)});
 
-        if self.dupfile:
-            # ### TODO: do this not only if we are given a dupfile?
-            #
-            # set the new bibdata, without the duplicates
-            # DON'T DO THIS, BECAUSE CACHES MAY HAVE KEPT A POINTER TO THE BIBDATA.
-            #bibolamazifile.setBibliographyData(newbibdata);
-            #
-            # Instead, update bibolamazifile's bibliographyData() object itself.
-            #
-            bibolamazifile.setEntries(newbibdata.entries.iteritems())
-                
-            
+        # ### TODO: do this not only if we are given a dupfile?
+        #if self.dupfile:
+        # ### --> Bibolamazi v3: also set this if no dupfile was given. This is because we
+        # ###     are moving entries themselves around and modifying them anyway
+        #
+        # set the new bibdata, without the duplicates
+        # DON'T DO THIS, BECAUSE CACHES MAY HAVE KEPT A POINTER TO THE BIBDATA.
+        #bibolamazifile.setBibliographyData(newbibdata);
+        #
+        # Instead, update bibolamazifile's bibliographyData() object itself.
+        #
+        bibolamazifile.setEntries(newbibdata.entries.iteritems())
+        
         return
 
 

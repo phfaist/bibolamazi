@@ -6,11 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 # core filter classes
-from core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 # types for passing arguments to the filter
-from core.bibfilter.argtypes import CommaStrList, enum_class
+from bibolamazi.core.bibfilter.argtypes import CommaStrList, enum_class
 # utility to parse boolean values
-from core.butils import getbool
+from bibolamazi.core.butils import getbool
 
 
 # --- help texts ---
@@ -38,24 +38,33 @@ Specify which operating mode you prefer with the option '-sMode=...'. By default
 
 # --- operating modes ---
 
+# Here we define a custom enumeration type for passing as argument to our constructor. By
+# doing it this way, instead of simply accepting a string, allows the filter factory
+# mechanism to help us report errors and provide more helpful help messages. Also, in the
+# graphical interface the relevant option is presented as a drop-down list instead of a
+# text field.
+
+# numerical values -- numerical values just have to be different
 MODE_EMPTY = 0
 MODE_RANDOM = 1
 MODE_FIXED = 2
 
-# All these defs are useful for the GUI
+# symbolic names and to which values they correspond
 _modes = [
     ('empty', MODE_EMPTY),
     ('random', MODE_RANDOM),
     ('fixed', MODE_FIXED),
     ]
 
-# our Mode type
+# our Mode type. See `bibolamazi.core.bibfilter.argtypes`
 Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
+
 
 # --- the filter object itself ---
 
 class MyTestFilter(BibFilter):
-    
+
+    # import help texts above here
     helpauthor = HELP_AUTHOR
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
@@ -72,14 +81,20 @@ class MyTestFilter(BibFilter):
           - mode(Mode): the operating mode to adopt
         """
         
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.mode = Mode(mode);
+        self.mode = Mode(mode)
 
         logger.debug('test filter constructor: mode=%s', self.mode)
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        # Here, we want the filter to operate entry-by-entry (so the function
+        # `self.filter_bibentry()` will be called). If we had preferred to operate on the
+        # whole bibliography database in one go (as, e.g., for the `duplicates` filter),
+        # then we would have to return `BibFilter.BIB_FILTER_BIBOLAMAZIFILE` here, and
+        # provide a `filter_bibolamazifile()` method.
+        #
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def requested_cache_accessors(self):
         # return the requested cache accessors here if you are using the cache mechanism. 
@@ -105,12 +120,16 @@ class MyTestFilter(BibFilter):
                 u"\u00E0 atteindre, ou qu'on a atteint d\u00E9finitivement. (Proust)"
                 )
         
-        raise BibFilterError('testfilter', "Unknown operating mode: %s" % mode );
+        raise BibFilterError('testfilter', "Unknown operating mode: %s" % mode )
 
 
 
+#
+# Every python module which defines a filter should have the following method, which
+# returns the filter class type (which is expected to be a `BibFilter` subclass).
+#
 def bibolamazi_filter_class():
-    return MyTestFilter;
+    return MyTestFilter
 
 
 

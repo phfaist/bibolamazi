@@ -342,6 +342,8 @@ class ArxivNormalizeFilter(BibFilter):
 
             add_note(entry, arxivinfo)
 
+            logger.longdebug('Entry %s is now %r', entry.key, entry)
+
             return entry
 
         if (mode == MODE_NOTE):

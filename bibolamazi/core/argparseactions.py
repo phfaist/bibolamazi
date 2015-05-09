@@ -39,6 +39,7 @@ import pydoc
 
 import bibolamazi.init
 from . import butils
+from . import blogger
 from .butils import getbool
 
 logger = logging.getLogger(__name__)
@@ -317,9 +318,6 @@ def help_list_filters():
     import textwrap;
     from bibolamazi.core.bibfilter import factory
 
-    #DEBUG
-    #logger.setVerbosity(3)
-
     def fmt_filter_helpline(f, fp):
 
         nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
@@ -388,3 +386,93 @@ class opt_init_empty_template(argparse.Action):
 
         parser.exit();
 
+
+
+
+
+# Set up the logger according to the user's wishes
+# ------------------------------------------------
+
+class opt_set_verbosity(argparse.Action):
+    def __init__(self, nargs=1, **kwargs):
+        if nargs != 0 and nargs != 1:
+            raise ValueError('nargs for opt_set_verbosity must be 0 or 1')
+        
+        argparse.Action.__init__(self, nargs=nargs, type=int, **kwargs);
+        
+    def __call__(self, parser, namespace, values, option_string):
+
+        from . import main
+
+        if self.nargs == 1:
+            verbositylevel = int(values[0])
+        else:
+            verbositylevel = self.const
+
+        # act on the root logger
+        loglevel = main.verbosity_logger_level(verbositylevel)
+        rootlogger = logging.getLogger()
+        rootlogger.setLevel(loglevel)
+
+        logger.longdebug('Set verbosity: %d', verbositylevel)
+
+        # finally, see if we should display information about where messages originated
+        # from. Do this if the user specified a log level of severity less or equal to
+        # DEBUG.
+        if loglevel <= logging.DEBUG and hasattr(rootlogger, 'bibolamazi_formatter'):
+            # show log-record-position-info (`[module lineno]: function():') for all messages
+            rootlogger.bibolamazi_formatter.setShowPosInfoLevel(logging.CRITICAL)
+        
+
+# ------------------
+
+
+class opt_set_fine_log_levels(argparse.Action):
+    def __init__(self, nargs=1, **kwargs):
+        if nargs != 1:
+            raise ValueError('nargs for opt_set_fine_log_levels must be == 1')
+        
+        argparse.Action.__init__(self, nargs=nargs, **kwargs);
+        
+    def __call__(self, parser, namespace, values, option_string):
+        #
+        # If there are some more fine-grained debug levels to set, go for it. Useful for
+        # debugging bibolamazi components.
+        #
+        rootlogger = logging.getLogger()
+
+        fine_log_levels = values[0]
+        logger.longdebug("fine_log_levels=%r", fine_log_levels)
+
+        lvlrx = re.compile(
+            r'^\s*((?P<modname>[A-Za-z0-9_.]+)=)?(?P<level>(LONG)?DEBUG|WARNING|INFO|ERROR|CRITICAL)\s*$'
+            )
+        has_set_fine_levels = False
+        for lvl in fine_log_levels.split(','):
+            m = lvlrx.match(lvl)
+            if not m:
+                logger.warning("Bad fine-grained log level setting: `%s'", lvl)
+                continue
+            modname = m.group('modname')
+            getloggerargs = {}
+            if modname:
+                getloggerargs['name'] = modname
+            thelogger = logging.getLogger(**getloggerargs)
+            try:
+                thelevel = blogger.LogLevel(m.group('level')).levelno
+            except ValueError as e:
+                logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
+                continue
+            #print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
+            #    modname, getloggerargs, thelogger, thelevel
+            #)
+            thelogger.setLevel(thelevel)
+            has_set_fine_levels = True
+
+        # finally, see if we should display information about where messages originated
+        # from. Do this if the user specified a nontrivial value to this option.
+        if has_set_fine_levels and hasattr(rootlogger, 'bibolamazi_formatter'):
+            # show log-record-position-info (`[module lineno]: function():') for all messages
+            rootlogger.bibolamazi_formatter.setShowPosInfoLevel(logging.CRITICAL)
+
+        logger.longdebug('Set fine log levels done.')
