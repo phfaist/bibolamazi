@@ -1,7 +1,19 @@
 from setuptools import setup, find_packages
 
+import sys
+
 import bibolamazi.init
 from bibolamazi.core import version as bibolamaziversion
+
+sys.stderr.write("""
+
+Welcome to the setup.py script for Bibolamazi. This setup.py script will only
+take care of compiling/installing the basic bibolamazi package and command-line
+utility. For the graphical interface, download a precompiled version from
+https://github.com/phfaist/bibolamazi/releases/ or use the `setup.py` script
+located in the gui/ directory.
+
+""")
 
 setup(
     name = "bibolamazi",
