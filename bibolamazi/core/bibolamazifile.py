@@ -61,7 +61,7 @@ class BibolamaziFileParseError(BibolamaziError):
             if (lineno is not None):
                 where += ", line %d" %(lineno)
                 
-        BibolamaziError.__init__(self, msg, where=where);
+        BibolamaziError.__init__(self, msg, where=where)
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
@@ -70,13 +70,13 @@ class NotBibolamaziFileError(BibolamaziFileParseError):
     file---most probably, it does not contain a valid configuration section.
     """
     def __init__(self, msg, fname=None, lineno=None):
-        BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno);
+        BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno)
 
 
 def _repl(s, dic):
     for (k,v) in dic.iteritems():
-        s = re.sub(k, v, s);
-    return s;
+        s = re.sub(k, v, s)
+    return s
 
 
 
@@ -100,8 +100,8 @@ class BibolamaziFileCmd:
                 )
 
 
-CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%';
-CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%';
+CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%'
+CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%'
 
 AFTER_CONFIG_TEXT = """\
 %
@@ -129,11 +129,11 @@ AFTER_CONFIG_TEXT = """\
 
 
 
-""";
+"""
 
                     
 # this is fixed to utf-8. No alternatives, sorry.
-BIBOLAMAZI_FILE_ENCODING = 'utf-8';
+BIBOLAMAZI_FILE_ENCODING = 'utf-8'
 
 
 BIBOLAMAZIFILE_INIT = 0
@@ -189,15 +189,15 @@ class BibolamaziFile(object):
         time is set before loading the cache.
         """
         
-        logger.debug("Opening bibolamazi file `%s'" %(fname));
+        logger.debug("Opening bibolamazi file `%s'" %(fname))
         self._fname = None
         self._dir = None
         self._use_cache = use_cache
 
         if (create):
-            self._init_empty_template();
+            self._init_empty_template()
             self._fname = fname
-            self._dir = os.path.dirname(os.path.realpath(fname));
+            self._dir = os.path.dirname(os.path.realpath(fname))
         elif (fname):
             # read the file, load settings
             self.load(fname=fname, to_state=min(load_to_state, BIBOLAMAZIFILE_PARSED))
@@ -212,7 +212,7 @@ class BibolamaziFile(object):
             logger.debug("No file given. Don't forget to set one with load()")
 
     def getLoadState(self):
-        return self._load_state;
+        return self._load_state
 
     def reset(self):
         self.load(fname=None, to_state=BIBOLAMAZIFILE_INIT)
@@ -251,10 +251,10 @@ class BibolamaziFile(object):
         if (to_state >= BIBOLAMAZIFILE_READ  and  self._load_state < BIBOLAMAZIFILE_READ):
             try:
                 with codecs.open(self._fname, 'r', encoding=BIBOLAMAZI_FILE_ENCODING) as f:
-                    logger.longdebug("File "+repr(self._fname)+" opened.");
-                    self._read_config_stream(f, self._fname);
+                    logger.longdebug("File "+repr(self._fname)+" opened.")
+                    self._read_config_stream(f, self._fname)
             except IOError as e:
-                raise BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)));
+                raise BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)))
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()
@@ -266,25 +266,25 @@ class BibolamaziFile(object):
 
 
     def fname(self):
-        return self._fname;
+        return self._fname
 
     def fdir(self):
-        return self._dir;
+        return self._dir
 
     def rawHeader(self):
-        return self._header;
+        return self._header
 
     def rawConfig(self):
-        return self._config;
+        return self._config
 
     def configData(self):
-        return self._config_data;
+        return self._config_data
 
     def rawStartConfigDataLineNo(self):
         """Returns the line number on which the begin config tag `CONFIG_BEGIN_TAG` is located.
         Line numbers start at 1 at the top of the file like in any reasonable editor.
         """
-        return self._startconfigdatalineno;
+        return self._startconfigdatalineno
 
     def fileLineNo(self, configlineno):
         """Returns the line number in the file of the config line `configlineno`. The latter
@@ -292,32 +292,32 @@ class BibolamaziFile(object):
         the begin config tag `CONFIG_BEGIN_TAG`.
         """
         
-        return configlineno + self._startconfigdatalineno;
+        return configlineno + self._startconfigdatalineno
 
     def configLineNo(self, filelineno):
         """Returns the line number in the config data corresponding to line `filelineno` in the
         file. Opposite of `fileLineNo()`.
         """
         
-        return filelineno - self._startconfigdatalineno;
+        return filelineno - self._startconfigdatalineno
 
     def rawrest(self):
-        return self._rest;
+        return self._rest
 
     def rawcmds(self):
-        return self._cmds;
+        return self._cmds
 
     def sources(self):
-        return self._sources;
+        return self._sources
 
     def sourceLists(self):
-        return self._source_lists;
+        return self._source_lists
 
     def filters(self):
-        return self._filters;
+        return self._filters
 
     def bibliographyData(self):
-        return self._bibliographydata;
+        return self._bibliographydata
 
     def bibliographydata(self):
         """
@@ -332,7 +332,7 @@ class BibolamaziFile(object):
         directly, the cache will be loaded and saved automatically. You should normally
         only access the cache through cache accessors. See `cacheAccessor()`.
         """
-        return self._fname + '.bibolamazicache';
+        return self._fname + '.bibolamazicache'
         
 
     def cacheAccessor(self, klass):
@@ -372,7 +372,7 @@ class BibolamaziFile(object):
 
         # force ending in '\n' (but don't duplicate existing '\n')
         if (not len(config_block) or config_block[-1] != '\n'):
-            config_block += '\n';
+            config_block += '\n'
 
         # add start and end bibolamazi config section tags.
         config_block = CONFIG_BEGIN_TAG + '\n' + config_block + CONFIG_END_TAG + '\n'
@@ -404,8 +404,8 @@ class BibolamaziFile(object):
         Note: `path` should not be an URL.
         """
         # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
-        path = os.path.expanduser(path);
-        path = os.path.expandvars(path);
+        path = os.path.expanduser(path)
+        path = os.path.expandvars(path)
         # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
         # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
         return os.path.join(self._dir, path)
@@ -416,26 +416,26 @@ class BibolamaziFile(object):
         # provide us an initialized instance
         self.load(None, to_state=BIBOLAMAZIFILE_INIT)
 
-        self._header = _TEMPLATE_HEADER;
-        self._config = _TEMPLATE_CONFIG;
-        self._config_data = self._config_data_from_block(_TEMPLATE_CONFIG);
-        self._rest = '';#_TEMPLATE_REST;
+        self._header = _TEMPLATE_HEADER
+        self._config = _TEMPLATE_CONFIG
+        self._config_data = self._config_data_from_block(_TEMPLATE_CONFIG)
+        self._rest = ''#_TEMPLATE_REST
 
         # store raw cmds
-        self._cmds = [];
+        self._cmds = []
 
         # parse commands
-        self._sources = [];
-        self._source_lists = [];
-        self._filters = [];
-        self._cache_accessors = {};
+        self._sources = []
+        self._source_lists = []
+        self._filters = []
+        self._cache_accessors = {}
 
         # cheat, we've loaded it manually
         self._load_state = BIBOLAMAZIFILE_LOADED
 
-        self._bibliographydata = pybtex.database.BibliographyData();
+        self._bibliographydata = pybtex.database.BibliographyData()
 
-        logger.longdebug('done with empty template init!');
+        logger.longdebug('done with empty template init!')
 
 
     def _config_data_from_input_lines(self, inputconfigdata):
@@ -473,45 +473,45 @@ class BibolamaziFile(object):
 
     def _read_config_stream(self, stream, streamfname=None):
 
-        ST_HEADER = 0;
-        ST_CONFIG = 1;
-        ST_REST = 2;
+        ST_HEADER = 0
+        ST_CONFIG = 1
+        ST_REST = 2
 
-        state = ST_HEADER;
+        state = ST_HEADER
 
         content = {
             ST_HEADER: u"",
             ST_CONFIG: u"",
             ST_REST: u""
-            };
+            }
         config_block_lines = []
 
-        lineno = 0;
-        self._startconfigdatalineno = None;
+        lineno = 0
+        self._startconfigdatalineno = None
 
         for line in stream:
             lineno += 1
             
             if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
-                state = ST_CONFIG;
-                content[ST_CONFIG] += line;
-                self._startconfigdatalineno = lineno;
+                state = ST_CONFIG
+                content[ST_CONFIG] += line
+                self._startconfigdatalineno = lineno
                 continue
 
             if (state == ST_CONFIG and line.startswith(CONFIG_END_TAG)):
-                content[ST_CONFIG] += line;
-                state = ST_REST;
+                content[ST_CONFIG] += line
+                state = ST_REST
                 continue
 
             if (state == ST_CONFIG):
                 # remove leading % signs
-                #logger.debug("adding line to config_block: "+line);
+                #logger.debug("adding line to config_block: "+line)
                 cline = line
                 if (len(cline) and cline[-1] == '\n'):
                     cline = cline[:-1]
                 config_block_lines.append(cline)
 
-            content[state] += line;
+            content[state] += line
 
         if (state != ST_REST):
             # file is not a bibolamazi file--no config section found.
@@ -522,35 +522,38 @@ class BibolamaziFile(object):
         config_block = "\n".join(config_block_lines)
 
         # save the splitted data into these data structures.
-        self._header = content[ST_HEADER];
-        self._config = content[ST_CONFIG];
-        self._config_data = self._config_data_from_input_lines(config_block);
-        self._rest = content[ST_REST];
+        self._header = content[ST_HEADER]
+        self._config = content[ST_CONFIG]
+        self._config_data = self._config_data_from_input_lines(config_block)
+        self._rest = content[ST_REST]
 
         logger.longdebug(("Parsed general bibolamazifile structure: len(header)=%d"+
                       "; len(config)=%d; len(config_data)=%d; len(rest)=%d") %
                      ( len(self._header),
                        len(self._config),
                        len(self._config_data),
-                       len(self._rest) ) );
+                       len(self._rest) ) )
 
 
         logger.longdebug("config data is"+ "\n--------------------------------\n"
-                     +self._config_data+"\n--------------------------------\n");
+                     +self._config_data+"\n--------------------------------\n")
 
         self._load_state = BIBOLAMAZIFILE_READ
         return True
 
     def _parse_config(self):
         # now, parse the configuration.
-        self._config_data = self._config_data_from_block(self._config);
-        configstream = io.StringIO(unicode(self._config_data));
-        cmds = [];
+        self._config_data = self._config_data_from_block(self._config)
+        configstream = io.StringIO(unicode(self._config_data))
+        cmds = []
         emptycmd = BibolamaziFileCmd(cmd=None, text="", lineno=-1, linenoend=-1, info={})
-        latestcmd = emptycmd;
+        latestcmd = emptycmd
+        # all 'src:' commands must be BEFORE any 'filter:' commands. `current_section`
+        # indicates in which command block we are ('src' or 'filter')
+        current_section = 'src'
         def complete_cmd():
             if (latestcmd.cmd is not None):
-                cmds.append(latestcmd);
+                cmds.append(latestcmd)
 
         thislineno = self._startconfigdatalineno
         for cline in configstream:
@@ -561,78 +564,82 @@ class BibolamaziFile(object):
                 continue
             
             if (re.match(r'^\s*$', cline)):
-                # ignore empty lines
-                # TODO: Maybe they shouldn't be ignored for filters? but then the cmd info stetches over
-                # following comments etc. and in the GUI it behaves wierdly
+                # empty line -> forces the state back to an empty state. We now expect a
+                # new 'src:' or 'filter:' keyword
+                complete_cmd()
+                latestcmd = emptycmd
                 continue
 
             # try to match to a new command
-            mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline);
+            mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline)
             if (not mcmd):
                 if (latestcmd.cmd is None):
                     # no command
                     self._raise_parse_error("Expected a bibolamazi command",
-                                            lineno=thislineno);
+                                            lineno=thislineno)
                 # simply continue current cmd
-                latestcmd.text += cline;
-                latestcmd.linenoend = thislineno;
+                latestcmd.text += cline
+                latestcmd.linenoend = thislineno
                 continue
 
             # we have completed the current cmd
-            complete_cmd();
-            latestcmd = emptycmd;
+            complete_cmd()
+            latestcmd = emptycmd
             # start new cmd
-            cmd = mcmd.group(1);
-            rest = cline[mcmd.end():];
-            info = { };
+            cmd = mcmd.group(1)
+            rest = cline[mcmd.end():]
+            info = { }
             if (cmd == "filter"):
+                current_section = 'filter'
                 # extract filter name
-                mfiltername = re.match('^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest);
+                mfiltername = re.match('^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest)
                 if (not mfiltername):
-                    self._raise_parse_error("Expected filter name", lineno=thislineno);
-                filtername = mfiltername.group('filtername');
-                rest = rest[mfiltername.end():];
-                info['filtername'] = filtername;
+                    self._raise_parse_error("Expected filter name", lineno=thislineno)
+                filtername = mfiltername.group('filtername')
+                rest = rest[mfiltername.end():]
+                info['filtername'] = filtername
+            if cmd == "src" and current_section == 'filter':
+                self._raise_parse_error("'src:' commands must preceed any 'filter:' commands", lineno=thislineno)
 
             # and start cumulating stuff
-            latestcmd = BibolamaziFileCmd(cmd=cmd, text=rest, lineno=thislineno, linenoend=thislineno, info=info);
+            latestcmd = BibolamaziFileCmd(cmd=cmd, text=rest, lineno=thislineno, linenoend=thislineno, info=info)
 
         # complete the last cmd
-        complete_cmd();
+        complete_cmd()
 
         # store raw cmds
-        self._cmds = cmds;
+        self._cmds = cmds
 
         # parse commands
-        self._sources = [];
-        self._source_lists = [];
-        self._filters = [];
-        self._cache_accessors = {};
+        self._sources = []
+        self._source_lists = []
+        self._filters = []
+        self._cache_accessors = {}
         for cmd in cmds:
             if (cmd.cmd == "src"):
-                thesrc_list = shlex.split(cmd.text);
-                self._source_lists.append(thesrc_list);
-                self._sources.append(''); # this will be set later to which source in the
-                #                           list was actually accessed.
-                logger.debug("Added source list %r" % (thesrc_list));
+                thesrc_list = shlex.split(cmd.text)
+                self._source_lists.append(thesrc_list)
+                self._sources.append('') # this will be set later to which source in the
+                #                          list was actually accessed.
+                logger.debug("Added source list %r" % (thesrc_list))
                 continue
             if (cmd.cmd == "filter"):
-                filname = cmd.info['filtername'];
-                filoptions = cmd.text;
+                filname = cmd.info['filtername']
+                filoptions = cmd.text
                 try:
                     filterinstance = factory.make_filter(filname, filoptions)
                     filterinstance.setBibolamaziFile(self)
                     filterinstance.setInvokationName(filname)
                     self._filters.append(filterinstance)
                 except factory.NoSuchFilter as e:
-                    self._raise_parse_error(str(e), lineno=cmd.lineno);
+                    self._raise_parse_error(str(e), lineno=cmd.lineno)
                 except factory.NoSuchFilterPackage as e:
-                    self._raise_parse_error(str(e), lineno=cmd.lineno);
+                    self._raise_parse_error(str(e), lineno=cmd.lineno)
                 except factory.FilterError as e:
                     import traceback
                     logger.debug("FilterError:\n" + traceback.format_exc())
                     self._raise_parse_error(unicode(e),
-                                            lineno=cmd.lineno);
+                                            lineno=cmd.lineno)
 
                 # see if we have to register a new cache accessor
                 for req_cache in list(filterinstance.requested_cache_accessors()):
@@ -649,7 +656,7 @@ class BibolamaziFile(object):
                                 %( req_cache.__name__, e.__class__.__name__, unicode(e) )
                                 )
                         
-                logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'");
+                logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'")
                 continue
 
             self._raise_parse_error("Unknown command: `%s'" %(cmd.cmd),
@@ -669,17 +676,17 @@ class BibolamaziFile(object):
         # Load the sources
         # ----------------
 
-        self._bibliographydata = None;
+        self._bibliographydata = None
 
         if (not len(self._source_lists)):
             logger.warning("File `%s': No source files specified. You need source files to provide bib entries!"
-                           %(self._fname));
+                           %(self._fname))
 
         # now, populate all bibliographydata.
         for k in range(len(self._source_lists)):
-            srclist = self._source_lists[k];
-            src = self._populate_from_srclist(srclist);
-            self._sources[k] = src;
+            srclist = self._source_lists[k]
+            src = self._populate_from_srclist(srclist)
+            self._sources[k] = src
 
 
         # Now, try to load the cache
@@ -722,21 +729,21 @@ class BibolamaziFile(object):
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 
-        logger.longdebug('done with _load_contents!');
+        logger.longdebug('done with _load_contents!')
         return True
 
 
     def _populate_from_srclist(self, srclist):
         for src in srclist:
             # try to populate from this source
-            ok = self._populate_from_src(src);
+            ok = self._populate_from_src(src)
             if ok:
                 return src
-        logger.info("Ignoring nonexisting source list: %s" %(", ".join(srclist)));
+        logger.warning("Ignoring nonexisting source list: %s" %(", ".join(srclist)))
         return None
 
     def _populate_from_src(self, src):
-        bib_data = None;
+        bib_data = None
 
         is_url = False
         if (re.match('^[A-Za-z0-9+_-]+://.*', src)):
@@ -746,39 +753,39 @@ class BibolamaziFile(object):
             src = self.resolveSourcePath(src)
 
         # read data, decode it in the right charset
-        data = None;
+        data = None
         if is_url:
-            logger.debug("Opening URL %r", src);
+            logger.debug("Opening URL %r", src)
             try:
                 f = urllib.urlopen(src)
                 if (f is None):
                     return None
-                data = butils.guess_encoding_decode(f.read());
-                logger.longdebug(" ... successfully read %d chars from URL resouce." % len(data));
-                f.close();
+                data = butils.guess_encoding_decode(f.read())
+                logger.longdebug(" ... successfully read %d chars from URL resouce." % len(data))
+                f.close()
             except IOError:
                 # ignore source, will have to try next in list
                 return None
         else:
-            logger.debug("Opening file %r", src);
+            logger.debug("Opening file %r", src)
             try:
                 with open(src, 'r') as f:
-                    data = butils.guess_encoding_decode(f.read());
+                    data = butils.guess_encoding_decode(f.read())
             except IOError:
                 # ignore source, will have to try next in list
-                return None;
+                return None
 
-        logger.info("Found Source: %s" %(src));
+        logger.info("Found Source: %s" %(src))
 
         # parse bibtex
-        parser = inputbibtex.Parser();
-        bib_data = None;
+        parser = inputbibtex.Parser()
+        bib_data = None
         with io.StringIO(data) as stream:
-            bib_data = parser.parse_stream(stream);
+            bib_data = parser.parse_stream(stream)
 
         if (self._bibliographydata is None):
             # initialize bibliography data
-            self._bibliographydata = pybtex.database.BibliographyData();
+            self._bibliographydata = pybtex.database.BibliographyData()
 
         for key, entry in bib_data.entries.iteritems():
             if (key in self._bibliographydata.entries):
@@ -815,7 +822,7 @@ class BibolamaziFile(object):
                      :py:class:`~core.bibusercache.tokencheckers.EntryFieldsTokenChecker`). Please
                      use :py:meth:`setEntries()` instead.
         """
-        self._bibliographydata = bibliographydata;
+        self._bibliographydata = bibliographydata
 
     def setEntries(self, bibentries):
         """
@@ -846,12 +853,12 @@ class BibolamaziFile(object):
 
     def saveToFile(self):
         with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
-            f.write(self._header);
-            f.write(self._config);
+            f.write(self._header)
+            f.write(self._config)
             f.write(_repl(AFTER_CONFIG_TEXT, {
                 r'__BIBOLAMAZI_VERSION__': butils.get_version(),
                 r'__DATETIME_NOW__': datetime.now().isoformat()
-                }));
+                }))
 
             if (self._bibliographydata):
                 #
@@ -866,10 +873,10 @@ class BibolamaziFile(object):
                 #
                 # Write to bibtex output
                 #
-                w = outputbibtex.Writer();
-                w.write_stream(self._bibliographydata, f);
+                w = outputbibtex.Writer()
+                w.write_stream(self._bibliographydata, f)
             
-            logger.info("Updated output file `"+self._fname+"'.");
+            logger.info("Updated output file `"+self._fname+"'.")
 
         # if we have cache to save, save it
         if (self._user_cache and self._user_cache.hasCache()):

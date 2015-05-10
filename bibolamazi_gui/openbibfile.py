@@ -53,32 +53,94 @@ from .qtauto.ui_openbibfile import Ui_OpenBibFile
 logger = logging.getLogger(__name__)
 
 
+
+def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
+
+    def a_link(m):
+        if bibolamaziFile is not None:
+            return "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
+                bibolamaziFile.configLineNo(int(m.group('lineno'))),
+                m.group()
+                )
+        return m.group();
+
+    errortxt = str(Qt.escape(unicode(errortxt)))
+    errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
+    try:
+        # if wrap_pre = (start_tag, end_tag)
+        return wrap_pre[0] + errortxt + wrap_pre[1]
+    except (TypeError,IndexError):
+        pass
+    if wrap_pre:
+        # if wrap_pre = True
+        return ("<pre>"+errortxt+"</pre>")
+    return errortxt
+
+
+
+class PreformattedHtml(object):
+    def __init__(self, html):
+        self.html = unicode(html)
+
+    def getHtml(self):
+        return self.html
+
+    def __str__(self):
+        return self.html.encode('utf-8')
+    def __unicode__(self):
+        return self.html
+
 class LogToTextBrowserHandler(logging.Handler):
     def __init__(self, textEdit):
         logging.Handler.__init__(self)
         self.textEdit = textEdit
 
     def addtolog(self, txt, levelno=logging.INFO):
-        chfmt = QTextCharFormat()
+        #chfmt = QTextCharFormat()
+        #if levelno == logging.ERROR or levelno == logging.CRITICAL:
+        #    chfmt.setForeground(QColor(255,0,0));
+        #    chfmt.setFontWeight(QFont.Bold);
+        #elif levelno == logging.WARNING:
+        #    chfmt.setForeground(QColor(204, 102, 0));
+        #    chfmt.setFontWeight(QFont.Bold);
+        #elif levelno == logging.INFO:
+        #    chfmt.setForeground(QColor(0,0,0));
+        #    chfmt.setFontWeight(QFont.Normal);
+        #elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
+        #    chfmt.setForeground(QColor(127,127,127));
+        #    chfmt.setFontWeight(QFont.Normal);
+        #else:
+        #    # unknown level
+        #    chfmt.setForeground(QColor(127,127,127));
+        #    chfmt.setFontWeight(QFont.Normal);
+
+        try:
+            html = txt.getHtml() # in case of a PreformattedHtml instance
+        except AttributeError:
+            html = unicode(Qt.escape(txt)) # in case of a simple plain text string
+
+        sty = ''
         if levelno == logging.ERROR or levelno == logging.CRITICAL:
-            chfmt.setForeground(QColor(255,0,0));
-            chfmt.setFontWeight(QFont.Bold);
+            sty = "color: #ff0000; font-weight: bold;"
         elif levelno == logging.WARNING:
-            chfmt.setForeground(QColor(204, 102, 0));
-            chfmt.setFontWeight(QFont.Bold);
+            sty = "color: rgb(204,102,0); font-weight: bold;"
         elif levelno == logging.INFO:
-            chfmt.setForeground(QColor(0,0,0));
-            chfmt.setFontWeight(QFont.Normal);
+            sty = "color: #000000; font-weight: normal;"
         elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
-            chfmt.setForeground(QColor(127,127,127));
-            chfmt.setFontWeight(QFont.Normal);
+            sty = "color: #7f7f7f; font-weight: normal;"
         else:
             # unknown level
-            chfmt.setForeground(QColor(127,127,127));
-            chfmt.setFontWeight(QFont.Normal);
+            sty = "color: #7f7f7f; font-weight: normal;"
 
-        self.textEdit.setCurrentCharFormat(chfmt)
-        self.textEdit.append(txt)
+        sty += "white-space: pre;"
+
+        cur = QTextCursor(self.textEdit.document())
+        cur.movePosition(QTextCursor.End)
+        #cur.setCharFormat(chfmt)
+        #try:
+        cur.insertHtml("<span style=\"%s\">%s\n</span>"%(sty, html))
+        #except AttributeError: # txt is a normal string, not a PreformattedHtml instance
+        #    cur.insertText(txt)
         self.textEdit.update()
         QApplication.instance().processEvents()
 
@@ -87,21 +149,30 @@ class LogToTextBrowserHandler(logging.Handler):
 
 
 class LogToTextBrowser:
-    def __init__(self, textedit, thelogger=logging.getLogger()):
+    def __init__(self, textedit, bibolamaziFile, thelogger=logging.getLogger()):
         self.ch = LogToTextBrowserHandler(textedit);
         self.ch.setLevel(logging.NOTSET); # propagate all messages
+
+        self.bibolamaziFile = bibolamaziFile
 
         # create formatter and add it to the handlers
         self.formatter = blogger.ConditionalFormatter('%(message)s',
                                                       DEBUG='-- %(message)s',
                                                       LONGDEBUG='  -- %(message)s',
                                                       WARNING='WARNING: %(message)s',
-                                                      ERROR='ERROR: %(message)s',
+                                                      ERROR=self._fmt_error,
                                                       CRITICAL='CRITICAL: %(message)s');
         self.ch.setFormatter(self.formatter);
 
         self.logger = thelogger
-        
+
+
+    def _fmt_error(self, x):
+        html = bibolamazi_error_html(
+            '%(message)s' % x, bibolamaziFile=self.bibolamaziFile,
+            wrap_pre=('<span style="white-space: pre">', '</span>'))
+        html = "<br />".join(['ERROR: %s'%(line) for line in html.split('\n')])
+        return PreformattedHtml(html=html)
 
     def addtolog(self, txt):
         self.ch.addtolog(txt)
@@ -380,7 +451,7 @@ class OpenBibFile(QWidget):
             QMessageBox.critical(self, "Load Error", u"Error loading file: %s" %(unicode(e)))
             self._set_win_state(False,
                                 "<h3 style=\"color: rgb(127,0,0)\">Error reading file.</h3>\n"
-                                +self._bibolamazi_error_html(unicode(e)))
+                                + bibolamazi_error_html(unicode(e), bibolamaziFile=self.bibolamaziFile))
             return
 
         self._set_win_state(True)
@@ -396,6 +467,15 @@ class OpenBibFile(QWidget):
 
         # now, try to further parse the config
         self._bibolamazifile_reparse()
+
+        if self.bibolamaziFile.getLoadState() == bibolamazifile.BIBOLAMAZIFILE_PARSED:
+            self._display_info()
+
+        logger.debug("file contents updated!")
+
+        
+
+    def _display_info(self):
 
         def srcurl(s):
             if (re.match(r'^\w+:/', s)):
@@ -463,8 +543,6 @@ class OpenBibFile(QWidget):
             };
 
         self.ui.txtInfo.setHtml(thehtml)
-
-        logger.debug("file contents updated!")
         
 
     @pyqtSlot(int)
@@ -501,7 +579,8 @@ class OpenBibFile(QWidget):
                                           setloggerlevel),
                                          (self.ui.tabs.currentWidget, self.ui.tabs.setCurrentWidget,
                                           self.ui.pageLog) ):
-                with LogToTextBrowser(self.ui.txtLog) as log2txtLog:
+                with LogToTextBrowser(textedit=self.ui.txtLog,
+                                      bibolamaziFile=self.bibolamaziFile) as log2txtLog:
                     try:
                         # block notifications for file contents updates that we generate ourselves...
                         self.fwatcher.blockSignals(True)
@@ -537,6 +616,13 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot(QUrl)
     def on_txtInfo_anchorClicked(self, url):
+        self._open_anchor(url)
+
+    @pyqtSlot(QUrl)
+    def on_txtLog_anchorClicked(self, url):
+        self._open_anchor(url)
+
+    def _open_anchor(self, url):
         if (url.scheme() == "helptopic"):
             self.requestHelpTopic.emit(url.path());
             return
@@ -616,23 +702,8 @@ class OpenBibFile(QWidget):
         except BibolamaziError as e:
             # see if we can parse the error
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
-                                    self._bibolamazi_error_html(unicode(e)))
+                                    bibolamazi_error_html(unicode(e), bibolamaziFile=self.bibolamaziFile))
             return
-
-    def _bibolamazi_error_html(self, errortxt):
-
-        def a_link(m):
-            if self.bibolamaziFile is not None:
-                return "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
-                    self.bibolamaziFile.configLineNo(int(m.group('lineno'))),
-                    m.group()
-                    )
-            return m.group();
-
-        errortxt = str(Qt.escape(unicode(errortxt)))
-        errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
-        return ("<pre>"+errortxt+"</pre>")
-        
 
     @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):

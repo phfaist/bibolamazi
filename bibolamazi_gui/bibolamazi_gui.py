@@ -395,7 +395,7 @@ def run_main():
     #logging.getLogger().setLevel(blogger.LONGDEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    # ## Seems we still need this for pyinstaller, I don't know why....
+    # ## Seems we still need this for pyinstaller, I'm not sure why....
     #
     # load precompiled filters, if we've got any
     try:

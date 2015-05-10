@@ -208,6 +208,8 @@ class BibolamaziConsoleFormatter(logging.Formatter):
 # Since 2.1, we don't use this ConditionalFormatter, but our new
 # BibolamaziConsoleFormatter instaad.
 #
+# We'll keep this for convenience, and also because the GUI uses it.
+#
 class ConditionalFormatter(logging.Formatter):
     """
     A formatter class.
@@ -244,13 +246,18 @@ class ConditionalFormatter(logging.Formatter):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
 
-        msg = record.message;
-        s = []
-        for line in msg.split('\n'):
-            u = dict([(k,v) for k,v in record.__dict__.iteritems()])
-            u['message'] = line
-            s.append(fmt % u)
-        s = '\n'.join(s)
+        u = dict([(k,v) for k,v in record.__dict__.iteritems()])
+        msg = record.message
+        if callable(fmt):
+            u['message'] = msg
+            s = fmt(u)
+        else:
+            s = []
+            for line in msg.split('\n'):
+                u['message'] = line
+                s.append(fmt % u)
+            s = '\n'.join(s)
+
         
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
