@@ -19,14 +19,20 @@ bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 ## Make sure some modules are accessible.
 ##
 import updater4pyi
+#import pybtex
+#import arxiv2bib
+#import pylatexenc
 
 
 ##
 ## set up our import paths well first of all for this same script.
 ##
-sys.path += [bibolamazi_path];
-import bibolamazi_init
-from core.bibfilter import factory as filterfac
+sys.path.insert(0, bibolamazi_path);
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pybtex'))
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'arxiv2bib'))
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pylatexenc'))
+import bibolamazi.init
+from bibolamazi.core.bibfilter import factory as filterfactory
 
 ##
 ## All the python files under 'filters/'
@@ -38,29 +44,29 @@ from core.bibfilter import factory as filterfac
 ##
 precompiled_filters_dir = '_precompiled_filters_build';
 #import filters
-filternames = filterfac.detect_filters()
+filternames = filterfactory.detect_filters()
 if (not os.path.isdir(precompiled_filters_dir)):
     os.mkdir(precompiled_filters_dir)
 with open(os.path.join(precompiled_filters_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
     f.write("""\
 filter_list = %r
-from filters import %s
+from bibolamazi.filters import %s
 """ %(filternames, ", ".join(filternames)))
 
 
 ##
 ## PyInstaller config part
 ##
-a = Analysis(['bibolamazi_gui.py'],
+a = Analysis(['bibolamazi_gui_exec.py'],
              pathex=[
                  os.path.join(bibolamazi_path,'gui'),
                  bibolamazi_path,
                  precompiled_filters_dir,
                  ] + [
                  os.path.join(bibolamazi_path, '3rdparty', x)
-                 for x in bibolamazi_init.third_party
+                 for x in bibolamazi.init.third_party
                  ],
-             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],#+filterlist,
+             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],
              hookspath=[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
              )
 
