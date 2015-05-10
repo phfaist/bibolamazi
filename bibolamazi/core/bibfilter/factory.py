@@ -316,7 +316,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
                              "".join(traceback.format_tb(tb_root)))
             tb1 = traceback.extract_tb(tb_root)[-1]
             logger.longdebug("tb1 = %r", tb1)
-            if 'importlib/__init__' in tb1[0]: # or:  tb1[2] == 'import_module':
+            if re.search(r'\bimportlib(?:[/.]__init__[^/]{0,4})?$', tb1[0]): # or:  tb1[2] == 'import_module':
                 caused_by_module = False
             ##tb_last_frame_mod_name = tb.tb_frame.f_globals.get('__name__')
             ##if tb_last_frame_mod_name == 'importlib':

@@ -393,6 +393,8 @@ def run_main():
     # default level: set to root logger
     logging.getLogger().setLevel(logging.DEBUG)
 
+    # ## Seems we still need this, I don't know why....
+    #
     # load precompiled filters, if we've got any
     try:
         import bibolamazi_compiled_filter_list as pc
