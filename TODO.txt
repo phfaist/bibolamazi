@@ -10,18 +10,6 @@ TODO LIST & THOUGHTS
   filters can use the functionality if required.
 
 
-- Empty line in config section terminates the command
-
-  --> otherwise if one forgets the 'src:' or 'filter:', the given sources or command are
-      interpreted as further options to the previous command, which can be very confusing.
-
-
-- loggers should be cleaned up -- modules should request their logger with
-  `logging.getLogger("...")`, and the log handler should only be set up in `core/main.py`.
-
-  * Messages produced in the GUI should also use python loggers.
-
-
 - What to do for repeated key names in different sources?
 
   * Idea: detect duplicates silently, but report error if entries are different. 
@@ -46,3 +34,23 @@ TODO LIST & THOUGHTS
 
 
 - Other bibliography managers?
+
+
+Completed Tasks
+===============
+
+
+x Empty line in config section terminates the command (***DONE)
+
+  --> otherwise if one forgets the 'src:' or 'filter:', the given sources or command are
+      interpreted as further options to the previous command, which can be very confusing.
+
+
+x loggers should be cleaned up -- modules should request their logger with
+  `logging.getLogger("...")`, and the log handler should only be set up in `core/main.py`.
+
+  * Messages produced in the GUI should also use python loggers.
+
+  (***DONE)
+
+
