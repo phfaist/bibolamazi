@@ -29,6 +29,7 @@ import os.path
 import re
 import logging
 import subprocess
+import datetime
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -369,8 +370,8 @@ def setup_software_updater():
     #upd_log.setup_logger(logging.DEBUG)
 
     # DEBUG:
-    #upd_iface.DEFAULT_INIT_CHECK_DELAY = 3 # seconds
-    #upd_iface.DEFAULT_CHECK_INTERVAL = 10 # seconds
+    #upd_iface.DEFAULT_INIT_CHECK_DELAY = datetime.timedelta(days=0, seconds=3, microseconds=0) # seconds
+    #upd_iface.DEFAULT_CHECK_INTERVAL = datetime.timedelta(days=0, seconds=10, microseconds=0) # seconds
 
     swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
 
@@ -391,14 +392,15 @@ def run_main():
     blogger.setup_simple_console_logging()
 
     # default level: set to root logger
+    #logging.getLogger().setLevel(blogger.LONGDEBUG)
     logging.getLogger().setLevel(logging.DEBUG)
 
-    # ## Seems we still need this, I don't know why....
+    # ## Seems we still need this for pyinstaller, I don't know why....
     #
     # load precompiled filters, if we've got any
     try:
         import bibolamazi_compiled_filter_list as pc
-        filters_factory.load_precompiled_filters('filters', dict([
+        filters_factory.load_precompiled_filters('bibolamazi.filters', dict([
             (fname, pc.__dict__[fname])  for fname in pc.filter_list
             ]))
     except ImportError:

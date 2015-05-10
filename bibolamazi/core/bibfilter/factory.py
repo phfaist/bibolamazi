@@ -209,6 +209,8 @@ def load_precompiled_filters(filterpackage, precompiled_modules):
 
     global _filter_precompiled_cache
     
+    logger.debug("Loading precompiled filter list for '%s': %r", filterpackage, precompiled_modules)
+
     _filter_precompiled_cache[filterpackage] = precompiled_modules
 
 
@@ -479,8 +481,7 @@ def detect_filters(force_redetect=False):
     _filter_list = []
     _filter_package_listings = OrderedDict()
 
-    logger.debug('Detecting filters ...')
-    logger.longdebug("Filter path is %r", filterpath)
+    logger.debug("Detecting filters ... filter path is %r", filterpath)
 
     for (filterpack, filterdir) in filterpath.iteritems():
         oldsyspath = sys.path
@@ -496,7 +497,9 @@ def detect_filters(force_redetect=False):
             detect_filters_in_module(filterpackage, filterpack)
 
             if filterpack in _filter_precompiled_cache:
+                logger.longdebug("Loading precompiled filters from package %s...", filterpack)
                 for (fname,fmod) in _filter_precompiled_cache[filterpack].iteritems():
+                    logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
                     if fname not in _filter_package_listings[filterpack]:
                         _filter_package_listings[filterpack].append(fname)
                     if fname not in _filter_list:
@@ -506,6 +509,7 @@ def detect_filters(force_redetect=False):
             sys.path = oldsyspath
 
     logger.debug('Filters detected.')
+    logger.longdebug("_filter_list=%r, _filter_package_listings=%r", _filter_list, _filter_package_listings)
 
     return _filter_list;
 
