@@ -1,0 +1,1 @@
+../../bibolamazi/core/version.py
