@@ -4,7 +4,8 @@ import sys
 import os.path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirname(__file__)), '..')))
 
-import bibolamazi.init
+#import bibolamazi.init # -- don't make the setup.py crash because some packages
+#e.g. pybtex aren't available
 from bibolamazi.core import version as bibolamaziversion
 
 
