@@ -1,23 +1,16 @@
 from setuptools import setup, find_packages
 
 import sys
+import os.path
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirname(__file__)), '..')))
 
-#import bibolamazi.init # -- don't make the setup.py crash because some packages
-#e.g. pybtex aren't available
-from bibolamazi.core.version import version_str as bibolamaziversion_str
+import bibolamazi.init
+from bibolamazi.core import version as bibolamaziversion
 
-sys.stderr.write("""
-Welcome to the setup.py script for Bibolamazi. This setup.py script will only
-take care of compiling/installing the basic bibolamazi package and command-line
-utility. For the graphical interface, use the `setup.py` script located in the
-`gui/` directory, or download a precompiled version from
-`https://github.com/phfaist/bibolamazi/releases/`.
-
-""")
 
 setup(
-    name = "bibolamazi",
-    version = bibolamaziversion_str,
+    name = "bibolamazi_gui",
+    version = bibolamaziversion.version_str,
 
     # metadata for upload to PyPI
     author = "Philippe Faist",
@@ -25,7 +18,7 @@ setup(
     description = "Prepare consistent BibTeX files for your LaTeX documents",
     license = "GPL v3+",
     keywords = "bibtex latex bibliography consistent tidy formatting",
-    url = "https://github.com/phfaist/bibolamazi/",
+    url = "https://github.com/phfaist/bibolamazi",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -39,11 +32,13 @@ setup(
 
     # could also include long_description, download_url, classifiers, etc.
 
-    packages = find_packages(exclude=['bibolamazi_gui', 'bibolamazi_gui.*']),
+    packages = ['bibolamazi_gui']),
     zip_safe = True,
-    scripts = ['bin/bibolamazi'],
+    scripts = ['../bin/bibolamazi_gui'],
 
-    install_requires = ['pybtex>=0.16', 'arxiv2bib>=1.0.2', 'pylatexenc>=0.9'],
+    # make sure we have the same bibolamazi version. Since the GUI uses (some internals?)
+    # of the bibolamazi library, make sure we have the same version.
+    install_requires = ['PyQt4', 'bibolamazi=='+bibolamaziversion.version_str],
 
     package_data = {
         # If any package contains *.txt or *.rst files, include them:
