@@ -27,7 +27,8 @@ import updater4pyi
 ##
 ## set up our import paths well first of all for this same script.
 ##
-sys.path.insert(0, bibolamazi_path);
+sys.path.insert(0, bibolamazi_path)
+sys.path.insert(0, os.path.join(bibolamazi_path, 'gui'))
 sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pybtex'))
 sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'arxiv2bib'))
 sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pylatexenc'))
@@ -57,7 +58,7 @@ from bibolamazi.filters import %s
 ##
 ## PyInstaller config part
 ##
-a = Analysis(['bibolamazi_gui_exec.py'],
+a = Analysis(['bin/bibolamazi_gui'],
              pathex=[
                  os.path.join(bibolamazi_path,'gui'),
                  bibolamazi_path,

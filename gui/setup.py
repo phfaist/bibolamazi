@@ -32,9 +32,9 @@ setup(
 
     # could also include long_description, download_url, classifiers, etc.
 
-    packages = ['bibolamazi_gui']),
+    packages = ['bibolamazi_gui', 'bibolamazi_gui.qtauto'],
     zip_safe = True,
-    scripts = ['../bin/bibolamazi_gui'],
+    scripts = ['bin/bibolamazi_gui'],
 
     # make sure we have the same bibolamazi version. Since the GUI uses (some internals?)
     # of the bibolamazi library, make sure we have the same version.
