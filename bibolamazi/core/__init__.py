@@ -26,4 +26,6 @@ See :py:mod:`bibolamazi.core.bibfilter`, :py:mod:`bibolamazi.core.bibolamazifile
 :py:mod:`bibolamazi.core.bibusercache` for the main core modules.
 """
 
-import bibolamazi.init
+# so that we can import bibolamazi.core.version from setup.py without e.g. crashing
+# because pybtex isn't available...
+#import bibolamazi.init

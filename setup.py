@@ -2,22 +2,23 @@ from setuptools import setup, find_packages
 
 import sys
 
-import bibolamazi.init
-from bibolamazi.core import version as bibolamaziversion
+#import bibolamazi.init # -- don't make the setup.py crash because some packages
+#e.g. pybtex aren't available
+from bibolamazi.core.version import version_str as bibolamaziversion_str
 
 sys.stderr.write("""
 
 Welcome to the setup.py script for Bibolamazi. This setup.py script will only
 take care of compiling/installing the basic bibolamazi package and command-line
 utility. For the graphical interface, download a precompiled version from
-https://github.com/phfaist/bibolamazi/releases/ or use the `setup.py` script
-located in the gui/ directory.
+`https://github.com/phfaist/bibolamazi/releases/` or use the `setup.py` script
+located in the `gui/` directory.
 
 """)
 
 setup(
     name = "bibolamazi",
-    version = bibolamaziversion.version_str,
+    version = bibolamaziversion_str,
 
     # metadata for upload to PyPI
     author = "Philippe Faist",
@@ -25,7 +26,7 @@ setup(
     description = "Prepare consistent BibTeX files for your LaTeX documents",
     license = "GPL v3+",
     keywords = "bibtex latex bibliography consistent tidy formatting",
-    url = "https://github.com/phfaist/bibolamazi",
+    url = "https://github.com/phfaist/bibolamazi/",
     classifiers=[
         'Development Status :: 5 - Stable',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
