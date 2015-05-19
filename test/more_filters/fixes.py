@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 
-from core.bibfilter import BibFilter, BibFilterError
-from core import butils
-from core.pylatexenc import latexencode
-from core.pylatexenc import latex2text
+from pylatexenc import latexencode
+from pylatexenc import latex2text
 
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core import butils
 
 HELP_AUTHOR = u"""\
 Extra, useless, fixes-shadowing, test filter by Philippe Faist, (C) 2014, GPL 3+

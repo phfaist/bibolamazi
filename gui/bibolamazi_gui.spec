@@ -4,6 +4,7 @@
 import sys
 import os
 import os.path
+import re
 
 from hooks import hookutils
 
@@ -18,14 +19,21 @@ bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
 ## Make sure some modules are accessible.
 ##
 import updater4pyi
+#import pybtex
+#import arxiv2bib
+#import pylatexenc
 
 
 ##
 ## set up our import paths well first of all for this same script.
 ##
-sys.path += [bibolamazi_path];
-import bibolamazi_init
-from core.bibfilter import factory as filterfac
+sys.path.insert(0, bibolamazi_path)
+sys.path.insert(0, os.path.join(bibolamazi_path, 'gui'))
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pybtex'))
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'arxiv2bib'))
+sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pylatexenc'))
+import bibolamazi.init
+from bibolamazi.core.bibfilter import factory as filterfactory
 
 ##
 ## All the python files under 'filters/'
@@ -37,29 +45,29 @@ from core.bibfilter import factory as filterfac
 ##
 precompiled_filters_dir = '_precompiled_filters_build';
 #import filters
-filternames = filterfac.detect_filters()
+filternames = filterfactory.detect_filters()
 if (not os.path.isdir(precompiled_filters_dir)):
     os.mkdir(precompiled_filters_dir)
 with open(os.path.join(precompiled_filters_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
     f.write("""\
 filter_list = %r
-from filters import %s
+from bibolamazi.filters import %s
 """ %(filternames, ", ".join(filternames)))
 
 
 ##
 ## PyInstaller config part
 ##
-a = Analysis(['bibolamazi_gui.py'],
+a = Analysis(['bin/bibolamazi_gui'],
              pathex=[
                  os.path.join(bibolamazi_path,'gui'),
                  bibolamazi_path,
                  precompiled_filters_dir,
                  ] + [
                  os.path.join(bibolamazi_path, '3rdparty', x)
-                 for x in bibolamazi_init.third_party
+                 for x in bibolamazi.init.third_party
                  ],
-             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],#+filterlist,
+             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],
              hookspath=[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
              )
 
@@ -95,25 +103,28 @@ if (sys.platform.startswith('darwin')):
                  name=os.path.join('dist', 'Bibolamazi.app'),
                  icon='bibolamazi_icon.icns',
                  )
-##     exe = EXE(pyz,
-##               a.scripts,
-##               exclude_binaries=True,
-##               name=os.path.join('dist', 'bibolamazi_gui_exe'),
-##               debug=True,
-##               strip=None,
-##               upx=False,
-##               console=True )
-##     coll = COLLECT(exe,
-##                    a.binaries,
-##                    a.zipfiles,
-##                    a.datas,
-##                    strip=None,
-##                    upx=False,
-##                    name=os.path.join('dist', 'bibolamazi_gui'))
-##     app = BUNDLE(exe,
-##                  name=os.path.join('dist', 'Bibolamazi.app'),
-##                  icon='bibolamazi_icon.icns',
-##                  )
+    # --------------------------------------------
+    # edit Info.plist for Retina displays
+    bundlename = app.name
+    plistname = os.path.join(bundlename, 'Contents', 'Info.plist')
+    with open(plistname, 'r') as f:
+        infoplistdata = f.read()
+    # insert defs for hi-res displays
+    (infoplistdata, nsubs) = re.subn('</dict>\s*</plist>', '''\
+<key>NSPrincipalClass</key>
+<string>NSApplication</string>
+<key>NSHighResolutionCapable</key>
+<string>True</string>
+</dict>
+</plist>
+''', infoplistdata);
+    if nsubs != 1:
+        print "WARNING: COULDN'T MODIFY INFO.PLIST!!"
+    else:
+        with open(plistname, 'w') as f:
+            f.write(infoplistdata)
+    # --------------------------------------------
+
 else:
     kwargs = {}
     if (sys.platform.startswith('win')):
