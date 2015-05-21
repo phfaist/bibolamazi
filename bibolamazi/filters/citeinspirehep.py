@@ -99,7 +99,8 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         if key.startswith('inspire:'):
             key = key[len('inspire:'):].strip()
-            allowedchars = r'A-Za-z0-9_.-\\\''
+            allowedchars = r"A-Za-z0-9_.'-"
+            print "helo"
             if re.match(r'[^'+allowedchars+r']', key):
                 # Report error rather than removing the spaces and special characters,
                 # otherwise the user might spend hours figuring out why "PhysRev 47 777"
