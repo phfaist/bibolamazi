@@ -99,7 +99,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         if key.startswith('inspire:'):
             key = key[len('inspire:'):].strip()
-            allowedchars = r'A-Za-z0-9_.-'
+            allowedchars = r"A-Za-z0-9_.'-"
             if re.match(r'[^'+allowedchars+r']', key):
                 # Report error rather than removing the spaces and special characters,
                 # otherwise the user might spend hours figuring out why "PhysRev 47 777"
@@ -112,6 +112,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # auto detect reference type
             if re.search(r'^.*\:\d{4}\w\w\w?$', key):
                 ref_type = 'texkey'
+                queryval = '"'+queryval+'"'
             elif re.search(arxiv2bib.OLD_STYLE, key):
                 ref_type = 'eprint'
             elif re.search(arxiv2bib.NEW_STYLE, key):
