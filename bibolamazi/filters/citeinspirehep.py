@@ -99,6 +99,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         if key.startswith('inspire:'):
             key = key[len('inspire:'):].strip()
+            # allow also single-quote `'` char for "'t Hooft"
             allowedchars = r"A-Za-z0-9_.'-"
             if re.match(r'[^'+allowedchars+r']', key):
                 # Report error rather than removing the spaces and special characters,
