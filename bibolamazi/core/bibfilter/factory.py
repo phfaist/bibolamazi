@@ -792,7 +792,7 @@ class DefaultFilterOptions:
         #                     textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
 
         filter_options_syntax_help = textwrap.dedent(
-            u"""
+            u"""\
             For passing option values, you may use either the `--key value' syntax, or the
             (ghostscript-like) `-sKey=Value' syntax. For boolean switches, use -dSwitch to
             set the given option to True. When using the -s or -d syntax, the option names
@@ -829,7 +829,7 @@ class DefaultFilterOptions:
             This filter accepts additional positional arguments. See the documentation
             below for more information.""")
 
-        p.add_argument_group(u'NOTE ON FILTER OPTIONS SYNTAX', filter_options_syntax_help)
+        p.add_argument_group(u'Note on Filter Options Syntax', filter_options_syntax_help)
 
         p.add_argument_group(u'FILTER DESCRIPTION', "\n" + fclass.getHelpText())
 

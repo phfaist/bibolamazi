@@ -17,8 +17,8 @@ Table of Contents:
    using-bibolamazi-app
    using-bibolamazi-cmdl
    devel-filter
-   core
-   filters.util
+   bibolamazi.core
+   bibolamazi.filters.util
    credits-contact
 
 
