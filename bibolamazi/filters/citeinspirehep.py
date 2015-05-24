@@ -118,9 +118,14 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                 ref_type = 'eprint'
             elif re.search(arxiv2bib.NEW_STYLE, key):
                 ref_type = 'eprint'
-            elif re.search(r'^\w\.\w+\.\w$', key):
+            elif re.search(r'^[.\w]+[+][.\w]+[+][.\w]+$', key):
                 ref_type = 'j'
-                queryval = key.replace('.', ',')
+                # don't understand why this (was in code from inspire's
+                # websubmit/Bibtex.py). Doesn't allow to encode e.g. "Phys.Rev.,47,777"
+                #queryval = key.replace('.', ',') # --??
+                # PhF: so the format now is simply to replace every `+` by a comma in the
+                # inspire request.
+                queryval = key.replace('+', ',')
             elif re.search(r'^ISBN-.*', key):
                 ref_type = 'isbn'
                 queryval = key[len('ISBN-'):]
@@ -172,6 +177,10 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         logger.info("citeinspirehep: Fetching missing information from InspireHEP...")
 
+        # use a Session() so that we keep the connection alive and reuse it multiple times
+        # for the different requests
+        reqsession = requests.Session()
+
         logger.longdebug('fetching missing id list %r' %(missing_keys))
         for key in missing_keys:
             pk = self.user_keys_parsed[key]
@@ -185,7 +194,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             for tries in range(5):
                 try:
                     exc = None
-                    r = requests.get('https://inspirehep.net/search', params=qs)
+                    r = reqsession.get('https://inspirehep.net/search', params=qs)
                 except Exception as e:
                     # meant to catch SSLError -- we can't rely on
                     #    ``from requests.packages.urllib3.exceptions import SSLError``
@@ -269,15 +278,18 @@ where the possible identifiers <id> are:
     - hep-th/0001001 or 1408.4546 or any eprint number / arXiv ID which is known to
       INSPIRE-HEP (the `archive/' prefix may be omitted for new-style arXiv ids)
 
-    - PHRVA.D66.010001 or any journal reference in INSPIRE' citation form (Note the 
+    - PHRVA+D66+010001 or any journal reference in INSPIRE' citation form (Note the 
       periods separating the pieces!)
 
-    - Phys.Rev.D66.010001 or any journal reference using typical abbreviations for 
+    - Phys.Rev.+47+777 or any journal reference using typical abbreviations for 
       the journal name
 
     - Hagiwara:2002fs or any INSPIRE LaTeX/bibtex key for the paper
 
-The optional '--comment' may help you remember which reference you meant, e.g. 
+Journal references of the form `<Journal.Abbrev.>+<volume>+<page>' are translated to the
+inspire.hep request `j:<Journal.Abbrev.>,<volume>,<page>'.
+
+The optional '--some-comment' may help you remember which reference you meant, e.g. 
 'PhysRev.47.777--EPR-paper'. If, in addition, you use the 'duplicates' filter, then you
 don't even need to worry about different ways to refer to the same paper.
 
