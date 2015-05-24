@@ -83,7 +83,37 @@ def _repl(s, dic):
 
 
 class BibolamaziFileCmd:
+    """
+    A command in the bibolamazi file configuration
+
+    Stores the command name (e.g. 'src' or 'filter'), additional text (the options), line
+    number information and possible additional information.
+
+    Object Properties:
+    
+      - `cmd`: the command name. Currently this is 'src' or 'filter'
+
+      - `text`: the text following the command. This is e.g. the sources list, or a filter
+        name followed by options. In general, it is anything following the 'src:' or
+        'filter:' commands.
+
+      - `lineno`: the line number at which this command is specified in the bibolamazi
+        file, relative to the top of the file. The first line of the file is line number
+        1.
+
+      - `linenoend`: the line number at which the command ends.
+
+      - `info`: a dictionary with possible additional information which is available at
+        parse time. For example, the filter name for 'filter' commands is stored when
+        parsing commands.
+
+    See also :py:meth:`bibolamazifile.configCmds()`.
+    """
     def __init__(self, cmd=None, text="", lineno=-1, linenoend=-1, info={}):
+        """
+        Construct a `BibolamaziFileCmd` with the given `cmd`, `text`, `lineno`, `linenoend`
+        and `info`.
+        """
         self.cmd = cmd
         self.text = text
         self.lineno = lineno
@@ -101,7 +131,13 @@ class BibolamaziFileCmd:
 
 
 CONFIG_BEGIN_TAG = '%%%-BIB-OLA-MAZI-BEGIN-%%%'
+"""
+The line which defines the beginning of a config section in a bibolamazi file.
+"""
 CONFIG_END_TAG = '%%%-BIB-OLA-MAZI-END-%%%'
+"""
+The line which defines the end of a config section in a bibolamazi file.
+"""
 
 AFTER_CONFIG_TEXT = """\
 %
@@ -130,16 +166,39 @@ AFTER_CONFIG_TEXT = """\
 
 
 """
+"""
+Some text which is inserted immediately after the config section when saving
+bibolamazi files. Includes a warning about losing any changes.
+"""# docstring
 
                     
 # this is fixed to utf-8. No alternatives, sorry.
 BIBOLAMAZI_FILE_ENCODING = 'utf-8'
+"""
+The encoding used to read and write bibolamazi files. Don't change this.
+"""
 
 
 BIBOLAMAZIFILE_INIT = 0
+"""
+Bibolamazi file load state: freshly initialized, no data read. See doc for
+:py:class:`BibolamaziFile`.
+"""
 BIBOLAMAZIFILE_READ = 1
+"""
+Bibolamazi file load state: data read, not parsed. See doc for
+:py:class:`BibolamaziFile`.
+"""
 BIBOLAMAZIFILE_PARSED = 2
+"""
+Bibolamazi file load state: data read and parsed, filters instanciated but no sources
+loaded. See doc for :py:class:`BibolamaziFile`.
+"""
 BIBOLAMAZIFILE_LOADED = 3
+"""
+Bibolamazi file load state: data read and parsed, filters instanciated and data from
+sources loaded. See doc for :py:class:`BibolamaziFile`.
+"""
 
 
 
@@ -156,34 +215,60 @@ class BibolamaziFile(object):
     This class provides an API to read and parse bibolamazi files, as well as load data
     defined in its configuration section and interact with its filters.
 
-    Filter instances are automatically created upon loading, etc.
+    A `BibolamaziFile` object may be in different load states:
 
-    .......... TODO: MORE DOC ............
+      - :py:const:`BIBOLAMAZIFILE_INIT`: The `BibolamaziFile` object is initialized to an
+        empty state. The file name (:py:meth:`fname()`) may be set already, but is `None`
+        by default.
 
-    .......... TODO: DOCUMENT MEMBERS ...........
-    
+      - :py:const:`BIBOLAMAZIFILE_READ`: Data has been read from a given file, but not
+        parsed. You may call certain methods such as :py:meth:`rawHeader()` or
+        :py:meth:`configData()`, but e.g. :py:meth:`configCmds()` will return an invalid
+        value.
+
+      - :py:const:`BIBOLAMAZIFILE_PARSED`: Data has been read from a bibolamazi file and
+        parsed, and filter objects have been instanciated. Methods such as
+        :py:meth:`filters()` or :py:meth:`sourceLists()` may be called.
+
+      - :py:const:`BIBOLAMAZIFILE_LOADED`: The bibolamazi file has been read and parsed,
+        filter objects have been instanciated and bibtex data from the sources has been
+        loaded. This is the "maximally loaded" state.
+
+    You may query the load state with :py:meth:`getLoadState()` and load a bibolamazi file
+    either from the constructor or by calling explicitly :py:meth:`load()`. Some methods
+    on this object may only be called if the object has reached a certain load
+    state. These methods are documented as such.
+
+    The bibliography database is accessed with :py:meth:`bibliographyData()`. You may
+    change the entries in the database via direct access (using the `pybtex` API), or
+    using the method :py:meth:`setEntries()`.
+
+    To create a new bibolamazi file template, you may specify `create=True` to the
+    constructor with a valid file name, and save the object.
     """
     def __init__(self, fname=None, create=False,
                  load_to_state=BIBOLAMAZIFILE_LOADED,
                  use_cache=True,
                  default_cache_invalidation_time=None):
-        """Create a BibolamaziFile object.
+        """
+        Create a BibolamaziFile object.
 
         If `fname` is provided, the file is fully loaded (unless `create` is also
         provided).
 
         If `create` is given and set to `True`, then an empty template is loaded and the
-        internal file name is set to `fname`. The internal state will be set to ``LOADED''
-        and calling `saveToFile()` will result in writing this template to the file
-        `fname`.
+        internal file name is set to `fname`. The internal state will be set to
+        :py:const:`BIBOLAMAZIFILE_LOADED` and calling :py:meth:`saveToFile()` will result
+        in writing this template to the file `fname`.
 
-        If `load_to_state` is given, then the file is only loaded up to the given state. 
-        See `load()` for more details. The state should be one of `BIBOLAMAZIFILE_INIT`,
-        `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or `BIBOLAMAZIFILE_LOADED`.
+        If `load_to_state` is given, then the file is only loaded up to the given state.
+        See :py:meth:`load()` for more details. The state should be one of
+        :py:const:`BIBOLAMAZIFILE_INIT`, :py:const:`BIBOLAMAZIFILE_READ`,
+        :py:const:`BIBOLAMAZIFILE_PARSED` or :py:const:`BIBOLAMAZIFILE_LOADED`.
 
         If `use_cache` is `True` (default), then when loading this file, we'll attempt to
         load a corresponding cache file if it exists. Note that even if `use_cache` is
-        `False`, then cache will still be *written* when calling `saveToFile()`.
+        `False`, then cache will still be *written* when calling :py:meth:`saveToFile()`.
 
         If `default_cache_invalidation_time` is given, then the default cache invalidation
         time is set before loading the cache.
@@ -211,26 +296,52 @@ class BibolamaziFile(object):
         else:
             logger.debug("No file given. Don't forget to set one with load()")
 
+            
+    # Note: the name "loadState()" would have been ambiguous: it could be understood
+    # as an imperative
     def getLoadState(self):
+        """
+        Returns the state of the `BibolamaziFile` object. One of :py:const:`BIBOLAMAZIFILE_INIT`,
+        :py:const:`BIBOLAMAZIFILE_READ`, :py:const:`BIBOLAMAZIFILE_PARSED`, or
+        :py:const:`BIBOLAMAZIFILE_LOADED`.
+        """
         return self._load_state
 
     def reset(self):
+        """
+        Reset the current object to an empty state and unset the file name. This will reset the
+        object to the state :py:const:`BIBOLAMAZIFILE_INIT`.
+        """
         self.load(fname=None, to_state=BIBOLAMAZIFILE_INIT)
 
     def load(self, fname=[], to_state=BIBOLAMAZIFILE_LOADED):
-        """Loads the given file.
+        """
+        Load the given file into the current object.
 
-        If `fname` is `None`, then resets the object to an empty state. If fname is not given or an
-        empty list, then uses any previously loaded fname and its state.
+        If `fname` is `None`, then reset the object to an empty state. If `fname` is not
+        given or an empty ``list``, then use any previously loaded fname and its state.
+
+        This function may be called several times with different states to incrementally
+        load the file, for example::
+
+            bibolamazifile.reset()
+            # load up to 'parsed' state
+            bibolamazifile.load(fname="somefile.bibolamazi.bib", to_state=BIBOLAMAZIFILE_PARSED)
+            # continue loading up to fully 'loaded' state
+            bibolamazifile.load(fname="somefile.bibolamazi.bib", to_state=BIBOLAMAZIFILE_LOADED)
 
         If `to_state` is given, will only attempt to load the file up to that state. This
         can be useful, e.g., in a config editor which needs to parse the sections of the
         file but does not need to worry about syntax errors. The state should be one of
-        `BIBOLAMAZIFILE_INIT`, `BIBOLAMAZIFILE_READ`, `BIBOLAMAZIFILE_PARSED` or
-        `BIBOLAMAZIFILE_LOADED`.
+        :py:const:`BIBOLAMAZIFILE_INIT`, :py:const:`BIBOLAMAZIFILE_READ`,
+        :py:const:`BIBOLAMAZIFILE_PARSED` or :py:const:`BIBOLAMAZIFILE_LOADED`.
         """
         
-        if (fname or not isinstance(fname, list)):
+        if (isinstance(fname, list) and not fname):
+            # fname=[], so keep old file name and properties.
+            pass
+        else:
+        #if (fname or not isinstance(fname, list)):
             # required to replace current file, if one open
             self._fname = fname
             self._dir = os.path.dirname(os.path.realpath(fname)) if fname is not None else None
@@ -266,62 +377,179 @@ class BibolamaziFile(object):
 
 
     def fname(self):
+        """
+        Returns the file name this object refers to.
+
+        If the state is any other than :py:const:`BIBOLAMAZIFILE_INIT`, then this function
+        will never return `None`.
+        """
         return self._fname
 
     def fdir(self):
+        """
+        Returns the directory name in which this bibolamazi file resides, always as a full
+        path (using `os.path.realpath`, resolving symlinks). The value is cached, so you
+        may call this function several times with little performance overhead.
+
+        If :py:meth:`fname()` is `None` (this is only possible if the load state is
+        :py:const:`BIBOLAMAZIFILE_INIT`), then `None` is returned.
+        """
         return self._dir
 
     def rawHeader(self):
+        """
+        Return any content above the configuration section.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
         return self._header
 
     def rawConfig(self):
+        """
+        Return the raw configuration section. The returned value will NOT have the leading
+        percent signs removed.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
         return self._config
 
+    def rawRest(self):
+        """
+        Return all the contents after the config section at the moment the file was read from
+        the disk. This includes the begin and end config section tags
+        (:py:const:`CONFIG_BEGIN_TAG` and :py:const:`CONFIG_END_TAG`).
+
+        Any changes to the bibliography data will not be reflected here, even if you call
+        :py:meth:`saveToFile()`.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
+        return self._rest
+
     def configData(self):
+        """
+        Returns the configuration commands, with leading percent signs stripped, and without
+        the begin and end tags.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
         return self._config_data
 
     def rawStartConfigDataLineNo(self):
-        """Returns the line number on which the begin config tag `CONFIG_BEGIN_TAG` is located.
-        Line numbers start at 1 at the top of the file like in any reasonable editor.
+        """
+        Returns the line number on which the begin config tag :py:const:`CONFIG_BEGIN_TAG` is
+        located. Line numbers start at 1 at the top of the file like in any reasonable
+        editor.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
         """
         return self._startconfigdatalineno
 
     def fileLineNo(self, configlineno):
-        """Returns the line number in the file of the config line `configlineno`. The latter
-        refers to the line number INSIDE the config section, where line number 1 is right after
-        the begin config tag `CONFIG_BEGIN_TAG`.
         """
-        
+        Utility to convert config line number to file line number
+
+        Returns the line number in the bibolamazi file corresponding to the config line
+        number `configlineno`. The `configlineno` refers to the line number INSIDE the
+        config section, where line number 1 is right after the begin config tag
+        :py:const:`CONFIG_BEGIN_TAG`.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
         return configlineno + self._startconfigdatalineno
 
     def configLineNo(self, filelineno):
-        """Returns the line number in the config data corresponding to line `filelineno` in the
-        file. Opposite of `fileLineNo()`.
         """
-        
+        Utility to convert file line number to config line number
+
+        Returns the line number in the config data corresponding to line `filelineno` in
+        the file. Opposite of :py:meth:`fileLineNo()`.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_READ`.
+        """
         return filelineno - self._startconfigdatalineno
 
-    def rawrest(self):
-        return self._rest
+    def configCmds(self):
+        """
+        Return a list of parsed commands from the configuration section.
 
-    def rawcmds(self):
+        This returns a list of :py:class:`BibolamaziFileCmd` objects.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_PARSED`.
+        """
         return self._cmds
 
-    def sources(self):
-        return self._sources
-
     def sourceLists(self):
+        """
+        Return a list of source lists, in the order they are specified in the configuration
+        section.
+
+        Each item in the returned list is itself a list of alternative sources to
+        consider.
+
+        This may be called in the state :py:const:`BIBOLAMAZIFILE_PARSED`.
+        """
         return self._source_lists
 
+    def sources(self):
+        """
+        Return a list of sources which have been read.
+
+        This is a list of strings. Each item in the returned list is one of the items in
+        the corresponding list from :py:meth:`sourceLists()` (the one that was actually
+        found and read). If no corresponding item in `sourceLists()` was readable, then
+        the corresponding item in this list is `None`. For example::
+
+          # suppose that we have the following instructions in the bibolamazi file:
+          #
+          #     src: src1.bib
+          #     src: a.bib b.bib c.bib
+          #     src: x/x.bib y/y.bib
+          #
+          # we would then have:
+          #
+          f.sourceLists() == [["src1.bib"], ["a.bib", "b.bib", "c.bib"], ["x/x.bib", "y/y.bib"]]
+
+          # suppose that "src1.bib" exists, "a.bib" doesn't exist but "b.bib" exists, and neither
+          # "x/x.bib" nor "y/y.bib" don't exist.
+          #
+          # Then, after loading this object, we get:
+          #
+          f.sources() == ["src1.bib", "b.bib", None]
+        
+        This function may be called in the state :py:const:`BIBOLAMAZIFILE_LOADED`.
+        """
+        return self._sources
+
     def filters(self):
+        """
+        Return a list of filter instances
+
+        This returns the list of all filter commands given in the bibolamazi config
+        section. The instances have already been instanciated with the proper options. The
+        order of this list is exactly the order of the filters in the config section.
+
+        If in the config section the same filter is invoked several times, then separate
+        instances are returned in this list with the appropriate ordering, as you'd
+        expect.
+        """
         return self._filters
 
     def bibliographyData(self):
+        """
+        Return the `pybtex.database.BibliographyData` object which stores all the
+        bibliography entries.
+
+        This object is only instanciated and initialized once in the
+        :py:const:`BIBOLAMAZIFILE_LOADED` state. If ``getLoadState() != BIBOLAMAZIFILE_LOADED``,
+        then this function returns `None`.
+        """
         return self._bibliographydata
 
     def bibliographydata(self):
         """
-        .. deprecated 2.0:: use `bibliographyData()` instead!
+        .. deprecated:: 2.0
+           Use `bibliographyData()` instead!
         """
         butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()", __name__)
         return self.bibliographyData()
@@ -329,8 +557,10 @@ class BibolamaziFile(object):
     def cacheFileName(self):
         """
         The file name where the cache will be stored. You don't need to access this
-        directly, the cache will be loaded and saved automatically. You should normally
-        only access the cache through cache accessors. See `cacheAccessor()`.
+        directly, the cache will be loaded and saved automatically.
+
+        Filters should only access the cache through cache accessors. See
+        `cacheAccessor()`.
         """
         return self._fname + '.bibolamazicache'
         
@@ -338,6 +568,9 @@ class BibolamaziFile(object):
     def cacheAccessor(self, klass):
         """
         Returns the cache accessor instance corresponding to the given class.
+
+        See documentation of :py:mod:`bibolamazi.core.bibusercache` for more information
+        about the bibolamazi cache.
         """
         return self._cache_accessors.get(klass, None)
         
@@ -367,6 +600,13 @@ class BibolamaziFile(object):
         self._user_cache.setDefaultInvalidationTime(time_delta)
 
     def setConfigData(self, configdata):
+        """
+        Store the given data `configdata` in memory as the configuration section of this file.
+        
+        This function cleanifies the `configdata` a bit by adding leading percent signs
+        and forcing a final newline, adds the config section begin and end tags, and then
+        directly calls :py:meth:`setRawConfig()`.
+        """
         # prefix every line by a percent sign.
         config_block = re.sub(r'^', '% ', configdata, flags=re.MULTILINE)
 
@@ -381,6 +621,19 @@ class BibolamaziFile(object):
 
 
     def setRawConfig(self, configblock):
+        """
+        Store the given `configblock` in memory as the raw configuration section of the
+        bibolamazi file. We must be at least in state :py:const:`BIBOLAMAZIFILE_READ` to
+        call this function; this function will also reset to state back to
+        :py:const:`BIBOLAMAZIFILE_READ` (as the configuration might have changed).
+        
+        Note that `configblock` is expected to start and end with the appropriate config
+        section tags (:py:const:`CONFIG_BEGIN_TAG` and :py:const:`CONFIG_END_TAG`).
+        
+        After calling this function, :py:meth:`configData()` will return the new
+        configuration data. Call :py:meth:`load()` to re-instanciate filters and re-load
+        sources.
+        """
         if (self._load_state < BIBOLAMAZIFILE_READ):
             raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
 
@@ -395,11 +648,11 @@ class BibolamaziFile(object):
         Resolves a path (for example corresponding to a source file) to an absolute file
         location.
 
-        This function expands '~/foo/bar' to e.g. '/home/someone/foo/bar', it expands
+        This function expands '~/foo/bar' to e.g. '/home/someone/foo/bar'; it also expands
         shell variables, e.g. '$HOME/foo/bar' or '${MYBIBDIR}/foo/bar.bib'.
 
         If the path is relative, it is made absolute by interpreting it as relative to the
-        location of this bibolamazi file (see `fdir()`).
+        location of this bibolamazi file (see :py:meth:`fdir()`).
 
         Note: `path` should not be an URL.
         """
@@ -852,6 +1105,24 @@ class BibolamaziFile(object):
 
 
     def saveToFile(self):
+        """
+        Save the current bibolamazi file object to disk.
+
+        This will write to the file :py:meth:`fname()` in order:
+
+          - the raw header data (:py:meth:`rawHeader()`) unchanged
+
+          - the config section text (:py:meth:`rawConfig()`) unchanged
+
+          - the bibliography data contained in :py:meth:`bibliographyData`, saved in
+            BibTeX format.
+
+        A warning message is included after the config section that the remainder of the
+        file was automatically generated.
+
+        As the file `fname` is expected to already exist, it is always silently
+        overwritten (so be careful).
+        """
         with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header)
             f.write(self._config)
