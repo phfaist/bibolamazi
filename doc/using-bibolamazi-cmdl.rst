@@ -2,6 +2,42 @@
 Using Bibolamazi in Command-Line
 ================================
 
+First Steps With Bibolamazi Command-Line
+----------------------------------------
+
+Once you've installed bibolamazi as described in :ref:`bibolamazi_installing_cmdl`, you may
+start using it! Here are a couple of commands to get you started playing around. But it's
+important to understand how Bibolamazi works: for that, read the following sections
+of this manual carefully.
+
+- To compile a bibolamazi bibtex file, you should run ``bibolamazi`` in general as::
+
+     > bibolamazi bibolamazibibtexfile.bibolamazi.bib
+
+- To quickly get started with a new bibolamazi file, the following command will create the
+  given file and produce a usable template which you can edit::
+
+     > bibolamazi --new newfile.bibolamazi.bib
+
+- For an example to study, look at the test files ``test/testX.bibolamazi.bib`` in the
+  source code.  To compile them, run::
+
+     > bibolamazi test/test0.bibolamazi.bib
+     
+- For a help message with a list of possible options, run::
+
+     > bibolamazi --help
+
+  To get a list of all available filters along with their description, run::
+
+     > bibolamazi --list-filters
+
+  To get information about a specific filter, simply use the command::
+
+     > bibolamazi --help <filter>
+
+
+
 Bibolamazi Operating Mode
 -------------------------
 

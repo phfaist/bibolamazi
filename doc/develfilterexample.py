@@ -32,8 +32,8 @@ There are three possible operating modes:
     "fixed"  -- the content of the 'testField' field which we add to all entries
                 is a hard-coded, fixed string. Surprise!
 
-Specify which operating mode you prefer with the option '-sMode=...'. By default,
-"random" mode is assumed.
+Specify which operating mode you prefer with the option '-sMode=...'. By
+default, "random" mode is assumed.
 """
 
 # --- operating modes ---
@@ -70,14 +70,15 @@ class MyTestFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, mode="random"):
+    def __init__(self, mode="random", use_uppercase_text=False):
         """
-        Constructor method for TestFilter. Note that this part of the
-        constructor docstring itself isn't that useful, but the argument list
-        below is parsed and used by the default automatic option parser for
-        filter arguments. So document your arguments! If your filter accepts
-        `**kwargs`, you may add more arguments below than you explicitly declare
-        in your constructor prototype.
+        Constructor method for TestFilter.
+
+        Note that this part of the constructor docstring itself isn't that
+        useful, but the argument list below is parsed and used by the default
+        automatic option parser for filter arguments. So document your
+        arguments! If your filter accepts `**kwargs`, you may add more arguments
+        below than you explicitly declare in your constructor prototype.
 
         If this function accepts `*args`, then additional positional arguments
         on the filter line will be passed to those args. (And not to the
@@ -85,13 +86,17 @@ class MyTestFilter(BibFilter):
 
         Arguments:
           - mode(Mode): the operating mode to adopt
+          - use_uppercase_text(bool): if set to True, then transform our added
+            text to uppercase characters.
         """
         
         BibFilter.__init__(self)
 
         self.mode = Mode(mode)
+        self.use_uppercase_text = getbool(use_uppercase_text)
 
-        logger.debug('test filter constructor: mode=%s', self.mode)
+        logger.debug('test filter constructor: mode=%s, use_uppercase_text=%s',
+                     self.mode, self.use_uppercase_text)
 
     def action(self):
         # Here, we want the filter to operate entry-by-entry (so the function
@@ -116,22 +121,24 @@ class MyTestFilter(BibFilter):
         
         if self.mode == MODE_EMPTY:
             entry.fields['testField'] = ''
-            return
 
-        if self.mode == MODE_RANDOM:
+        elif self.mode == MODE_RANDOM:
             entry.fields['testField'] = random.randint(0, 999999)
-            return
 
-        if self.mode == MODE_FIXED:
+        elif self.mode == MODE_FIXED:
             entry.fields['testField'] = (
                 u"On d\u00E9daigne volontiers un but qu'on n'a pas "
                 u"r\u00E9ussi \u00E0 atteindre, ou qu'on a atteint "
                 u"d\u00E9finitivement. (Proust)"
                 )
-        
-        raise BibFilterError('testfilter', "Unknown operating mode: %s" % mode )
+        else:        
+            raise BibFilterError('testfilter', "Unknown operating mode: %s"
+                                 % mode )
 
+        if self.use_uppercase_text:
+            entry.fields['testField'] = entry.fields['testField'].toupper()
 
+        return
 
 #
 # Every python module which defines a filter should have the following method,

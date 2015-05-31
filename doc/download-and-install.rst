@@ -9,6 +9,11 @@ Bibolamazi comes in two flavors:
 
 - a command-line tool (for more advanced and automated usage)
 
+There are precompiled ready-for-use binaries for the Application (see below,
+:ref:`bibolamazi_application`). Alternatively, both flavors may be installed using
+``pip``/``setuptools`` or from source (see :ref:`bibolamazi_installing_cmdl`).
+
+.. _bibolamazi_application:
 
 The Bibolamazi Application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,6 +33,8 @@ You may now start using Bibolamazi normally. To read more on bibolamazi, skip to
 :ref:`using-bibolamazi-app`.
 
 
+.. _bibolamazi_installing_cmdl:
+
 Installing the Command-Line Interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -37,6 +44,26 @@ Additionally, the graphical user interface requires PyQt4_. If you're on a linux
 distribution, it's most probably in your distribution packages. Note you only need PyQt4
 to run the graphical user interface: the command-line version will happily run without.
 
+**The easy way: via PIP**
+
+The recommended way to install Bibolamazi command line and gui interfaces is via ``pip``::
+
+  pip install bibolamazi        # for the command-line interface
+  pip install bibolamazigui     # if you want the GUI interface
+
+After that, you'll find the ``bibolamazi`` (respectively ``bibolamazi_gui``) executables
+in your PATH::
+
+  > bibolamazi --help           # command-line interface
+  (...)
+  > bibolamazi_gui              # to launch the GUI
+  (...)
+  
+
+**The less easy way: From Source**
+
+You may, alternatively, download and compile the packages from source.
+
 - First, clone this repository on your computer (don't download the prepackaged
   ZIP/Tarball proposed by github, because there will be missing submodules)::
 
@@ -45,44 +72,25 @@ to run the graphical user interface: the command-line version will happily run w
 
   Note the ``--recursive`` switch which will also retrieve all required submodules.
 
-  Then, link the executable(s) to somewhere in your path::
+- Then, run the setup script to install the package and script (see `Installing Python
+  Modules <https://docs.python.org/2/install/>`_)::
 
-    > cd ~/bin/
-    bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi .
-    bin> ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
+    > python setup.py install
 
-  or, for a system-wide install::
+  After that, you should find the ``bibolamazi`` executable in your PATH automatically::
 
-     > cd /usr/local/bin/
-     > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi .
-     > sudo ln -s /path/to/unpacked/bibolamazi/bibolamazi_gui .
+    > bibolamazi --help
 
+- If you want to install the GUI Application, you need to do that seperately. Go into the
+  ``gui/`` directory of the source code, and run the python setup script there::
 
-- To compile a bibolamazi bibtex file, you should run ``bibolamazi`` in general as::
+    > cd gui/
+    gui> python setup.py install
 
-     > bibolamazi bibolamazibibtexfile.bibolamazi.bib
+  After that, you should find the ``bibolamazi_gui`` executable in your PATH
+  automatically::
 
-- To quickly get started with a new bibolamazi file, the following command will create the
-  given file and produce a usable template which you can edit::
-
-     > bibolamazi --new newfile.bibolamazi.bib
-
-- For an example to study, look at the file ``test/test0.bibolamazi.bib`` in the source code.
-  To compile it, run::
-
-     > bibolamazi test/test0.bibolamazi.bib
-           
-- For a help message with a list of possible options, run::
-
-     > bibolamazi --help
-
-  To get a list of all available filters along with their description, run::
-
-     > bibolamazi --list-filters
-
-  To get information about a specific filter, simply use the command::
-
-     > bibolamazi --help <filter>
+    > bibolamazi_gui
 
 
 .. _PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
