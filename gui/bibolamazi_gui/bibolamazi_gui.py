@@ -130,7 +130,7 @@ class MainWidget(QWidget):
                 #if myratio > 1.01:
                 self.mypict = QPicture()
                 mypaint = QPainter(self.mypict)
-                self.myicon = QIcon(":pic/bibolamazi.svg")
+                self.myicon = QIcon(":/pic/bibolamazi.svg")
                 mysize = QSize(375, 150)
                 mypaint.drawPixmap(QRect(QPoint(0,0),mysize), self.myicon.pixmap(myratio*mysize))
                 self.ui.lblMain.setPicture(self.mypict)
