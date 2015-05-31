@@ -18,7 +18,7 @@ NOTE: You'll have to make sure that `PyQt4` is installed in order to use
 
 
 setup(
-    name = "bibolamazi_gui",
+    name = "bibolamazigui",
     version = bibolamaziversion.version_str,
 
     # metadata for upload to PyPI
