@@ -25,6 +25,8 @@
 
 import imp
 
+from pybtex.utils import OrderedCaseInsensitiveDict
+
 from pybtex.database.output import BaseWriter
 from pybtex.database.input import BaseParser
 from pybtex.database import BibliographyData
@@ -44,6 +46,7 @@ class PythonParser(BaseParser):
     def parse_stream(self, stream):
         context = {
             'BibliographyData': BibliographyData,
+            'OrderedCaseInsensitiveDict': OrderedCaseInsensitiveDict,
             'Entry': Entry,
             'Person': Person,
         }

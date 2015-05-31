@@ -69,8 +69,8 @@ class Text(list):
     Rich text is basically a list of:
 
     - plain strings
-    - Tag objects
-    - other Text objects
+    - Text objects, including objects derived from Text (Tag, HRef, ...)
+    - Symbol objects
 
     Text is used as an internal formatting language of Pybtex,
     being rendered to to HTML or LaTeX markup or whatever in the end.
@@ -81,12 +81,22 @@ class Text(list):
     ['a', 'c']
     >>> Text('a', Text(), 'c')
     ['a', 'c']
+    >>> Text('a', Text('b', 'c'), Tag('emph', 'x'), Symbol('nbsp'), 'd')
+    ['a', ['b', 'c'], ['x'], Symbol('nbsp'), 'd']
+    >>> Text({}) # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    TypeError: ...
 
     """
 
     def __init__(self, *parts):
         """Create a Text consisting of one or more parts."""
 
+        if not all(isinstance(part, (basestring, Text, Symbol))
+                   for part in parts):
+            raise TypeError(
+                "parts must be str, Text or Symbol")
         list.__init__(self, [part for part in parts if part])
 
     def __len__(self):
@@ -120,20 +130,23 @@ class Text(list):
         if item:
             list.append(self, item)
 
-    def extend(self, list):
-        for item in list:
+    def extend(self, list_):
+        for item in list_:
             self.append(item)
 
     def render(self, backend):
         """Return backend-dependent textual representation of this Text."""
 
-        text = []
+        rendered_list = []
         for item in self:
             if isinstance(item, basestring):
-                text.append(backend.format_text(item))
+                rendered_list.append(backend.format_str(item))
             else:
-                text.append(item.render(backend))
-        return backend.render_sequence(text)
+                assert isinstance(item, (Text, Symbol))
+                rendered_list.append(item.render(backend))
+        assert all(isinstance(item, backend.RenderType)
+                   for item in rendered_list)
+        return backend.render_sequence(rendered_list)
 
     def enumerate(self):
         for n, child in enumerate(self):
@@ -277,6 +290,11 @@ class Tag(Text):
         return Tag(self.name, *lst)
 
     def __init__(self, name, *args):
+        if not isinstance(name, (basestring, Text)):
+            raise TypeError(
+                "name must be str or Text (got %s)" % name.__class__.__name__)
+        if isinstance(name, Text):
+            name = name.plaintext()
         self.name = name
         Text.__init__(self, *args)
 
@@ -289,18 +307,21 @@ class HRef(Text):
     or \href{URL}{some text} in LaTeX.
 
     >>> href = HRef('http://www.example.com', 'hyperlinked text')
-    >>> from pybtex.backends import latex, html, doctree, plaintext
+    >>> from pybtex.backends import latex, html, plaintext
     >>> print href.render(latex.Backend())
     \href{http://www.example.com}{hyperlinked text}
     >>> print href.render(html.Backend())
-    <href url="http://www.example.com">hyperlinked text</href>
-    >>> print href.render(doctree.Backend())
-    <reference refuri="http://www.example.com"><inline>hyperlinked text</inline></reference>
+    <a href="http://www.example.com">hyperlinked text</a>
     >>> print href.render(plaintext.Backend())
     hyperlinked text
     """
 
     def __init__(self, url, *args):
+        if not isinstance(url, (basestring, Text)):
+            raise TypeError(
+                "url must be str or Text (got %s)" % url.__class__.__name__)
+        if isinstance(url, Text):
+            url = url.plaintext()
         self.url = url
         Text.__init__(self, *args)
 

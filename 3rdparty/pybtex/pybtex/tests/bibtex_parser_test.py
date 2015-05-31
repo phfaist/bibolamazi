@@ -49,14 +49,20 @@ class TestParser(Parser):
 
 
 class ParserTest(object):
-    input = None
+    input_string = None
+    input_strings = []
     correct_result = None
     parser_options = {}
     errors = []
 
+    def setUp(self):
+        if not self.input_strings:
+            self.input_strings = [self.input_string]
+
     def test_parser(self):
         parser = TestParser(encoding='UTF-8', **self.parser_options)
-        parser.parse_stream(StringIO(self.input))
+        for input_string in self.input_strings:
+            parser.parse_stream(StringIO(input_string))
         result = parser.data
         correct_result = self.correct_result
         assert result == correct_result
@@ -66,12 +72,12 @@ class ParserTest(object):
     
 
 class EmptyDataTest(ParserTest, TestCase):
-    input = u''
+    input_string = u''
     correct_result = BibliographyData()
 
 
 class BracesTest(ParserTest, TestCase):
-    input = u"""@ARTICLE{
+    input_string = u"""@ARTICLE{
                 test,
                 title={Polluted
                     with {DDT}.
@@ -81,7 +87,7 @@ class BracesTest(ParserTest, TestCase):
 
 
 class BracesAndQuotesTest(ParserTest, TestCase):
-    input = u'''@ARTICLE{
+    input_string = u'''@ARTICLE{
                 test,
                 title="Nested braces  and {"quotes"}",
         }'''
@@ -89,7 +95,7 @@ class BracesAndQuotesTest(ParserTest, TestCase):
 
 
 class EntryInStringTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         @article{Me2010, author="Brett, Matthew", title="An article
         @article{something, author={Name, Another}, title={not really an article}}
         "}
@@ -112,7 +118,7 @@ class EntryInStringTest(ParserTest, TestCase):
 
 
 class EntryInCommentTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         Both the articles register despite the comment block
         @Comment{
         @article{Me2010, title="An article"}
@@ -133,7 +139,7 @@ class EntryInCommentTest(ParserTest, TestCase):
 
 class AtTest(ParserTest, TestCase):
     # FIXME: check warnings
-    input = u"""
+    input_string = u"""
         The @ here parses fine in both cases
         @article{Me2010,
             title={An @tey article}}
@@ -144,11 +150,11 @@ class AtTest(ParserTest, TestCase):
         'Me2009': Entry('article', {'title': 'A @tey short story'}),
     })
     errors = [
-        "Syntax error in line 2: '(' or '{' expected",
+        "syntax error in line 2: '(' or '{' expected",
     ]
 
 class EntryTypesTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         Testing what are allowed for entry types
 
         These are OK
@@ -172,15 +178,15 @@ class EntryTypesTest(ParserTest, TestCase):
         'aa2_id': Entry('_t'),
     })
     errors = [
-        "Syntax error in line 12: a valid name expected",
-        "Syntax error in line 13: '(' or '{' expected",
-        "Syntax error in line 14: '(' or '{' expected",
-        "Syntax error in line 15: '(' or '{' expected",
+        "syntax error in line 12: a valid name expected",
+        "syntax error in line 13: '(' or '{' expected",
+        "syntax error in line 14: '(' or '{' expected",
+        "syntax error in line 15: '(' or '{' expected",
     ]
 
 
 class FieldNamesTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         Check for characters allowed in field names
         Here the cite key is fine, but the field name is not allowed:
         ``You are missing a field name``
@@ -212,14 +218,14 @@ class FieldNamesTest(ParserTest, TestCase):
         '2017': Entry('article', {'@name': 'Myself'}),
     })
     errors = [
-        "Syntax error in line 5: '}' expected",
-        "Syntax error in line 11: '=' expected",
-        'Syntax error in line 14: \'}\' expected',
+        "syntax error in line 5: '}' expected",
+        "syntax error in line 11: '=' expected",
+        'syntax error in line 14: \'}\' expected',
     ]
 
 
 class InlineCommentTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         "some text" causes an error like this
         ``You're missing a field name---line 6 of file bibs/inline_comment.bib``
         for all 3 of the % some text occurences below; in each case the parser keeps
@@ -244,13 +250,13 @@ class InlineCommentTest(ParserTest, TestCase):
         'Me2013': Entry('article'),
     })
     errors = [
-        "Syntax error in line 10: '}' expected",
-        "Syntax error in line 12: '}' expected",
+        "syntax error in line 10: '}' expected",
+        "syntax error in line 12: '}' expected",
     ]
 
 
 class SimpleEntryTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         % maybe the simplest possible
         % just a comment and one reference
 
@@ -290,7 +296,7 @@ class SimpleEntryTest(ParserTest, TestCase):
 
 
 class KeyParsingTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         # will not work as expected
         @article(test(parens1))
 
@@ -310,13 +316,13 @@ class KeyParsingTest(ParserTest, TestCase):
         'test(braces2)': Entry('article'),
     })
     errors = [
-        "Syntax error in line 5: ')' expected",
+        "syntax error in line 5: ')' expected",
     ]
 
 
 class KeylessEntriesTest(ParserTest, TestCase):
     parser_options = {'keyless_entries': True}
-    input = u"""
+    input_string = u"""
         @BOOK(
             title="I Am Jackie Chan: My Life in Action",
             year=1999
@@ -338,7 +344,7 @@ class KeylessEntriesTest(ParserTest, TestCase):
 
 
 class MacrosTest(ParserTest, TestCase):
-    input = u"""
+    input_string = u"""
         @String{and = { and }}
         @String{etal = and # { {et al.}}}
         @Article(
@@ -355,42 +361,130 @@ class MacrosTest(ParserTest, TestCase):
         'gsl': Entry('article', persons={u'author': [Person(u'Gough, Brian'), Person(u'{et al.}')]}),
     })
     errors = [
-        'Undefined string in line 6: nobody',
+        'undefined string in line 6: nobody',
     ]
 
 
 class WantedEntriesTest(ParserTest, TestCase):
     parser_options = {'wanted_entries': ['GSL']}
-    input = u"""
+    input_string = u"""
         @Article(
             gsl,
         )
     """
     correct_result = BibliographyData(entries={
-        'gsl': Entry('article'),
+        'GSL': Entry('article'),
     })
 
 
 class CrossrefTest(ParserTest, TestCase):
     parser_options = {'wanted_entries': ['GSL', 'GSL2']}
-    input = u"""
+    input_string = u"""
         @Article(gsl, crossref="the_journal")
         @Article(gsl2, crossref="The_Journal")
         @Journal{the_journal,}
     """
     correct_result = BibliographyData(entries={
-        'gsl': Entry('article', {'crossref': 'the_journal'}),
-        'gsl2': Entry('article', {'crossref': 'The_Journal'}),
+        'GSL': Entry('article', {'crossref': 'the_journal'}),
+        'GSL2': Entry('article', {'crossref': 'The_Journal'}),
         'the_journal': Entry('journal'),
+    })
+
+
+class CrossrefWantedTest(ParserTest, TestCase):
+    """When cross-referencing an explicitly cited, the key from .aux file should be used."""
+
+    parser_options = {'wanted_entries': ['GSL', 'GSL2', 'The_Journal']}
+    input_string = u"""
+        @Article(gsl, crossref="the_journal")
+        @Article(gsl2, crossref="The_Journal")
+        @Journal{the_journal,}
+    """
+    correct_result = BibliographyData(entries={
+        'GSL': Entry('article', {'crossref': 'the_journal'}),
+        'GSL2': Entry('article', {'crossref': 'The_Journal'}),
+        'The_Journal': Entry('journal'),
     })
 
 
 class UnusedEntryTest(ParserTest, TestCase):
     parser_options = {'wanted_entries': []}
-    input = u"""
+    input_string = u"""
         @Article(
             gsl,
             author = nobody,
         )
     """
     correct_result = BibliographyData()
+
+
+class CrossFileMacrosTest(ParserTest, TestCase):
+    input_strings = [
+        u'@string{jackie = "Jackie Chan"}',
+        u""",
+            @Book{
+                i_am_jackie,
+                author = jackie,
+                title = "I Am " # jackie # ": My Life in Action",
+            }
+        """,
+    ]
+    correct_result = BibliographyData({
+        'i_am_jackie': Entry('book', 
+            fields={'title': 'I Am Jackie Chan: My Life in Action'},
+            persons={'author': [Person(u'Chan, Jackie')]}
+        ),
+    })
+
+
+class AtCharacterTest(ParserTest, TestCase):
+    input_strings = [
+        ur""",
+            @proceedings{acc,
+                title = {Proc.\@ of the American Control Conference},
+                notes = "acc@example.org"
+            }
+        """,
+    ]
+    correct_result = BibliographyData({
+        'acc': Entry('proceedings', 
+            fields={
+                'title': r'Proc.\@ of the American Control Conference',
+                'notes': 'acc@example.org'
+            },
+        ),
+    })
+
+
+class AtCharacterInUnwantedEntryTest(ParserTest, TestCase):
+    parser_options = {'wanted_entries': []}
+    input_strings = [
+        ur""",
+            @proceedings{acc,
+                title = {Proc.\@ of the American Control Conference},
+                notes = "acc@example.org"
+            }
+        """,
+    ]
+    correct_result = BibliographyData()
+
+
+class CaseSensitivityTest(ParserTest, TestCase):
+    input_strings = [
+        ur""",
+            @Article{CamelCase,
+                Title = {To CamelCase or Under score},
+                year = 2009,
+                NOTES = "none"
+            }
+        """,
+    ]
+    correct_result = BibliographyData({
+        'CamelCase': Entry('article', 
+            fields={
+                'Title': 'To CamelCase or Under score',
+                'year': '2009',
+                'NOTES': 'none',
+            },
+        ),
+    })

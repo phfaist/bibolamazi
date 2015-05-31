@@ -28,8 +28,6 @@ from pybtex.database.output import BaseWriter
 class Writer(BaseWriter):
     """Outputs BibTeX markup"""
 
-    name = 'bibtex'
-    suffixes = '.bib',
     unicode_io = True
 
     def quote(self, s):
@@ -112,9 +110,9 @@ class Writer(BaseWriter):
             if preamble:
                 stream.write(u'@preamble{%s}\n\n' % self.quote(preamble))
 
-        write_preamble(bib_data.preamble())
+        write_preamble(bib_data.get_preamble())
         for key, entry in bib_data.entries.iteritems():
-            stream.write(u'@%s' % entry.type)
+            stream.write(u'@%s' % entry.original_type)
             stream.write(u'{%s' % key)
 #            for role in ('author', 'editor'):
             for role, persons in entry.persons.iteritems():

@@ -26,55 +26,107 @@ from __future__ import with_statement
 
 import re
 
-from pybtex.exceptions import PybtexError
 import pybtex.io
+from pybtex.exceptions import PybtexError
+from pybtex.errors import report_error
 
 
 class AuxDataError(PybtexError):
-    pass
+    def __init__(self, message, context=None):
+        super(AuxDataError, self).__init__(message, context.filename)
+        self.context = context
+    
+    def get_context(self):
+        if self.context.line:
+            marker = '^' * len(self.context.line)
+            return self.context.line + '\n' + marker
+
+    def __unicode__(self):
+        base_message = super(AuxDataError, self).__unicode__()
+        lineno = self.context.lineno
+        location = 'in line {0}: '.format(lineno) if lineno else ''
+        return location + base_message
 
 
-class AuxData:
+class AuxDataContext(object):
+    lineno = None
+    line = None
+    filename = None
+
+    def __init__(self, filename):
+        self.filename = filename
+
+
+class AuxData(object):
     command_re = re.compile(r'\\(citation|bibdata|bibstyle|@input){(.*)}')
-    def __init__(self, encoding):
-        self.filename = None
-        self.encoding = encoding
-        self.style = None
-        self.data = None
-        self.citations = []
+    context = None
+    style = None
+    data = None
+    citations = None
 
-    def handle_citation(self, s):
-        for c in s.split(','):
-            if not c in self.citations:
-                self.citations.append(c)
+    def __init__(self, encoding):
+        self.encoding = encoding
+        self.citations = []
+        self._canonical_keys = {}
+
+    def handle_citation(self, keys):
+        for key in keys.split(','):
+            key_lower = key.lower()
+            if key_lower in self._canonical_keys:
+                existing_key = self._canonical_keys[key_lower]
+                if key != existing_key:
+                    msg = 'case mismatch error between cite keys {0} and {1}'
+                    report_error(AuxDataError(msg.format(key, existing_key), self.context))
+            self.citations.append(key)
+            self._canonical_keys[key_lower] = key
 
     def handle_bibstyle(self, style):
         if self.style is not None:
-            raise AuxDataError(r'illegal, another \bibstyle command in %s' % self.filename)
-        self.style = style
+            report_error(AuxDataError(r'illegal, another \bibstyle command', self.context))
+        else:
+            self.style = style
 
     def handle_bibdata(self, bibdata):
         if self.data is not None:
-            raise AuxDataError(r'illegal, another \bibdata command in %s' % self.filename)
-        self.data = bibdata.split(',')
+            report_error(AuxDataError(r'illegal, another \bibdata command', self.context))
+        else:
+            self.data = bibdata.split(',')
 
     def handle_input(self, filename):
         self.parse_file(filename)
 
-    def handle(self, command, value):
+    def handle_command(self, command, value):
         action = getattr(self, 'handle_%s' % command.lstrip('@'))
         action(value)
 
+    def parse_line(self, line, lineno):
+        self.context.lineno = lineno
+        self.context.line = line.strip()
+        match = self.command_re.match(line)
+        if match:
+            command, value = match.groups()
+            self.handle_command(command, value)
+
     def parse_file(self, filename):
-        previous_filename = self.filename
-        self.filename = filename
+        previous_context = self.context
+        self.context = AuxDataContext(filename)
 
-        with pybtex.io.open_unicode(filename, encoding=self.encoding) as f:
-            s = f.read()
-        for command, value in self.command_re.findall(s):
-            self.handle(command, value)
+        with pybtex.io.open_unicode(filename, encoding=self.encoding) as aux_file:
+            for lineno, line in enumerate(aux_file, 1):
+                self.parse_line(line, lineno)
 
-        self.filename = previous_filename
+        if previous_context:
+            self.context = previous_context
+        else:
+            self.context.line = None
+            self.context.lineno = None
+
+        # these errors are fatal - always raise an exception instead of using
+        # erorrs.report_error()
+        if self.data is None:
+            raise AuxDataError(r'found no \bibdata command', self.context)
+        if self.style is None:
+            raise AuxDataError(r'found no \bibstyle command', self.context)
 
 
 def parse_file(filename, encoding):
@@ -82,8 +134,4 @@ def parse_file(filename, encoding):
 
     data = AuxData(encoding)
     data.parse_file(filename)
-    if data.data is None:
-        raise AuxDataError(r'found no \bibdata command in %s' % filename)
-    if data.style is None:
-        raise AuxDataError(r'found no \bibstyle command in %s' % filename)
     return data

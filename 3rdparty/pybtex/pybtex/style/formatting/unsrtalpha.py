@@ -23,5 +23,4 @@ from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 
 
 class Style(UnsrtStyle):
-    name = 'unsrtalpha'
     default_label_style = 'alpha'

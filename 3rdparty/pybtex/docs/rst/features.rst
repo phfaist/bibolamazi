@@ -23,8 +23,9 @@ example:
     }
 
 
-For the detailed description of the BibTeX format please refer to the
-`BibTeX documentation <http://www.ctan.org/get/info/tex-references/html/bibtex-bib-files.html>`_.
+Here is a `more detailed description of the BibTeX format`_.
+
+.. _more detailed description of the BibTeX format: http://www.miwie.org/tex-refs/html/bibtex-bib-files.html
 
 BibTeXML
 --------
@@ -102,6 +103,6 @@ produce:
 Support for other formats can be added easily. If you really need it,
 please `file a feature request`_.
 
-.. _file a feature request: http://sourceforge.net/tracker/?group_id=151578&atid=781409
+.. _file a feature request: http://sourceforge.net/p/pybtex/bugs/new/
 
 

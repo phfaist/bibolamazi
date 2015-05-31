@@ -33,9 +33,10 @@ class FormattedEntry(object):
 
 
 class FormattedBibliography(object):
-    def __init__(self, entries, style):
+    def __init__(self, entries, style, preamble=''):
         self.entries = list(entries)
         self.style = style
+        self.preamble = preamble
 
     def __iter__(self):
         return iter(self.entries)

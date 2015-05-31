@@ -25,7 +25,6 @@ from pybtex.style.names import BaseNameStyle, name_part
 
 
 class NameStyle(BaseNameStyle):
-    name = 'plain'
 
     def format(self, person, abbr=False):
         r"""

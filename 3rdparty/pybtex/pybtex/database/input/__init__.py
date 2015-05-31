@@ -30,9 +30,8 @@ from pybtex.exceptions import PybtexError
 
 
 class BaseParser(Plugin):
-    default_plugin = 'bibtex'
+    default_suffix = None
     filename = '<INPUT>'
-
     unicode_io = False
 
     def __init__(self, encoding=None, wanted_entries=None, min_crossrefs=2, **kwargs):

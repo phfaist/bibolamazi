@@ -137,7 +137,7 @@ class Scanner(object):
 
 
 class PybtexSyntaxError(PybtexError):
-    error_type = 'Syntax error'
+    error_type = 'syntax error'
 
     def __init__(self, message, parser):
         super(PybtexSyntaxError, self).__init__(message, filename=parser.filename)

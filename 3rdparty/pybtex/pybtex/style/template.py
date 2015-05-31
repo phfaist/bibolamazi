@@ -242,7 +242,8 @@ class FieldIsMissing(PybtexError):
     def __init__(self, field_name, entry):
         self.field_name = field_name
         super(FieldIsMissing, self).__init__(
-            'missing field: %s in %s' % (field_name, entry))
+            u'missing {0} in {1}'.format(field_name, getattr(entry, 'key', '<unnamed>'))
+        )
 
 @node
 def field(children, data, name, apply_func=None):
@@ -316,9 +317,9 @@ def href(children, data):
     >>> import pybtex.backends.html
     >>> html = pybtex.backends.html.Backend()
     >>> print href ['www.test.org', 'important'].format().render(html)
-    <href url="www.test.org">important</href>
+    <a href="www.test.org">important</a>
     >>> print sentence ['ready', 'set', href ['www.test.org', 'go']].format().render(html)
-    Ready, set, <href url="www.test.org">go</href>.
+    Ready, set, <a href="www.test.org">go</a>.
     """
     parts = _format_list(children, data)
     return richtext.HRef(*parts)

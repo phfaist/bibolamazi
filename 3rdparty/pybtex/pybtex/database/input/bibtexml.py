@@ -32,8 +32,7 @@ def remove_ns(s):
         return s[len(bibtexns):]
 
 class Parser(BaseParser):
-    name = 'bibtexml'
-    suffixes = '.xml', '.bibtexml'
+    default_suffix = '.xml'
 
     def parse_stream(self, stream):
         t = ET.parse(stream)
@@ -67,5 +66,6 @@ class Parser(BaseParser):
             if field_name in Person.valid_roles:
                 process_person(field, field_name)
             else:
-                e.fields[field_name] = field.text.strip()
+                field_text = field.text if field.text is not None else ''
+                e.fields[field_name] = field_text
         return id_, e

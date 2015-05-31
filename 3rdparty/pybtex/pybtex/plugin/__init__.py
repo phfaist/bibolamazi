@@ -1,4 +1,5 @@
 # Copyright (c) 2007, 2008, 2009, 2010, 2011, 2012  Andrey Golovizin
+# Copyright (c) 2014  Matthias C. M. Troffaes
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -19,14 +20,31 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import os
-import sys
-from itertools import chain
+
+import os.path  # splitext
+import pkg_resources
 
 from pybtex.exceptions import PybtexError
 
 
+class Plugin(object):
+    pass
+
+
+#: default pybtex plugins
+_DEFAULT_PLUGINS = {
+    "pybtex.database.input": "bibtex",
+    "pybtex.database.output": "bibtex",
+    "pybtex.backends": "latex",
+    "pybtex.style.labels": "number",
+    "pybtex.style.names": "plain",
+    "pybtex.style.sorting": "none",
+    "pybtex.style.formatting": "unsrt",
+}
+
+
 class PluginGroupNotFound(PybtexError):
+
     def __init__(self, group_name):
         message = u'plugin group {group_name} not found'.format(
             group_name=group_name,
@@ -35,135 +53,131 @@ class PluginGroupNotFound(PybtexError):
 
 
 class PluginNotFound(PybtexError):
-    def __init__(self, plugin_group, name=None, filename=None):
-        assert plugin_group
-        if name:
+
+    def __init__(self, plugin_group, name):
+        if not name.startswith('.'):
             message = u'plugin {plugin_group}.{name} not found'.format(
                 plugin_group=plugin_group,
                 name=name,
             )
-        elif filename:
-            message = u'cannot determine file type for {filename}'.format(
-                plugin_group=plugin_group,
-                filename=filename,
-            )
         else:
-            message = u'' # FIXME
+            assert plugin_group.endswith('.suffixes')
+            message = (
+                u'plugin {plugin_group} for suffix {suffix} not found'.format(
+                    plugin_group=plugin_group,
+                    suffix=name,
+                )
+            )
 
         super(PluginNotFound, self).__init__(message)
 
 
-class Plugin(object):
-    name = None
-    aliases = ()
-    suffixes = ()
-    default_plugin = None
-
-    @classmethod
-    def get_default_suffix(cls):
-        return cls.suffixes[0]
-
-
-class PluginLoader(object):
-    def find_plugin(plugin_group, name):
-        raise NotImplementedError
-
-    def enumerate_plugin_names(self, plugin_group):
-        raise NotImplementedError
-
-
-class BuiltInPluginLoader(PluginLoader):
-    def get_group_info(self, plugin_group):
-        from pybtex.plugin.registry import plugin_registry
-        try:
-            return plugin_registry[plugin_group]
-        except KeyError:
-            raise PluginGroupNotFound(plugin_group)
-
-    def find_plugin(self, plugin_group, name=None, filename=None):
-        plugin_group_info = self.get_group_info(plugin_group)
-        module_name = None
-        if name:
-            if name in plugin_group_info['plugins']:
-                module_name = name
-            elif name in plugin_group_info['aliases']:
-                module_name = plugin_group_info['aliases'][name]
-            else:
-                raise PluginNotFound(plugin_group, name=name)
-        elif filename:
-            suffix = os.path.splitext(filename)[1]
-            if suffix in plugin_group_info['suffixes']:
-                module_name = plugin_group_info['suffixes'][suffix]
-            else:
-                raise PluginNotFound(plugin_group, filename=filename)
-        else:
-            module_name = plugin_group_info['default_plugin']
-
-        class_name = plugin_group_info['class_name']
-        return self.import_plugin(plugin_group, module_name, class_name)
-
-    def import_plugin(self, plugin_group, module_name, class_name):
-        module = __import__(str(plugin_group), globals(), locals(), [str(module_name)])
-        return getattr(getattr(module, module_name), class_name)
-
-    def enumerate_plugin_names(self, plugin_group):
-        plugin_group_info = self.get_group_info(plugin_group)
-        return plugin_group_info['plugins']
-
-
-class EntryPointPluginLoader(PluginLoader):
-    def find_plugin(self, plugin_group, name=None, filename=None):
-        try:
-            import pkg_resources
-        except ImportError:
-            raise PluginNotFound(plugin_group)
-
-        def load_entry_point(group, name):
-            entry_points = pkg_resources.iter_entry_points(group, name)
-            try:
-                entry_point = entry_points.next()
-            except StopIteration:
-                raise PluginNotFound(plugin_group, name, filename)
-            else:
-                return entry_point.load()
-
-        if name:
-            return load_entry_point(plugin_group, name)
-        elif filename:
-            suffix = os.path.splitext(filename)[1]
-            return load_entry_point(plugin_group + '.suffixes', suffix)
-        else:
-            raise PluginNotFound(plugin_group)
-
-    def enumerate_plugin_names(self, plugin_group):
-        try:
-            import pkg_resources
-        except ImportError:
-            return
-        entry_points = pkg_resources.iter_entry_points(plugin_group)
-        return [entry_point.name for entry_point in entry_points]
-
-
-plugin_loaders = [EntryPointPluginLoader(), BuiltInPluginLoader()]
+def _load_entry_point(group, name, use_aliases=False):
+    groups = [group, group + '.aliases'] if use_aliases else [group]
+    for search_group in groups:
+        for entry_point in pkg_resources.iter_entry_points(search_group, name):
+            return entry_point.load()
+    raise PluginNotFound(group, name)
 
 
 def find_plugin(plugin_group, name=None, filename=None):
+    """Find a :class:`Plugin` class within *plugin_group* which
+    matches *name*, or *filename* if *name* is not specified, or
+    the default plugin if neither *name* nor *filename* is
+    specified.
+
+    If *name* is specified, return the :class:`Plugin` class
+    registered under *name*. If *filename* is specified, look at
+    its suffix (i.e. extension) and return the :class:`Plugin`
+    class registered for this suffix.
+
+    If *name* is not a string, but a plugin class, just return it back.
+    (Used to make functions like :function:`make_bibliography` accept already
+    loaded plugins as well as plugin names.
+
+    """
     if isinstance(name, type) and issubclass(name, Plugin):
-        plugin = name
-        #assert plugin.group_name == plugin_group
-        return plugin
+        return name
+
+    if plugin_group not in _DEFAULT_PLUGINS:
+        raise PluginGroupNotFound(plugin_group)
+    if name:
+        return _load_entry_point(plugin_group, name, use_aliases=True)
+    elif filename:
+        suffix = os.path.splitext(filename)[1]
+        return _load_entry_point(plugin_group + '.suffixes', suffix)
     else:
-        for loader in plugin_loaders:
-            try:
-                return loader.find_plugin(plugin_group, name, filename)
-            except PluginNotFound:
-                continue
-        raise PluginNotFound(plugin_group, name, filename)
+        return _load_entry_point(plugin_group, _DEFAULT_PLUGINS[plugin_group])
 
 
 def enumerate_plugin_names(plugin_group):
-    results = (
-        loader.enumerate_plugin_names(plugin_group)
-        for loader in plugin_loaders
-    )
-    return chain(*results)
+    """Enumerate all plugin names for the given *plugin_group*."""
+    return (entry_point.name
+            for entry_point in pkg_resources.iter_entry_points(plugin_group))
+
+
+class _FakeEntryPoint(pkg_resources.EntryPoint):
+
+    def __init__(self, name, klass):
+        self.name = name
+        self.klass = klass
+
+    def __str__(self):
+        return "%s = :%s" % (self.name, self.klass.__name__)
+
+    def __repr__(self):
+        return (
+            "_FakeEntryPoint(name=%r, klass=%s)"
+            % (self.name, self.klass.__name__))
+
+    def load(self, require=True, env=None, installer=None):
+        return self.klass
+
+    def require(self, env=None, installer=None):
+        pass
+
+
+def register_plugin(plugin_group, name, klass, force=False):
+    """Register a plugin on the fly.
+
+    This works by adding *klass* as a pybtex entry point, under entry
+    point group *plugin_group* and entry point name *name*.
+
+    To register a suffix, append ".suffixes" to the plugin group, and
+    *name* is then simply the suffix, which should start with a
+    period.
+
+    To register an alias plugin name, append ".aliases" to the plugin group.
+    Aliases work just as real names, but are not returned by
+    :function:`enumerate_plugin_names` and not advertised in the command line
+    help.
+
+    If *force* is ``False``, then existing entry points are not
+    overwritten. If an entry point with the given group and name
+    already exists, then returns ``False``, otherwise returns
+    ``True``.
+
+    If *force* is ``True``, then existing entry points are
+    overwritten, and the function always returns ``True``.
+
+    """
+    if plugin_group.endswith(".suffixes"):
+        base_group, _ = plugin_group.rsplit(".", 1)
+        if not name.startswith('.'):
+            raise ValueError("a suffix must start with a period")
+    elif plugin_group.endswith(".aliases"):
+        base_group, _ = plugin_group.rsplit(".", 1)
+    else:
+        base_group = plugin_group
+    if base_group not in _DEFAULT_PLUGINS:
+        raise PluginGroupNotFound(base_group)
+
+    dist = pkg_resources.get_distribution('pybtex')
+    ep_map = pkg_resources.get_entry_map(dist)
+    if plugin_group not in ep_map:
+        ep_map[plugin_group] = {}
+    if name in ep_map[plugin_group] and not force:
+        return False
+    else:
+        ep_map[plugin_group][name] = _FakeEntryPoint(name, klass)
+        return True

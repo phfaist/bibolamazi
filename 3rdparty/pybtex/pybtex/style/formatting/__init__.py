@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from pybtex.style import FormattedEntry
+from pybtex.style import FormattedEntry, FormattedBibliography
 from pybtex.style.template import node, join
 from pybtex.richtext import Symbol, Text
 from pybtex.plugin import Plugin, find_plugin
@@ -31,12 +31,11 @@ def toplevel(children, data):
 
 
 class BaseStyle(Plugin):
-    default_plugin = 'unsrt'
     default_name_style = None
     default_label_style = None
     default_sorting_style = None
 
-    def __init__(self, label_style=None, name_style=None, sorting_style=None, abbreviate_names=False, **kwargs):
+    def __init__(self, label_style=None, name_style=None, sorting_style=None, abbreviate_names=False, min_crossrefs=2, **kwargs):
         self.name_style = find_plugin('pybtex.style.names', name_style or self.default_name_style)()
         self.label_style = find_plugin('pybtex.style.labels', label_style or self.default_label_style)()
         self.sorting_style = find_plugin('pybtex.style.sorting', sorting_style or self.default_sorting_style)()
@@ -44,6 +43,7 @@ class BaseStyle(Plugin):
         self.format_labels = self.label_style.format_labels
         self.sort = self.sorting_style.sort
         self.abbreviate_names = abbreviate_names
+        self.min_crossrefs = min_crossrefs
 
     def format_entries(self, entries):
         sorted_entries = self.sort(entries)
@@ -56,3 +56,12 @@ class BaseStyle(Plugin):
             f = getattr(self, "format_" + entry.type)
             text = f(entry)
             yield FormattedEntry(entry.key, text, label)
+
+    def format_bibliography(self, bib_data, citations=None):
+        if citations is None:
+            citations = bib_data.entries.keys()
+        citations = bib_data.add_extra_citations(citations, self.min_crossrefs)
+        entries = [bib_data.entries[key] for key in citations]
+        formatted_entries = self.format_entries(entries)
+        formatted_bibliography = FormattedBibliography(formatted_entries, style=self, preamble=bib_data.get_preamble())
+        return formatted_bibliography

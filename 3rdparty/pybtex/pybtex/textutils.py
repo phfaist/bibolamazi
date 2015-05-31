@@ -22,7 +22,7 @@
 import re
 
 terminators = '.?!'
-dash_re = re.compile(r'-')
+delimiter_re = re.compile(r'([\s\-])')
 whitespace_re = re.compile(r'\s+')
 
 def capfirst(s):
@@ -40,31 +40,27 @@ def add_period(s):
         return s + '.'
     return s
 
-def abbreviate(s):
+def abbreviate(s, split=delimiter_re.split):
     """Abbreviate some text.
-    Examples:
-    abbreviate('Some words') -> "S. w."
-    abbreviate('First-Second') -> "F.-S."
+
+    >> abbreviate('Name')
+    'N'
+    >> abbreviate('Some words')
+    'S. w.'
+    >>> abbreviate('First-Second')
+    'F.-S.'
     """
-    def parts(s):
-        start = 0
-        length = 0
-        for letter in s:
-            length += 1
-            if not letter.isalpha():
-                yield s[start:length], letter
-                start += length
-                length = 0
-        yield s[start:length], ""
-    def abbr(part):
-        if part[0]:
-            if is_terminated(part[1]):
-                return part[0][0].upper() + part[1]
-            else:
-                return part[0][0].upper() + '.'
+
+    def split(string):
+        return delimiter_re.split(string)
+
+    def abbreviate(part):
+        if part.isalpha():
+            return part[0] + '.'
         else:
-            return part[1]
-    return ''.join(abbr(part) for part in parts(s))
+            return part
+
+    return ''.join(abbreviate(part) for part in split(s))
 
 def normalize_whitespace(string):
     r"""
@@ -87,3 +83,27 @@ def normalize_whitespace(string):
     """
 
     return whitespace_re.sub(' ', string.strip())
+
+def width(string):
+    r"""
+    Get the width of the typeset string, in relative units.  Similar to
+    BibTeX's width$, but does not care about any "special characters".
+    
+    >>> width('')
+    0
+    >>> width('abc')
+    1500
+    >>> width('ab{c}')
+    2500
+    >>> width(r"ab{\'c}")
+    3278
+    >>> width(r"ab{\'c{}}")
+    4278
+    >>> width(r"ab{\'c{}")
+    3778
+    >>> width(r"ab{\'c{d}}")
+    4834
+    """
+
+    from pybtex.charwidths import charwidths
+    return sum(charwidths.get(char, 0) for char in string)

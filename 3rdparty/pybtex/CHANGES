@@ -1,3 +1,70 @@
+Version 0.18
+------------
+(released on July 6, 2014)
+
+- Pybtex is now fully case-insensitive (like BibTeX). As a consequence, IEEEtran styles now work corretly.
+
+- Added ``--preserve-case`` optoin to ``pybtex-convert`` (by default all identifiers are converted to lower case).
+
+- An erorr is reported if two citations have the same key but different case, like in BibTeX. (Example: ddt1999 and DDT1999).
+
+- Fixed parsing unused bibliography entries with strings containing @ characters.
+
+- ``entry.max$`` constant is now set to 250, ``global.max$`` is set to 20000, like in BibTeX.
+
+- Added ``--strict`` option to ``pybtex-convert`` and ``pybtex-format`` (turns
+  warning to errors).
+
+- Strict mode is now enabled by default when using pybtex as a library
+  (exceptions are raised on all errors instead of just printing warnings to
+  stderr).
+
+  Non-strict error handling is still enabled when using pybtex from the command
+  line, for compatibility with BibTeX. Use ``--strict`` option if you don't
+  like this.
+
+- Added missing pybtex-format manpage.
+
+
+Version 0.17
+------------
+(released on March 10, 2014)
+
+- Added ``pybtex-format`` utility for formatting bibliography files as HTML,
+  LaTeX, and other supported human-readable formats.
+
+- Added ``--strict`` command line option to ``pybtex`` (all warnings become errors).
+
+- Added ``alpha`` label style, and alpha and unsrtalpha formatting styles.
+
+- Added support for ``url``, ``eprint``, ``doi``, and ``pubmed`` fields in ``unsrt`` style.
+
+- Names with hyphens are now abbreviated correctly ("Jean-Baptiste" becomes "J.-B.").
+
+- ``width$`` now uses cmr10 font metrics, like in BibTeX. Non-latin characters are also supported.
+
+- Pythonic style engine now supports ``@preamble`` commands.
+
+- Warning on missing fields are now more human-readable.
+
+- When writing BibTeX files, put entry key on the same line with entry type. Fixes warnings in Jabref.
+
+- When using multiple ``.bib`` files, macros defined in earlier files are available in subsequent ones (like in BibTeX).
+
+- Fixed parsing ``.bst`` files with lines consisting of a single % character.
+
+- Fixed sorting entries without author in ``author_year_title`` sorting style.
+
+- Fixed broken ``CaseInsensitiveDict.get()``.
+
+- ``CaseInsensitiveDict`` is now pickleable.
+
+- Added support for registering plugins at runtime with
+  ``pybtex.plugin.register_plugin()`` - useful for using pybtex as a library.
+
+Many thanks to Matthias C. M. Troffaes for his numerous fixes and improvements!
+
+
 Version 0.16
 ------------
 (released on March 17, 2012)

@@ -20,9 +20,9 @@ producing formatted text:
     >>> from pybtex.richtext import Text, Tag
     >>> from pybtex.backends import latex, html
     >>> text = Text('This is an example of a ', Tag('emph', 'rich'), ' text.')
-    >>> print text.render(html.Writer())
+    >>> print text.render(html.Backend())
     This is an example of a <em>rich</em> text.
-    >>> print text.render(latex.Writer())
+    >>> print text.render(latex.Backend())
     This is an example of a \emph{rich} text.
 
 
@@ -39,8 +39,10 @@ formatted entry (an instance of ``pybtex.richtes.Text``).
 
 .. sourcecode:: python
 
+    from pybtex.style.formatting import BaseStyle
     from pybtex.richtext import Text, Tag
-    class Formatter(FormatterBase):
+
+    class MyStyle(BaseStyle):
         def format_article(self, entry):
             return Text('Article ', Tag('em', entry.fields['title']))
 
@@ -48,10 +50,10 @@ To make things easier we designed a simple template language:
 
 .. sourcecode:: python
 
-    from pybtex.style.formatting import FormatterBase, toplevel
+    from pybtex.style.formatting import BaseStyle, toplevel
     from pybtex.style.template import field, join, optional
 
-    class Formatter(FormatterBase):
+    class MyStyle(BaseStyle):
         def format_article(self, entry):
             if entry.fields['volume']:
                 volume_and_pages = join [field('volume'), optional [':', pages]]
@@ -63,7 +65,7 @@ To make things easier we designed a simple template language:
                 sentence [
                     tag('emph') [field('journal')], volume_and_pages, date],
             ]
-            return template.format_data(e)
+            return template.format_data(entry)
 
 Is that all?
 ============

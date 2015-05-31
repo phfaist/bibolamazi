@@ -33,7 +33,7 @@ from pybtex.bibtex.exceptions import BibTeXError
 from pybtex.utils import memoize
 from pybtex.bibtex import utils
 from pybtex.database import Person
-from pybtex.bibtex.names import format as format_bibtex_name
+from pybtex.bibtex.names import format_name as format_bibtex_name
 
 
 def print_warning(msg):
@@ -207,7 +207,7 @@ def if_(i):
 def int_to_chr(i):
     n = i.pop()
     try:
-        char = chr(n)
+        char = unichr(n)
     except ValueError:
         raise BibTeXError('%i passed to int.to.chr$', n)
     i.push(char)
@@ -239,7 +239,7 @@ def pop(i):
 
 @builtin('preamble$')
 def preamble(i):
-    i.push(i.bib_data.preamble())
+    i.push(i.bib_data.get_preamble())
 
 @builtin('purify$')
 def purify(i):
@@ -309,9 +309,8 @@ def while_(i):
 
 @builtin('width$')
 def width(i):
-    #FIXME need to investigate bibtex' source
     s = i.pop()
-    i.push(utils.bibtex_len(s))
+    i.push(utils.bibtex_width(s))
 
 @builtin('write$')
 def write(i):

@@ -21,13 +21,9 @@
 
 from pybtex.backends import BaseBackend
 
-file_extension = 'txt'
 
 class Backend(BaseBackend):
-    name = 'plaintext'
-    aliases = 'text',
-    suffixes = '.txt',
-
+    default_suffix = '.txt'
     symbols = {
         'ndash': u'-',
         'newblock': u' ',

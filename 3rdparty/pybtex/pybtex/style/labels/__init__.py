@@ -20,16 +20,13 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from pybtex.plugin import Plugin
-
-available_plugins = ('number', 'alpha')
+from pybtex.textutils import width
 
 
 class BaseLabelStyle(Plugin):
-    default_plugin = 'number'
-
     def get_longest_label(self, formatted_entries):
-        #FIXME: determine label width proprely
-        return max(formatted_entries, key=lambda entry: len(entry.label)).label
+        labels = (entry.label for entry in formatted_entries)
+        return max(labels, key=width)
 
     def format_labels(self, sorted_entries):
         raise NotImplementedError

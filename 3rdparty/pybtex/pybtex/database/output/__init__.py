@@ -27,7 +27,6 @@ from pybtex.plugin import Plugin
 
 class BaseWriter(Plugin):
     unicode_io = False
-    default_plugin = 'bibtex'
 
     def __init__(self, encoding=None):
         self.encoding = encoding or pybtex.io.get_default_encoding()

@@ -22,17 +22,31 @@
 """BibTeX-like name formatting.
 
 >>> name = 'Charles Louis Xavier Joseph de la Vallee Poussin'
->>> print format(name, '{vv~}{ll}{, jj}{, f.}')
+>>> print format_name(name, '{vv~}{ll}{, jj}{, f.}')
 de~la Vallee~Poussin, C.~L. X.~J.
 >>> name = 'abc'
->>> print format(name, '{vv~}{ll}{, jj}{, f.}')
+>>> print format_name(name, '{vv~}{ll}{, jj}{, f.}')
 abc
+>>> name = 'Jean-Pierre Hansen'
+>>> print format_name(name, '{ff~}{vv~}{ll}{, jj}')
+Jean-Pierre Hansen
+>>> print format_name(name, '{f.~}{vv~}{ll}{, jj}')
+J.-P. Hansen
+
+>>> name = 'F. Phidias Phony-Baloney'
+>>> print format_name(name, '{v{}}{l}')
+P.-B
+>>> print format_name(name, '{v{}}{l.}')
+P.-B.
+>>> print format_name(name, '{v{}}{l{}}')
+PB
 """
 
 import re
 
 from pybtex.database import Person
-from pybtex.bibtex.utils import bibtex_len, bibtex_first_letter
+from pybtex.utils import deprecated
+from pybtex.bibtex.utils import bibtex_len, bibtex_abbreviate
 from pybtex.scanner import (
     Scanner, Pattern, Literal,
     PybtexSyntaxError, PrematureEOF
@@ -120,7 +134,7 @@ class NamePart(object):
             return ''
 
         if self.abbreviate:
-            names = [bibtex_first_letter(name) for name in names]
+            names = [bibtex_abbreviate(name, self.delimiter) for name in names]
         if self.delimiter is None:
             if self.abbreviate:
                 names = join(names, '.~', '. ')
@@ -260,8 +274,14 @@ def join(words, tie='~', space=' '):
                 space.join(words[1:-1]) +
                 tie + words[-1])
 
-def format(name, format):
+
+def format_name(name, format):
     return NameFormat(format).format(name)
+
+
+@deprecated('0.16', 'use format_name() instead')
+def format(name, format):
+    return format_name(name, format)
 
 
 class UnbalancedBraceError(PybtexSyntaxError):

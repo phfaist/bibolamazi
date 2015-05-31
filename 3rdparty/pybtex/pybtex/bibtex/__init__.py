@@ -29,6 +29,7 @@ def make_bibliography(aux_filename,
         output_encoding=None,
         bst_encoding=None,
         min_crossrefs=2,
+        style=None,
         **kwargs
     ):
 
@@ -43,11 +44,14 @@ def make_bibliography(aux_filename,
     if bib_format is None:
         from pybtex.database.input.bibtex import Parser as bib_format
     aux_data = auxfile.parse_file(aux_filename, output_encoding)
-    bst_filename = aux_data.style + path.extsep + 'bst'
+    if style is None:
+        style = aux_data.style
+    bst_filename = style + path.extsep + 'bst'
     bst_script = bst.parse_file(bst_filename, bst_encoding)
     base_filename = path.splitext(aux_filename)[0]
     bbl_filename = base_filename + path.extsep + 'bbl'
-    bib_filenames = [filename + bib_format.get_default_suffix() for filename in aux_data.data]
-    bbl_file = pybtex.io.open_unicode(bbl_filename, 'w', encoding=output_encoding)
+    bib_filenames = [filename + bib_format.default_suffix for filename in aux_data.data]
     interpreter = Interpreter(bib_format, bib_encoding)
-    interpreter.run(bst_script, aux_data.citations, bib_filenames, bbl_file, min_crossrefs=min_crossrefs)
+    bbl_data = interpreter.run(bst_script, aux_data.citations, bib_filenames, min_crossrefs=min_crossrefs)
+    with pybtex.io.open_unicode(bbl_filename, 'w', encoding=output_encoding) as bbl_file:
+        bbl_file.write(bbl_data)

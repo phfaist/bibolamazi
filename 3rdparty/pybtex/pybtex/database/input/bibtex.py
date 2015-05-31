@@ -47,7 +47,12 @@
 ...   eprint =       "http://www.sciencemag.org/cgi/reprint/276/5315/1109.pdf",
 ... }
 ... '''))
->>> rief97b = parser.data.entries['rief97b']
+
+# entry keys are case-insensitive
+>>> bib_data.entries['rief97b'] == bib_data.entries['RIEF97B']
+True
+
+>>> rief97b = bib_data.entries['rief97b']
 >>> authors = rief97b.persons['author']
 >>> for author in authors:
 ...     print unicode(author)
@@ -57,12 +62,19 @@ Oesterhelt, Filipp
 Fernandez, Julio M.
 Gaub, Hermann E.
 
+# field names are case-insensitive
+>>> print rief97b.fields['URL']
+http://www.sciencemag.org/cgi/content/abstract/276/5315/1109
+>>> print rief97b.fields['url']
+http://www.sciencemag.org/cgi/content/abstract/276/5315/1109
+
 """
 
 from string import ascii_letters, digits
 
 import re
 import pybtex.io
+from pybtex.utils import CaseInsensitiveDict, CaseInsensitiveSet
 from pybtex.database import Entry, Person
 from pybtex.database.input import BaseParser
 from pybtex.bibtex.utils import split_name_list
@@ -89,20 +101,12 @@ month_names = {
 }
 
 
-class Macro(object):
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return 'Macro({0})'.format(self.name)
-
-
 class SkipEntry(Exception):
     pass
 
 
 class UndefinedMacro(PybtexSyntaxError):
-    error_type = 'Undefined string'
+    error_type = 'undefined string'
 
 class BibTeXEntryIterator(Scanner):
     NAME_CHARS = ascii_letters + u'@!$&*+-./:;<>?[\\]^_`|~\x7f'
@@ -130,7 +134,7 @@ class BibTeXEntryIterator(Scanner):
     def __init__(self, text, keyless_entries=False, macros=month_names, handle_error=None, want_entry=None, filename=None):
         super(BibTeXEntryIterator, self).__init__(text, filename)
         self.keyless_entries = keyless_entries
-        self.macros = dict(macros)
+        self.macros = macros
         if handle_error:
             self.handle_error = handle_error
         if want_entry:
@@ -160,6 +164,9 @@ class BibTeXEntryIterator(Scanner):
     def want_entry(self, key):
         return True
 
+    def want_current_entry(self):
+        return self.current_entry_key is None or self.want_entry(self.current_entry_key)
+
     def parse_bibliography(self):
         while True:
             if not self.skip_to([self.AT]):
@@ -173,28 +180,28 @@ class BibTeXEntryIterator(Scanner):
                 pass
 
     def parse_command(self):
-        self.current_command = None
         self.current_entry_key = None
         self.current_fields = []
         self.current_field_name = None
         self.current_value = []
 
         name = self.required([self.NAME])
-        self.current_command = name.value.lower()
+        command = name.value
         body_start = self.required([self.LPAREN, self.LBRACE])
         body_end = self.RBRACE if body_start.pattern == self.LBRACE else self.RPAREN
 
-        if self.current_command == 'string':
+        command_lower = command.lower()
+        if command_lower == 'string':
             parse_body = self.parse_string_body
-            make_result = lambda: (self.current_command, (self.current_field_name, self.current_value))
-        elif self.current_command == 'preamble':
+            make_result = lambda: (command, (self.current_field_name, self.current_value))
+        elif command_lower == 'preamble':
             parse_body = self.parse_preamble_body
-            make_result = lambda: (self.current_command, (self.current_value,))
-        elif self.current_command == 'comment':
+            make_result = lambda: (command, (self.current_value,))
+        elif command_lower == 'comment':
             raise SkipEntry
         else:
             parse_body = self.parse_entry_body
-            make_result = lambda: (self.current_command, (self.current_entry_key, self.current_fields))
+            make_result = lambda: (command, (self.current_entry_key, self.current_fields))
         try:
             parse_body(body_end)
             self.required([body_end])
@@ -206,18 +213,18 @@ class BibTeXEntryIterator(Scanner):
         self.parse_value()
 
     def parse_string_body(self, body_end):
-        self.current_field_name = self.required([self.NAME]).value.lower()
+        self.current_field_name = self.required([self.NAME]).value
         self.required([self.EQUALS])
         self.parse_value()
-        self.macros[self.current_field_name.lower()] = ''.join(self.current_value)
+        self.macros[self.current_field_name] = ''.join(self.current_value)
 
     def parse_entry_body(self, body_end):
         if not self.keyless_entries:
             key_pattern = self.KEY_PAREN if body_end == self.RPAREN else self.KEY_BRACE
             self.current_entry_key = self.required([key_pattern]).value
-            if not self.want_entry(self.current_entry_key):
-                raise SkipEntry
         self.parse_entry_fields()
+        if not self.want_current_entry():
+            raise SkipEntry
 
     def parse_entry_fields(self):
         while True:
@@ -234,7 +241,7 @@ class BibTeXEntryIterator(Scanner):
         name = self.optional([self.NAME])
         if not name:
             return
-        self.current_field_name = name.value.lower()
+        self.current_field_name = name.value
         self.required([self.EQUALS])
         self.parse_value()
 
@@ -271,9 +278,10 @@ class BibTeXEntryIterator(Scanner):
 
     def substitute_macro(self, name):
         try:
-            return self.macros[name.lower()]
+            return self.macros[name]
         except KeyError:
-            self.handle_error(UndefinedMacro(name, self))
+            if self.want_current_entry():
+                self.handle_error(UndefinedMacro(name, self))
             return ''
 
     def parse_string(self, string_end, level=0):
@@ -296,8 +304,7 @@ class BibTeXEntryIterator(Scanner):
 
 
 class Parser(BaseParser):
-    name = 'bibtex'
-    suffixes = '.bib',
+    default_suffix = '.bib'
     unicode_io = True
 
     macros = None
@@ -311,8 +318,8 @@ class Parser(BaseParser):
         ):
         BaseParser.__init__(self, encoding, **kwargs)
 
-        self.macros = dict(macros)
-        self.person_fields = person_fields
+        self.macros = CaseInsensitiveDict(macros)
+        self.person_fields = CaseInsensitiveSet(person_fields)
         self.keyless_entries = keyless_entries
 
     def process_entry(self, entry_type, key, fields):
@@ -357,9 +364,10 @@ class Parser(BaseParser):
         )
         for entry in entry_iterator:
             entry_type = entry[0]
-            if entry_type == 'string':
+            entry_type_lower = entry_type.lower()
+            if entry_type_lower == 'string':
                 pass
-            elif entry_type == 'preamble':
+            elif entry_type_lower == 'preamble':
                 self.process_preamble(*entry[1])
             else:
                 self.process_entry(entry_type, *entry[1])

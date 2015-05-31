@@ -1,3 +1,4 @@
+# vim: fileencoding=utf-8
 # Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2012  Andrey Golovizin
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -25,6 +26,7 @@ from collections import Mapping
 
 from pybtex.exceptions import PybtexError
 from pybtex.utils import (
+    deprecated,
     OrderedCaseInsensitiveDict, CaseInsensitiveDefaultDict, CaseInsensitiveSet
 )
 from pybtex.bibtex.utils import split_tex_string
@@ -43,8 +45,10 @@ class BibliographyData(object):
         self._preamble = []
         if wanted_entries is not None:
             self.wanted_entries = CaseInsensitiveSet(wanted_entries)
+            self.citations = CaseInsensitiveSet(wanted_entries)
         else:
             self.wanted_entries = None
+            self.citations = CaseInsensitiveSet()
         if entries:
             if isinstance(entries, Mapping):
                 entries = entries.iteritems()
@@ -70,7 +74,11 @@ class BibliographyData(object):
     def add_to_preamble(self, *values):
         self._preamble.extend(values)
 
+    @deprecated('0.17', 'use get_preamble instead')
     def preamble(self):
+        return self.get_preamble()
+
+    def get_preamble(self):
         return ''.join(self._preamble)
 
     def want_entry(self, key):
@@ -80,6 +88,12 @@ class BibliographyData(object):
             or '*' in self.wanted_entries
         )
 
+    def get_canonical_key(self, key):
+        if key in self.citations:
+            return self.citations.get_canonical_key(key)
+        else:
+            return key
+
     def add_entry(self, key, entry):
         if not self.want_entry(key):
             return
@@ -87,18 +101,15 @@ class BibliographyData(object):
             report_error(BibliographyDataError('repeated bibliograhpy entry: %s' % key))
             return
         entry.collection = self
-        entry.key = key
-        entry.key = key
-        self.entries[key] = entry
+        entry.key = self.get_canonical_key(key)
+        self.entries[entry.key] = entry
         try:
             crossref = entry.fields['crossref']
         except KeyError:
             pass
         else:
-            self.crossref_count[crossref] += 1
-            if self.crossref_count[crossref] >= self.min_crossrefs:
-                if self.wanted_entries is not None:
-                    self.wanted_entries.add(crossref)
+            if self.wanted_entries is not None:
+                self.wanted_entries.add(crossref)
 
     def add_entries(self, entries):
         for key, entry in entries:
@@ -148,7 +159,9 @@ class BibliographyData(object):
                 crossref = entry.fields['crossref']
             except KeyError:
                 continue
-            if crossref not in self.entries:
+            try:
+                crossref_entry = self.entries[crossref]
+            except KeyError:
                 report_error(BibliographyDataError(
                     'bad cross-reference: entry "{key}" refers to '
                     'entry "{crossref}" which does not exist.'.format(
@@ -156,10 +169,12 @@ class BibliographyData(object):
                     )
                 ))
                 continue
-            crossref_count[crossref] += 1
-            if crossref_count[crossref] >= min_crossrefs and crossref not in citation_set:
-                citation_set.add(crossref)
-                yield crossref
+
+            canonical_crossref = crossref_entry.key
+            crossref_count[canonical_crossref] += 1
+            if crossref_count[canonical_crossref] >= min_crossrefs and canonical_crossref not in citation_set:
+                citation_set.add(canonical_crossref)
+                yield canonical_crossref
 
     def expand_wildcard_citations(self, citations):
         """
@@ -204,19 +219,58 @@ class BibliographyData(object):
         crossrefs = list(self.get_crossreferenced_citations(expanded_citations, min_crossrefs))
         return expanded_citations + crossrefs
 
+    def lower(self):
+        u"""
+        Return another BibliographyData with all identifiers converted to lowercase.
 
-class FieldDict(dict):
+        >>> data = BibliographyData([
+        ...     ('Obrazy', Entry('Book', [('Title', u'Obrazy z Rus')], [('Author', u'Karel Havlíček Borovský')])),
+        ...     ('Elegie', Entry('BOOK', [('TITLE', u'Tirolské elegie')], [('AUTHOR', u'Karel Havlíček Borovský')])),
+        ... ]).lower()
+        >>> data.entries.keys()
+        ['obrazy', 'elegie']
+        >>> for entry in data.entries.values():
+        ...     entry.key
+        ...     entry.persons.keys()
+        ...     entry.fields.keys()
+        'obrazy'
+        ['author']
+        ['title']
+        'elegie'
+        ['author']
+        ['title']
+
+        """
+
+        entries_lower = ((key.lower(), entry.lower()) for key, entry in self.entries.iteritems())
+        return type(self)(
+            entries=entries_lower,
+            preamble=self._preamble,
+            wanted_entries=self.wanted_entries,
+            min_crossrefs=self.min_crossrefs,
+        )
+
+
+class FieldDict(OrderedCaseInsensitiveDict):
     def __init__(self, parent, *args, **kwargw):
         self.parent = parent
-        dict.__init__(self, *args, **kwargw)
-    def __missing__(self, key):
-        if key in self.parent.persons:
-            persons = self.parent.persons[key]
-            return ' and '.join(unicode(person) for person in persons)
-        elif 'crossref' in self:
-            return self.parent.get_crossref().fields[key]
-        else:
-            raise KeyError(key)
+        super(FieldDict, self).__init__(*args, **kwargw)
+
+    def __getitem__(self, key):
+        try:
+            return super(FieldDict, self).__getitem__(key)
+        except KeyError:
+            if key in self.parent.persons:
+                persons = self.parent.persons[key]
+                return ' and '.join(unicode(person) for person in persons)
+            elif 'crossref' in self:
+                return self.parent.get_crossref().fields[key]
+            else:
+                raise KeyError(key)
+    
+    def lower(self):
+        lower_dict = super(FieldDict, self).lower()
+        return type(self)(self.parent, self.iteritems_lower())
 
 
 class Entry(object):
@@ -230,9 +284,10 @@ class Entry(object):
             fields = {}
         if persons is None:
             persons = {}
-        self.type = type_
+        self.type = type_.lower()
+        self.original_type = type_
         self.fields = FieldDict(self, fields)
-        self.persons = dict(persons)
+        self.persons = OrderedCaseInsensitiveDict(persons)
         self.collection = collection
 
         # for BibTeX interpreter
@@ -259,6 +314,15 @@ class Entry(object):
 
     def add_person(self, person, role):
         self.persons.setdefault(role, []).append(person)
+
+    def lower(self):
+        return type(self)(
+            self.type,
+            fields=self.fields.lower(),
+            persons=self.persons.lower(),
+            collection=self.collection,
+        )
+
 
 
 class Person(object):

@@ -67,9 +67,6 @@ class PrettyTreeBuilder(object):
 class Writer(BaseWriter):
     """Outputs BibTeXML markup"""
 
-    name = 'bibtexml'
-    suffixes = '.xml', '.bibtexml'
-
     def write_stream(self, bib_data, stream):
         def write_persons(persons, role):
             if persons:
@@ -89,7 +86,7 @@ class Writer(BaseWriter):
 
         for key, entry in bib_data.entries.iteritems():
             w.start('bibtex:entry', dict(id=key))
-            w.start('bibtex:' + entry.type)
+            w.start('bibtex:' + entry.original_type)
             for field_name, field_value in entry.fields.iteritems():
                 w.element('bibtex:' + field_name, field_value)
             for role, persons in entry.persons.iteritems():

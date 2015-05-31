@@ -27,10 +27,6 @@ from pybtex.database.output import BaseWriter
 class Writer(BaseWriter):
     """Outputs YAML markup"""
 
-    name = 'bibyaml'
-    aliases = 'yaml',
-    suffixes = '.yaml', '.bibyaml'
-
     def write_stream(self, bib_data, stream):
         def process_person_roles(entry):
             for role, persons in entry.persons.iteritems():
@@ -49,12 +45,12 @@ class Writer(BaseWriter):
         def process_entries(bib_data):
             for key, entry in bib_data.iteritems():
                 fields = dict(entry.fields)
-                fields['type'] = entry.type
+                fields['type'] = entry.original_type
                 fields.update(process_person_roles(entry))
                 yield key, fields
 
         data = {'entries': dict(process_entries(bib_data.entries))}
-        preamble = bib_data.preamble()
+        preamble = bib_data.get_preamble()
         if preamble:
             data['preamble'] = preamble
         yaml.safe_dump(data, stream, allow_unicode=True, encoding='UTF-8', default_flow_style=False, indent=4)

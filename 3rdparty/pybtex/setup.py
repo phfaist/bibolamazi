@@ -24,7 +24,6 @@
 
 import sys
 import os
-from glob import glob1
 from setuptools import setup, find_packages
 from distutils.command.sdist import sdist
 from distutils.dep_util import newer
@@ -59,12 +58,16 @@ if sys.version_info >= (3, 0):
 else:
     extra = {}
 
+install_requires = ['PyYAML>=3.01']
+if sys.version_info < (2, 7):
+    install_requires += ['Counter>=1.0.0']
+
 setup(name=progname,
     version=version,
     description='A BibTeX-compatible bibliography processor in Python',
     long_description=README,
     author='Andrey Golovizin',
-    author_email='golovizin@gmail.com',
+    author_email='ag@sologoc.com',
     url='http://pybtex.sourceforge.net/',
     license='MIT',
     platforms=['platform-independent'],
@@ -75,17 +78,87 @@ setup(name=progname,
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Text Editors :: Text Processing',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
         'Topic :: Text Processing :: Markup :: LaTeX',
-        'Topic :: Text Processing :: Markup :: XML'
+        'Topic :: Text Processing :: Markup :: XML',
+        'Topic :: Utilities',
     ],
-    install_requires = [
-        'PyYAML>=3.01'
-    ],
+    install_requires = install_requires,
     packages=find_packages(exclude=['docs']),
-    scripts=[os.path.join('scripts', progname), os.path.join('scripts', progname + "-convert")],
+    scripts=[
+        os.path.join('scripts', progname),
+        os.path.join('scripts', progname + "-convert"),
+        os.path.join('scripts', progname + "-format"),
+    ],
     include_package_data=True,
     cmdclass={'sdist' : Sdist},
+    entry_points={
+        'pybtex.database.input': [
+            'bibtex = pybtex.database.input.bibtex:Parser',
+            'bibtexml = pybtex.database.input.bibtexml:Parser',
+            'yaml = pybtex.database.input.bibyaml:Parser',
+            ],
+        'pybtex.database.input.aliases': [
+            'bibyaml = pybtex.database.input.bibyaml:Parser',
+            ],
+        'pybtex.database.input.suffixes': [
+            '.bib = pybtex.database.input.bibtex:Parser',
+            '.xml = pybtex.database.input.bibtexml:Parser',
+            '.bibtexml = pybtex.database.input.bibtexml:Parser',
+            '.bibyaml = pybtex.database.input.bibyaml:Parser',
+            '.yaml = pybtex.database.input.bibyaml:Parser',
+            ],
+        'pybtex.database.output': [
+            'bibtex = pybtex.database.output.bibtex:Writer',
+            'bibtexml = pybtex.database.output.bibtexml:Writer',
+            'yaml = pybtex.database.output.bibyaml:Writer',
+            ],
+        'pybtex.database.output.aliases': [
+            'bibyaml = pybtex.database.output.bibyaml:Writer',
+            ],
+        'pybtex.database.output.suffixes': [
+            '.bib = pybtex.database.output.bibtex:Writer',
+            '.xml = pybtex.database.output.bibtexml:Writer',
+            '.bibtexml = pybtex.database.output.bibtexml:Writer',
+            '.bibyaml = pybtex.database.output.bibyaml:Writer',
+            '.yaml = pybtex.database.output.bibyaml:Writer',
+            ],
+        'pybtex.backends': [
+            'latex = pybtex.backends.latex:Backend',
+            'html = pybtex.backends.html:Backend',
+            'plaintext = pybtex.backends.plaintext:Backend',
+            ],
+        'pybtex.backends.aliases': [
+            'text = pybtex.backends.plaintext:Backend',
+            ],
+        'pybtex.backends.suffixes': [
+            '.bbl = pybtex.backends.latex:Backend',
+            '.tex = pybtex.backends.latex:Backend',
+            '.latex = pybtex.backends.latex:Backend',
+            '.html = pybtex.backends.html:Backend',
+            '.txt = pybtex.backends.plaintext:Backend',
+            ],
+        'pybtex.style.labels': [
+            'number = pybtex.style.labels.number:LabelStyle',
+            'alpha = pybtex.style.labels.alpha:LabelStyle',
+            ],
+        'pybtex.style.names': [
+            'plain = pybtex.style.names.plain:NameStyle',
+            'lastfirst = pybtex.style.names.lastfirst:NameStyle',
+            'last_first = pybtex.style.names.lastfirst:NameStyle',
+            ],
+        'pybtex.style.sorting': [
+            'none = pybtex.style.sorting.none:SortingStyle',
+            'author_year_title = pybtex.style.sorting.author_year_title:SortingStyle',
+            ],
+        'pybtex.style.formatting': [
+            'plain = pybtex.style.formatting.plain:Style',
+            'unsrt = pybtex.style.formatting.unsrt:Style',
+            'alpha = pybtex.style.formatting.alpha:Style',
+            'unsrtalpha = pybtex.style.formatting.unsrtalpha:Style',
+            ],
+        },
     zip_safe=True,
     **extra
     )

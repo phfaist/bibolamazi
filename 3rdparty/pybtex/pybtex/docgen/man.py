@@ -140,5 +140,7 @@ def generate_manpages(doc_dir):
     man_dir = os.path.join(doc_dir, 'man1')
     from pybtex.__main__ import main as pybtex
     from pybtex.database.convert.__main__ import main as pybtex_convert
+    from pybtex.database.format.__main__ import main as pybtex_format
     generate_manpage(man_dir, pybtex)
     generate_manpage(man_dir, pybtex_convert)
+    generate_manpage(man_dir, pybtex_format)

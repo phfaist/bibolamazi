@@ -249,6 +249,39 @@ def bibtex_len(string):
     return length
 
 
+def bibtex_width(string):
+    r"""
+    Determine the width of the given string, in relative units.
+
+    >>> bibtex_width('')
+    0
+    >>> bibtex_width('abc')
+    1500
+    >>> bibtex_width('ab{c}')
+    2500
+    >>> bibtex_width(r"ab{\'c}")
+    1500
+    >>> bibtex_width(r"ab{\'c{}}")
+    1500
+    >>> bibtex_width(r"ab{\'c{}")
+    1500
+    >>> bibtex_width(r"ab{\'c{d}}")
+    2056
+    """
+
+    from pybtex.charwidths import charwidths
+    width = 0
+    for token, brace_level in scan_bibtex_string(string):
+        if brace_level == 1 and token.startswith('\\'):
+            for char in token[2:]:
+                if char not in '{}':
+                    width += charwidths.get(char, 0)
+            width -= 1000  # two braces
+        else:
+            width += charwidths.get(token, 0)
+    return width
+
+
 def bibtex_prefix(string, num_chars):
     """Return the firxt num_char characters of the string.
 
@@ -392,7 +425,7 @@ def split_tex_string(string, sep=None, strip=True, filter_empty=False):
     """
 
     if sep is None:
-        sep = r'(?:\s|(?<!\\)~)+' ### PhF: FIX TO NOT MATCH e.g. Brand\~{a}o
+        sep = '[\s~]+'
         filter_empty = True
     sep_re = re.compile(sep)
     brace_level = 0
@@ -406,8 +439,7 @@ def split_tex_string(string, sep=None, strip=True, filter_empty=False):
         elif char == '}':
             brace_level -= 1
         elif brace_level == 0 and pos > 0:
-            ### PhF: FIX TO NOT TRUNCATE THE STRING, TO ENABLE THE LOOKBEHIND ASSERTION IN REGEX.
-            match = sep_re.match(string, pos=pos)
+            match = sep_re.match(string[pos:])
             if match:
                 sep_len = len(match.group())
                 if pos + sep_len < string_len:
@@ -448,3 +480,27 @@ def bibtex_first_letter(string):
         elif char.isalpha():
             return char
     return ''
+
+
+def bibtex_abbreviate(string, delimiter=None, separator='-'):
+    """
+    Abbreviate string.
+
+    >>> print bibtex_abbreviate('Andrew Blake')
+    A
+    >>> print bibtex_abbreviate('Jean-Pierre')
+    J.-P
+    >>> print bibtex_abbreviate('Jean--Pierre')
+    J.-P
+    
+    """
+
+    def _bibtex_abbreviate():
+        for token in split_tex_string(string, sep=separator):
+            letter = bibtex_first_letter(token)
+            if letter:
+                yield letter
+
+    if delimiter is None:
+        delimiter = '.-'
+    return delimiter.join(_bibtex_abbreviate())

@@ -50,6 +50,12 @@ def strip_comment(line):
 
     >>> print strip_comment('a normal line')
     a normal line
+    >>> print strip_comment('%')
+    <BLANKLINE>
+    >>> print strip_comment('%comment')
+    <BLANKLINE>
+    >>> print strip_comment('trailing%')
+    trailing
     >>> print strip_comment('a normal line% and a comment')
     a normal line
     >>> print strip_comment('"100% compatibility" is a myth')
@@ -61,7 +67,7 @@ def strip_comment(line):
     pos = 0
     end = len(line) - 1
     in_string = False
-    while pos < end:
+    while pos <= end:
         match = quote_or_comment.search(line, pos)
         if not match:
             break

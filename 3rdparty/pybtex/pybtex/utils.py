@@ -24,8 +24,22 @@
 
 
 from functools import wraps
-from collections import Sequence, MutableMapping
+from collections import Sequence, MutableMapping, MutableSet
 from types import GeneratorType
+
+
+def deprecated(since, reason=None):
+    def decorator(f):
+        @wraps(f)
+        def new_f(*args, **kwargs):
+            import warnings
+            message = u'{0}() is deprecated since {1}'.format(f.__name__, since)
+            if reason:
+                message += ': {0}'.format(reason)
+            warnings.warn(message, DeprecationWarning)
+            return f(*args, **kwargs)
+        return new_f
+    return decorator
 
 
 def memoize(f):
@@ -44,6 +58,8 @@ class CaseInsensitiveDict(MutableMapping):
     >>> d = CaseInsensitiveDict(TesT='passed')
     >>> d
     CaseInsensitiveDict({'TesT': 'passed'})
+    >>> d.lower()
+    CaseInsensitiveDict({'test': 'passed'})
     >>> print d['TesT']
     passed
     >>> print d['test']
@@ -59,6 +75,8 @@ class CaseInsensitiveDict(MutableMapping):
     >>> print d['test']
     passed again
     >>> 'test' in d
+    True
+    >>> 'Test' in d
     True
     >>> print d.keys()
     ['Test']
@@ -97,36 +115,32 @@ class CaseInsensitiveDict(MutableMapping):
     """
 
     def __init__(self, *args, **kwargs):
-        self._dict = dict(*args, **kwargs)
-        self._keys = dict((key.lower(), key) for key in self)
+        initial = dict(*args, **kwargs)
+        self._dict = dict((key.lower(), value) for key, value in initial.iteritems())
+        self._keys = dict((key.lower(), key) for key in initial)
 
     def __len__(self):
         return len(self._dict)
 
     def __iter__(self):
-        return iter(self._dict)
+        return iter(self._keys.values())
 
     def __setitem__(self, key, value):
         """To implement lowercase keys."""
         key_lower = key.lower()
-        try:
-            existing_key = self._keys[key_lower]
-        except KeyError:
-            pass
-        else:
-            del self._dict[existing_key]
-        self._dict[key] = value
+        self._dict[key_lower] = value
         self._keys[key_lower] = key
 
     def __getitem__(self, key):
-        existing_key = self._keys[key.lower()]
-        return self._dict[existing_key]
+        return self._dict[key.lower()]
 
     def __delitem__(self, key):
         key_lower = key.lower()
-        existing_key = self._keys[key_lower]
-        del self._dict[existing_key]
+        del self._dict[key_lower]
         del self._keys[key_lower]
+
+    def __contains__(self, key):
+        return key.lower() in self._dict
 
     def __deepcopy__(self, memo):
         from copy import deepcopy
@@ -134,14 +148,18 @@ class CaseInsensitiveDict(MutableMapping):
             (key, deepcopy(value, memo)) for key, value in self.iteritems()
         )
 
-    def __contains__(self, key):
-        return key.lower() in self._keys
-
     def __repr__(self):
         """A caselessDict version of __repr__ """
+        dct = dict((key, self[key]) for key in self)
         return '{0}({1})'.format(
-            type(self).__name__, self._dict.__repr__()
+            type(self).__name__, repr(dct),
         )
+
+    def iteritems_lower(self):
+        return ((key.lower(), value) for key, value in self.iteritems())
+
+    def lower(self):
+        return type(self)(self.iteritems_lower())
 
 
 class CaseInsensitiveDefaultDict(CaseInsensitiveDict):
@@ -178,31 +196,67 @@ class OrderedCaseInsensitiveDict(CaseInsensitiveDict):
     """ An (incomplete) ordered case-insensitive dict.
 
     >>> d = OrderedCaseInsensitiveDict([
-    ...     ('uno', 1),
-    ...     ('dos', 2),
-    ...     ('tres', 3),
+    ...     ('Uno', 1),
+    ...     ('Dos', 2),
+    ...     ('Tres', 3),
     ... ])
+    >>> d
+    OrderedCaseInsensitiveDict([('Uno', 1), ('Dos', 2), ('Tres', 3)])
+    >>> d.lower()
+    OrderedCaseInsensitiveDict([('uno', 1), ('dos', 2), ('tres', 3)])
     >>> d.keys()
-    ['uno', 'dos', 'tres']
+    ['Uno', 'Dos', 'Tres']
     >>> d.items()
-    [('uno', 1), ('dos', 2), ('tres', 3)]
+    [('Uno', 1), ('Dos', 2), ('Tres', 3)]
     >>> d.values()
     [1, 2, 3]
-    >>> d['cuatro'] = 4
+    >>> d['Cuatro'] = 4
     >>> d.keys()
-    ['uno', 'dos', 'tres', 'cuatro']
+    ['Uno', 'Dos', 'Tres', 'Cuatro']
     >>> d.items()
-    [('uno', 1), ('dos', 2), ('tres', 3), ('cuatro', 4)]
+    [('Uno', 1), ('Dos', 2), ('Tres', 3), ('Cuatro', 4)]
     >>> d.values()
     [1, 2, 3, 4]
     >>> list(d)
-    ['uno', 'dos', 'tres', 'cuatro']
+    ['Uno', 'Dos', 'Tres', 'Cuatro']
     >>> list(d.iterkeys()) == d.keys()
     True
     >>> list(d.itervalues()) == d.values()
     True
     >>> list(d.iteritems()) == d.items()
     True
+    >>> 'Uno' in d
+    True
+    >>> 'uno' in d
+    True
+    >>> d['Uno']
+    1
+    >>> d['uno']
+    1
+    >>> d['UNO']
+    1
+    >>> 'Cuatro' in d
+    True
+    >>> 'CUATRO' in d
+    True
+    >>> d['Cuatro']
+    4
+    >>> d['cuatro']
+    4
+    >>> d['UNO'] = 'one'
+    >>> d['uno']
+    'one'
+    >>> d['Uno']
+    'one'
+    >>> d.keys()
+    ['Uno', 'Dos', 'Tres', 'Cuatro']
+    >>> d['cuatro'] = 'four'
+    >>> d['Cuatro']
+    'four'
+    >>> d['cuatro']
+    'four'
+    >>> d.keys()
+    ['Uno', 'Dos', 'Tres', 'Cuatro']
 
     """
 
@@ -252,8 +306,13 @@ class OrderedCaseInsensitiveDict(CaseInsensitiveDict):
     def items(self):
         return [(key, self[key]) for key in self.order]
 
+    def __repr__(self):
+        return '{0}({1})'.format(
+            type(self).__name__, repr(self.items())
+        )
 
-class CaseInsensitiveSet(set):
+
+class CaseInsensitiveSet(MutableSet):
     """A very basic case-insensitive set.
 
     >>> s = CaseInsensitiveSet()
@@ -261,11 +320,13 @@ class CaseInsensitiveSet(set):
     0
     >>> 'a' in s
     False
-
     >>> list(CaseInsensitiveSet(['aaa', 'Aaa', 'AAA']))
     ['aaa']
-
     >>> s = CaseInsensitiveSet(['Aaa', 'Bbb'])
+    >>> s
+    CaseInsensitiveSet(['Aaa', 'Bbb'])
+    >>> s.lower()
+    CaseInsensitiveSet(['aaa', 'bbb'])
     >>> len(s)
     2
     >>> 'aaa' in s
@@ -278,6 +339,8 @@ class CaseInsensitiveSet(set):
     True
     >>> 'Bbb' in s
     True
+    >>> 'abc' in s
+    False
     >>> s.add('ccc')
     >>> len(s)
     3
@@ -291,17 +354,48 @@ class CaseInsensitiveSet(set):
     >>> 'aaa' in s
     False
 
+    >>> bool(CaseInsensitiveSet(['a']))
+    True
+    >>> bool(CaseInsensitiveSet([]))
+    False
+    >>> bool(CaseInsensitiveSet())
+    False
+
     """
 
-    def __init__(self, *args, **kwargs):
-        initial_data = set(*args, **kwargs)
-        super(CaseInsensitiveSet, self).__init__(item.lower() for item in initial_data)
+    def __init__(self, iterable=()):
+        self._set = set()
+        self._keys = dict()
+        for item in iterable:
+            self.add(item)
 
-    def __contains__(self, item):
-        return super(CaseInsensitiveSet, self).__contains__(item.lower())
+    def __contains__(self, key):
+        return key.lower() in self._set
 
-    def add(self, item):
-        super(CaseInsensitiveSet, self).add(item.lower())
+    def __iter__(self):
+        return iter(self._set)
 
-    def remove(self, item):
-        super(CaseInsensitiveSet, self).remove(item.lower())
+    def __len__(self):
+        return len(self._set)
+
+    def __repr__(self):
+        """A caselessDict version of __repr__ """
+        return '{0}({1})'.format(
+            type(self).__name__, repr(sorted(self._keys.values()))
+        )
+
+    def add(self, key):
+        key_lower = key.lower()
+        self._set.add(key_lower)
+        self._keys[key_lower] = key
+
+    def discard(self, key):
+        key_lower = key.lower()
+        self._set.discard(key_lower)
+        self._keys.pop(key_lower, None)
+
+    def get_canonical_key(self, key):
+        return self._keys[key.lower()]
+
+    def lower(self):
+        return type(self)(self._set)

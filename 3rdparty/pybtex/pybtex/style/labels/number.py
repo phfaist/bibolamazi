@@ -24,8 +24,7 @@ from pybtex.style.labels import BaseLabelStyle
 
 
 class LabelStyle(BaseLabelStyle):
-    name = 'number'
 
     def format_labels(self, sorted_entries):
-        for number in xrange(1, len(sorted_entries) + 1):
-            yield unicode(number)
+        for number, entry in enumerate(sorted_entries):
+            yield unicode(number + 1)

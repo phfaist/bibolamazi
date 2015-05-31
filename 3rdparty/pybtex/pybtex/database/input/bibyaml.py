@@ -25,9 +25,7 @@ from pybtex.database import Entry, Person
 
 
 class Parser(BaseParser):
-    name = 'bibyaml'
-    aliases = 'yaml',
-    suffixes = '.yaml', '.bibyaml'
+    default_suffix = '.yaml'
 
     def parse_stream(self, stream):
         t = yaml.safe_load(stream)
@@ -44,13 +42,14 @@ class Parser(BaseParser):
         return self.data
 
     def process_entry(self, entry):
-        e = Entry(entry['type']) 
-        for (k, v) in entry.iteritems():
-            if k in Person.valid_roles:
-                for names in v:
-                    e.add_person(Person(**names), k)
-            elif k == 'type':
+        bib_entry = Entry(entry['type']) 
+        for (key, value) in entry.iteritems():
+            key_lower = key.lower()
+            if key_lower in Person.valid_roles:
+                for names in value:
+                    bib_entry.add_person(Person(**names), key)
+            elif key_lower == 'type':
                 pass
             else:
-                e.fields[k] = unicode(v)
-        return e
+                bib_entry.fields[key] = unicode(value)
+        return bib_entry

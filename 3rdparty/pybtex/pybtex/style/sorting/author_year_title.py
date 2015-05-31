@@ -23,7 +23,6 @@ from pybtex.style.sorting import BaseSortingStyle
 
 
 class SortingStyle(BaseSortingStyle):
-    name = 'author_year_title'
 
     def sorting_key(self, entry):
         if entry.type in ('book', 'inbook'):

@@ -25,8 +25,6 @@ from pybtex.style.names import BaseNameStyle, name_part
 
 
 class NameStyle(BaseNameStyle):
-    name = 'lastfirst'
-    aliases = 'last_first',
 
     def format(self, person, abbr=False):
         r"""

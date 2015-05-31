@@ -23,8 +23,6 @@ from pybtex.plugin import Plugin
 
 
 class BaseSortingStyle(Plugin):
-    default_plugin = 'none'
-
     def sorting_key(self, entry):
         raise NotImplementedError
 

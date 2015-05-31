@@ -22,7 +22,12 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from collections import Counter
+import sys
+if sys.version_info < (2, 7):
+   from counter import Counter
+else:
+   from collections import Counter
+
 import re
 import string
 import unicodedata
@@ -39,14 +44,13 @@ def _strip_accents(s):
 def _strip_nonalnum(parts):
     """Strip all non-alphanumerical characters from a list of strings.
 
-    >>> _strip_nonalnum([u"ÅA. B. Testing 12+}[.@~_", u" 3%"])
-    u'AABTesting123'
+    >>> print _strip_nonalnum([u"ÅA. B. Testing 12+}[.@~_", u" 3%"])
+    AABTesting123
     """
     s = u''.join(parts)
     return _nonalnum_pattern.sub(u'', _strip_accents(s))
 
 class LabelStyle(BaseLabelStyle):
-    name = 'alpha'
 
     def format_labels(self, sorted_entries):
         labels = [self.format_label(entry) for entry in sorted_entries]

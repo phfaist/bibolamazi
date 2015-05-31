@@ -23,6 +23,5 @@ from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 
 
 class Style(UnsrtStyle):
-    name = 'alpha'
     default_sorting_style = 'author_year_title'
     default_label_style = 'alpha'

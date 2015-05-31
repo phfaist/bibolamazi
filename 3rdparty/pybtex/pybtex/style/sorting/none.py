@@ -23,7 +23,6 @@ from pybtex.style.sorting import BaseSortingStyle
 
 
 class SortingStyle(BaseSortingStyle):
-    name = 'none'
 
     def sort(self, entries):
         return entries

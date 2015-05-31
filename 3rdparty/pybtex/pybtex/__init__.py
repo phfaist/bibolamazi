@@ -29,6 +29,7 @@ def make_bibliography(aux_filename,
         output_encoding=None,
         output_backend=None,
         min_crossrefs=2,
+        style=None,
         **kwargs
         ):
     """This functions extracts all nessessary information from .aux file
@@ -38,31 +39,29 @@ def make_bibliography(aux_filename,
     from os import path
     from pybtex import auxfile
     from pybtex.plugin import find_plugin
-    from pybtex.style import FormattedBibliography
 
     filename = path.splitext(aux_filename)[0]
     aux_data = auxfile.parse_file(aux_filename, output_encoding)
 
-    output_backend = find_plugin('pybtex.backends', output_backend)
     bib_parser = find_plugin('pybtex.database.input', bib_format)
     bib_data = bib_parser(
         encoding=bib_encoding,
         wanted_entries=aux_data.citations,
         min_crossrefs=min_crossrefs,
-    ).parse_files(aux_data.data, bib_parser.get_default_suffix())
+    ).parse_files(aux_data.data, bib_parser.default_suffix)
 
-    style_cls = find_plugin('pybtex.style.formatting', aux_data.style)
+    if style is None:
+        style = aux_data.style
+    style_cls = find_plugin('pybtex.style.formatting', style)
     style = style_cls(
             label_style=kwargs.get('label_style'),
             name_style=kwargs.get('name_style'),
             sorting_style=kwargs.get('sorting_style'),
             abbreviate_names=kwargs.get('abbreviate_names'),
+            min_crossrefs=min_crossrefs,
     )
-    citations = bib_data.add_extra_citations(aux_data.citations, min_crossrefs)
-    entries = (bib_data.entries[key] for key in citations)
-    formatted_entries = style.format_entries(entries)
-    del entries
-    formatted_bibliography = FormattedBibliography(formatted_entries, style)
+    formatted_bibliography = style.format_bibliography(bib_data, aux_data.citations)
 
-    output_filename = filename + output_backend.get_default_suffix()
+    output_backend = find_plugin('pybtex.backends', output_backend)
+    output_filename = filename + output_backend.default_suffix
     output_backend(output_encoding).write_to_file(formatted_bibliography, output_filename)

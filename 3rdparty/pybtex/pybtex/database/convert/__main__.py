@@ -22,7 +22,7 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from pybtex.cmdline import CommandLine, make_option
+from pybtex.cmdline import CommandLine, make_option, standard_option
 
 class PybtexConvertCommandLine(CommandLine):
     prog = 'pybtex-convert'
@@ -39,6 +39,7 @@ pybtex-convert converts bibliography database files between supported formats
 
     options = (
         (None, (
+            standard_option('strict'),
             make_option(
                 '-f', '--from', dest='from_format',
                 help='input format (%plugin_choices)', metavar='FORMAT',
@@ -49,44 +50,38 @@ pybtex-convert converts bibliography database files between supported formats
                 help='output format (%plugin_choices)', metavar='FORMAT',
                 type='load_plugin', plugin_group='pybtex.database.output',
             ),
+            standard_option('keyless_entries'),
             make_option(
-                '--keyless-bibtex-entries',
-                action='store_true', dest='keyless_entries',
-                help='allow BibTeX entries without keys and generate unnamed-<number> keys for them'
+                '--preserve-case', dest='preserve_case',
+                action='store_true',
+                help='do not convert identifiers to lower case',
             ),
         )),
-        ('encoding options', (
-            make_option(
-                '-e', '--encoding',
-                action='store', type='string', dest='encoding',
-                help='default encoding',
-                metavar='ENCODING',
-            ),
-            make_option(
-                '--input-encoding',
-                action='store', type='string', dest='input_encoding',
-                metavar='ENCODING',
-            ),
-            make_option(
-                '--output-encoding',
-                action='store', type='string', dest='output_encoding',
-                metavar='ENCODING',
-            ),
+        ('Encoding options', (
+            standard_option('encoding'),
+            standard_option('input_encoding'),
+            standard_option('output_encoding'),
         )),
     )
     option_defaults = {
         'keyless_entries': False,
+        'preserve_case': False,
     }
 
-    def run(self, options, args):
+    def run(
+        self, from_filename, to_filename,
+        encoding, input_encoding, output_encoding,
+        keyless_entries,
+        **options
+    ):
         from pybtex.database.convert import convert, ConvertError
 
-        convert(args[0], args[1],
-                options.from_format,
-                options.to_format,
-                input_encoding=options.input_encoding or options.encoding,
-                output_encoding=options.output_encoding or options.encoding,
-                parser_options = {'keyless_entries': options.keyless_entries})
+        convert(from_filename, to_filename,
+            input_encoding=input_encoding or encoding,
+            output_encoding=output_encoding or encoding,
+            parser_options = {'keyless_entries': keyless_entries},
+            **options
+        )
 
 main = PybtexConvertCommandLine()
 

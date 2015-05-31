@@ -25,7 +25,7 @@ Nevertheless, we are going to achieve 100% compatibility before releasing
 version 1.0.
 
 If something does not work for you, just `let us know
-<http://sourceforge.net/tracker/?func=add&group_id=151578&atid=781406>`_.
+<http://sourceforge.net/p/pybtex/bugs/new/>`_.
 
 
 But why should I use it instead of BibTeX?
@@ -46,21 +46,20 @@ Hmm nice. Wrap it up, I'll take it! Where is the download link?
 The tarballs thay are available from the `PyPI page
 <http://pypi.python.org/pypi/pybtex>`_.  That said, the most stable and
 feature complete and well documented version of Pybtex is known to be the
-`Bazaar trunk <https://code.launchpad.net/~ero-sennin/pybtex/trunk>`_.
+`Bazaar trunk <https://code.launchpad.net/~pybtex-devs/pybtex/trunk>`_.
 
 To get the very latest Pybtex from the trunk:
 
 .. sourcecode:: bash
 
     bzr branch lp:pybtex
-    cd pybtex
-    python setup.py develop
 
-And do not forget to run the tests (need `nose
-<http://somethingaboutorange.com/mrl/projects/nose/>`_):
+To run the tests (need `nose <http://nose.readthedocs.org/>`_):
 
 .. sourcecode:: bash
 
+    cd pybtex
+    python setup.py egg_info  # or python setup.py develop
     python setup.py nosetests
 
 Pybtex can be also installed with Easy Install:
@@ -72,6 +71,6 @@ Pybtex can be also installed with Easy Install:
 But you won't get any documentation this way.
 
 If something goes wrong, please `file a bug report
-<http://sourceforge.net/tracker/?func=add&group_id=151578&atid=781406>`_.
+<http://sourceforge.net/p/pybtex/bugs/new/>`_.
 
 Have fun!

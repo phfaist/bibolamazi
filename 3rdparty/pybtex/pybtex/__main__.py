@@ -23,7 +23,7 @@
 
 from os import path
 
-from pybtex.cmdline import CommandLine, make_option
+from pybtex.cmdline import CommandLine, make_option, standard_option
 
 
 class PybtexCommandLine(CommandLine):
@@ -46,30 +46,15 @@ It is also possible to define bibliography formatting styles in Python.
 
     options = (
         (None, (
-            make_option(
-                '--min-crossrefs',
-                type='int', dest='min_crossrefs',
-                help='include item after NUMBER crossrefs; default 2',
-                metavar='NUMBER',
-            ),
+            standard_option('strict'),
             make_option(
                 '--terse', dest='verbose', action='store_false',
                 help='ignored for compatibility with BibTeX',
             ),
-            make_option(
-                '-f', '--bibliography-format', dest='bib_format',
-                help='bibliograpy format (%plugin_choices)',
-                type='load_plugin',
-                plugin_group='pybtex.database.input',
-                metavar='FORMAT',
-            ),
-            make_option(
-                '-b', '--output-backend', dest='output_backend',
-                help='output backend (%plugin_choices)',
-                type='load_plugin',
-                plugin_group='pybtex.backends',
-                metavar='BACKEND',
-            ),
+            standard_option('min_crossrefs'),
+            standard_option('bib_format'),
+            standard_option('output_backend'),
+            standard_option('style'),
             make_option(
                 '-l', '--style-language', dest='style_language',
                 help='style definition language to use (bibtex or python)',
@@ -77,41 +62,16 @@ It is also possible to define bibliography formatting styles in Python.
             ),
         )),
         ('Pythonic style options', (
-            make_option(
-                '--label-style', dest='label_style',
-                help='label formatting style (%plugin_choices)',
-                type='load_plugin',
-                plugin_group='pybtex.style.labels',
-                metavar='STYLE',
-            ),
-            make_option(
-                '--name-style', dest='name_style',
-                help='name formatting style (%plugin_choices)',
-                type='load_plugin',
-                plugin_group='pybtex.style.names',
-                metavar='STYLE',
-            ),
-            make_option(
-                '--sorting-style', dest='sorting_style',
-                help='sorting style (%plugin_choices)',
-                type='load_plugin',
-                plugin_group='pybtex.style.sorting',
-                metavar='STYLE',
-            ),
-            make_option(
-                '--abbreviate-names',
-                action='store_true', dest='abbreviate_names',
-                help='use abbreviated name formatting style',
-            ),
+            standard_option('label_style'),
+            standard_option('name_style'),
+            standard_option('sorting_style'),
+            standard_option('abbreviate_names'),
         )),
         ('Encoding options', (
-            make_option(
-                '-e', '--encoding', dest='encoding', metavar='ENCODING',
-                help='default encoding',
-            ),
+            standard_option('encoding'),
             make_option('--bibtex-encoding', dest='bib_encoding', metavar='ENCODING'),
             make_option('--bst-encoding', dest='bst_encoding', metavar='ENCODING'),
-            make_option('--output-encoding', dest='output_encoding', metavar='ENCODING'),
+            standard_option('output_encoding'),
         )),
     )
     option_defaults = {
@@ -120,13 +80,13 @@ It is also possible to define bibliography formatting styles in Python.
     }
     legacy_options = '-help', '-version', '-min-crossrefs', '-terse'
 
-    def run(self, options, args):
-        from pybtex.plugin import find_plugin
-
-        filename = args[0]
-        ext = path.splitext(filename)[1]
-        if ext != '.aux':
-            filename = path.extsep.join([filename, 'aux'])
+    def run(self, filename, style_language, encoding, **options):
+        if style_language == 'bibtex':
+            from pybtex import bibtex as engine
+        elif style_language == 'python':
+            import pybtex as engine
+        else:
+            self.opt_parser.error('unknown style language %s' % style_language)
 
         not_supported_by_bibtex = {
             'output_backend': 'output backends',
@@ -135,31 +95,21 @@ It is also possible to define bibliography formatting styles in Python.
             'sorting_style': 'sorting styles',
             'abbreviate_names': 'abbreviated names',
         }
-        if options.style_language != 'python':
+        if style_language != 'python':
             for option, what_is_not_supported in not_supported_by_bibtex.iteritems():
-                if getattr(options, option):
+                if options[option]:
                     self.opt_parser.error(
                         '%s are only supported by the Pythonic style engine (-l python)' % what_is_not_supported
                     )
 
-        if options.style_language == 'bibtex':
-            from pybtex import bibtex as engine
-        elif options.style_language == 'python':
-            import pybtex as engine
-        else:
-            self.opt_parser.error('unknown style language %s' % options.style_language)
-
         for encoding_option in 'bib_encoding', 'bst_encoding', 'output_encoding':
-            if not getattr(options, encoding_option):
-                setattr(options, encoding_option, options.encoding)
+            if not options[encoding_option]:
+                options[encoding_option] = encoding
 
-        kwargs = {}
-        uninteresting_options = 'verbose', 'style_language'
-        kwargs = dict(
-            (key, value) for (key, value) in options.__dict__.iteritems()
-            if key not in uninteresting_options
-        )
-        engine.make_bibliography(filename, **kwargs)
+        ext = path.splitext(filename)[1]
+        if ext != '.aux':
+            filename = path.extsep.join([filename, 'aux'])
+        engine.make_bibliography(filename, **options)
 
 main = PybtexCommandLine()
 

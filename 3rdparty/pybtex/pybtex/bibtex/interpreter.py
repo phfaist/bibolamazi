@@ -19,6 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from pybtex.utils import CaseInsensitiveDict
 from pybtex.bibtex.exceptions import BibTeXError
 from pybtex.bibtex.builtins import builtins, print_warning
 from pybtex.bibtex.utils import wrap
@@ -176,13 +177,13 @@ class Interpreter(object):
         self.bib_format = bib_format
         self.bib_encoding = bib_encoding
         self.stack = []
-        self.vars = dict(builtins)
-        #FIXME is 10000 OK?
-        self.add_variable('global.max$', Integer(10000))
-        self.add_variable('entry.max$', Integer(10000))
+        self.vars = CaseInsensitiveDict(builtins)
+        self.add_variable('global.max$', Integer(20000))  # constants taken from
+        self.add_variable('entry.max$', Integer(250))     # BibTeX 0.99d (TeX Live 2012)
         self.add_variable('sort.key$', EntryString(self, 'sort.key$'))
         self.macros = {}
         self.output_buffer = []
+        self.output_lines = []
 
     def push(self, value):
 #        print 'push <%s>' % value
@@ -210,15 +211,16 @@ class Interpreter(object):
 
     def newline(self):
         output = wrap(u''.join(self.output_buffer))
-        self.output_file.write(output)
-        self.output_file.write(u'\n')
+        self.output_lines.append(output)
+        self.output_lines.append(u'\n')
         self.output_buffer = []
 
-    def run(self, bst_script, citations, bib_files, bbl_file, min_crossrefs):
+    def run(self, bst_script, citations, bib_files, min_crossrefs):
+        """Run bst script and return formatted bibliography."""
+
         self.bst_script = iter(bst_script)
         self.citations = citations
         self.bib_files = bib_files
-        self.output_file = bbl_file
         self.min_crossrefs = min_crossrefs
 
         for command in self.bst_script:
@@ -230,7 +232,7 @@ class Interpreter(object):
             else:
                 print 'Unknown command', name
 
-        self.output_file.close()
+        return u''.join(self.output_lines)
 
     def command_entry(self, fields, ints, strings):
         for id in fields:

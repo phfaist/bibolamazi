@@ -21,13 +21,12 @@
 
 import pybtex.io
 from pybtex.plugin import Plugin
-
-
-available_plugins = ('latex', 'html', 'plaintext', 'doctree')
+from pybtex.utils import deprecated
 
 
 class BaseBackend(Plugin):
-    default_plugin = 'latex'
+    RenderType = basestring  #: the result of render and render_sequence
+    default_suffix = None  #: the default suffix for an output file
 
     def __init__(self, encoding=None):
         self.encoding = encoding
@@ -38,26 +37,40 @@ class BaseBackend(Plugin):
     def write_epilogue(self):
         pass
 
+    @deprecated('0.17', 'use format_str instead')
     def format_text(self, text):
-        return text
+        return self.format_str(text)
+
+    def format_str(self, str_):
+        """Format the given string *str_*.
+        The default implementation simply returns the string ad verbatim.
+        Override this method for non-string backends.
+        """
+        return str_
 
     def format_tag(self, tag_name, text):
         """Format a tag with some text inside.
 
-        Text is already formatted with format_text."""
+        *tag_name* is a str, and *text* is a rendered Text object.
+        """
 
         raise NotImplementedError
 
     def format_href(self, url, text):
         """Format a hyperlink with some text inside.
 
-        Text is already formatted with format_text."""
+        *url* is a str, and *text* is a rendered Text object.
+        """
 
         raise NotImplementedError
 
-    def render_sequence(self, text):
-        """Render a sequence of rendered text objects."""
-        return "".join(text)
+    def render_sequence(self, rendered_list):
+        """Render a sequence of rendered Text objects.
+        The default implementation simply concatenates
+        the strings in rendered_list.
+        Override this method for non-string backends.
+        """
+        return "".join(rendered_list)
 
     def write_entry(self, label, key, text):
         raise NotImplementedError
@@ -75,10 +88,6 @@ class BaseBackend(Plugin):
             self.write_entry(entry.key, entry.label, entry.text.render(self))
         self.write_epilogue()
 
+    @deprecated('0.15', 'use write_to_file() instead')
     def write_bibliography(self, formatted_bibliography, filename):
-        import warnings
-        warnings.warn(
-            'write_bibliography() is deprecated, use write_to_file() insted.',
-            DeprecationWarning,
-        )
         self.write_to_file(formatted_bibliography, filename)

@@ -32,7 +32,7 @@ class DatabaseIOTest(TestCase):
     def setUp(self):
         self.reference_data = deepcopy(reference_data)
         self.assertTrue(self.reference_data.entries)
-        self.assertTrue(self.reference_data.preamble())
+        self.assertTrue(self.reference_data.get_preamble())
 
     def _test_input(self, plugin):
         parser = find_plugin('pybtex.database.input', plugin)(encoding='UTF-8')
