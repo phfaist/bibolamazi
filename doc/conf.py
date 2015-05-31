@@ -17,8 +17,8 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import bibolamazi_init
-from core import version as bibolamaziversion
+import bibolamazi.init
+from bibolamazi.core import version as bibolamaziversion
 
 # -- General configuration -----------------------------------------------------
 
@@ -87,6 +87,10 @@ pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 modindex_common_prefix = [ 'core.', 'filters.util.', ]
+
+
+# Option for autodoc:
+autoclass_content = "both"
 
 
 # -- Options for HTML output ---------------------------------------------------

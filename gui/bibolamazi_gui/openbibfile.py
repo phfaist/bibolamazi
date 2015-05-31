@@ -549,7 +549,7 @@ class OpenBibFile(QWidget):
     def on_tabs_currentChanged(self, index):
         if (self.ui.tabs.widget(index) == self.ui.pageBibEntries):
             if (self._needs_update_txtbibentries):
-                self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawrest())
+                self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
 
 
     @pyqtSlot()
@@ -759,7 +759,7 @@ class OpenBibFile(QWidget):
             logger.warning("No bibolamazi file open")
             return
 
-        cmds = self.bibolamaziFile.rawcmds();
+        cmds = self.bibolamaziFile.configCmds();
         if (cmds is None):
             # file is not yet parsed
             return None

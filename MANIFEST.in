@@ -1,0 +1,8 @@
+include README.md
+include doc/*.rst
+include doc/*.py
+include doc/*.png
+include doc/Makefile
+include doc/make.bat
+recursive-include doc/_static *
+recursive-include doc/_templates *

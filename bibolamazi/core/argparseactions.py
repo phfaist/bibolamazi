@@ -270,6 +270,9 @@ class opt_action_help(argparse.Action):
         except factory.NoSuchFilterPackage as e:
             logger.error(unicode(e))
             parser.exit();
+        except Exception as e:
+            logger.error(unicode(e))
+            parser.exit();
 
 
 

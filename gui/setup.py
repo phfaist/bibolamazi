@@ -4,8 +4,17 @@ import sys
 import os.path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirname(__file__)), '..')))
 
-import bibolamazi.init
-from bibolamazi.core import version as bibolamaziversion
+#import bibolamazi.init # -- don't make the setup.py crash because some packages
+#e.g. pybtex aren't available
+#from bibolamazi.core import version as bibolamaziversion
+from bibolamazi_gui import version as bibolamaziversion
+
+sys.stderr.write("""
+NOTE: You'll have to make sure that `PyQt4` is installed in order to use
+`bibolamazi_gui`. We unfortunately can't enforce this requirement when you run
+`pip install`, because PyQt4 isn't packaged with distutils/setuptools.
+
+""")
 
 
 setup(
@@ -38,7 +47,9 @@ setup(
 
     # make sure we have the same bibolamazi version. Since the GUI uses (some internals?)
     # of the bibolamazi library, make sure we have the same version.
-    install_requires = ['PyQt4', 'bibolamazi=='+bibolamaziversion.version_str],
+    #
+    # we should NOT list PyQt4 here, because of http://stackoverflow.com/a/4628806/1694896 .
+    install_requires = ['bibolamazi=='+bibolamaziversion.version_str],
 
     package_data = {
         # If any package contains *.txt or *.rst files, include them:
