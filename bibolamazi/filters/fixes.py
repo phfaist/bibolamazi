@@ -108,6 +108,17 @@ For now, the implemented fixes are:
   -dRemoveDoiPrefix
     Removes `doi:' prefix from all DOIs, if present.
 
+  -dMapAnnoteToNote
+    Changes the 'annote=' field to 'note='. If the 'note' field already has
+    contents, the contents of the 'annote' field is appended to the existing
+    'note' field.
+
+  -dAutoUrlify
+  -sAutoUrlify=field1,field2...
+    Automatically wrap strings that look like an URL in the `note' field into
+    `\\url{}' commands. If a list of fields is provided, then the
+    auto-urlification is applied to those given bibtex fields.
+
 
 The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
@@ -119,7 +130,6 @@ compatibility:
 
 
 """
-
 
 
 class FixesFilter(BibFilter):
@@ -139,6 +149,8 @@ class FixesFilter(BibFilter):
                  remove_file_field=False,
                  remove_fields=[],
                  remove_doi_prefix=False,
+                 map_annote_to_note=False,
+                 auto_urlify=False,
                  fix_swedish_a=False):
         """
         Constructor method for FixesFilter
@@ -157,6 +169,8 @@ class FixesFilter(BibFilter):
           - remove_file_field(bool): removes file={...} fields from all entries.
           - remove_fields(CommaStrList): removes given fields from all entries.
           - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
+          - map_annote_to_note(bool): maps `annote' bibtex field to a `note' field
+          - auto_urlify: automatically wrap URLs into `\\url{}' commands
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
                 transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
                 problem occurs in files generated e.g. by Mendeley); revtex tends to
@@ -211,19 +225,29 @@ class FixesFilter(BibFilter):
         self.remove_fields = CommaStrList(remove_fields);
         self.remove_doi_prefix = butils.getbool(remove_doi_prefix)
 
+        self.map_annote_to_note = butils.getbool(map_annote_to_note)
+        
+        try:
+            auto_urlify_bool = butils.getbool(auto_urlify) # raises ValueError if not a boolean
+            self.auto_urlify = [ "note" ] if auto_urlify_bool else []
+        except ValueError:
+            self.auto_urlify = CommaStrList(auto_urlify)
 
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
-                      'remove_full_braces=%r [fieldlist=%r, not lang=%r],'
-                      ' protect_names=%r, remove_file_field=%r'
-                      'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r')
+                      'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
+                      'protect_names=%r, remove_file_field=%r, '
+                      'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r, '
+                      'map_annote_to_note=%r, auto_urlify=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
                         self.remove_full_braces_not_lang,
                         self.protect_names,
                         self.remove_file_field,
-                        self.remove_fields, self.remove_doi_prefix, self.fix_swedish_a
+                        self.remove_fields, self.remove_doi_prefix, self.fix_swedish_a,
+                        self.map_annote_to_note,
+                        self.auto_urlify
                         ));
         
 
@@ -318,6 +342,18 @@ class FixesFilter(BibFilter):
         if (self.protect_names):
             filter_protect_names(entry);
 
+        if (self.map_annote_to_note):
+            if 'annote' in entry.fields:
+                thenote = ''
+                if len(entry.fields.get('note', '')):
+                    thenote = entry.fields['note'] + '; '
+                entry.fields['note'] = thenote + entry.fields['annote']
+                del entry.fields['annote']
+                
+        if (self.auto_urlify):
+            for fld in self.auto_urlify:
+                if fld in entry.fields:
+                    entry.fields[fld] = do_auto_urlify(entry.fields[fld])
 
         if (self.remove_file_field):
             if ('file' in entry.fields):
@@ -426,6 +462,30 @@ def do_fix_space_after_escape(x):
     logger.longdebug("\t\t--> `%s'", newx)
 
     return newx
+
+
+
+# see http://stackoverflow.com/a/1547940
+_rx_url = re.compile(r"(https?|ftp)://[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+(/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=-]*)?")
+_rx_urlcmd = re.compile(r"((\\url\s*\{|\\href\s*\{)\s*)")
+
+def do_auto_urlify(x):
+    pos = 0
+    while True:
+        m = _rx_url.search(x, pos=pos)
+        if m is None:
+            return x
+        # found a candidate URL. Now check it is not preceeded by e.g. "\url{"
+        mpreclast = None
+        for mprec in _rx_urlcmd.finditer(x[0:m.start()]):
+            mpreclast = mprec
+        if mpreclast is not None and mpreclast.end() == m.start():
+            pos = m.start()
+            continue
+        # safe to wrap this URL into \url{...}
+        x = x[:m.start()] + u"\\url{" + m.group() + u"}" + x[m.end():]
+        pos = m.end()
+    return x
 
 
 
