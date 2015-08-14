@@ -339,9 +339,6 @@ class FixesFilter(BibFilter):
                 if (newval != val):
                     entry.fields[key] = newval;
 
-        if (self.protect_names):
-            filter_protect_names(entry);
-
         if (self.map_annote_to_note):
             if 'annote' in entry.fields:
                 thenote = ''
@@ -354,6 +351,9 @@ class FixesFilter(BibFilter):
             for fld in self.auto_urlify:
                 if fld in entry.fields:
                     entry.fields[fld] = do_auto_urlify(entry.fields[fld])
+
+        if (self.protect_names):
+            filter_protect_names(entry);
 
         if (self.remove_file_field):
             if ('file' in entry.fields):
