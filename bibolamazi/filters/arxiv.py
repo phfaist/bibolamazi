@@ -32,6 +32,7 @@ from bibolamazi.core.bibfilter.argtypes import CommaStrList, enum_class
 from bibolamazi.core import butils
 
 from .util import arxivutil
+from .util import entryfmt
 
 
 
@@ -112,6 +113,30 @@ the arxiv.org API (via the arxiv2bib module, Copyright (c) 2012, Nathan Grigg, N
 See the original copyright in the folder '3rdparty/arxiv2bib/' of this project)
 
 
+NOTE FIELD FORMATTING (-sNoteStringFmt):
+
+This is based on Python's new string formatting mini-language. Include fields with the syntax
+`{format-str}':
+
+    -sNoteStringFmt="arXiv:{arxiv.arxivid} [{arxiv.primaryclass}]"
+
+The available fields and subfields are:
+
+    'p.firstauthor' =>  first author (Person object)
+    'p.authors' =>  list of bibtex entry authors (list of Person objects)
+    'p.editors' =>  list of bibtex entry editors (list of Person objects)
+    'p.persons' =>  dictionary with keys 'authors' and 'editors'
+    'f' =>  object with all entry's bibtex fields (access as 'f.<FIELD>')
+    'arxiv' =>  object with properties: (access as 'arxiv.<FIELD>')
+        'primaryclass' =>  primary class, if available
+        'arxivid' =>  the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
+        'archiveprefix' =>  value of the 'archiveprefix' field
+        'published' =>  True/False <whether this entry was published in a journal other than arxiv
+        'doi' =>  DOI of entry if any, otherwise None
+        'year' =>  Year in preprint arXiv ID number. 4-digit, string type.
+        'isoldarxivid' =>  boolean which is True if the arXiv id is of the format 'archive/XXXXXXX'
+
+
 """
 
 
@@ -159,7 +184,8 @@ class ArxivNormalizeFilter(BibFilter):
                  unpublished_mode=None,
                  arxiv_journal_name="ArXiv e-prints",
                  strip_unpublished_fields=[],
-                 note_string="{arXiv:%(arxivid)s}",
+                 note_string="",
+                 note_string_fmt="",
                  no_archive_prefix=False,
                  default_archive_prefix="arXiv",
                  no_primary_class_for_old_ids=False,
@@ -177,10 +203,16 @@ class ArxivNormalizeFilter(BibFilter):
                    from all unpublished entries.
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                    unpublished entries
-          - note_string: the string to insert in the `note' field (for modes 'unpublished-note',
-                   'note', and 'unpublished-note-notitle'). Use `%(arxivid)s' to include the ArXiv
-                   ID itself in the string. Default: '{arXiv:%(arxivid)s}'. Possible substitutions
-                   keys are 'arxivid','primaryclass','published','doi'.
+          - note_string: (obsolete, prefer -sNoteStringFmt) the string to insert in the `note' field
+                   (for modes 'unpublished-note', 'note', and 'unpublished-note-notitle'). Use
+                   `%(arxivid)s' to include the ArXiv ID itself in the string. Default:
+                   '{arXiv:%(arxivid)s}'. Possible substitutions keys are
+                   'arxivid','primaryclass','published','doi'. You can't specify both (-sNoteString
+                   and -sNoteStringFmt).
+          - note_string_fmt: the string to insert in the `note' field for modes 'unpublished-note',
+                   'note' and 'unpublished-note-notitle'. This field uses Python's new advanced
+                   formatting mini-language (see `string.Formatter`). The available fields and
+                   formats are documented below in the filter documentation.
           - no_archive_prefix(bool): If set, then removes the 'archiveprefix' key entirely.
           - default_archive_prefix: In `eprint' mode, entries which don't have an archive prefix are
                    given this one. Additionally, other entries whose archive prefix match this one
@@ -195,7 +227,6 @@ class ArxivNormalizeFilter(BibFilter):
                    database, but for which the arXiv.org API reports a published version, we produce
                    a warning (this is the default; set this option to false to suppress these
                    warnings).
-
         """
         
         BibFilter.__init__(self);
@@ -206,6 +237,12 @@ class ArxivNormalizeFilter(BibFilter):
         self.strip_unpublished_fields = CommaStrList(strip_unpublished_fields)
         self.arxiv_journal_name = arxiv_journal_name;
         self.note_string = note_string;
+        self.note_string_fmt = note_string_fmt;
+        if (self.note_string and self.note_string_fmt):
+            raise BibFilterError('arXiv', "Can't give both -sNoteString and -sNoteStringFmt !")
+        if not self.note_string and not self.note_string_fmt:
+            # nothing given, defaults to:
+            self.note_string_fmt = "{{arXiv:{arxiv.arxivid}}}"
         self.no_archive_prefix = no_archive_prefix;
         self.default_archive_prefix = default_archive_prefix;
         self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids);
@@ -314,9 +351,14 @@ class ArxivNormalizeFilter(BibFilter):
         origentryfields = CaseInsensitiveDict(entry.fields.iteritems())
 
         def add_note(entry, arxivinfo):
-            d = CaseInsensitiveDict(origentryfields.iteritems())
-            d.update(arxivinfo)
-            note = self.note_string % TolerantReplacer(d);
+            if (self.note_string):
+                d = CaseInsensitiveDict(origentryfields.iteritems())
+                d.update(arxivinfo)
+                note = self.note_string % TolerantReplacer(d);
+            elif (self.note_string_fmt):
+                note = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
+                                               arxivinfo=arxivinfo).format(self.note_string_fmt)
+
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
                 entry.fields['note'] += ', '+note;

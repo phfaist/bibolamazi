@@ -107,6 +107,8 @@ def detectEntryArXivInfo(entry):
           'published': True/False <whether this entry was published in a journal other than arxiv>,
           'doi': <DOI of entry if any, otherwise None>
           'year': <Year in preprint arXiv ID number. 4-digit, string type.>
+          'isoldarxivid': <Whether the arXiv ID is of old style, i.e. 'primary-class/XXXXXXX'>
+          'isnewarxivid': <Whether the arXiv ID is of new style, i.e. 'XXXX.XXXX+' (with 4 or more digits after dot)>
         }
 
     Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
@@ -124,6 +126,8 @@ def detectEntryArXivInfo(entry):
            'archiveprefix': None,
            'doi': None,
            'year': None,
+           'isoldarxivid': None,
+           'isnewarxivid': None,
            };
 
     #
@@ -229,6 +233,18 @@ def detectEntryArXivInfo(entry):
     if (re.match(r'^\d{7}$', d['arxivid']) and d['primaryclass'] and len(d['primaryclass']) > 0):
         d['arxivid'] = d['primaryclass']+'/'+d['arxivid']
 
+    # set whether old style or new style arXiv ID
+    if re.match(r'^\d{4}\.\d{4,}(v\d+)?$', d['arxivid']):
+        d['isoldarxivid'] = False
+        d['isnewarxivid'] = True
+    elif re.match(r'^'+_RX_PRIMARY_CLASS_PAT+r'/\d{7}(v\d+)?$', d['arxivid']):
+        d['isoldarxivid'] = True
+        d['isnewarxivid'] = False
+    else:
+        d['isoldarxivid'] = False # can't determine arxiv ID style ...
+        d['isnewarxivid'] = False # can't determine arxiv ID style ...
+
+        
     # get the year
     m = _rx_aid_year.search(d['arxivid'])
     if not m:
@@ -406,8 +422,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
 class ArxivInfoCacheAccessor(BibUserCacheAccessor):
     """
-    A `BibUserCacheAccessor` for fetching and accessing information retrieved from the
-    arXiv API.
+    Cache accessor for detected arXiv information about bibliography entries.
     """
     def __init__(self, **kwargs):
         super(ArxivInfoCacheAccessor, self).__init__(

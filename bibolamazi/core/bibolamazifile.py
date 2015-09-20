@@ -571,6 +571,8 @@ class BibolamaziFile(object):
 
         See documentation of :py:mod:`bibolamazi.core.bibusercache` for more information
         about the bibolamazi cache.
+
+        If the cache accessor was not loaded, then `None` is returned.
         """
         return self._cache_accessors.get(klass, None)
         
