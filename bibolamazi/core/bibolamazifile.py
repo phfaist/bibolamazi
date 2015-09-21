@@ -72,6 +72,12 @@ class NotBibolamaziFileError(BibolamaziFileParseError):
     def __init__(self, msg, fname=None, lineno=None):
         BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno)
 
+class BibolamaziBibtexSourceError(BibolamaziError):
+    def __init__(self, msg, fname=None):
+        where = fname
+
+        BibolamaziError.__init__(self, msg, where=where)
+
 
 def _repl(s, dic):
     for (k,v) in dic.iteritems():
@@ -1032,33 +1038,39 @@ class BibolamaziFile(object):
 
         logger.info("Found Source: %s" %(src))
 
-        # parse bibtex
-        parser = inputbibtex.Parser()
-        bib_data = None
-        with io.StringIO(data) as stream:
-            bib_data = parser.parse_stream(stream)
+        try:
+            # parse bibtex
+            parser = inputbibtex.Parser()
+            bib_data = None
+            with io.StringIO(data) as stream:
+                bib_data = parser.parse_stream(stream)
 
-        if (self._bibliographydata is None):
-            # initialize bibliography data
-            self._bibliographydata = pybtex.database.BibliographyData()
+            if (self._bibliographydata is None):
+                # initialize bibliography data
+                self._bibliographydata = pybtex.database.BibliographyData()
 
-        for key, entry in bib_data.entries.iteritems():
-            if (key in self._bibliographydata.entries):
-                logger.warn('Repeated bibliography entry: %s. Keeping first encountered entry.', key)
-                continue
-            
-            # TODO: Do this cleverly?
-            #
-            #if (key in self._bibliographydata.entries):
-            #    oldkey = key
-            #    duplcounter = 1
-            #    while key in self._bibliographydata.entries:
-            #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
-            #        duplcounter += 1
-            #
-            #    logger.warn('Repeated bibliography entry: %s. Renamed duplicate occurence to %s.', oldkey, key)
+            for key, entry in bib_data.entries.iteritems():
+                if (key in self._bibliographydata.entries):
+                    logger.warn('Repeated bibliography entry: %s. Keeping first encountered entry.', key)
+                    continue
 
-            self._bibliographydata.add_entry(key, entry)
+                # TODO: Do this cleverly?
+                #
+                #if (key in self._bibliographydata.entries):
+                #    oldkey = key
+                #    duplcounter = 1
+                #    while key in self._bibliographydata.entries:
+                #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
+                #        duplcounter += 1
+                #
+                #    logger.warn('Repeated bibliography entry: %s. Renamed duplicate occurence to %s.', oldkey, key)
+
+                self._bibliographydata.add_entry(key, entry)
+
+        except pybtex.database.BibliographyDataError as e:
+            # We don't skip to next source, because we've encountered an error in the
+            # BibTeX data itself: the file itself was properly found. So raise an error.
+            raise BibolamaziBibtexSourceError(unicode(e), fname=src)
 
         return True
 

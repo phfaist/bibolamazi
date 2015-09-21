@@ -216,7 +216,7 @@ def main(argv=sys.argv[1:]):
         raise
 
     except BibolamaziError as e:
-        logger.error("[BIBOLAMAZI ERROR]\n" + unicode(e))
+        logger.error("\n" + unicode(e))
 
     except:
         
