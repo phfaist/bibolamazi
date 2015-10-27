@@ -31,7 +31,7 @@ from pylatexenc import latexwalker
 from pylatexenc import latex2text
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
-from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.bibfilter.argtypes import CommaStrList, ColonCommaStrDict
 from bibolamazi.core import butils
 
 
@@ -87,7 +87,8 @@ For now, the implemented fixes are:
     Useful only if `RemoveFullBraces' is set. This option inhibits the removal of
     the extra braces if the language of the entry (as given by a bibtex
     language={...} field) is in the given list. This is useful, for example, to
-    preserve the capitalization of nouns in German titles.
+    preserve the capitalization of nouns in German titles. (Comparision is done
+    case insensitive.)
 
   -sProtectNames=Name1,Name2...
     A list of names that should be protected within most fields. Whenever a
@@ -119,6 +120,22 @@ For now, the implemented fixes are:
     `\\url{}' commands. If a list of fields is provided, then the
     auto-urlification is applied to those given bibtex fields.
 
+  -sRenameLanguage=alias1:language1,alias2:language2...
+    Change language={} field values according to the given rules. An alias (case
+    insensitive) is replaced by its corresponding language. Replacements are not
+    done recursively.
+
+  -dFixMendeleyBugUrls
+  -sFixMendeleyBugUrls=field1,field2...
+    Mendeley's BibTeX output currently is buggy and escapes URLs with signs like
+    $\sim$ etc. This option enables reverting Mendeley's escape sequences back
+    to URL characters (for known escape Mendeley sequences).
+
+    This option is off by default. Use the
+    `-sFixMendeleyBugUrls=field1,field2...' variant to specify a list of bibtex
+    fields on which to act (but not author nor editor). If the
+    `-dFixMendeleyBugUrls' variant is given, the only the 'url' field is
+    processed.
 
 The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
@@ -151,6 +168,8 @@ class FixesFilter(BibFilter):
                  remove_doi_prefix=False,
                  map_annote_to_note=False,
                  auto_urlify=False,
+                 rename_language={},
+                 fix_mendeley_bug_urls=False,
                  fix_swedish_a=False):
         """
         Constructor method for FixesFilter
@@ -164,13 +183,18 @@ class FixesFilter(BibFilter):
           - remove_full_braces: removes overprotective global braces in field values.
           - remove_full_braces_not_lang(CommaStrList): (in conjunction with --remove-full-braces) removes the
             overprotective global braces only if the language of the entry (as per language={..} bibtex field)
-            is not in the given list.
+            is not in the given list (case insensitive).
           - protect_names: list of names to protect from bibtex style casing.
           - remove_file_field(bool): removes file={...} fields from all entries.
           - remove_fields(CommaStrList): removes given fields from all entries.
           - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
           - map_annote_to_note(bool): maps `annote' bibtex field to a `note' field
           - auto_urlify: automatically wrap URLs into `\\url{}' commands
+          - rename_language(ColonCommaStrDict): replace e.g. `de' by `Deutsch'. Use
+                format `alias1:language1,alias2:language2...'.
+          - fix_mendeley_bug_urls(bool): fix the `url' field for Mendeley's
+                buggy output. Pass on a list of fields (comma-separated) to specify
+                which fields to act on; by default if enabled only 'url'.
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
                 transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
                 problem occurs in files generated e.g. by Mendeley); revtex tends to
@@ -233,12 +257,37 @@ class FixesFilter(BibFilter):
         except ValueError:
             self.auto_urlify = CommaStrList(auto_urlify)
 
+        # make sure key (language alias) is made lower-case
+        self.rename_language = dict([ (k.lower(), v)
+                                      for k, v in ColonCommaStrDict(rename_language).iteritems() ])
+        self.rename_language_rx = None
+        if self.rename_language:
+            # e.g. with rename_language={'en':'english','de':'deutsch',
+            # 'german':'deutsch', 'french':'francais'}, prepare the regexp
+            # '^en|de|german|french$'. Case INsensitive.
+            self.rename_language_rx = re.compile(
+                r'^\s*(?P<lang>' +
+                "|".join([re.escape(k.strip()) for k in self.rename_language.iterkeys()]) +
+                r'\s*)$',
+                flags=re.IGNORECASE
+                )
+
+        if fix_mendeley_bug_urls:
+            try:
+                self.fix_mendeley_bug_urls = CommaStrList(fix_mendeley_bug_urls)
+            except TypeError:
+                # just passed, e.g., `True`
+                self.fix_mendeley_bug_urls = ['url']
+        else:
+            self.fix_mendeley_bug_urls = []
+
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
                       'protect_names=%r, remove_file_field=%r, '
                       'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r, '
-                      'map_annote_to_note=%r, auto_urlify=%r')
+                      'map_annote_to_note=%r, auto_urlify=%r, rename_language=%r, rename_language_rx=%r, '
+                      'fix_mendeley_bug_urls=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -247,7 +296,10 @@ class FixesFilter(BibFilter):
                         self.remove_file_field,
                         self.remove_fields, self.remove_doi_prefix, self.fix_swedish_a,
                         self.map_annote_to_note,
-                        self.auto_urlify
+                        self.auto_urlify,
+                        self.rename_language,
+                        (self.rename_language_rx.pattern if self.rename_language_rx else None),
+                        self.fix_mendeley_bug_urls
                         ));
         
 
@@ -354,6 +406,20 @@ class FixesFilter(BibFilter):
 
         if (self.protect_names):
             filter_protect_names(entry);
+
+        if (self.rename_language):
+            if 'language' in entry.fields:
+                logger.longdebug('Maybe fixing language in entry %s: lang=%r', entry.key, entry.fields['language'])
+                entry.fields['language'] = self.rename_language_rx.sub(
+                    lambda m: self.rename_language.get(m.group('lang').lower(), m.group('lang')),
+                    entry.fields['language']
+                )
+                logger.longdebug('  --> language is now = %r', entry.fields['language'])
+
+        if (self.fix_mendeley_bug_urls):
+            for fld in self.fix_mendeley_bug_urls:
+                if fld in entry.fields:
+                    entry.fields[fld] = do_fix_mendeley_bug_urls(entry.fields[fld])
 
         if (self.remove_file_field):
             if ('file' in entry.fields):
@@ -487,6 +553,21 @@ def do_auto_urlify(x):
         pos = m.end()
     return x
 
+
+_mendeley_bug_urls_escapes = {
+    r'$\sim$': '~',
+}
+
+_rx_mendeley_bug_urls_escapes = re.compile(
+    r'(?P<esc>' + r'|'.join(
+        (re.escape(k) for k in _mendeley_bug_urls_escapes.keys())
+    ) + r')'
+)
+
+def do_fix_mendeley_bug_urls(x):
+    return _rx_mendeley_bug_urls_escapes.sub(
+        lambda m: _mendeley_bug_urls_escapes.get(m.group('esc'),m.group('esc')),
+        x)
 
 
 

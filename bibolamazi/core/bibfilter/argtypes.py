@@ -152,11 +152,11 @@ class CommaStrListArgType:
     def __init__(self):
         pass
 
-_rx_escape = re.compile(r'(\\|,)');
-def _escape(x):
-    return _rx_escape.sub(lambda m: '\\'+m.group(1), x);
+_rx_escape_lst = re.compile(r'(\\|,)');
+def _escape_lst(x):
+    return _rx_escape_lst.sub(lambda m: '\\'+m.group(1), x);
 
-_rx_unescape = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
+_rx_unescape_lst = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
 
 class CommaStrList(list):
     """
@@ -168,7 +168,7 @@ class CommaStrList(list):
             lastpos = 0
             strlist = []
             laststr = ""
-            for m in _rx_unescape.finditer(iterable):
+            for m in _rx_unescape_lst.finditer(iterable):
                 laststr += fullstr[lastpos:m.start()];
                 if (m.group('sep') == ','):
                     strlist.append(laststr)
@@ -189,7 +189,72 @@ class CommaStrList(list):
         super(CommaStrList, self).__init__(iterable)
 
     def __unicode__(self):
-        return u",".join([_escape(unicode(x)) for x in self]);
+        return u",".join([_escape_lst(unicode(x)) for x in self]);
+
+    def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+
+
+# ------------------------------------------------------------------------------
+
+
+class ColonCommaStrDictArgType:
+    def __init__(self):
+        pass
+
+_rx_escape_dic = re.compile(r'(\\|,:)');
+def _escape_dic(x):
+    return _rx_escape_dic.sub(lambda m: '\\'+m.group(1), x);
+
+_rx_unescape_val = re.compile(r'\\(?P<char>.)');
+_rx_unescape_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*');
+
+class ColonCommaStrDict(dict):
+    """
+    A dictionary of values, specified as a comma-separated string of pairs
+    ``'key:value'``. If no value is given (no colon), then the value is `None`.
+    """
+    def __init__(self, *args, **kwargs):
+
+        if len(args) == 1:
+            iterable = args[0]
+        elif len(args) == 0:
+            iterable = None
+        else:
+            raise ValueError('ColonCommaStrDict accepts at most one *arg, an iterable')
+        
+        if (isinstance(iterable, basestring)):
+            pairlist = CommaStrList(iterable)
+            d = {}
+            # now, read each key/value pair
+            for pairstr in pairlist:
+                m = _rx_unescape_keyvalsep.search(pairstr)
+                if m:
+                    key = pairstr[:m.start()]
+                    val = pairstr[m.end():]
+                else:
+                    key = pairstr
+                    val = None
+                key = _rx_unescape_val.sub(lambda m: m.group('char'), key)
+                if val:
+                    val = _rx_unescape_val.sub(lambda m: m.group('char'), val)
+
+                if key in d:
+                    raise ValueError("Repeated key in input: %s"%(key))
+
+                d[key] = val
+
+            super(ColonCommaStrDict, self).__init__(d)
+
+        else:
+
+            super(ColonCommaStrDict, self).__init__(*args, **kwargs)
+
+
+    def __unicode__(self):
+        return u",".join([_escape_dic(unicode(k))+(':'+_escape_dic(unicode(v)) if v is not None else '')
+                          for k,v in self.iteritems()]);
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
