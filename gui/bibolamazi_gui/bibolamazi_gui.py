@@ -391,9 +391,12 @@ def run_main():
 
     blogger.setup_simple_console_logging()
 
-    # default level: set to root logger
-    #logging.getLogger().setLevel(blogger.LONGDEBUG)
-    logging.getLogger().setLevel(logging.DEBUG)
+    # default level: set to root logger.  May be set externally via environment variable
+    # (e.g. for debugging)
+    if 'BIBOLAMAZI_LOG_LEVEL' in os.environ and os.environ['BIBOLAMAZI_LOG_LEVEL']:
+        logging.getLogger().setLevel(blogger.LogLevel(os.environ['BIBOLAMAZI_LOG_LEVEL']).levelno)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
 
     # ## Seems we still need this for pyinstaller, I'm not sure why....
     #

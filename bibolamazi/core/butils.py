@@ -43,7 +43,6 @@ def get_version():
     """
     return version.version_str;
 
-
 _theversionsplit = None
 
 def get_version_split():
@@ -59,6 +58,14 @@ def get_version_split():
         m = re.match(r'^(\d+)(?:\.(\d+)(?:\.(\d+)(.+)?)?)?', version.version_str);
         _theversionsplit = (m.group(1), m.group(2), m.group(3), m.group(4));
     return _theversionsplit;
+
+
+def get_copyrightyear():
+    """
+    Return the copyright year :py:data:`~core.version.copyright_year`, unchanged.
+    """
+    return version.copyright_year;
+
 
 
 

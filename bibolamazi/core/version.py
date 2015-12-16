@@ -27,3 +27,9 @@ version_str = "3.1"
 """
 The version string. This is increased upon each release.
 """
+
+
+copyright_year = "2015"
+"""
+Year of copyright.
+"""

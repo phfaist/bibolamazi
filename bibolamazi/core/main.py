@@ -282,7 +282,7 @@ def run_bibolamazi_args(args):
     #
 
     logger.debug(textwrap.dedent("""
-    Bibolamazi Version %(ver)s by Philippe Faist (C) 2014
+    Bibolamazi Version %(ver)s by Philippe Faist (C) 2015
 
     Use option --help for help information.
     """         %   {

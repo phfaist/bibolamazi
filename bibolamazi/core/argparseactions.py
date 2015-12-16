@@ -239,10 +239,10 @@ class store_key_const(argparse.Action):
 
 def helptext_prolog():
     return ("""
-Bibolamazi Version %(version)s by Philippe Faist (C) 2014
+Bibolamazi Version %(version)s by Philippe Faist (C) %(copyrightyear)s
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 
-""" % { 'version': butils.get_version(),
+""" % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
         } );
     
 
@@ -281,9 +281,10 @@ class opt_action_version(argparse.Action):
 
         helptext = """\
 Version: %(version)s
-Bibolamazi by Philippe Faist (C) 2014
+Bibolamazi by Philippe Faist
+(C) %(copyrightyear)s Philippe Faist
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
-""" % { 'version': butils.get_version(),
+""" % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
 }
         sys.stdout.write(helptext);
         parser.exit()
