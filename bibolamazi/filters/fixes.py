@@ -321,6 +321,8 @@ class FixesFilter(BibFilter):
                 x = re.sub(r'\\AA\s+', r'\AA{}', x);
                 x = re.sub(r'\\o\s+', r'\o{}', x);
             if (self.encode_utf8_to_latex):
+                # Need non_ascii_only=True because we might have e.g. braces or other
+                # LaTeX code we want to preserve.
                 x = latexencode.utf8tolatex(x, non_ascii_only=True);
             if (self.encode_latex_to_utf8):
                 x = latex2text.latex2text(x);

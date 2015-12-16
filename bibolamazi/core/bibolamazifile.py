@@ -1051,7 +1051,7 @@ class BibolamaziFile(object):
 
             for key, entry in bib_data.entries.iteritems():
                 if (key in self._bibliographydata.entries):
-                    logger.warn('Repeated bibliography entry: %s. Keeping first encountered entry.', key)
+                    logger.warn('Repeated bibliography entry in other file: %s. Keeping first encountered entry.', key)
                     continue
 
                 # TODO: Do this cleverly?
@@ -1063,7 +1063,7 @@ class BibolamaziFile(object):
                 #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
                 #        duplcounter += 1
                 #
-                #    logger.warn('Repeated bibliography entry: %s. Renamed duplicate occurence to %s.', oldkey, key)
+                #    logger.warn('Repeated bibliography entry in other file: %s. Renamed duplicate occurence to %s.', oldkey, key)
 
                 self._bibliographydata.add_entry(key, entry)
 

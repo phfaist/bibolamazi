@@ -131,7 +131,7 @@ BIBALIAS_LATEX_DEFINITIONS = ur"""
   % However, still write in the .aux file a dummy \citation{...} command, so that
   % filters.util.auxfile will still catch those used citations....
   %
-  %\immediate\write\@auxout{\noexpand{\bgroup\newcommand\citation[2][]{}\citation{#2}\egroup}}
+  %\immediate\write\@auxout{\noexpand{\bgroup\renewcommand\citation[1]{}\citation{#2}\egroup}}
   \immediate\write\@auxout{\noexpand\bgroup\noexpand\renewcommand\noexpand\citation[1]{}\noexpand\citation{#2}\noexpand\egroup}%
   %
   % Now, produce the \cite command with the original keys instead of the aliases
