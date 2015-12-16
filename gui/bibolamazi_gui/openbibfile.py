@@ -747,8 +747,8 @@ class OpenBibFile(QWidget):
         if (cmd is None):
             insertcur = QTextCursor(doc.findBlockByNumber(self.ui.txtConfig.textCursor().block().blockNumber()))
         else:
-            # insert _after_ current cmd (-> +1 for next line, no correction for offset starting at 1...)
-            insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend+1)))
+            # insert _after_ current cmd (-> +1 for next line, -1 to correct for offset starting at 1)
+            insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend)))
 
         insertcur.insertText(str(cmdtext)+'\n')
         # select inserted text without the newline
