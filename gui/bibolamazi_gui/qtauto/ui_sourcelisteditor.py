@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'sourcelisteditor.ui'
 #
-# Created: Sun May 31 15:09:06 2015
+# Created: Wed Dec 16 13:50:55 2015
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_SourceListEditor(object):
     def setupUi(self, SourceListEditor):
         SourceListEditor.setObjectName(_fromUtf8("SourceListEditor"))
-        SourceListEditor.resize(377, 362)
+        SourceListEditor.resize(368, 457)
         self.gridLayout = QtGui.QGridLayout(SourceListEditor)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.lstSources = QtGui.QListWidget(SourceListEditor)
@@ -53,18 +53,12 @@ class Ui_SourceListEditor(object):
         self.btnBrowse = QtGui.QPushButton(self.gbxEditSource)
         self.btnBrowse.setObjectName(_fromUtf8("btnBrowse"))
         self.gridLayout_2.addWidget(self.btnBrowse, 0, 1, 1, 1)
-        self.gridLayout.addWidget(self.gbxEditSource, 6, 0, 1, 2)
-        self.btnAddSource = QtGui.QPushButton(SourceListEditor)
-        self.btnAddSource.setObjectName(_fromUtf8("btnAddSource"))
-        self.gridLayout.addWidget(self.btnAddSource, 3, 0, 1, 1)
-        self.btnRemoveSource = QtGui.QPushButton(SourceListEditor)
-        self.btnRemoveSource.setObjectName(_fromUtf8("btnRemoveSource"))
-        self.gridLayout.addWidget(self.btnRemoveSource, 3, 1, 1, 1)
+        self.gridLayout.addWidget(self.gbxEditSource, 9, 0, 1, 2)
         spacerItem = QtGui.QSpacerItem(10, 5, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
-        self.gridLayout.addItem(spacerItem, 5, 0, 1, 1)
+        self.gridLayout.addItem(spacerItem, 8, 0, 1, 1)
         self.label_2 = QtGui.QLabel(SourceListEditor)
         self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.gridLayout.addWidget(self.label_2, 4, 0, 1, 2)
+        self.gridLayout.addWidget(self.label_2, 7, 0, 1, 2)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.label = QtGui.QLabel(SourceListEditor)
@@ -77,6 +71,15 @@ class Ui_SourceListEditor(object):
         self.btnAddFavorite.setObjectName(_fromUtf8("btnAddFavorite"))
         self.horizontalLayout.addWidget(self.btnAddFavorite)
         self.gridLayout.addLayout(self.horizontalLayout, 1, 0, 1, 2)
+        self.btnAddSourceAltLoc = QtGui.QPushButton(SourceListEditor)
+        self.btnAddSourceAltLoc.setObjectName(_fromUtf8("btnAddSourceAltLoc"))
+        self.gridLayout.addWidget(self.btnAddSourceAltLoc, 4, 0, 1, 1)
+        self.btnRemoveSourceAltLoc = QtGui.QPushButton(SourceListEditor)
+        self.btnRemoveSourceAltLoc.setObjectName(_fromUtf8("btnRemoveSourceAltLoc"))
+        self.gridLayout.addWidget(self.btnRemoveSourceAltLoc, 4, 1, 1, 1)
+        self.btnAddSource = QtGui.QPushButton(SourceListEditor)
+        self.btnAddSource.setObjectName(_fromUtf8("btnAddSource"))
+        self.gridLayout.addWidget(self.btnAddSource, 3, 0, 1, 2)
 
         self.retranslateUi(SourceListEditor)
         QtCore.QMetaObject.connectSlotsByName(SourceListEditor)
@@ -91,10 +94,11 @@ class Ui_SourceListEditor(object):
         self.gbxEditSource.setTitle(_translate("SourceListEditor", "Edit this source", None))
         self.lblFile.setText(_translate("SourceListEditor", "File or URL:", None))
         self.btnBrowse.setText(_translate("SourceListEditor", "browse file ...", None))
-        self.btnAddSource.setText(_translate("SourceListEditor", "Add Source", None))
-        self.btnRemoveSource.setText(_translate("SourceListEditor", "Remove this source", None))
-        self.label_2.setText(_translate("SourceListEditor", "(reorder sources by drag and drop)", None))
+        self.label_2.setText(_translate("SourceListEditor", "(reorder alt. source locations by drag and drop)", None))
         self.label.setText(_translate("SourceListEditor", "Source List: (first accessible will be used)", None))
         self.btnAddFavorite.setToolTip(_translate("SourceListEditor", "Add this source list to your favorites", None))
+        self.btnAddSourceAltLoc.setText(_translate("SourceListEditor", "Add Alternative Location", None))
+        self.btnRemoveSourceAltLoc.setText(_translate("SourceListEditor", "Remove Alt. Loc.", None))
+        self.btnAddSource.setText(_translate("SourceListEditor", "Add Source", None))
 
 from . import bibolamazi_res_rc

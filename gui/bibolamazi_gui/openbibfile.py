@@ -263,6 +263,7 @@ class OpenBibFile(QWidget):
 
         self.ui.filterInstanceEditor.requestAddToFavorites.connect(self.add_favorite_cmd)
         self.ui.sourceListEditor.requestAddToFavorites.connect(self.add_favorite_cmd)
+        self.ui.sourceListEditor.requestAddSourceList.connect(self.on_btnAddSourceList_clicked)
 
         self.bibolamaziFileName = None
         self.bibolamaziFile = None
@@ -731,7 +732,10 @@ class OpenBibFile(QWidget):
     def on_btnAddSourceList_clicked(self):
         logger.debug('add source list: clicked')
 
-        self._insert_new_cmd('src: ')
+        self._insert_new_cmd('src: ""')
+        # directly set the focus on the file name field
+        self.ui.sourceListEditor.selectSourceAltLoc(0)
+        
 
     def _insert_new_cmd(self, cmdtext):
 
@@ -743,8 +747,8 @@ class OpenBibFile(QWidget):
         if (cmd is None):
             insertcur = QTextCursor(doc.findBlockByNumber(self.ui.txtConfig.textCursor().block().blockNumber()))
         else:
-            # insert _after_ current cmd (-> +1 for next line, +1 for counting from one and not from zero)
-            insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend+1)+1))
+            # insert _after_ current cmd (-> +1 for next line, no correction for offset starting at 1...)
+            insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend+1)))
 
         insertcur.insertText(str(cmdtext)+'\n')
         # select inserted text without the newline
@@ -790,7 +794,8 @@ class OpenBibFile(QWidget):
             return
         
         if (cmd.cmd == 'src'):
-            self.ui.sourceListEditor.setSourceList(shlex.split(cmd.text), noemit=True)
+            thesrcs = shlex.split(cmd.text)
+            self.ui.sourceListEditor.setSourceList(thesrcs, noemit=True)
             self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
             return

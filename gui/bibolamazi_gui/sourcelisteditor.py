@@ -55,6 +55,7 @@ class SourceListEditor(QWidget):
     sourceListChanged = pyqtSignal('QStringList')
 
     requestAddToFavorites = pyqtSignal()
+    requestAddSourceList = pyqtSignal()
     
 
     def sourceList(self):
@@ -84,12 +85,23 @@ class SourceListEditor(QWidget):
             self.ui.lstSources.addItem(src)
 
         # refresh current row
-        self.on_lstSources_currentRowChanged(self.ui.lstSources.currentRow())
+        if len(sourcelist):
+            self.ui.lstSources.setCurrentRow(0)
+        else:
+            self.on_lstSources_currentRowChanged(self.ui.lstSources.currentRow())
 
         self._is_updating = False
         if (not noemit):
             self.emitSourceListChanged()
 
+    @pyqtSlot(int)
+    def selectSourceAltLoc(self, index):
+        """
+        Select and focus input field for the alt loc identified by `index` in the list. Starts
+        with zero.
+        """
+        self.ui.lstSources.setCurrentRow(index)
+        self.ui.txtFile.setFocus()
 
     @pyqtSlot()
     def emitSourceListChanged(self):
@@ -100,14 +112,14 @@ class SourceListEditor(QWidget):
 
 
     @pyqtSlot()
-    def on_btnAddSource_clicked(self):
+    def on_btnAddSourceAltLoc_clicked(self):
         self.ui.lstSources.addItem("")
         self.ui.lstSources.setCurrentRow(self.ui.lstSources.count()-1)
         self.ui.txtFile.setFocus()
         self.emitSourceListChanged()
 
     @pyqtSlot()
-    def on_btnRemoveSource_clicked(self):
+    def on_btnRemoveSourceAltLoc_clicked(self):
         row = self.ui.lstSources.currentRow()
         if (row < 0):
             logger.debug("No row selected")
@@ -118,6 +130,10 @@ class SourceListEditor(QWidget):
         # ###TODO: FIXME: delete item?!?
 
         self.emitSourceListChanged()
+
+    @pyqtSlot()
+    def on_btnAddSource_clicked(self):
+        self.requestAddSourceList.emit()
 
     @pyqtSlot()
     def update_stuff_moved(self):
@@ -136,10 +152,10 @@ class SourceListEditor(QWidget):
         logger.debug("current row changed.. row=%d", row)
         if (self.ui.lstSources.count() == 0  or  row < 0):
             self.ui.txtFile.setText("")
-            self.ui.btnRemoveSource.setEnabled(False)
+            self.ui.btnRemoveSourceAltLoc.setEnabled(False)
             self.ui.gbxEditSource.setEnabled(False)
         else:
-            self.ui.btnRemoveSource.setEnabled(True)
+            self.ui.btnRemoveSourceAltLoc.setEnabled(True)
             self.ui.gbxEditSource.setEnabled(True)
             self.ui.txtFile.setText(self.ui.lstSources.item(row).text())
 
