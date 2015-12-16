@@ -1196,7 +1196,6 @@ _TEMPLATE_CONFIG = """\
 % %%
 % %%     https://github.com/phfaist/bibolamazi
 % %%
-% %% See comments below this configuration section if you're new to bibolamazi.
 %
 % %% This is the BIBOLAMAZI configuration section. Additional two leading
 % %% percent signs indicate comments within the configuration.
