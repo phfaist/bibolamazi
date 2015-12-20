@@ -116,7 +116,8 @@ BIBALIAS_LATEX_DEFINITIONS = ur"""
   \biba@toks{\bibalias@oldcite#1}%
   \def\biba@comma{}%
   \def\biba@all{}%
-  \@for\biba@one:=#2\do{%
+  \@for\biba@one@:=#2\do{%
+    \edef\biba@one{\expandafter\@firstofone\biba@one@\@empty}%
     \@ifundefined{bibali@\biba@one}{%
       \edef\biba@all{\biba@all\biba@comma\biba@one}%
     }{%
