@@ -452,15 +452,20 @@ def do_fix_space_after_escape(x):
 
     logger.longdebug("fixes filter: do_fix_space_after_escape(`%s')", x)
 
+    if hasattr(latexwalker, 'default_macro_dict'): # pylatexenc version >= 1.0
+        macro_dict = latexwalker.default_macro_dict
+    else:
+        macro_dict = latexwalker.macro_dict # old pylatexenc versions
+
     def deal_with_escape(x, m): # helper
         macroname = m.group('macroname')
-        if macroname not in latexwalker.macro_dict:
+        if macroname not in macro_dict:
             logger.longdebug("fixes filter: Unknown macro \\%s for -dFixSpaceAfterEscape, assuming no arguments.",
                              macroname)
             replacexstr = '\\' + macroname + "{}"
             return (x[:m.start()] + replacexstr + x[m.end():], m.start() + len(replacexstr))
 
-        macrodef = latexwalker.macro_dict[macroname]
+        macrodef = macro_dict[macroname]
 
         ns = _Namespace()
         ns.pos = m.end()
