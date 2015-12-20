@@ -3,7 +3,11 @@ TODO LIST & THOUGHTS
 ====================
 
 
-- Sources & filters --> combine into "plugins"
+- Sources & filters --> combine into "plugins" ... or not... ?
+
+
+- Use something like: " \edef\@citeb{\expandafter\@firstofone\@citeb\@empty}% "
+  in duplicates filter, to allow for spaces in citation keys
 
 
 - Centralize duplicate detection mechanism, like the arXiv accessor, so that several
