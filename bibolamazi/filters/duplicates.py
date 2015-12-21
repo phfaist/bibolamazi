@@ -239,6 +239,19 @@ def fmtjournal(x):
     return x2
 
 
+# -------------
+
+# utility for comparing months:
+_mon_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+_mon = dict(zip(_mon_list,range(1,12)))
+
+def normalize_month(x):
+    m = x.strip().lower()[:3]
+    if m in _mon:
+        return _mon[m]
+    return -1
+
+
 
 
 
@@ -386,20 +399,10 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         return self.cacheDic()['entries'][key]
 
 
-# -------------
-
-# utility for comparing months:
-_mon_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-_mon = dict(zip(_mon_list,range(1,12)))
-
-def normalize_month(x):
-    m = x.strip().lower()[:3]
-    if m in _mon:
-        return _mon[m]
-    return -1
 
 
 
+    
 
 
 
@@ -566,7 +569,12 @@ class DuplicatesFilter(BibFilter):
         # create abbreviations of the journals by keeping only the uppercase letters
         j_abbrev_a = cache_a['j_abbrev']
         j_abbrev_b = cache_b['j_abbrev']
-        if (j_abbrev_a and j_abbrev_b and j_abbrev_a != j_abbrev_b):
+        # don't require them to be equal, but just that they have good overlap... e.g. "PNAS" and "PNASUSA"
+        # allow also one typo per approx. 4 chars
+        if ( j_abbrev_a and j_abbrev_b and
+             (levenshtein(j_abbrev_a[:len(j_abbrev_b)], j_abbrev_b[:len(j_abbrev_a)])
+              > (1+int(min(len(j_abbrev_a),len(j_abbrev_b))/4))
+             ) ):
             logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
             return False
 
@@ -575,7 +583,7 @@ class DuplicatesFilter(BibFilter):
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
-            logger.longdebug("  Numbers %r and %r differ", a.fields.get('numbers', None), b.fields.get('numbers', None))
+            logger.longdebug("  Numbers %r and %r differ", a.fields.get('number', None), b.fields.get('number', None))
             return False
 
         titlea = cache_a['title_clean']
