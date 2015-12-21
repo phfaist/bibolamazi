@@ -386,6 +386,18 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         return self.cacheDic()['entries'][key]
 
 
+# -------------
+
+# utility for comparing months:
+_mon_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+_mon = dict(zip(_mon_list,range(1,12)))
+
+def normalize_month(x):
+    m = x.strip().lower()[:3]
+    if m in _mon:
+        return _mon[m]
+    return -1
+
 
 
 
@@ -475,13 +487,13 @@ class DuplicatesFilter(BibFilter):
 
         # compare author list first
 
-        #logger.longdebug('Comparing entries %s and %s', a.key, b.key)
+        logger.longdebug('Comparing entries %s and %s', a.key, b.key)
 
         apers = cache_a['pers']
         bpers = cache_b['pers']
 
         if (len(apers) != len(bpers)):
-            #logger.longdebug("  Author list lengths %d and %d differ", len(apers), len(bpers))
+            logger.longdebug("  Author list lengths %d and %d differ", len(apers), len(bpers))
             return False
 
         for k in range(len(apers)):
@@ -490,10 +502,10 @@ class DuplicatesFilter(BibFilter):
             # use Levenshtein distance to detect possible typos or alternative spellings
             # (e.g. Koenig vs Konig). Allow approx. one such typo per 8 characters.
             if (levenshtein(lasta, lastb) > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
-                #logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
+                logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
                 return False
 
-        #print "Author list matches! %r and %r "%(apers,bpers);
+        logger.longdebug("Author list matches! %r and %r ",apers,bpers)
 
         def compare_neq_fld(x, y, fld, filt=lambda x: x):
             xval = x.get(fld, None);
@@ -511,17 +523,17 @@ class DuplicatesFilter(BibFilter):
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
-            #logger.longdebug("  Years %r and %r differ", a.fields.get('year', None), b.fields.get('year', None))
+            logger.longdebug("  Years %r and %r differ", a.fields.get('year', None), b.fields.get('year', None))
             return False
 
-        if (compare_neq_fld(a.fields, b.fields, 'month')):
-            #logger.longdebug("  Months %r and %r differ", a.fields.get('month', None), b.fields.get('month', None))
+        if (compare_neq_fld(a.fields, b.fields, 'month', filt=normalize_month)):
+            logger.longdebug("  Months %r and %r differ", a.fields.get('month', None), b.fields.get('month', None))
             return False
 
         doi_a = a.fields.get('doi')
         doi_b = b.fields.get('doi')
         if (doi_a and doi_b and doi_a != doi_b):
-            #logger.longdebug("  DOI's %r and %r differ", doi_a, doi_b)
+            logger.longdebug("  DOI's %r and %r differ", doi_a, doi_b)
             return False
         if (doi_a and doi_a == doi_b):
             logger.longdebug("  DOI's %r and %r are the same --> DUPLICATES", doi_a, doi_b)
@@ -530,12 +542,12 @@ class DuplicatesFilter(BibFilter):
         arxiv_a = cache_a['arxivinfo']
         arxiv_b = cache_b['arxivinfo']
 
-        #logger.longdebug("  arxiv_a=%r, arxiv_b=%r", arxiv_a, arxiv_b)
+        logger.longdebug("  arxiv_a=%r, arxiv_b=%r", arxiv_a, arxiv_b)
         
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
-            #logger.longdebug("  arXiv IDS %r and %r differ", arxiv_a['arxivid'], arxiv_b['arxivid'])
+            logger.longdebug("  arXiv IDS %r and %r differ", arxiv_a['arxivid'], arxiv_b['arxivid'])
             return False
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
@@ -548,29 +560,29 @@ class DuplicatesFilter(BibFilter):
         note_cl_a = cache_a['note_cleaned']
         note_cl_b = cache_b['note_cleaned']
         if (note_cl_a and note_cl_b and note_cl_a != note_cl_b):
-            #logger.longdebug("  Notes (cleaned up) %r and %r differ", note_cl_a, note_cl_b)
+            logger.longdebug("  Notes (cleaned up) %r and %r differ", note_cl_a, note_cl_b)
             return False
 
         # create abbreviations of the journals by keeping only the uppercase letters
         j_abbrev_a = cache_a['j_abbrev']
         j_abbrev_b = cache_b['j_abbrev']
         if (j_abbrev_a and j_abbrev_b and j_abbrev_a != j_abbrev_b):
-            #logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
+            logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
-            #logger.longdebug("  Volumes %r and %r differ", a.fields.get('volume', None), b.fields.get('volume', None))
+            logger.longdebug("  Volumes %r and %r differ", a.fields.get('volume', None), b.fields.get('volume', None))
             return False
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
-            #logger.longdebug("  Numbers %r and %r differ", a.fields.get('numbers', None), b.fields.get('numbers', None))
+            logger.longdebug("  Numbers %r and %r differ", a.fields.get('numbers', None), b.fields.get('numbers', None))
             return False
 
         titlea = cache_a['title_clean']
         titleb = cache_b['title_clean']
 
         if (titlea and titleb and titlea != titleb):
-            #logger.longdebug("  Titles %r and %r differ.", titlea, titleb)
+            logger.longdebug("  Titles %r and %r differ.", titlea, titleb)
             return False
 
         # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
@@ -580,7 +592,6 @@ class DuplicatesFilter(BibFilter):
         #    import pdb; pdb.set_trace()
         #    return False
 
-        #print "entries match!"
         logger.longdebug("  Entries %s and %s match.", a.key, b.key)
 
         # well at this point the publications are pretty much duplicates
