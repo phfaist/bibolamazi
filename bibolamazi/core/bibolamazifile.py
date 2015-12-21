@@ -1043,7 +1043,12 @@ class BibolamaziFile(object):
             parser = inputbibtex.Parser()
             bib_data = None
             with io.StringIO(data) as stream:
-                bib_data = parser.parse_stream(stream)
+                try:
+                    bib_data = parser.parse_stream(stream)
+                except Exception as e:
+                    # We don't skip to next source, because we've encountered an error in the
+                    # BibTeX data itself: the file itself was properly found. So raise an error.
+                    raise BibolamaziBibtexSourceError(unicode(e), fname=src)
 
             if (self._bibliographydata is None):
                 # initialize bibliography data
