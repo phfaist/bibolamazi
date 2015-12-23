@@ -108,7 +108,7 @@ class store_or_count(argparse.Action):
 
 
 
-rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL);
+rxkeyval = re.compile(ur'^([\w.-]+)=(.*)$', re.DOTALL);
 
 class store_key_val(argparse.Action):
     """
@@ -132,24 +132,24 @@ class store_key_val(argparse.Action):
         # parse key-value pair in values
         if (isinstance(values, list)):
             values = values[0];
-        m = rxkeyval.match(values);
+        m = rxkeyval.match(values)
         if not m:
-            raise self.exception("cannot parse key=value pair: "+repr(values));
+            raise self.exception("cannot parse key=value pair: "+repr(values))
 
         keyvalpair = (m.group(1), m.group(2),)
 
         if (not self.dest):
-            (key, val) = keyvalpair;
-            setattr(namespace, key, val);
+            (key, val) = keyvalpair
+            setattr(namespace, key, val)
         else:
             try:
-                d = getattr(namespace, self.dest);
+                d = getattr(namespace, self.dest)
             except AttributeError:
                 pass
             if not d:
-                d = [];
-            d.append(keyvalpair);
-            setattr(namespace, self.dest, d);
+                d = []
+            d.append(keyvalpair)
+            setattr(namespace, self.dest, d)
 
 
 class store_key_bool(argparse.Action):

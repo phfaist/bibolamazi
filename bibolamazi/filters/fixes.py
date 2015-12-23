@@ -240,8 +240,8 @@ class FixesFilter(BibFilter):
             self.remove_full_braces_not_lang = None
 
         if protect_names is not None:
-            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+re.escape(x.strip())+r'\b', re.IGNORECASE))
-                                        for x in protect_names.split(',') ]);
+            self.protect_names = dict([ (x.strip(), re.compile(ur'\b'+re.escape(x.strip())+ur'\b', re.IGNORECASE))
+                                        for x in protect_names.split(u',') ]);
         else:
             self.protect_names = None;
 

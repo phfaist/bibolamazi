@@ -904,7 +904,7 @@ class DefaultFilterOptions:
         corresponding value is converted to the type the filter expects, in each case
         whenever possible (i.e. documented by the filter).
         """
-        
+
         logger.debug("parse_optionstring: "+self._filtername+"; fclass="+repr(self._fclass)
                      +"; optionstring="+optionstring);
 
@@ -915,9 +915,13 @@ class DefaultFilterOptions:
             defaults = []
 
         try:
-            parts = shlex.split(optionstring);
+            #
+            # shlex.split() doesn't work on unicode objects directly, need to encode it in
+            # 8-bit e.g. using 'utf-8'.
+            #
+            parts = [ x.decode('utf-8') for x in shlex.split(optionstring.encode('utf-8')) ]
         except ValueError as e:
-            raise FilterOptionsParseError("Error parsing option string: %s\n\t%s" %(e, optionstring.strip()),
+            raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s" %(e, optionstring.strip()),
                                           self._filtername)
         
         try:
@@ -945,7 +949,7 @@ class DefaultFilterOptions:
                 if (argspec.argtypename is not None):
                     typ = butils.resolve_type(argspec.argtypename, self._fmodule)
                 else:
-                    typ = str
+                    typ = unicode
                 kwargs[argname] = typ(argval)
             else:
                 kwargs[argname] = argval # raw type if we can't figure one out (could be
