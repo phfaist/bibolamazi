@@ -374,7 +374,7 @@ class FixesFilter(BibFilter):
                             if (pos + length == len(val)):
                                 # yes, all fine: the braces are one block for the field
                                 entry.fields[k] = val[1:-1];
-                        except LatexWalkerError:
+                        except latexwalker.LatexWalkerError:
                             logger.longdebug("LatexWalkerError while checking enclosing braces for key %s,"
                                              " for field %s = `%s' --ignoring", entry.key, k, val)
 
