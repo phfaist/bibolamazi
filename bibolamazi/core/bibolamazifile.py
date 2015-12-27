@@ -146,10 +146,6 @@ The line which defines the end of a config section in a bibolamazi file.
 """
 
 AFTER_CONFIG_TEXT = """\
-%
-%
-% ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
-%
 
 
 %
@@ -157,25 +153,15 @@ AFTER_CONFIG_TEXT = """\
 %
 %     https://github.com/phfaist/bibolamazi
 %
-% Bibolamazi collects bib entries from the sources listed in the configuration section
-% above, and merges them all into this file while applying the defined filters with
-% the given options. Your sources will not be altered.
 %
-% Any entries ABOVE the configuration section will be preserved as is, which means that
-% if you don't want to install bibolamazi or if it not installed, and you want to add
-% a bibliographic entry to this file, add it AT THE TOP OF THIS FILE.
-%
+% ALL CHANGES BEYOND THIS POINT WILL BE LOST NEXT TIME BIBOLAMAZI IS RUN.
 %
 
-
-
-
-
-"""
+"""# the value of the variable
 """
 Some text which is inserted immediately after the config section when saving
 bibolamazi files. Includes a warning about losing any changes.
-"""# docstring
+"""# the docstring
 
                     
 # this is fixed to utf-8. No alternatives, sorry.
@@ -1068,7 +1054,8 @@ class BibolamaziFile(object):
                 #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
                 #        duplcounter += 1
                 #
-                #    logger.warn('Repeated bibliography entry in other file: %s. Renamed duplicate occurence to %s.', oldkey, key)
+                #    logger.warn('Repeated bibliography entry in other file: %s. '+
+                #                'Renamed duplicate occurence to %s.', oldkey, key)
 
                 self._bibliographydata.add_entry(key, entry)
 
@@ -1186,10 +1173,21 @@ class BibolamaziFile(object):
 
 _TEMPLATE_HEADER = """\
 
+%
+% This bibliography database uses BIBOLAMAZI:
+%
+%     https://github.com/phfaist/bibolamazi
+%
+% Bibolamazi collects bib entries from given source bibtex files, and merges
+% them all into this file while applying the defined filters with the given
+% options. Your sources will not be altered.
+%
+% Additionnal stuff here will not be managed by bibolamazi and will not be
+% overwritten. You can e.g. temporarily add additional references here if you
+% don't have bibolamazi installed.
+%
 
-.. Additionnal stuff here will not be managed by bibolamazi. It will also not be
-.. overwritten. You can e.g. temporarily add additional references here if you
-.. don't have bibolamazi installed.
+
 
 
 """
