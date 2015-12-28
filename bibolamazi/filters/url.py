@@ -24,8 +24,8 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
-from bibolamazi.core.butils import getbool;
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
+from bibolamazi.core.butils import getbool
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 
 # for the arxiv info parser tool
 from .util import arxivutil
@@ -53,8 +53,9 @@ class UrlNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, Strip=False, StripAllIfDoiOrArxiv=False, StripDoiUrl=True, StripArxivUrl=True,
-                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False, StripForTypes=None):
-        """UrlNormalizeFilter constructor.
+                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False, StripForTypes=None,
+                 AddAsHowPublished=False, HowPublishedText='available at {urlstr}'):
+        r"""UrlNormalizeFilter constructor.
 
         Arguments:
           - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the other options.
@@ -73,25 +74,32 @@ class UrlNormalizeFilter(BibFilter):
                          stripping rules, keep only the first remaining URL, if any.  [default: False]
           - StripForTypes: strip all URLs specified for entries among the given list of types. Common
                          types to strip would be e.g. 'book' or 'phdthesis'.
+          - AddAsHowPublished(bool): Add a howpublished={available at \url{...}} entry to the bibtex.
+          - HowPublishedText: replace the 'available at ' text for -dAddAsHowPublished.  Use Python
+                         string formatting. Available keys are '{urlstr}' to insert list of URLs
+                         concatenated with a comma, '{url}' to insert the first url and the key 'urls'
+                         is passed the raw Python list as argument.
         """
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.strip = getbool(Strip);
-        self.stripallifdoiorarxiv = getbool(StripAllIfDoiOrArxiv);
-        self.stripdoiurl = getbool(StripDoiUrl);
-        self.striparxivurl = getbool(StripArxivUrl);
-        self.urlfromdoi = getbool(UrlFromDoi);
-        self.urlfromarxiv = getbool(UrlFromArxiv);
-        self.keepfirsturlonly = getbool(KeepFirstUrlOnly);
-        self.stripfortypes = None;
+        self.strip = getbool(Strip)
+        self.stripallifdoiorarxiv = getbool(StripAllIfDoiOrArxiv)
+        self.stripdoiurl = getbool(StripDoiUrl)
+        self.striparxivurl = getbool(StripArxivUrl)
+        self.urlfromdoi = getbool(UrlFromDoi)
+        self.urlfromarxiv = getbool(UrlFromArxiv)
+        self.keepfirsturlonly = getbool(KeepFirstUrlOnly)
+        self.stripfortypes = None
         if (StripForTypes is not None):
-            self.stripfortypes = [ x.strip()  for x in StripForTypes.split(',') ];
+            self.stripfortypes = [ x.strip()  for x in StripForTypes.split(',') ]
+        self.addashowpublished = getbool(AddAsHowPublished)
+        self.howpublishedtext = HowPublishedText
 
         logger.debug('url filter constructor')
         
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def prerun(self, bibolamazifile):
         arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
@@ -101,13 +109,13 @@ class UrlNormalizeFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        arxivinfo = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).getArXivInfo(entry.key);
+        arxivinfo = self.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).getArXivInfo(entry.key)
 
         # --- prepare urls[] list ---
         if ('url' in entry.fields):
-            urls = entry.fields['url'].split();
+            urls = entry.fields['url'].split()
         else:
-            urls = [];
+            urls = []
 
         logger.longdebug("%s: Urls is initially %r; arxivinfo=%r", entry.key, urls, arxivinfo)
 
@@ -131,26 +139,26 @@ class UrlNormalizeFilter(BibFilter):
         if (self.stripdoiurl):
             for url in urls:
                 if re.match(r'^http://dx.doi.org/', url):
-                    urls.remove(url);
+                    urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.striparxivurl):
             for url in urls:
                 if re.match(r'^http://arxiv.org/abs/', url):
-                    urls.remove(url);
+                    urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromdoi):
             if ('doi' in entry.fields):
-                urls.append("http://dx.doi.org/"+entry.fields['doi']);
+                urls.append("http://dx.doi.org/"+entry.fields['doi'])
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromarxiv):
             if (arxivinfo is not None):
-                urls.append("http://arxiv.org/abs/"+arxivinfo['arxivid']);
+                urls.append("http://arxiv.org/abs/"+arxivinfo['arxivid'])
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
@@ -160,16 +168,28 @@ class UrlNormalizeFilter(BibFilter):
                 
         logger.longdebug("%s: Urls is now %r", entry.key, urls)
 
-        # --- reformat the entry as needed, according to the modified urls[] list, and return it ---
+        # --- reformat the entry as needed, according to the modified urls[] list ---
 
         if (urls):
-            entry.fields['url'] = " ".join(urls);
+            entry.fields['url'] = " ".join(urls)
         else:
             entry.fields.pop('url', None)
+
+        # --- possibly add the howpublished={} key entry, if required to do so ---
+
+        if (self.addashowpublished):
+            if urls:
+                howpub = self.howpublishedtext.format(urlstr=", ".join([r'\url{%s}'%x for x in urls]),
+                                                      urls=urls,
+                                                      url=urls[0])
+                if 'howpublished' in entry.fields:
+                    entry.fields['howpublished'] += ' '+howpub
+                else:
+                    entry.fields['howpublished'] = howpub
 
         return
 
 
 def bibolamazi_filter_class():
-    return UrlNormalizeFilter;
+    return UrlNormalizeFilter
 
