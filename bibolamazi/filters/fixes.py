@@ -358,6 +358,20 @@ class FixesFilter(BibFilter):
             filter_entry_remove_type_from_phd(entry);
 
 
+        #
+        # do this before 'self.remove_full_braces', because the latter depends on language
+        #
+        if (self.rename_language):
+            if 'language' in entry.fields:
+                logger.longdebug('Maybe fixing language in entry %s: lang=%r', entry.key, entry.fields['language'])
+                entry.fields['language'] = self.rename_language_rx.sub(
+                    lambda m: self.rename_language.get(m.group('lang').lower(), m.group('lang')),
+                    entry.fields['language']
+                )
+                logger.longdebug('  --> language is now = %r', entry.fields['language'])
+
+
+
         def filter_entry_remove_full_braces(entry, fieldlist):
             for k,v in entry.fields.iteritems():
                 if (fieldlist is None or k in fieldlist):
@@ -408,15 +422,6 @@ class FixesFilter(BibFilter):
 
         if (self.protect_names):
             filter_protect_names(entry);
-
-        if (self.rename_language):
-            if 'language' in entry.fields:
-                logger.longdebug('Maybe fixing language in entry %s: lang=%r', entry.key, entry.fields['language'])
-                entry.fields['language'] = self.rename_language_rx.sub(
-                    lambda m: self.rename_language.get(m.group('lang').lower(), m.group('lang')),
-                    entry.fields['language']
-                )
-                logger.longdebug('  --> language is now = %r', entry.fields['language'])
 
         if (self.fix_mendeley_bug_urls):
             for fld in self.fix_mendeley_bug_urls:
