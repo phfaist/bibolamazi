@@ -20,6 +20,27 @@ use this filter. (These packages are not listed as a requirement in the
 
 """)
 
+
+# see http://stackoverflow.com/a/14399775/1694896
+def _parse_requires(fn):
+    """
+    Parse PIP requirements given in that file.  Nothing special, just splits lines and
+    ignores those which start by '#'.
+    """
+    with open(fn) as f:
+        required = f.read().splitlines()
+    return [ r
+             for r in required
+             if r.strip() and r.lstrip()[:1] != '#'
+    ]
+
+
+install_requires = _parse_requires('pip_requirements.txt'),
+#
+sys.stderr.write("(Requirements: %s)\n\n\n" % (install_requires))
+
+
+
 setup(
     name = "bibolamazi",
     version = bibolamaziversion_str,
@@ -48,7 +69,8 @@ setup(
     zip_safe = True,
     scripts = ['bin/bibolamazi'],
 
-    install_requires = ['pybtex>=0.16', 'arxiv2bib>=1.0.2', 'pylatexenc>=0.9'],
+    #install_requires = ['pybtex>=0.16', 'arxiv2bib>=1.0.2', 'pylatexenc>=0.9'],
+    install_requires = install_requires,
 
     package_data = {
         # If any package contains *.txt or *.rst files, include them:

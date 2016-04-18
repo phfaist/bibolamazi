@@ -16,11 +16,9 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-print "__file__=", repr(__file__)
 _bibolamaziroot = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, _bibolamaziroot)
-print "sys.path = ", repr(sys.path)
-import bibolamazi_3rdparty
+#import bibolamazi_3rdparty  # no, assume installed via pip
 import bibolamazi.init
 from bibolamazi.core import version as bibolamaziversion
 

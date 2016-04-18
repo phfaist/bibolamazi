@@ -1,0 +1,15 @@
+
+#
+# pybtex.
+#
+pybtex >= 0.16
+
+#
+# arxiv2bib.
+#
+arxiv2bib >= 1.0.2
+
+#
+# My own pylatexenc.
+#
+pylatexenc >= 0.9
