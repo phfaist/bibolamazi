@@ -1108,6 +1108,45 @@ class BibolamaziFile(object):
         self._bibliographydata.add_entries(bibentries)
 
 
+    def runFilter(self, filter_instance):
+        #
+        # See how the filter acts. It can act on the full bibolamazifile object, it can act on the
+        # full list of entries (possibly adding/deleting entries etc.), or it can act on a single
+        # entry.
+        #
+        action = filter_instance.action()
+
+        logger.info("Filter: %s" %(filter_instance.getRunningMessage()))
+
+        filter_instance.prerun(self)
+
+        #
+        # pass the whole bibolamazifile to the filter. the filter can actually do
+        # whatever it wants with it (!!)
+        #
+        if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
+            filter_instance.filter_bibolamazifile(self)
+
+            logger.debug('filter '+filter_instance.name()+' filtered the full bibolamazifile.')
+            return
+
+        #
+        # filter all the bibentries one by one throught the filter. The filter can only
+        # process a single bibentry at a time.
+        #
+        if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
+
+            bibdata = self.bibliographyData()
+
+            for (k, entry) in bibdata.entries.iteritems():
+                filter_instance.filter_bibentry(entry)
+
+            logger.debug('filter '+filter_instance.name()+' filtered each of the the bibentries one by one.');
+            return
+
+        raise ValueError("Bad value for BibFilter.action(): "+repr(action))
+        
+
 
     def saveToFile(self):
         """

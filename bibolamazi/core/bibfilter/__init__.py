@@ -99,14 +99,21 @@ class BibFilter(object):
     """
 
    
-    def __init__(self, *pargs, **kwargs):
+    def __init__(self, **kwargs):
         """
-        Constructor. No particular arguments are expected; any received are passed further
-        to superclasses.
+        Constructor.  Sets the filtername to the name of the filter class.
+
+        A warning is emitted for each argument in `kwargs`, which presumably was ignored
+        by the superclass and passed on.
         """
+        super(BibFilter, self).__init__()
+
         self._bibolamazifile = None;
-        super(BibFilter, self).__init__(*pargs, **kwargs)
         self._filtername = self.__class__.__name__
+
+        for k,v in kwargs.iteritems():
+            logger.warning("Warning: %s: discarding unused argument: %s=%r", self._filtername, k, v)
+
 
 
     def action(self):

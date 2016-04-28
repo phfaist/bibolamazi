@@ -330,44 +330,8 @@ def run_bibolamazi_args(args):
             s += "===================================================\n"
             logger.longdebug(s)
 
-        #
-        # See how the filter acts. It can act on the full bibolamazifile object, it can act on the
-        # full list of entries (possibly adding/deleting entries etc.), or it can act on a single
-        # entry.
-        #
-        action = filtr.action();
+        bfile.runFilter(filtr)
 
-        logger.info("Filter: %s" %(filtr.getRunningMessage()));
-
-        filtr.prerun(bfile)
-
-        #
-        # pass the whole bibolamazifile to the filter. the filter can actually do
-        # whatever it wants with it (!!)
-        #
-        if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
-            filtr.filter_bibolamazifile(bfile);
-
-            logger.debug('filter '+filtr.name()+' filtered the full bibolamazifile.');
-            continue
-
-        #
-        # filter all the bibentries one by one throught the filter. The filter can only
-        # process a single bibentry at a time.
-        #
-        if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
-
-            bibdata = bfile.bibliographyData();
-
-            for (k, entry) in bibdata.entries.iteritems():
-                filtr.filter_bibentry(entry);
-
-            bfile.setBibliographyData(bibdata);
-
-            logger.debug('filter '+filtr.name()+' filtered each of the the bibentries one by one.');
-            continue
-
-        raise ValueError("Bad value for BibFilter.action(): "+repr(action));
 
     # and output everything back to the original file.
     bfile.saveToFile();

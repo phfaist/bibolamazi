@@ -563,11 +563,11 @@ def make_filter(name, optionstring):
         x = fmodule.parse_args(optionstring);
         try:
             (pargs, kwargs) = x;
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
     else:
         fopts = DefaultFilterOptions(name, fclass=fclass)
-        (pargs, kwargs) = fopts.parse_optionstring(optionstring);
+        (pargs, kwargs) = fopts.parse_optionstring(optionstring)
 
     # first, validate the arguments to the function call with inspect.getcallargs()
     try:
