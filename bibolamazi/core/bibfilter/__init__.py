@@ -111,10 +111,20 @@ class BibFilter(object):
         self._bibolamazifile = None;
         self._filtername = self.__class__.__name__
 
+        self._delegate_filters = []
+
         for k,v in kwargs.iteritems():
             logger.warning("Warning: %s: discarding unused argument: %s=%r", self._filtername, k, v)
 
 
+    def addDelegateFilter(self, ......):
+        self._delegate_filters.append(filter_instance)
+
+    def runDelegateFilter(self..................................):
+        .........
+        pass
+
+    
 
     def action(self):
         """

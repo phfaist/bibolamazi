@@ -92,11 +92,11 @@ class BibUserCacheDic(collections.MutableMapping):
 
     def set_validation(self, tokenchecker, validate=True):
         """
-        Set a function that will calculate the `token' for a given entry, for cache
-        validation. The function `fn` shall compute a value based on a key (and possibly
-        cache value) of the cache, such that comparision with `fncmp` (by default
-        equality) will tell us if the entry is out of date. See the documentation for the
-        :py:mod:`tokencheckers` modules for more information about cache validation.
+        Set a function that will calculate the token for a given entry, for cache validation.
+        The `tokenchecker` should be a
+        :py:class:`~core.bibusercache.tokencheckers.TokenChecker` instance. See the
+        documentation for the :py:mod:`tokencheckers` modules for more information about
+        cache validation.
 
         If `validate` is `True`, then we immediately validate the contents of the cache.
         """
@@ -509,15 +509,15 @@ class BibUserCacheAccessor(object):
     right away, refresh it on demand only, etc.
 
     Filters access the cache by requesting an instance to the accessor. This is done by
-    calling :py:meth:`~core.bibolamazifile.BibolamaziFile.cache_accessor` (you can use
-    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile` to get a pointer to the
+    calling :py:meth:`~core.bibolamazifile.BibolamaziFile.cacheAccessor()` (you can use
+    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile()` to get a pointer to the
     `bibolamazifile` object.). Filters should declare in advance which caches they would
     like to have access to by reimplementing the
     :py:meth:`~core.bibfilter.BibFilter.requested_cache_accessors` method.
 
     Accessors are free to implement their public API how they deem it best. There is no
-    obligation or particular structure to follow. (Although `refresh_cache()`,
-    `fetch_missing_items(list)`, or similar function names may be typical.)
+    obligation or particular structure to follow. (Although `refreshCache()`,
+    `fetchMissingItems(list)`, or similar function names may be typical.)
 
     Cache accessor objects are instantiated by the bibolamazi file. Their constructors
     should accept a keyword argument `bibolamazifile` and pass it on to the superclass
@@ -526,6 +526,7 @@ class BibUserCacheAccessor(object):
     argument of this constructor should be a fixed string passed by the subclass,
     identifying this cache (e.g. 'arxiv_info').
     """
+    
     def __init__(self, cache_name, bibolamazifile, **kwargs):
         super(BibUserCacheAccessor, self).__init__(**kwargs)
         self._cache_name = cache_name
@@ -607,6 +608,7 @@ class BibUserCacheAccessor(object):
         reimplement) this function. This function gets called by the `BibolamaziFile`.
         """
         self._cache_obj = cache_obj
+
 
     def bibolamaziFile(self):
         """
