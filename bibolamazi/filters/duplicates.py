@@ -841,7 +841,7 @@ def delatex(s):
     # Fixed: bug in pybtex.
     #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
     #    s = s.replace(r'\ ', r'\~');
-    return latex2text.latex2text(unicode(s));
+    return latex2text.latex2text(unicode(s), tolerant_parsing=True);
 
 
 
