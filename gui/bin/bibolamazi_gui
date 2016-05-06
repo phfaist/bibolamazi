@@ -30,8 +30,12 @@ try:
     import bibolamazi.init
 except ImportError:
     # realpath() needed for resolving executable symlink
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..')))
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')))
+    ourrootpath = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..'))
+    sys.path.append(ourrootpath)
+    sys.path.append(os.path.join(ourrootpath, 'gui'))
+    sys.path.append(os.path.join(ourrootpath, '3rdparty', 'pybtex'))
+    sys.path.append(os.path.join(ourrootpath, '3rdparty', 'arxiv2bib'))
+    sys.path.append(os.path.join(ourrootpath, '3rdparty', 'pylatexenc'))
     import bibolamazi.init
 
 
