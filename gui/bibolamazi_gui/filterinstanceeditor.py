@@ -77,7 +77,7 @@ class RegisteredArgInputType:
     def setEditorData(self, editor):
         if (isinstance(self.type_arg_input, EnumArgType)):
             for i in xrange(editor.count()):
-                if (str(editor.itemText(i)) == self.value):
+                if (unicode(editor.itemText(i)) == self.value):
                     editor.setCurrentIndex(i)
                     return
             return
@@ -87,7 +87,7 @@ class RegisteredArgInputType:
 
     def valueOf(self, editor):
         if (isinstance(self.type_arg_input, EnumArgType)):
-            val = str(editor.itemText(editor.currentIndex()))
+            val = unicode(editor.itemText(editor.currentIndex()))
             logger.debug("GOT VALUE: %r", val)
             return val
 
@@ -114,7 +114,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     @pyqtSlot(QString)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
-        filtername = str(filtername)
+        filtername = unicode(filtername)
 
         if (not force and self._filtername == filtername):
             return
@@ -141,7 +141,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     @pyqtSlot(QString)
     def setOptionString(self, optionstring, force=False, noemit=False):
-        optionstring = str(optionstring);
+        optionstring = unicode(optionstring);
 
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
         if (not force and optionstring == self._optionstring):
@@ -190,7 +190,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     @pyqtSlot('QString')
     def removeArgument(self, argname):
-        argname = str(argname)
+        argname = unicode(argname)
         
         logger.debug('remove argument: %r', argname)
         
@@ -271,7 +271,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if (role == Qt.DisplayRole):
                 if (val is None):
                     return QVariant()
-                return QVariant(QString(str(val)))
+                return QVariant(QString(unicode(val)))
 
             # request editing value of argument
             if (role == Qt.EditRole):
@@ -279,7 +279,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     fmodule = filters_factory.get_module(self._filtername, False)
                     typ = butils.resolve_type(arg.argtypename, fmodule)
                 else:
-                    typ = str
+                    typ = unicode
                 if (hasattr(typ, 'type_arg_input')):
                     editval = RegisteredArgInputType(typ, val)
                 elif (issubclass(typ, basestring) and val is None):
@@ -360,7 +360,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (arg.argtypename is not None):
             typ = butils.resolve_type(arg.argtypename, filters_factory.get_module(self._filtername, False))
         if (typ == None):
-            typ = str
+            typ = unicode
             
         value = typ(value)
 
@@ -401,7 +401,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 if (arg.argtypename == 'bool'):
                     slist.append('-d'+soptarg+('' if v else '=False'))
                 else:
-                    slist.append('-s'+soptarg+'='+butils.quotearg(str(v)))
+                    slist.append('-s'+soptarg+'='+butils.quotearg(unicode(v)))
                     
             done_args.append(arg.argname)
 
@@ -409,7 +409,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         for (k,v) in self._kwargs.iteritems():
             if (k in done_args):
                 continue
-            slist.append('-s' + k + '=' + butils.quotearg(str(v)))
+            slist.append('-s' + k + '=' + butils.quotearg(unicode(v)))
 
         self._optionstring = " ".join(slist)
 
@@ -514,7 +514,7 @@ class FilterInstanceEditor(QWidget):
     
 
     def filterName(self):
-        return str(self.ui.cbxFilter.currentText())
+        return unicode(self.ui.cbxFilter.currentText()).encode('utf-8')
 
     def optionString(self):
         return self._filteroptionsmodel.optionstring()

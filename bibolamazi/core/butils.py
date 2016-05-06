@@ -138,6 +138,23 @@ def resolve_type(typename, in_module=None):
 
 
 def quotearg(x):
+    """
+    If `x` contains only non-special characters, it is returned as is.  The
+    non-special characters are: all alphanumerical chars, hyphen, dot, slash,
+    colon, tilde, percent, hash.  Otherwise, put the value `x` in double-quotes,
+    escaping all double-quotes and backslashes in the value of `x` by a
+    backslash.
+
+    The argument `x` may be either a python string or unicode object.
+
+    For example:
+    >>> print quotearg('kosher_name_clean')
+    kosher_name_clean
+    >>> print quotearg('dirty name with spaces')
+    \"dirty name with spaces\"
+    >>> print quotearg(r'''really\\dirty\"name::with/tons&#$of special chars!!!''')
+    \"really\\\\dirty\\\"name::with/tons&#$of special chars!!!\"
+    """
     if (re.match(r'^[-\w./:~%#]+$', x)):
         # only very sympathetic chars
         return x

@@ -601,14 +601,14 @@ class BibolamaziFile(object):
         directly calls :py:meth:`setRawConfig()`.
         """
         # prefix every line by a percent sign.
-        config_block = re.sub(r'^', '% ', configdata, flags=re.MULTILINE)
+        config_block = re.sub(ur'^', u'% ', unicode(configdata), flags=re.MULTILINE)
 
         # force ending in '\n' (but don't duplicate existing '\n')
-        if (not len(config_block) or config_block[-1] != '\n'):
-            config_block += '\n'
+        if (not len(config_block) or config_block[-1] != u'\n'):
+            config_block += u'\n'
 
         # add start and end bibolamazi config section tags.
-        config_block = CONFIG_BEGIN_TAG + '\n' + config_block + CONFIG_END_TAG + '\n'
+        config_block = CONFIG_BEGIN_TAG + u'\n' + config_block + CONFIG_END_TAG + u'\n'
 
         self.setRawConfig(config_block)
 
@@ -630,6 +630,7 @@ class BibolamaziFile(object):
         if (self._load_state < BIBOLAMAZIFILE_READ):
             raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
 
+        configblock = unicode(configblock)
         self._config = configblock
         self._config_data = self._config_data_from_block(configblock)
         # in case we were in a more advanced state, reset to READ state, because config has changed.
@@ -737,6 +738,7 @@ class BibolamaziFile(object):
 
         for line in stream:
             lineno += 1
+            line = unicode(line)
             
             if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
                 state = ST_CONFIG
@@ -753,7 +755,7 @@ class BibolamaziFile(object):
                 # remove leading % signs
                 #logger.debug("adding line to config_block: "+line)
                 cline = line
-                if (len(cline) and cline[-1] == '\n'):
+                if (len(cline) and cline[-1] == u'\n'):
                     cline = cline[:-1]
                 config_block_lines.append(cline)
 
@@ -765,7 +767,7 @@ class BibolamaziFile(object):
             raise NotBibolamaziFileError("Not a bibolamazi file--no config section found.",
                                          fname=self._fname, lineno=lineno)
 
-        config_block = "\n".join(config_block_lines)
+        config_block = u"\n".join(config_block_lines)
 
         # save the splitted data into these data structures.
         self._header = content[ST_HEADER]
@@ -796,7 +798,7 @@ class BibolamaziFile(object):
         latestcmd = emptycmd
         # all 'src:' commands must be BEFORE any 'filter:' commands. `current_section`
         # indicates in which command block we are ('src' or 'filter')
-        current_section = 'src'
+        current_section = u'src'
         def complete_cmd():
             if (latestcmd.cmd is not None):
                 cmds.append(latestcmd)
@@ -805,11 +807,11 @@ class BibolamaziFile(object):
         for cline in configstream:
             thislineno += 1
 
-            if (re.match(r'^\s*%%', cline)):
+            if (re.match(ur'^\s*%%', cline)):
                 # ignore comments
                 continue
             
-            if (re.match(r'^\s*$', cline)):
+            if (re.match(ur'^\s*$', cline)):
                 # empty line -> forces the state back to an empty state. We now expect a
                 # new 'src:' or 'filter:' keyword
                 complete_cmd()
@@ -817,7 +819,7 @@ class BibolamaziFile(object):
                 continue
 
             # try to match to a new command
-            mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline)
+            mcmd = re.match(ur'^\s{0,1}(src|filter):\s*', cline)
             if (not mcmd):
                 if (latestcmd.cmd is None):
                     # no command
@@ -838,13 +840,13 @@ class BibolamaziFile(object):
             if (cmd == "filter"):
                 current_section = 'filter'
                 # extract filter name
-                mfiltername = re.match('^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest)
+                mfiltername = re.match(ur'^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest)
                 if (not mfiltername):
                     self._raise_parse_error("Expected filter name", lineno=thislineno)
                 filtername = mfiltername.group('filtername')
                 rest = rest[mfiltername.end():]
                 info['filtername'] = filtername
-            if cmd == "src" and current_section == 'filter':
+            if cmd == u"src" and current_section == u"filter":
                 self._raise_parse_error("'src:' commands must preceed any 'filter:' commands", lineno=thislineno)
 
             # and start cumulating stuff
@@ -992,7 +994,7 @@ class BibolamaziFile(object):
         bib_data = None
 
         is_url = False
-        if (re.match('^[A-Za-z0-9+_-]+://.*', src)):
+        if (re.match(ur'^[A-Za-z0-9+_-]+://.*', src)):
             is_url = True
         
         if (not is_url):
@@ -1230,7 +1232,7 @@ _TEMPLATE_HEADER = """\
 
 """
 
-_TEMPLATE_CONFIG = """\
+_TEMPLATE_CONFIG = u"""\
 %%%-BIB-OLA-MAZI-BEGIN-%%%
 %
 % %% This bibliography database uses BIBOLAMAZI:

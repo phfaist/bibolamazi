@@ -64,7 +64,7 @@ def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
                 )
         return m.group();
 
-    errortxt = str(Qt.escape(unicode(errortxt)))
+    errortxt = unicode(Qt.escape(unicode(errortxt)))
     errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
     try:
         # if wrap_pre = (start_tag, end_tag)
@@ -350,7 +350,7 @@ class OpenBibFile(QWidget):
             QMessageBox.critical(self, "No File!", "No file to save to!")
             return
 
-        config_data = str(self.ui.txtConfig.toPlainText())
+        config_data = unicode(self.ui.txtConfig.toPlainText())
 
         # ignore changes caused by ourselves
         self.fwatcher.blockSignals(True)
@@ -691,7 +691,7 @@ class OpenBibFile(QWidget):
         self._set_modified(True)
         logger.debug('modified!!')
 
-        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.setConfigData(unicode(self.ui.txtConfig.toPlainText()))
         self._bibolamazifile_reparse();
 
         self._do_update_edittools()
@@ -750,7 +750,7 @@ class OpenBibFile(QWidget):
             # insert _after_ current cmd (-> +1 for next line, -1 to correct for offset starting at 1)
             insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend)))
 
-        insertcur.insertText(str(cmdtext)+'\n')
+        insertcur.insertText(unicode(cmdtext)+'\n')
         # select inserted text without the newline
         insertcur.movePosition(QTextCursor.Left)
         insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
@@ -843,14 +843,14 @@ class OpenBibFile(QWidget):
         self._ignore_change_for_edittools = False
 
         # now, reparse the config
-        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.setConfigData(unicode(self.ui.txtConfig.toPlainText()))
         self._bibolamazifile_reparse()
         
 
     @pyqtSlot(QStringList)
     def on_sourceListEditor_sourceListChanged(self, sourcelist):
 
-        sourcelist = [str(x) for x in list(sourcelist)]
+        sourcelist = [unicode(x) for x in list(sourcelist)]
 
         cmdtext = "src: " + ("\n     ".join([butils.quotearg(x) for x in sourcelist])) + "\n"
 
@@ -889,7 +889,7 @@ class OpenBibFile(QWidget):
         doc = self.ui.txtConfig.document();
         for n in xrange(self.bibolamaziFile.configLineNo(cmd.lineno),
                         self.bibolamaziFile.configLineNo(cmd.linenoend)+1):
-            cmdtext.append(str(doc.findBlockByNumber(n-1).text()))
+            cmdtext.append(unicode(doc.findBlockByNumber(n-1).text()))
         cmdtext = "\n".join(cmdtext)
 
         self.add_favorite_cmdtext(cmdtext)
@@ -902,7 +902,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot(QString)
     def add_favorite_cmdtext(self, cmdtext):
-        cmdtext = str(cmdtext)
+        cmdtext = unicode(cmdtext)
         
         self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmdtext[:30], cmd=cmdtext))
 
