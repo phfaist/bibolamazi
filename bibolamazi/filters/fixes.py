@@ -137,6 +137,18 @@ For now, the implemented fixes are:
     `-dFixMendeleyBugUrls' variant is given, the only the 'url' field is
     processed.
 
+  -dProtectCaptialLetterAfterDot
+  -dProtectCaptialLetterAtBegin
+  -sProtectCaptialLetterAfterDot=title
+  -sProtectCaptialLetterAtBegin=title
+    In the given fields, or in the title if -dProtectCapitalLetter... is
+    provided, protect capital letters following full stops and colons
+    (...AfterDot) or at the beginning of the field (...AtBegin) using braces, to
+    ensure they are displayed as capital letters. For example,
+        title = {Exorcist {XIV}. Part {I}. From {Maxwell} to {Szilard}}
+    becomes
+        title = {{E}xorcist {XIV}. {P}art {I}. {F}rom {Maxwell} to {Szilard}}
+
 The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
 
@@ -170,6 +182,8 @@ class FixesFilter(BibFilter):
                  auto_urlify=False,
                  rename_language={},
                  fix_mendeley_bug_urls=False,
+                 protect_capital_letter_after_dot=False,
+                 protect_capital_letter_at_begin=False,
                  fix_swedish_a=False):
         """
         Constructor method for FixesFilter
@@ -195,6 +209,10 @@ class FixesFilter(BibFilter):
           - fix_mendeley_bug_urls(bool): fix the `url' field for Mendeley's
                 buggy output. Pass on a list of fields (comma-separated) to specify
                 which fields to act on; by default if enabled only 'url'.
+          - protect_capital_letter_after_dot: place first (capital) letter after a full
+                stop or colon in protective braces (for the the given bibtex fields)
+          - protect_capital_letter_at_begin: place first (capital) letter of a field in
+                protective braces (for the the given bibtex fields)
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
                 transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
                 problem occurs in files generated e.g. by Mendeley); revtex tends to
@@ -281,13 +299,32 @@ class FixesFilter(BibFilter):
         else:
             self.fix_mendeley_bug_urls = []
 
+        if protect_capital_letter_after_dot:
+            try:
+                self.protect_capital_letter_after_dot = CommaStrList(protect_capital_letter_after_dot)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.protect_capital_letter_after_dot = ['title']
+        else:
+            self.protect_capital_letter_after_dot = [];
+
+        if protect_capital_letter_at_begin:
+            try:
+                self.protect_capital_letter_at_begin = CommaStrList(protect_capital_letter_at_begin)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.protect_capital_letter_at_begin = ['title']
+        else:
+            self.protect_capital_letter_at_begin = [];
+
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
                       'protect_names=%r, remove_file_field=%r, '
                       'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r, '
                       'map_annote_to_note=%r, auto_urlify=%r, rename_language=%r, rename_language_rx=%r, '
-                      'fix_mendeley_bug_urls=%r')
+                      'fix_mendeley_bug_urls=%r,'
+                      'protect_capital_letter_after_dot=%r,protect_capital_letter_at_begin=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -299,7 +336,8 @@ class FixesFilter(BibFilter):
                         self.auto_urlify,
                         self.rename_language,
                         (self.rename_language_rx.pattern if self.rename_language_rx else None),
-                        self.fix_mendeley_bug_urls
+                        self.fix_mendeley_bug_urls,
+                        self.protect_capital_letter_after_dot, self.protect_capital_letter_at_begin
                         ));
         
 
@@ -422,6 +460,24 @@ class FixesFilter(BibFilter):
 
         if (self.protect_names):
             filter_protect_names(entry);
+
+        # include stuff like:
+        #
+        # title = "{\textquotedblleft}Relative State{\textquotedblright} Formulation of Quantum Mechanics"
+        #
+        _rx_prcap_lead = ur'([^\w\{]|\\[A-Za-z]+|\{\\[A-Za-z]+\})*'
+        if (self.protect_capital_letter_after_dot):
+            for fld in self.protect_capital_letter_after_dot:
+                if fld in entry.fields:
+                    entry.fields[fld] = re.sub(ur'(?P<dotlead>[.:]'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                                               lambda m: m.group('dotlead')+u'{'+m.group('ucletter')+u'}',
+                                               entry.fields[fld])
+        if (self.protect_capital_letter_at_begin):
+            for fld in self.protect_capital_letter_at_begin:
+                if fld in entry.fields:
+                    entry.fields[fld] = re.sub(ur'^(?P<lead>'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                                               lambda m: m.group('lead')+u'{'+m.group('ucletter')+u'}',
+                                               entry.fields[fld])
 
         if (self.fix_mendeley_bug_urls):
             for fld in self.fix_mendeley_bug_urls:
