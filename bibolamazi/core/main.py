@@ -141,7 +141,7 @@ def get_args_parser():
         "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
         add_help=False);
 
-    parser.add_argument('-o', '--output', action='store', dest='output', metavar="FILE", nargs=1,
+    parser.add_argument('-o', '--output', action='store', dest='output', metavar="FILE", nargs='?',
                         help="Do not overwrite the original bibolamazi file, and write "
                         "instead bibolamazi output to FILE. (Note: the cache is still "
                         "saved using the old file name with extension \".bibolamazicache\" "
