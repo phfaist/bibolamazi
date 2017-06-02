@@ -148,11 +148,11 @@ def quotearg(x):
     The argument `x` may be either a python string or unicode object.
 
     For example:
-    >>> print quotearg('kosher_name_clean')
+    >>> print(quotearg('kosher_name_clean'))
     kosher_name_clean
-    >>> print quotearg('dirty name with spaces')
+    >>> print(quotearg('dirty name with spaces'))
     \"dirty name with spaces\"
-    >>> print quotearg(r'''really\\dirty\"name::with/tons&#$of special chars!!!''')
+    >>> print(quotearg(r'''really\\dirty\"name::with/tons&#$of special chars!!!'''))
     \"really\\\\dirty\\\"name::with/tons&#$of special chars!!!\"
     """
     if (re.match(r'^[-\w./:~%#]+$', x)):

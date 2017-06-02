@@ -596,7 +596,7 @@ class DuplicatesFilter(BibFilter):
         # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
         #
         #if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
-        #    print "pages differ!"
+        #    print("pages differ!")
         #    import pdb; pdb.set_trace()
         #    return False
 

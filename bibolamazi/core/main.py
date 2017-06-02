@@ -19,12 +19,12 @@
 #                                                                              #
 ################################################################################
 
-
 """
 This module contains the code that implements Bibolamazi's main functionality. It also
 provides the basic tools for the command-line interface.
 """
 
+from __future__ import print_function
 
 import os
 import os.path
@@ -227,9 +227,9 @@ def main(argv=sys.argv[1:]):
 
     except:
         
-        print
-        print " -- EXCEPTION --"
-        print
+        print()
+        print(" -- EXCEPTION --")
+        print()
 
         # debugging post-mortem
         import traceback; traceback.print_exc()
