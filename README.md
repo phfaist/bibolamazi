@@ -8,15 +8,16 @@ bibtex files produced by your favorite reference manager, and applying specific
 rules.
 
 
-Download Bibolamazi
--------------------
+Download & Install Bibolamazi
+-----------------------------
 
 Download the application from our github releases page:
 
 [**Download Releases Page**](https://github.com/phfaist/bibolamazi/releases)
 
-These binaries don't need any installation, you can just download them, place
-them wherever you want, and run them.
+Download the binary for your system, place it wherever you want, and run
+them. On Mac OS X, place the application bundle `Bibolamazi.app` into your
+`/Applications/` folder.
 
 If you prefer to use the command-line interface, you should clone this
 repository; check out [the docs][thedocsdownloadandinstall].
@@ -38,10 +39,10 @@ bibolamzi python API, and more.
 Credits and Copyright
 ---------------------
 
-Copyright (c) 2014 Philippe Faist: ![phf-contact](phf.png)
+Copyright (c) 2016 Philippe Faist: ![phf-contact](phf.png)
 
-Bibolamazi is developed and maintained by Philippe Faist. It is distributed under the [GNU
-General Public License (GPL)][gpl], Version 3 or higher.
+Bibolamazi is developed and maintained by Philippe Faist. It is distributed
+under the [GNU General Public License (GPL)][gpl], Version 3 or higher.
 
 [gpl]: http://www.gnu.org/copyleft/gpl.html
 

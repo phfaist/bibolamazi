@@ -137,6 +137,36 @@ For now, the implemented fixes are:
     `-dFixMendeleyBugUrls' variant is given, the only the 'url' field is
     processed.
 
+  -dProtectCaptialLetterAfterDot
+  -dProtectCaptialLetterAtBegin
+  -sProtectCaptialLetterAfterDot=title
+  -sProtectCaptialLetterAtBegin=title
+    In the given fields, or in the title if -dProtectCapitalLetter... is
+    provided, protect capital letters following full stops and colons
+    (...AfterDot) or at the beginning of the field (...AtBegin) using braces, to
+    ensure they are displayed as capital letters. For example,
+        title = {Exorcist {XIV}. Part {I}. From {Maxwell} to {Szilard}}
+    becomes
+        title = {{E}xorcist {XIV}. {P}art {I}. {F}rom {Maxwell} to {Szilard}}
+
+  -dConvertDblQuotes
+  -sConvertDblQuotes=title
+  -dConvertSglQuotes
+  -sConvertSglQuotes=title
+  -sDblQuoteMacro=\qq
+  -sSglQuoteMacro=\q
+    If provided, expressions in double (resp. single) quotes are detected and
+    automatically converted to use the given LaTeX macro (which defaults to \qq
+    and \q, respectively). For example,
+        title = {``Relative state'' formulation of quantum mechanics}
+    is converted to
+        title = {\qq{Relative state} formulation of quantum mechanics}
+
+    This may be useful if you do fancy stuff with your quotes in your document,
+    such as permuting the punctuation etc. (See also the LaTeX package
+    {csquotes})
+
+
 The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
 
@@ -170,6 +200,13 @@ class FixesFilter(BibFilter):
                  auto_urlify=False,
                  rename_language={},
                  fix_mendeley_bug_urls=False,
+                 protect_capital_letter_after_dot=False,
+                 protect_capital_letter_at_begin=False,
+                 convert_dbl_quotes=False,
+                 convert_sgl_quotes=False,
+                 dbl_quote_macro=r'\qq',
+                 sgl_quote_macro=r'\q',
+                 # obsolete:
                  fix_swedish_a=False):
         """
         Constructor method for FixesFilter
@@ -192,9 +229,21 @@ class FixesFilter(BibFilter):
           - auto_urlify: automatically wrap URLs into `\\url{}' commands
           - rename_language(ColonCommaStrDict): replace e.g. `de' by `Deutsch'. Use
                 format `alias1:language1,alias2:language2...'.
-          - fix_mendeley_bug_urls(bool): fix the `url' field for Mendeley's
+          - fix_mendeley_bug_urls: fix the `url' field for Mendeley's
                 buggy output. Pass on a list of fields (comma-separated) to specify
                 which fields to act on; by default if enabled only 'url'.
+          - protect_capital_letter_after_dot: place first (capital) letter after a full
+                stop or colon in protective braces (for the the given bibtex fields). Pass
+                true or false here, or a list of fields on which to act (by default 'title')
+          - protect_capital_letter_at_begin: place first (capital) letter of a field in
+                protective braces (for the the given bibtex fields). Pass
+                true or false here, or a list of fields on which to act (by default 'title')
+          - convert_dbl_quotes: detect & convert double-quoted expressions to invoke a LaTeX macro. Pass
+                true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
+          - dbl_quote_macro: the macro to use for double-quotes when convert_dbl_quotes is set
+          - convert_sgl_quotes: detect & convert single-quoted expressions to invoke a LaTeX macro. Pass
+                true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
+          - sgl_quote_macro: the macro to use for single-quotes when convert_sgl_quotes is set
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
                 transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
                 problem occurs in files generated e.g. by Mendeley); revtex tends to
@@ -216,7 +265,8 @@ class FixesFilter(BibFilter):
         self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
-            raise BibFilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
+            raise BibFilterError(self.name(),
+                                 "Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
 
@@ -281,13 +331,53 @@ class FixesFilter(BibFilter):
         else:
             self.fix_mendeley_bug_urls = []
 
+        if protect_capital_letter_after_dot:
+            try:
+                self.protect_capital_letter_after_dot = CommaStrList(protect_capital_letter_after_dot)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.protect_capital_letter_after_dot = ['title']
+        else:
+            self.protect_capital_letter_after_dot = []
+
+        if protect_capital_letter_at_begin:
+            try:
+                self.protect_capital_letter_at_begin = CommaStrList(protect_capital_letter_at_begin)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.protect_capital_letter_at_begin = ['title']
+        else:
+            self.protect_capital_letter_at_begin = []
+
+        self.dbl_quote_macro = dbl_quote_macro
+        self.sgl_quote_macro = sgl_quote_macro
+        if convert_dbl_quotes:
+            try:
+                self.convert_dbl_quotes = CommaStrList(convert_dbl_quotes)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.convert_dbl_quotes = ['title','abstract','booktitle','series']
+        else:
+            self.convert_dbl_quotes = []
+        if convert_sgl_quotes:
+            try:
+                self.convert_sgl_quotes = CommaStrList(convert_sgl_quotes)
+            except TypeError:
+                # just passed a bool, e.g. 'True'
+                self.convert_sgl_quotes = ['title','abstract','booktitle','series']
+        else:
+            self.convert_sgl_quotes = []
+        
+
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
                       'protect_names=%r, remove_file_field=%r, '
                       'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r, '
                       'map_annote_to_note=%r, auto_urlify=%r, rename_language=%r, rename_language_rx=%r, '
-                      'fix_mendeley_bug_urls=%r')
+                      'fix_mendeley_bug_urls=%r,'
+                      'protect_capital_letter_after_dot=%r,protect_capital_letter_at_begin=%r,'
+                      'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -299,7 +389,9 @@ class FixesFilter(BibFilter):
                         self.auto_urlify,
                         self.rename_language,
                         (self.rename_language_rx.pattern if self.rename_language_rx else None),
-                        self.fix_mendeley_bug_urls
+                        self.fix_mendeley_bug_urls,
+                        self.protect_capital_letter_after_dot, self.protect_capital_letter_at_begin,
+                        self.convert_dbl_quotes,self.dbl_quote_macro,self.convert_sgl_quotes,self.sgl_quote_macro
                         ));
         
 
@@ -423,11 +515,57 @@ class FixesFilter(BibFilter):
         if (self.protect_names):
             filter_protect_names(entry);
 
+        # include stuff like:
+        #
+        # title = "{\textquotedblleft}Relative State{\textquotedblright} Formulation of Quantum Mechanics"
+        #
+        _rx_prcap_lead = ur'([^\w\{]|\\[A-Za-z]+|\{\\[A-Za-z]+\})*'
+        if (self.protect_capital_letter_after_dot):
+            for fld in self.protect_capital_letter_after_dot:
+                if fld in entry.fields:
+                    entry.fields[fld] = re.sub(ur'(?P<dotlead>[.:]'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                                               lambda m: m.group('dotlead')+u'{'+m.group('ucletter')+u'}',
+                                               entry.fields[fld])
+        if (self.protect_capital_letter_at_begin):
+            for fld in self.protect_capital_letter_at_begin:
+                if fld in entry.fields:
+                    entry.fields[fld] = re.sub(ur'^(?P<lead>'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                                               lambda m: m.group('lead')+u'{'+m.group('ucletter')+u'}',
+                                               entry.fields[fld])
+
         if (self.fix_mendeley_bug_urls):
             for fld in self.fix_mendeley_bug_urls:
                 if fld in entry.fields:
                     entry.fields[fld] = do_fix_mendeley_bug_urls(entry.fields[fld])
 
+        _rx_dbl_quotes = [
+            re.compile(ur"``(?P<contents>.*?)''"),
+            # this pattern must be tested first, because otherwise we leave stray braces
+            re.compile(ur'\{\\textquotedblleft\}(?P<contents>.*?)\{\\textquotedblright\}'),
+            re.compile(ur'\\textquotedblleft(?P<contents>.*?)\\textquotedblright'),
+        ]
+        _rx_sgl_quotes = [
+            # try to match correct quote in " `My dad's dog' is a nice book ".
+            re.compile(ur"`(?P<contents>.*?)'(?=\W|$)"),
+            # this pattern must be tested first, because otherwise we leave stray braces
+            re.compile(ur'\{\\textquoteleft\}(?P<contents>.*?)\{\\textquoteright\}'),
+            re.compile(ur'\\textquoteleft(?P<contents>.*?)\\textquoteright'),
+        ]
+        if (self.convert_dbl_quotes):
+            for fld in self.convert_dbl_quotes:
+                if fld in entry.fields:
+                    for rx in _rx_dbl_quotes:
+                        entry.fields[fld] = re.sub(rx,
+                                                   lambda m: self.dbl_quote_macro+u"{"+m.group('contents')+u"}",
+                                                   entry.fields[fld])
+        if (self.convert_sgl_quotes):
+            for fld in self.convert_sgl_quotes:
+                if fld in entry.fields:
+                    for rx in _rx_sgl_quotes:
+                        entry.fields[fld] = re.sub(rx,
+                                                   lambda m: self.sgl_quote_macro+u"{"+m.group('contents')+u"}",
+                                                   entry.fields[fld])
+                    
         if (self.remove_file_field):
             if ('file' in entry.fields):
                 del entry.fields['file'];

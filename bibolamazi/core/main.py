@@ -141,8 +141,14 @@ def get_args_parser():
         "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
         add_help=False);
 
+    parser.add_argument('-o', '--output', action='store', dest='output', metavar="FILE", nargs='?',
+                        help="Do not overwrite the original bibolamazi file, and write "
+                        "instead bibolamazi output to FILE. (Note: the cache is still "
+                        "saved using the old file name with extension \".bibolamazicache\" "
+                        "for future use.)")
+
     parser.add_argument('-N', '--new', action=argparseactions.opt_init_empty_template, nargs=1,
-                        metavar="[new_filename.bib]",
+                        metavar="NEW_FILENAME",
                         help="Create a new bibolamazi file with a template configuration.");
     parser.add_argument('-F', '--list-filters', action=argparseactions.opt_list_filters, dest='list_filters',
                         help="Show a list of available filters along with their description, and exit.");
@@ -191,6 +197,7 @@ def get_args_parser():
                         ))
 
     parser.add_argument('bibolamazifile',
+                        # note the %'s are parsed as formatting:
                         help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
                         'configuration tags.');
 
@@ -333,8 +340,13 @@ def run_bibolamazi_args(args):
         bfile.runFilter(filtr)
 
 
-    # and output everything back to the original file.
-    bfile.saveToFile();
+    # and output everything ...
+    if args.output:
+        # ...  to the specified file:
+        bfile.saveToFile(fname=args.output)
+    else:
+        # ...  or back to the original file:
+        bfile.saveToFile()
 
 
     logger.debug('Done.');

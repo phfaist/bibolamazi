@@ -75,9 +75,9 @@ class FilterError(Exception):
     event of an error inside the filter.
     """
     def __init__(self, errorstr, name=None):
-        self.name = name;
-        self.errorstr = errorstr;
-        Exception.__init__(self, unicode(self));
+        self.name = name
+        self.errorstr = errorstr
+        Exception.__init__(self, unicode(self))
 
     def setName(self, name):
         self.name = name

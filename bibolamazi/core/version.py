@@ -23,13 +23,13 @@
 # This is the current BIBOLAMAZI version.
 # Bump the number here for different version numbers.
 
-version_str = "3.2.post1"
+version_str = "3.2.post2"
 """
 The version string. This is increased upon each release.
 """
 
 
-copyright_year = "2015"
+copyright_year = "2017"
 """
 Year of copyright.
 """

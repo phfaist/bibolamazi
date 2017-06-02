@@ -286,7 +286,6 @@ class BibolamaziFile(object):
                 self.load(to_state=load_to_state)
         else:
             logger.debug("No file given. Don't forget to set one with load()")
-
             
     # Note: the name "loadState()" would have been ambiguous: it could be understood
     # as an imperative
@@ -553,7 +552,14 @@ class BibolamaziFile(object):
         Filters should only access the cache through cache accessors. See
         `cacheAccessor()`.
         """
-        return self._fname + '.bibolamazicache'
+        return BibolamaziFile.cacheFileNameFor(self._fname)
+
+    @staticmethod
+    def cacheFileNameFor(fname):
+        """
+        Return the cache file name corresponding to the given bibolamazi file name.
+        """
+        return fname + '.bibolamazicache'
         
 
     def cacheAccessor(self, klass):
@@ -1150,11 +1156,12 @@ class BibolamaziFile(object):
         
 
 
-    def saveToFile(self):
+    def saveToFile(self, fname=None, cachefname=None):
         """
         Save the current bibolamazi file object to disk.
 
-        This will write to the file :py:meth:`fname()` in order:
+        This method will write the bibliography data to the file specified to by `fname`
+        (or :py:meth:`fname()` if `fname=None`).  Specifically, we will write in order:
 
           - the raw header data (:py:meth:`rawHeader()`) unchanged
 
@@ -1166,10 +1173,27 @@ class BibolamaziFile(object):
         A warning message is included after the config section that the remainder of the
         file was automatically generated.
 
+        The cache is also saved, unless `cachefname=False`.  If `cachefname=None` (the
+        default) or `cachefname=True`, the cache is saved to the *old* file name with
+        extension '.bibolamazicache', that is, the one given by `self.fname()` and not in
+        `fname`. (The rationale is that we want to be able to use the cache next time we
+        open the file `self.fname()`.) You may also specify `cachefname=<file name>` to
+        save the cache to a specific file name. NOTE: this file is silently overwritten.
+
         As the file `fname` is expected to already exist, it is always silently
-        overwritten (so be careful).
+        overwritten (so be careful). Same with the cache file.
         """
-        with codecs.open(self._fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
+        if fname is None:
+            fname = self._fname
+
+        if cachefname is None or (isinstance(cachefname, bool) and cachefname):
+            cachefname = self.cacheFileName()
+        elif isinstance(cachefname, bool) and not cachefname:
+            cachefname = ''
+        else:
+            pass # cachefname has a specific file name
+            
+        with codecs.open(fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header)
             f.write(self._config)
             f.write(_repl(AFTER_CONFIG_TEXT, {
@@ -1196,8 +1220,7 @@ class BibolamaziFile(object):
             logger.info("Updated output file `"+self._fname+"'.")
 
         # if we have cache to save, save it
-        if (self._user_cache and self._user_cache.hasCache()):
-            cachefname = self.cacheFileName()
+        if (cachefname and self._user_cache and self._user_cache.hasCache()):
             try:
                 with open(cachefname, 'wb') as f:
                     logger.debug("Writing cache to file %s" %(cachefname))
