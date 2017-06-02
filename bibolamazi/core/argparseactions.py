@@ -467,9 +467,9 @@ class opt_set_fine_log_levels(argparse.Action):
             except ValueError as e:
                 logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
                 continue
-            #print "setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
+            #print("setting Logger: modname=%r, getloggerargs=%r, thelogger=%r; to level %d"%(
             #    modname, getloggerargs, thelogger, thelevel
-            #)
+            #))
             thelogger.setLevel(thelevel)
             has_set_fine_levels = True
 
