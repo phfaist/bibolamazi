@@ -310,7 +310,7 @@ level 3.
 
 _simple_console_logging_setup_done = False
 
-def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
+def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr, level=None, capture_warnings=True):
     """
     Sets up the given logger object for simple console output.
 
@@ -364,6 +364,11 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
     # function) is reproduced
     logger.bibolamazi_formatter = formatter
 
+    if level is not None:
+        logger.setLevel(level)
+
+    if capture_warnings:
+        logging.captureWarnings(True)
     
 
 
@@ -372,14 +377,14 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr):
 
 # utility: enum_class for a log level
 
-from bibolamazi.core.bibfilter.argtypes import enum_class
-
-LogLevel = enum_class('LogLevel',
-                      [('CRITICAL', logging.CRITICAL),
-                       ('ERROR', logging.ERROR),
-                       ('WARNING', logging.WARNING),
-                       ('INFO', logging.INFO),
-                       ('DEBUG', logging.DEBUG),
-                       ('LONGDEBUG', LONGDEBUG)],
-                      default_value='INFO',
-                      value_attr_name='levelno')
+# Avoid cyclic imports!!!! Don't do this here, this module is imported from bibolamazi.init
+#from bibolamazi.core.bibfilter.argtypes import enum_class
+# LogLevel = enum_class('LogLevel',
+#                       [('CRITICAL', logging.CRITICAL),
+#                        ('ERROR', logging.ERROR),
+#                        ('WARNING', logging.WARNING),
+#                        ('INFO', logging.INFO),
+#                        ('DEBUG', logging.DEBUG),
+#                        ('LONGDEBUG', LONGDEBUG)],
+#                       default_value='INFO',
+#                       value_attr_name='levelno')

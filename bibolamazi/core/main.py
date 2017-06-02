@@ -58,6 +58,8 @@ from .bibfilter import factory as filterfactory
 logger = logging.getLogger(__name__)
 
 
+from .bibfilter.argtypes import LogLevel
+
 
 # ------------------------------------------------------------------------------
 
@@ -193,7 +195,7 @@ def get_args_parser():
                         item no module is given (but just a level or number), then the
                         root logger is addressed. Possible levels are (%s)
                         ''')%(
-                            ", ".join( (x[0] for x in blogger.LogLevel.levelnos) )
+                            ", ".join( (x[0] for x in LogLevel.levelnos) )
                         ))
 
     parser.add_argument('bibolamazifile',

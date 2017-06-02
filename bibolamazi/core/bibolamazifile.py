@@ -19,11 +19,18 @@
 #                                                                              #
 ################################################################################
 
-
 """
 The Main bibolamazifile module: this contains the :py:class:`BibolamaziFile` class
 definition.
 """
+
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
 
 
 import re
@@ -34,7 +41,10 @@ import os.path
 import codecs
 import shlex
 import urllib
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from datetime import datetime
 import logging
 
@@ -355,7 +365,7 @@ class BibolamaziFile(object):
                     logger.longdebug("File "+repr(self._fname)+" opened.")
                     self._read_config_stream(f, self._fname)
             except IOError as e:
-                raise BibolamaziError(u"Can't open file `%s': %s" %(self._fname, unicode(e)))
+                raise BibolamaziError("Can't open file `%s': %s" %(self._fname, unicodestr(e)))
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()
@@ -607,7 +617,7 @@ class BibolamaziFile(object):
         directly calls :py:meth:`setRawConfig()`.
         """
         # prefix every line by a percent sign.
-        config_block = re.sub(ur'^', u'% ', unicode(configdata), flags=re.MULTILINE)
+        config_block = re.sub(r'^', u'% ', unicodestr(configdata), flags=re.MULTILINE)
 
         # force ending in '\n' (but don't duplicate existing '\n')
         if (not len(config_block) or config_block[-1] != u'\n'):
@@ -636,7 +646,7 @@ class BibolamaziFile(object):
         if (self._load_state < BIBOLAMAZIFILE_READ):
             raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
 
-        configblock = unicode(configblock)
+        configblock = unicodestr(configblock)
         self._config = configblock
         self._config_data = self._config_data_from_block(configblock)
         # in case we were in a more advanced state, reset to READ state, because config has changed.
@@ -706,7 +716,7 @@ class BibolamaziFile(object):
 
         data_lines = []
         
-        sio = io.StringIO(unicode(inputconfigdata))
+        sio = io.StringIO(unicodestr(inputconfigdata))
         is_first = True
         for line in sio:
             if (is_first):
@@ -744,7 +754,7 @@ class BibolamaziFile(object):
 
         for line in stream:
             lineno += 1
-            line = unicode(line)
+            line = unicodestr(line)
             
             if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
                 state = ST_CONFIG
@@ -798,7 +808,7 @@ class BibolamaziFile(object):
     def _parse_config(self):
         # now, parse the configuration.
         self._config_data = self._config_data_from_block(self._config)
-        configstream = io.StringIO(unicode(self._config_data))
+        configstream = io.StringIO(unicodestr(self._config_data))
         cmds = []
         emptycmd = BibolamaziFileCmd(cmd=None, text="", lineno=-1, linenoend=-1, info={})
         latestcmd = emptycmd
@@ -813,11 +823,11 @@ class BibolamaziFile(object):
         for cline in configstream:
             thislineno += 1
 
-            if (re.match(ur'^\s*%%', cline)):
+            if (re.match(r'^\s*%%', cline)):
                 # ignore comments
                 continue
             
-            if (re.match(ur'^\s*$', cline)):
+            if (re.match(r'^\s*$', cline)):
                 # empty line -> forces the state back to an empty state. We now expect a
                 # new 'src:' or 'filter:' keyword
                 complete_cmd()
@@ -825,7 +835,7 @@ class BibolamaziFile(object):
                 continue
 
             # try to match to a new command
-            mcmd = re.match(ur'^\s{0,1}(src|filter):\s*', cline)
+            mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline)
             if (not mcmd):
                 if (latestcmd.cmd is None):
                     # no command
@@ -846,7 +856,7 @@ class BibolamaziFile(object):
             if (cmd == "filter"):
                 current_section = 'filter'
                 # extract filter name
-                mfiltername = re.match(ur'^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest)
+                mfiltername = re.match(r'^\s*(?P<filtername>(?:[\w.]+:)?\w+)(\s|$)', rest)
                 if (not mfiltername):
                     self._raise_parse_error("Expected filter name", lineno=thislineno)
                 filtername = mfiltername.group('filtername')
@@ -886,13 +896,13 @@ class BibolamaziFile(object):
                     filterinstance.setInvokationName(filname)
                     self._filters.append(filterinstance)
                 except factory.NoSuchFilter as e:
-                    self._raise_parse_error(str(e), lineno=cmd.lineno)
+                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
                 except factory.NoSuchFilterPackage as e:
-                    self._raise_parse_error(str(e), lineno=cmd.lineno)
+                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
                 except factory.FilterError as e:
                     import traceback
                     logger.debug("FilterError:\n" + traceback.format_exc())
-                    self._raise_parse_error(unicode(e),
+                    self._raise_parse_error(unicodestr(e),
                                             lineno=cmd.lineno)
 
                 # see if we have to register a new cache accessor
@@ -907,7 +917,7 @@ class BibolamaziFile(object):
                             raise BibolamaziError(
                                 (u"Error in cache %s: Exception while instantiating the class:\n"
                                  u"%s: %s")
-                                %( req_cache.__name__, e.__class__.__name__, unicode(e) )
+                                %( req_cache.__name__, e.__class__.__name__, unicodestr(e) )
                                 )
                         
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'")
@@ -1000,7 +1010,7 @@ class BibolamaziFile(object):
         bib_data = None
 
         is_url = False
-        if (re.match(ur'^[A-Za-z0-9+_-]+://.*', src)):
+        if (re.match(r'^[A-Za-z0-9+_-]+://.*', src)):
             is_url = True
         
         if (not is_url):
@@ -1041,7 +1051,7 @@ class BibolamaziFile(object):
                 except Exception as e:
                     # We don't skip to next source, because we've encountered an error in the
                     # BibTeX data itself: the file itself was properly found. So raise an error.
-                    raise BibolamaziBibtexSourceError(unicode(e), fname=src)
+                    raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
 
             if (self._bibliographydata is None):
                 # initialize bibliography data
@@ -1069,7 +1079,7 @@ class BibolamaziFile(object):
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the
             # BibTeX data itself: the file itself was properly found. So raise an error.
-            raise BibolamaziBibtexSourceError(unicode(e), fname=src)
+            raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
 
         return True
 

@@ -19,6 +19,14 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 import re
 
 import bibolamazi.init
@@ -50,6 +58,7 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
     `enumobject.mode`.
     """
 
+    @python_2_unicode_compatible
     class ThisEnumArgClass:
         _values = values;
         _values_list = [x[0] for x in _values]
@@ -81,7 +90,7 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
                 return (0 if default_value is None else self._parse_value(default_value))
 
             # value given by key
-            svalue = str(value)
+            svalue = unicodestr(value)
             if (svalue in self._values_dict):
                 return self._values_dict.get(svalue)
             try:
@@ -158,6 +167,7 @@ def _escape_lst(x):
 
 _rx_unescape_lst = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
 
+@python_2_unicode_compatible
 class CommaStrList(list):
     """
     A list of values, specified as a comma-separated string.
@@ -188,11 +198,8 @@ class CommaStrList(list):
             
         super(CommaStrList, self).__init__(iterable)
 
-    def __unicode__(self):
-        return u",".join([_escape_lst(unicode(x)) for x in self]);
-
     def __str__(self):
-        return self.__unicode__().encode('utf-8')
+        return u",".join([_escape_lst(unicodestr(x)) for x in self])
 
 
 
@@ -203,13 +210,14 @@ class ColonCommaStrDictArgType:
     def __init__(self):
         pass
 
-_rx_escape_dic = re.compile(r'(\\|,:)');
+_rx_escape_dic = re.compile(r'(\\|,|:)');
 def _escape_dic(x):
     return _rx_escape_dic.sub(lambda m: '\\'+m.group(1), x);
 
 _rx_unescape_val = re.compile(r'\\(?P<char>.)');
 _rx_unescape_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*');
 
+@python_2_unicode_compatible
 class ColonCommaStrDict(dict):
     """
     A dictionary of values, specified as a comma-separated string of pairs
@@ -252,12 +260,26 @@ class ColonCommaStrDict(dict):
             super(ColonCommaStrDict, self).__init__(*args, **kwargs)
 
 
-    def __unicode__(self):
-        return u",".join([_escape_dic(unicode(k))+(':'+_escape_dic(unicode(v)) if v is not None else '')
-                          for k,v in self.iteritems()]);
-
     def __str__(self):
-        return self.__unicode__().encode('utf-8')
+        return u",".join([_escape_dic(unicodestr(k))+(':'+_escape_dic(unicodestr(v)) if v is not None else '')
+                          for k,v in iteritems(self)]);
 
 
 
+
+#
+# A special type for a Logging Level
+#
+
+import logging
+from bibolamazi.core.blogger import LONGDEBUG
+
+LogLevel = enum_class('LogLevel',
+                      [('CRITICAL', logging.CRITICAL),
+                       ('ERROR', logging.ERROR),
+                       ('WARNING', logging.WARNING),
+                       ('INFO', logging.INFO),
+                       ('DEBUG', logging.DEBUG),
+                       ('LONGDEBUG', LONGDEBUG)],
+                      default_value='INFO',
+                      value_attr_name='levelno')

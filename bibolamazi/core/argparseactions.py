@@ -44,6 +44,8 @@ from .butils import getbool
 
 logger = logging.getLogger(__name__)
 
+from .bibfilter.argtypes import LogLevel
+
 
 def run_pager(text):
     """
@@ -108,7 +110,7 @@ class store_or_count(argparse.Action):
 
 
 
-rxkeyval = re.compile(ur'^([\w.-]+)=(.*)$', re.DOTALL);
+rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL);
 
 class store_key_val(argparse.Action):
     """
@@ -463,7 +465,7 @@ class opt_set_fine_log_levels(argparse.Action):
                 getloggerargs['name'] = modname
             thelogger = logging.getLogger(**getloggerargs)
             try:
-                thelevel = blogger.LogLevel(m.group('level')).levelno
+                thelevel = LogLevel(m.group('level')).levelno
             except ValueError as e:
                 logger.warning("Bad fine-grained log level setting: bad level `%s': %s", m.group('level'), e)
                 continue

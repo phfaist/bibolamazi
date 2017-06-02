@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
@@ -348,11 +355,11 @@ class ArxivNormalizeFilter(BibFilter):
             # directly leave entry stripped.
             return
 
-        origentryfields = CaseInsensitiveDict(entry.fields.iteritems())
+        origentryfields = CaseInsensitiveDict(iteritems(entry.fields))
 
         def add_note(entry, arxivinfo):
             if (self.note_string):
-                d = CaseInsensitiveDict(origentryfields.iteritems())
+                d = CaseInsensitiveDict(iteritems(origentryfields))
                 d.update(arxivinfo)
                 note = self.note_string % TolerantReplacer(d);
             elif (self.note_string_fmt):

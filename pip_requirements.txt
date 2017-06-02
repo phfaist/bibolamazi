@@ -2,7 +2,7 @@
 #
 # pybtex.
 #
-pybtex >= 0.16
+pybtex >= 0.19
 
 #
 # arxiv2bib.
@@ -13,3 +13,8 @@ arxiv2bib >= 1.0.2
 # My own pylatexenc.
 #
 pylatexenc >= 0.9
+
+#
+# `future` for both python2 & python3 support
+#
+future

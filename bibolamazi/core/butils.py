@@ -23,6 +23,14 @@
 Various utilities for use within all of the Bibolamazi Project.
 """
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 
 import re
 import types
@@ -102,7 +110,7 @@ def getbool(x):
         return (int(x) != 0)
     except (TypeError, ValueError):
         pass
-    if (isinstance(x, basestring)):
+    if isinstance(x, (str,basestring)):
         m = re.match(r'^\s*(t(?:rue)?|1|y(?:es)?|on)\s*$', x, re.IGNORECASE);
         if m:
             return True

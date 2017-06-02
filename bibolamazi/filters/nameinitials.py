@@ -19,17 +19,25 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
 logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
+from pybtex.textutils import abbreviate
 
-from pylatexenc import latex2text;
+from pylatexenc import latex2text
 
-from bibolamazi.core.butils import getbool;
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
+from bibolamazi.core.butils import getbool
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 
 
 HELP_AUTHOR = u"""\
@@ -60,6 +68,7 @@ roles to consider (see pybtex API), one or more among ['author', 'editor']
 """
 
 
+
 class NameInitialsFilter(BibFilter):
 
     helpauthor = HELP_AUTHOR
@@ -75,11 +84,11 @@ class NameInitialsFilter(BibFilter):
           - names_to_utf8(bool): Convert LaTeX escapes to UTF-8 characters in names in
             bib file. (default: True)
         """
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.roles = roles;
+        self.roles = roles
         if not self.roles:
-            self.roles = ['author'];
+            self.roles = ['author']
 
         self._names_to_utf8 = getbool(names_to_utf8)
         self._only_single_letter_firsts = getbool(only_single_letter_firsts)
@@ -88,7 +97,7 @@ class NameInitialsFilter(BibFilter):
         
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def filter_bibentry(self, entry):
         #
@@ -98,35 +107,37 @@ class NameInitialsFilter(BibFilter):
         for role in self.roles:
             if role not in entry.persons:
                 continue
+
             for k in range(len(entry.persons[role])):
-                p = entry.persons[role][k];
+
+                p = entry.persons[role][k]
                 # de-latex the person first
-                pstr = unicode(p);
+                pstr = unicodestr(p)
                 # BUG: FIXME: remove space after any macros
-                pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr); # replace "blah\macro blah" by "blah\macro{}blah"
+                pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr) # replace "blah\macro blah" by "blah\macro{}blah"
                 if (self._names_to_utf8):
                     pstr = latex2text.latex2text(pstr)
+
                 p = Person(pstr)
+
                 if self._only_single_letter_firsts:
-                    from pybtex.textutils import abbreviate
-                    def getparts(p, x):
-                        for part in p.get_part(x, False):
-                            if len(part) == 1:
-                                yield abbreviate(part)
-                            else:
-                                yield part
-                    pnew = Person('', " ".join(getparts(p, 'first')), " ".join(getparts(p, 'middle')),
-                                  " ".join(p.prelast()),
-                                  " ".join(p.last()), " ".join(p.lineage()));
+                    do_abbrev = lambda x: abbreviate(x) if len(x) == 1 else x
                 else:
-                    pnew = Person('', " ".join(p.first(True)), " ".join(p.middle(True)), " ".join(p.prelast()),
-                                  " ".join(p.last()), " ".join(p.lineage()));
+                    do_abbrev = abbreviate
+
+                pnew = Person(string='',
+                              first=" ".join([do_abbrev(x)  for x in p.first_names]),
+                              middle=" ".join([do_abbrev(x)  for x in p.middle_names]),
+                              prelast=" ".join(p.prelast_names),
+                              last=" ".join(p.last_names),
+                              lineage=" ".join(p.lineage_names))
+
                 entry.persons[role][k] = pnew
-                #logger.debug("nameinitials: %r became %r" % (p, pnew));
+                #logger.debug("nameinitials: %r became %r" % (p, pnew))
 
         return
 
 
 def bibolamazi_filter_class():
-    return NameInitialsFilter;
+    return NameInitialsFilter
 

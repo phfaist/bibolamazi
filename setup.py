@@ -69,7 +69,6 @@ setup(
     zip_safe = True,
     scripts = ['bin/bibolamazi'],
 
-    #install_requires = ['pybtex>=0.16', 'arxiv2bib>=1.0.2', 'pylatexenc>=0.9'],
     install_requires = install_requires,
 
     package_data = {

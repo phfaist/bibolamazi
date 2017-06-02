@@ -19,9 +19,18 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
+
+
 import arxiv2bib
 import re
-from urllib2 import URLError, HTTPError
+#from urllib2 import URLError, HTTPError # --> from future.standard_library import install_aliases
 import logging
 logger = logging.getLogger(__name__)
 
@@ -251,7 +260,7 @@ def detectEntryArXivInfo(entry):
         logger.warning("Couldn't find the year in arXiv ID %r", d['arxivid'])
     else:
         # 91->1991, 89->2089 (arXiv started in 1991)
-        d['year'] = str(1990 + (int(m.group('year')) - 90) % 100)
+        d['year'] = unicodestr(1990 + (int(m.group('year')) - 90) % 100)
         
     return d
 
@@ -383,7 +392,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                 #                "HTTP Connection Error: {0}".format(error.getcode())
                 #                )
 
-        for (k,ref) in arxivdict.iteritems():
+        for (k,ref) in iteritems(arxivdict):
             logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
             cache_entrydic[k]['reference'] = ref
             bibtex = ref.bibtex()
@@ -476,7 +485,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         # using only what we have. We'll do a query to the arXiv API in a second step
         # below.
         #
-        for k,v in bibdata.entries.iteritems():
+        for k,v in iteritems(bibdata.entries):
             if (k in entrydic):
                 continue
             arinfo = detectEntryArXivInfo(v);

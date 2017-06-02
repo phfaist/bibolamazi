@@ -29,7 +29,7 @@ from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import enum_class
 from bibolamazi.core.main import verbosity_logger_level
 
-from bibolamazi.core.blogger import LogLevel
+from bibolamazi.core.bibfilter.argtypes import LogLevel
 
 
 

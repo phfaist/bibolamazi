@@ -19,6 +19,14 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 import re
 
 import bibolamazi.init
@@ -30,9 +38,9 @@ class BibFilterError(BibolamaziError):
     Exception a filter should raise if it encounters an error.
     """
     def __init__(self, filtername, message):
-        if (not isinstance(filtername, basestring)):
+        if not isinstance(filtername, (basestring,str)):
             filtername = '<unknown>'
-        super(BibFilterError, self).__init__(u"Filter `"+filtername+"': "+unicode(message));
+        super(BibFilterError, self).__init__("Filter `%s': %s"%(filtername,unicodestr(message)))
         self.filtername = filtername
         self.message = message
 
@@ -111,18 +119,18 @@ class BibFilter(object):
         self._bibolamazifile = None;
         self._filtername = self.__class__.__name__
 
-        self._delegate_filters = []
+#        self._delegate_filters = []
 
-        for k,v in kwargs.iteritems():
+        for k,v in iteritems(kwargs):
             logger.warning("Warning: %s: discarding unused argument: %s=%r", self._filtername, k, v)
 
 
-    def addDelegateFilter(self, ......):
-        self._delegate_filters.append(filter_instance)
+#    def addDelegateFilter(self, ......):
+#        self._delegate_filters.append(filter_instance)
 
-    def runDelegateFilter(self..................................):
-        .........
-        pass
+#    def runDelegateFilter(self..................................):
+#        .........
+#        pass
 
     
 

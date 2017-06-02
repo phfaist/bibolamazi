@@ -19,9 +19,18 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
 from __future__ import unicode_literals, print_function
 from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
+import sys
+def to_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
+def from_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
+
 
 import sys
 import importlib
@@ -29,7 +38,6 @@ import re
 import os
 import os.path
 import shlex
-import inspect
 import argparse
 import textwrap
 import types
@@ -43,6 +51,10 @@ from bibolamazi.core.argparseactions import store_key_val, store_key_const, stor
 from bibolamazi.core import butils
 
 logger = logging.getLogger(__name__)
+
+
+import inspect
+inspect_getargspec = inspect.getargspec if sys.version_info[0] <= 2 else lambda f: inspect.getfullargspec(f)[:4]
 
 
 
@@ -80,7 +92,7 @@ class FilterError(Exception):
     def __init__(self, errorstr, name=None):
         self.name = name
         self.errorstr = errorstr
-        Exception.__init__(self, unicode(self))
+        Exception.__init__(self, unicodestr(self))
 
     def setName(self, name):
         self.name = name
@@ -288,12 +300,12 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
                 # warning. This is really useful for filter developers.
                 logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
                                name, filterpackname, dirstradd(filterdir), e.__class__.__name__,
-                               unicode(e), fmt_exc)
+                               unicodestr(e), fmt_exc)
             # and log the error for if, at the end, filter loading failed everywhere:
             # useful as additional information for debugging.
             import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
                                  %(name, filterpackname, dirstradd(filterdir), exctypestr,
-                                   unicode(e)))
+                                   unicodestr(e)))
             
         # first, search the actual module.
         oldsyspath = sys.path
@@ -301,12 +313,13 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         if filterdir:
             sys.path = [filterdir] + sys.path
         try:
+            logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, filterpackname))
             mod = importlib.import_module('.'+name, package=filterpackname);
         except ImportError:
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicode(exc_type.__name__), unicode(exc_value))
+                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__), unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
             # Attempt to understand whether the ImportError was due to a missing module
@@ -491,7 +504,7 @@ def detect_filters(force_redetect=False):
             try:
                 filterpackage = importlib.import_module(filterpack);
             except ImportError as e:
-                logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicode(e))
+                logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicodestr(e))
                 continue
             #thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
             detect_filters_in_module(filterpackage, filterpack)
@@ -563,6 +576,7 @@ def make_filter(name, options):
         #
         # parse option string
         #
+        optionstring = options
         if (hasattr(fmodule, 'parse_args')):
             x = fmodule.parse_args(optionstring);
             try:
@@ -585,7 +599,7 @@ def make_filter(name, options):
     except Exception as e:
         import traceback
         logger.debug("Filter exception:\n" + traceback.format_exc())
-        raise FilterCreateArgumentError(unicode(e), name)
+        raise FilterCreateArgumentError(unicodestr(e), name)
 
     # and finally, instantiate the filter.
 
@@ -598,7 +612,7 @@ def make_filter(name, options):
     except Exception as e:
         import traceback
         logger.debug("Filter exception:\n" + traceback.format_exc())
-        msg = unicode(e);
+        msg = unicodestr(e);
         if (not isinstance(e, FilterError) and e.__class__ != Exception):
             # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
             msg = e.__class__.__name__ + ": " + msg
@@ -648,7 +662,7 @@ class DefaultFilterOptions:
         self._fclass = fclass
 
         # find out what the arguments to the filter constructor are
-        self.fclass_arg_defs = inspect.getargspec(fclass.__init__)
+        self.fclass_arg_defs = inspect_getargspec(fclass.__init__)
         (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
 
         # get some doc about the parameters
@@ -669,7 +683,8 @@ class DefaultFilterOptions:
             docstr = doc[m.end():thisend].strip()
             # just format whitespace, don't fill. This is for the GUI. we'll fill to a
             # certain width only when specifying this as the argparse help argument.
-            docstr = textwrap.TextWrapper(width=sys.maxint, replace_whitespace=True, drop_whitespace=True).fill(docstr)
+            docstr = (textwrap.TextWrapper(width=100*len(docstr), replace_whitespace=True, drop_whitespace=True)
+                      .fill(docstr))
             argdoclist.append(_ArgDoc(argname=m.group('argname'),
                                       argtypename=m.group('argtypename'),
                                       doc=docstr))
@@ -759,7 +774,7 @@ class DefaultFilterOptions:
 
 
         argdocs_left = [ x.argname for x in argdoclist ];
-        for n in xrange(len(fargs)):
+        for n in range(len(fargs)):
             if n == 0: # Skip 'self' argument. Don't use "farg == 'self'" because in
                        # theory the argument could have any name.
                 continue
@@ -928,7 +943,7 @@ class DefaultFilterOptions:
             # shlex.split() doesn't work on unicode objects directly, need to encode it in
             # 8-bit e.g. using 'utf-8'.
             #
-            parts = [ x.decode('utf-8') for x in shlex.split(optionstring.encode('utf-8')) ]
+            parts = [ from_native_str(x) for x in shlex.split(to_native_str(optionstring)) ]
         except ValueError as e:
             raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s" %(e, optionstring.strip()),
                                           self._filtername)
@@ -958,7 +973,7 @@ class DefaultFilterOptions:
                 if (argspec.argtypename is not None):
                     typ = butils.resolve_type(argspec.argtypename, self._fmodule)
                 else:
-                    typ = unicode
+                    typ = unicodestr
                 kwargs[argname] = typ(argval)
             else:
                 kwargs[argname] = argval # raw type if we can't figure one out (could be
@@ -1032,7 +1047,7 @@ class DefaultFilterOptions:
         n_deflts_offset = len(fargs)-len(defaults)
         #
         fdeclpargs = []
-        for n in xrange(len(fargs)):
+        for n in range(len(fargs)):
             if n == 0: # Skip 'self' argument. Don't use "farg == 'self'" because in
                        # theory the argument could have any name.
                 continue

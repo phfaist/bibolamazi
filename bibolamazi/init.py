@@ -44,27 +44,30 @@ import importlib
 
 
 # subfolders of 3rdparty/ which we add to sys.path
-third_party = [
-    'pybtex',
-    'arxiv2bib',
-    'pylatexenc',
-]
+#
+# ### We no longer ship the 3rd party libs. They are all available in pip!
+#
+#third_party = [
+#    'pybtex',
+#    'arxiv2bib',
+#    'pylatexenc',
+#]
 
 # This base dir of bibolamazi
 base_dir = os.path.dirname(__file__)
 
 
-# setup python path correctly.
-# ----------------------------
-for mod in third_party:
-    # this should be done in the 'bibolamazi' script only, as last resort.
-    #try:
-    importlib.import_module(mod)
-    #    continue
-    #except ImportError:
-    #    # no such package--attempt to use pre-packaged version
-    #    sys.path += [os.path.abspath(os.path.join(base_dir, '..', '3rdparty', mod))]
-    #    importlib.import_module(mod)
+# # setup python path correctly.
+# # ----------------------------
+# for mod in third_party:
+#     # this should be done in the 'bibolamazi' script only, as last resort.
+#     #try:
+#     importlib.import_module(mod)
+#     #    continue
+#     #except ImportError:
+#     #    # no such package--attempt to use pre-packaged version
+#     #    sys.path += [os.path.abspath(os.path.join(base_dir, '..', '3rdparty', mod))]
+#     #    importlib.import_module(mod)
 
 
 #
