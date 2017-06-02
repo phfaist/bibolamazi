@@ -19,7 +19,9 @@
 #                                                                              #
 ################################################################################
 
-
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
 
 import sys
 import importlib
@@ -63,6 +65,7 @@ class NoSuchFilterPackage(Exception):
                            + (": "+errorstr if errorstr else ""));
         
 
+@python_2_unicode_compatible
 class FilterError(Exception):
     """
     Signifies that there was some error in creating or instanciating the filter, or that
@@ -85,12 +88,9 @@ class FilterError(Exception):
     def fmt(self, name):
         return "Filter %s: %s" %(name, self.errorstr)
 
-    def __unicode__(self):
+    def __str__(self):
         name = ( "`%s'" %(self.name) if self.name else "<unknown>" )
         return self.fmt(name)
-
-    def __str__(self):
-        return self.unicode().encode('latin1')
     
 
 class FilterOptionsParseError(FilterError):
@@ -103,8 +103,8 @@ class FilterOptionsParseError(FilterError):
 
 class FilterOptionsParseErrorHintSInstead(FilterOptionsParseError):
     """
-    As FilterOptionsParseError, but hinting that maybe -sOption=Value was meant instead of
-    -dOption=Value.
+    As `FilterOptionsParseError`, but hinting that maybe ``-sOption=Value`` was meant
+    instead of ``-dOption=Value``.
     """
     def fmt(self, name):
         return (super(FilterOptionsParseErrorHintSInstead, self).fmt(name)
@@ -483,7 +483,7 @@ def detect_filters(force_redetect=False):
 
     logger.debug("Detecting filters ... filter path is %r", filterpath)
 
-    for (filterpack, filterdir) in filterpath.iteritems():
+    for (filterpack, filterdir) in iteritems(filterpath):
         oldsyspath = sys.path
         try:
             if filterdir:
@@ -498,7 +498,7 @@ def detect_filters(force_redetect=False):
 
             if filterpack in _filter_precompiled_cache:
                 logger.longdebug("Loading precompiled filters from package %s...", filterpack)
-                for (fname,fmod) in _filter_precompiled_cache[filterpack].iteritems():
+                for (fname,fmod) in iteritems(_filter_precompiled_cache[filterpack]):
                     logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
                     if fname not in _filter_package_listings[filterpack]:
                         _filter_package_listings[filterpack].append(fname)
@@ -551,23 +551,32 @@ def filter_arg_parser(name):
 
 
 
-def make_filter(name, optionstring):
+def make_filter(name, options):
 
     fmodule = get_module(name);
 
     fclass = fmodule.bibolamazi_filter_class();
 
-    pargs = [];
-    kwargs = {};
-    if (hasattr(fmodule, 'parse_args')):
-        x = fmodule.parse_args(optionstring);
-        try:
-            (pargs, kwargs) = x;
-        except (TypeError, ValueError):
-            raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
+    pargs = []
+    kwargs = {}
+    if isinstance(options, (basestring,str)):
+        #
+        # parse option string
+        #
+        if (hasattr(fmodule, 'parse_args')):
+            x = fmodule.parse_args(optionstring);
+            try:
+                (pargs, kwargs) = x;
+            except (TypeError, ValueError):
+                raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
+        else:
+            fopts = DefaultFilterOptions(name, fclass=fclass)
+            (pargs, kwargs) = fopts.parse_optionstring(optionstring)
     else:
-        fopts = DefaultFilterOptions(name, fclass=fclass)
-        (pargs, kwargs) = fopts.parse_optionstring(optionstring)
+        #
+        # 'options' is already a ready-to-use tuple (pargs, kwargs)
+        #
+        pargs, kwargs = options
 
     # first, validate the arguments to the function call with inspect.getcallargs()
     try:
@@ -581,7 +590,7 @@ def make_filter(name, optionstring):
     # and finally, instantiate the filter.
 
     logger.debug(name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
-                  ','.join([repr(k)+'='+repr(v) for k,v in kwargs.iteritems()]) + ')');
+                  ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')');
 
     # exceptions caught here are those thrown from the filter constructor itself.
     try:
@@ -955,7 +964,7 @@ class DefaultFilterOptions:
                 kwargs[argname] = argval # raw type if we can't figure one out (could be
                                          # extra kwargs argument, or not documented)
 
-        for (arg, argval) in dargs.iteritems():
+        for (arg, argval) in iteritems(dargs):
             if (varargs and arg == '_args'):
                 optspec['_args'] = argval;
                 continue
