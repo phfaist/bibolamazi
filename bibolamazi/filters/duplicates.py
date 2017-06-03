@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -54,7 +61,7 @@ BIBALIAS_WARNING_HEADER = """\
 %       ANY CHANGES WILL BE LOST!
 """
 
-BIBALIAS_HEADER = ur"""
+BIBALIAS_HEADER = r"""
 %
 ####BIBALIAS_WARNING_HEADER####
 %
@@ -69,7 +76,7 @@ BIBALIAS_HEADER = ur"""
 
 """.replace('####BIBALIAS_WARNING_HEADER####\n', BIBALIAS_WARNING_HEADER)
 
-BIBALIAS_LATEX_DEFINITIONS = ur"""
+BIBALIAS_LATEX_DEFINITIONS = r"""
 
 %
 % The following will define the command \bibalias{<alias>}{<source>}, which will make
@@ -197,14 +204,14 @@ BORING_WORDS = (
 
 
 def normstr(x, lower=True):
-    if not isinstance(x, unicode):
-        x = unicode(x.decode('utf-8'))
+    if not isinstance(x, unicodestr):
+        x = unicodestr(x.decode('utf-8'))
 
     x2 = unicodedata.normalize('NFKD', x).strip();
     if lower:
         x2 = x2.lower();
     # remove any unicode compositions (accents, etc.)
-    x2 = re.sub(r'[^\x00-\x7f]', '', x2.encode('utf-8')).decode('utf-8')
+    x2 = re.sub(rb'[^\x00-\x7f]', b'', x2.encode('utf-8')).decode('utf-8')
     ## additionally, remove any special LaTeX chars which may be written differently.
     #x2 = re.sub(r'\\([a-zA-Z]+|.)', '', x2);
     x2 = re.sub(r'''[\{\}\|\.\+\?\*\,\'\"\\]''', '', x2);
@@ -214,14 +221,14 @@ def normstr(x, lower=True):
 
 def getlast(pers, lower=True):
     # join last names
-    last = normstr(unicode(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]), lower=lower)
+    last = normstr(unicodestr(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]), lower=lower)
     initial = re.sub('[^a-z]', '', normstr(u"".join(pers.first(True)),lower=lower),
                      flags=re.IGNORECASE)[0:1] # only first initial [a-z]
     return (last, initial);
 
 def fmtjournal(x):
-    if not isinstance(x, unicode):
-        x = unicode(x.decode('utf-8'))
+    if not isinstance(x, unicodestr):
+        x = unicodestr(x.decode('utf-8'))
         
     x2 = normstr(x, lower=False)
 
@@ -274,7 +281,7 @@ HELP_DESC = u"""\
 Produces LaTeX rules to make duplicate entries aliases of one another.
 """
 
-HELP_TEXT = ur"""
+HELP_TEXT = r"""
 This filter works by writing a LaTeX file (the ``dupfile''), which contains the
 commands needed to define the bibtex aliases. You may then use the LaTeX `\cite'
 command with either key; duplicate entries are merged and a single entry will be
@@ -381,9 +388,9 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
 
         def cleantitle(title):
-            title = unicodedata.normalize('NFKD', unicode(delatex(title).lower()))
+            title = unicodedata.normalize('NFKD', unicodestr(delatex(title).lower()))
             # remove any unicode compositions (accents, etc.)
-            title = re.sub(r'[^\x00-\x7f]', '', title.encode('utf-8')).decode('utf-8')
+            title = re.sub(rb'[^\x00-\x7f]', b'', title.encode('utf-8')).decode('utf-8')
             # remove any unusual characters
             title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
             # remove any inline math
@@ -841,7 +848,7 @@ def delatex(s):
     # Fixed: bug in pybtex.
     #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
     #    s = s.replace(r'\ ', r'\~');
-    return latex2text.latex2text(unicode(s), tolerant_parsing=True);
+    return latex2text.latex2text(unicodestr(s), tolerant_parsing=True);
 
 
 
@@ -881,7 +888,7 @@ def check_overwrite_dupfile(dupfilepath):
     
     with codecs.open(dupfilepath, 'r') as f:
         head_content = u'';
-        for countline in xrange(10):
+        for countline in range(10):
             head_content += f.readline()
 
     if BIBALIAS_WARNING_HEADER not in head_content:

@@ -48,6 +48,13 @@ class :py:class:`~tokencheckers.TokenChecker`.
 
 """
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import datetime
 import hashlib
@@ -313,14 +320,15 @@ class EntryFieldsTokenChecker(TokenChecker):
     def new_token(self, key, value, **kwargs):
         entry = self.bibdata.entries.get(key,Entry('misc'))
 
-        data = "\n\n".join( (entry.fields.get(fld, '').encode('utf-8')
-                         for fld in self.fields) )
+        data = b"\n\n".join( (entry.fields.get(fld, '').encode('utf-8')
+                             for fld in self.fields) )
         if self.store_type:
-            data += "\n\n" + entry.type.encode('utf-8')
+            data += b"\n\n" + entry.type.encode('utf-8')
         if self.store_persons:
             data += "".join([
-                ("\n\n"+p+":"+";".join([unicode(pers) for pers in entry.persons.get(p, [])]))
-                for p in self.store_persons ]).encode('utf-8')
+                ("\n\n"+p+":"+";".join([unicodestr(pers) for pers in entry.persons.get(p, [])]))
+                for p in self.store_persons
+            ]).encode('utf-8')
         
         return hashlib.md5(data).digest()
 

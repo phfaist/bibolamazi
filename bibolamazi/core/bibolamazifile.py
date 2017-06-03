@@ -31,7 +31,9 @@ from future.utils import python_2_unicode_compatible, iteritems
 from builtins import str as unicodestr
 from future.standard_library import install_aliases
 install_aliases()
-
+from urllib.parse import urlparse, urlencode
+from urllib.request import urlopen
+from urllib.error import HTTPError
 
 import re
 import io
@@ -40,7 +42,6 @@ import os
 import os.path
 import codecs
 import shlex
-import urllib
 try:
     import cPickle as pickle
 except ImportError:
@@ -58,7 +59,7 @@ from pybtex.utils import OrderedCaseInsensitiveDict
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-from bibolamazi.core.bibfilter import factory
+from bibolamazi.core.bibfilter import BibFilter, factory
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ class BibolamaziBibtexSourceError(BibolamaziError):
 
 
 def _repl(s, dic):
-    for (k,v) in dic.iteritems():
+    for (k,v) in iteritems(dic):
         s = re.sub(k, v, s)
     return s
 
@@ -976,7 +977,7 @@ class BibolamaziFile(object):
         # filters always use it. `self._use_cache` only tells us whether to load some
         # initial data.
 
-        for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.iteritems():
+        for (cacheaccessor, cacheaccessorinstance) in iteritems(self._cache_accessors):
             #
             # Ensure the existance of the cache dictionary instance in the cache
             #
@@ -1021,7 +1022,7 @@ class BibolamaziFile(object):
         if is_url:
             logger.debug("Opening URL %r", src)
             try:
-                f = urllib.urlopen(src)
+                f = urlopen(src)
                 if (f is None):
                     return None
                 data = butils.guess_encoding_decode(f.read())
@@ -1033,7 +1034,7 @@ class BibolamaziFile(object):
         else:
             logger.debug("Opening file %r", src)
             try:
-                with open(src, 'r') as f:
+                with open(src, 'rb') as f:
                     data = butils.guess_encoding_decode(f.read())
             except IOError:
                 # ignore source, will have to try next in list
@@ -1057,7 +1058,7 @@ class BibolamaziFile(object):
                 # initialize bibliography data
                 self._bibliographydata = pybtex.database.BibliographyData()
 
-            for key, entry in bib_data.entries.iteritems():
+            for key, entry in iteritems(bib_data.entries):
                 if (key in self._bibliographydata.entries):
                     logger.warn('Repeated bibliography entry in other file: %s. Keeping first encountered entry.', key)
                     continue
@@ -1156,7 +1157,7 @@ class BibolamaziFile(object):
 
             bibdata = self.bibliographyData()
 
-            for (k, entry) in bibdata.entries.iteritems():
+            for (k, entry) in iteritems(bibdata.entries):
                 filter_instance.filter_bibentry(entry)
 
             logger.debug('filter '+filter_instance.name()+' filtered each of the the bibentries one by one.');
@@ -1218,7 +1219,7 @@ class BibolamaziFile(object):
                 #
                 # So if any filters changed entry.type, reflect that in
                 # entry.original_type.
-                for key, entry in self._bibliographydata.entries.iteritems():
+                for key, entry in iteritems(self._bibliographydata.entries):
                     entry.original_type = entry.type
 
                 #

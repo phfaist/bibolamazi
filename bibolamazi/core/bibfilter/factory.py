@@ -65,7 +65,7 @@ class NoSuchFilter(Exception):
     Signifies that the requested filter was not found. See also `get_module()`.
     """
     def __init__(self, fname, errorstr=None):
-        Exception.__init__(self, "No such filter or import error: "+fname+(": "+errorstr if errorstr else ""));
+        Exception.__init__(self, "No such filter or import error: "+fname+(": "+errorstr if errorstr else ""))
 
 class NoSuchFilterPackage(Exception):
     """
@@ -74,7 +74,7 @@ class NoSuchFilterPackage(Exception):
     def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
         Exception.__init__(self, "No such filter package or import error: `"+ fpname + "'"
                            + (" (dir=`%s')"%(fpdir) if fpdir is not None else "")
-                           + (": "+errorstr if errorstr else ""));
+                           + (": "+errorstr if errorstr else ""))
         
 
 @python_2_unicode_compatible
@@ -313,8 +313,10 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         if filterdir:
             sys.path = [filterdir] + sys.path
         try:
+            logger.longdebug("Attempting to import filter package `%s`"%(filterpackname))
+            fpmod = importlib.import_module(filterpackname)
             logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, filterpackname))
-            mod = importlib.import_module('.'+name, package=filterpackname);
+            mod = importlib.import_module('.'+name, package=filterpackname)
         except ImportError:
             exc_type, exc_value, tb_root = sys.exc_info()
 
@@ -394,7 +396,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 
     # already open?
     if (name in _filter_modules):
-        return _filter_modules[name];
+        return _filter_modules[name]
 
     mod = None
 
@@ -410,11 +412,11 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         extrainfo = ""
         if import_errors:
             extrainfo = "\n\n" + "\n".join(import_errors) + "\n"
-        raise NoSuchFilter(name, "Can't find module that defines the filter" + extrainfo);
+        raise NoSuchFilter(name, "Can't find module that defines the filter" + extrainfo)
 
     if mod is not None:
         # cache the module
-        _filter_modules[name] = mod;
+        _filter_modules[name] = mod
 
     # and return it
     return mod
@@ -431,7 +433,7 @@ def detect_filters(force_redetect=False):
     global filterpath
 
     if (_filter_list is not None and not force_redetect):
-        return _filter_list;
+        return _filter_list
     
 
     def detect_filters_in_module(filterpackage, filterpackname):
@@ -502,7 +504,7 @@ def detect_filters(force_redetect=False):
             if filterdir:
                 sys.path = [filterdir] + sys.path
             try:
-                filterpackage = importlib.import_module(filterpack);
+                filterpackage = importlib.import_module(filterpack)
             except ImportError as e:
                 logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicodestr(e))
                 continue
@@ -524,7 +526,7 @@ def detect_filters(force_redetect=False):
     logger.debug('Filters detected.')
     logger.longdebug("_filter_list=%r, _filter_package_listings=%r", _filter_list, _filter_package_listings)
 
-    return _filter_list;
+    return _filter_list
 
 def detect_filter_package_listings():
     detect_filters()
@@ -534,9 +536,9 @@ def detect_filter_package_listings():
 
 def get_filter_class(name, filterpackage=None):
     
-    fmodule = get_module(name, filterpackage=filterpackage);
+    fmodule = get_module(name, filterpackage=filterpackage)
 
-    return fmodule.bibolamazi_filter_class();
+    return fmodule.bibolamazi_filter_class()
 
 
 def filter_uses_default_arg_parser(name):
@@ -560,15 +562,15 @@ def filter_arg_parser(name):
     if (hasattr(fmodule, 'parse_args')):
         return None
 
-    return DefaultFilterOptions(name);
+    return DefaultFilterOptions(name)
 
 
 
 def make_filter(name, options):
 
-    fmodule = get_module(name);
+    fmodule = get_module(name)
 
-    fclass = fmodule.bibolamazi_filter_class();
+    fclass = fmodule.bibolamazi_filter_class()
 
     pargs = []
     kwargs = {}
@@ -578,9 +580,9 @@ def make_filter(name, options):
         #
         optionstring = options
         if (hasattr(fmodule, 'parse_args')):
-            x = fmodule.parse_args(optionstring);
+            x = fmodule.parse_args(optionstring)
             try:
-                (pargs, kwargs) = x;
+                (pargs, kwargs) = x
             except (TypeError, ValueError):
                 raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
         else:
@@ -604,15 +606,15 @@ def make_filter(name, options):
     # and finally, instantiate the filter.
 
     logger.debug(name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
-                  ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')');
+                  ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')')
 
     # exceptions caught here are those thrown from the filter constructor itself.
     try:
-        return fclass(*pargs, **kwargs);
+        return fclass(*pargs, **kwargs)
     except Exception as e:
         import traceback
         logger.debug("Filter exception:\n" + traceback.format_exc())
-        msg = unicodestr(e);
+        msg = unicodestr(e)
         if (not isinstance(e, FilterError) and e.__class__ != Exception):
             # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
             msg = e.__class__.__name__ + ": " + msg
@@ -643,7 +645,7 @@ class FilterArgumentParser(argparse.ArgumentParser):
         raise FilterOptionsParseError(msg, self._filtername)
 
 
-_rxargdoc = re.compile(r'^\s*(-\s*|\*)(?P<argname>\w+)\s*(\((?P<argtypename>\w+)\))?\s*:\s*', re.MULTILINE);
+_rxargdoc = re.compile(r'^\s*(-\s*|\*)(?P<argname>\w+)\s*(\((?P<argtypename>\w+)\))?\s*:\s*', re.MULTILINE)
 
 _add_epilog="""
 
@@ -666,18 +668,18 @@ class DefaultFilterOptions:
         (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
 
         # get some doc about the parameters
-        doc = fclass.__init__.__doc__;
+        doc = fclass.__init__.__doc__
         if (doc is None):
             doc = ''
-        argdocspos = [];
+        argdocspos = []
         for m in re.finditer(_rxargdoc, doc):
-            argdocspos.append(m);
-        argdoclist = [];
-        begindoc = None;
+            argdocspos.append(m)
+        argdoclist = []
+        begindoc = None
         for k in range(len(argdocspos)):
             m = argdocspos[k]
             if (begindoc is None):
-                begindoc = doc[:m.start()];
+                begindoc = doc[:m.start()]
             thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc))
             # adjust whitespace in docstr
             docstr = doc[m.end():thisend].strip()
@@ -692,16 +694,16 @@ class DefaultFilterOptions:
 
         self._use_auto_case = True
         if (re.search(r'[A-Z]', "".join(fargs))):
-            logger.debug("filter "+self._filtername+": will not automatically adjust option letter case.");
+            logger.debug("filter "+self._filtername+": will not automatically adjust option letter case.")
             self._use_auto_case = False
 
         if (defaults is None):
-            defaults = [];
+            defaults = []
         def fmtarg(k, fargs, defaults):
-            s = fargs[k];
-            off = len(fargs)-len(defaults);
+            s = fargs[k]
+            off = len(fargs)-len(defaults)
             if (k-off >= 0):
-                s += "="+repr(defaults[k-off]);
+                s += "="+repr(defaults[k-off])
             return s
         fclasssyntaxdesc = fclass.__name__+("(" + " ".join([xpart for xpart in [
             (", ".join([fmtarg(k, fargs, defaults)
@@ -709,7 +711,7 @@ class DefaultFilterOptions:
                         if fargs[k] != "self"])),
             ("[...]" if varargs else ""),
             ("[..=...]" if keywords else ""),
-            ] if xpart]) + ")");
+            ] if xpart]) + ")")
 
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,
@@ -717,9 +719,9 @@ class DefaultFilterOptions:
                                  epilog=_add_epilog,
                                  add_help=False,
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 );
+                                 )
 
-        group_filter = p.add_argument_group('Filter Arguments');
+        group_filter = p.add_argument_group('Filter Arguments')
 
         # add option for all arguments
 
@@ -735,7 +737,7 @@ class DefaultFilterOptions:
         self._filtervaroptions = []
 
         def make_filter_option(farg):
-            fopt = farg.replace('_', '-');
+            fopt = farg.replace('_', '-')
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
             if argdoc.doc is not None:
                 argdocdoc = argdoc.doc.replace('%', '%%')
@@ -773,7 +775,7 @@ class DefaultFilterOptions:
             return argdoc
 
 
-        argdocs_left = [ x.argname for x in argdoclist ];
+        argdocs_left = [ x.argname for x in argdoclist ]
         for n in range(len(fargs)):
             if n == 0: # Skip 'self' argument. Don't use "farg == 'self'" because in
                        # theory the argument could have any name.
@@ -800,20 +802,20 @@ class DefaultFilterOptions:
         # a la ghostscript: -sOutputFile=blahblah -sKey=Value
         group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
                                    exception=FilterOptionsParseError,
-                                   help="-sKey=Value sets parameter values");
+                                   help="-sKey=Value sets parameter values")
         group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args',
                                    metavar='Switch[=<value>]', exception=FilterOptionsParseErrorHintSInstead,
                                    help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default "
-                                   "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off");
+                                   "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off")
 
         # allow also to give arguments without the keywords.
         if varargs:
             group_general.add_argument('_args', nargs='*', metavar='<arg>',
                                        help="Additional arguments will be passed as is to the filter--see "
-                                       "documentation below");
+                                       "documentation below")
 
         #p.add_argument_group(u"Python filter syntax",
-        #                     textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '));
+        #                     textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '))
 
         filter_options_syntax_help = textwrap.dedent(
             u"""\
@@ -893,7 +895,7 @@ class DefaultFilterOptions:
     def getArgNameFromSOpt(self, x):
         if (not self._use_auto_case):
             return x
-        x = re.sub(r'[A-Z]', lambda mo: ('_' if mo.start() > 0 else '')+mo.group().lower(), x);
+        x = re.sub(r'[A-Z]', lambda mo: ('_' if mo.start() > 0 else '')+mo.group().lower(), x)
         return x
 
 
@@ -930,7 +932,7 @@ class DefaultFilterOptions:
         """
 
         logger.debug("parse_optionstring: "+self._filtername+"; fclass="+repr(self._fclass)
-                     +"; optionstring="+optionstring);
+                     +"; optionstring="+optionstring)
 
         p = self._parser
 
@@ -949,14 +951,14 @@ class DefaultFilterOptions:
                                           self._filtername)
         
         try:
-            args = p.parse_args(parts);
+            args = p.parse_args(parts)
         except FilterOptionsParseError as e:
             e.name = self._filtername
             raise
 
         # parse and collect arguments now
 
-        dargs = vars(args);
+        dargs = vars(args)
 
         optspec = {
             '_args': None,
@@ -981,13 +983,13 @@ class DefaultFilterOptions:
 
         for (arg, argval) in iteritems(dargs):
             if (varargs and arg == '_args'):
-                optspec['_args'] = argval;
+                optspec['_args'] = argval
                 continue
             if (arg == '_d_args' and argval is not None):
                 # get all the defined args
                 for (thekey, theval) in argval:
                     # store this definition
-                    therealkey = self.getArgNameFromSOpt(thekey);
+                    therealkey = self.getArgNameFromSOpt(thekey)
                     optspec['kwargs'][therealkey] = theval
 
                     logger.debug("Set switch `%s' to %s" %(thekey, "True" if theval else "False"))
@@ -997,7 +999,7 @@ class DefaultFilterOptions:
             if (arg == '_s_args' and argval is not None):
                 # get all the set args
                 for (key, v) in argval:
-                    thekey = self.getArgNameFromSOpt(key);
+                    thekey = self.getArgNameFromSOpt(key)
                     set_kw_arg(optspec['kwargs'], thekey, v)
 
                     logger.debug("Set option `%s' to `%s'" %(thekey, v))
@@ -1067,15 +1069,15 @@ class DefaultFilterOptions:
         # ensure that all filter-declared arguments have values, then add all remaining args for *args.
         pargs = fdeclpargs + pargs
                     
-        return (pargs, kwargs);
+        return (pargs, kwargs)
 
 
     def format_filter_help(self):
-        prolog = self._fclass.getHelpAuthor();
+        prolog = self._fclass.getHelpAuthor()
         if (prolog):
-            prolog += "\n\n";
+            prolog += "\n\n"
 
-        return prolog + self._parser.format_help();
+        return prolog + self._parser.format_help()
 
 
 def format_filter_help(filtname):
@@ -1086,7 +1088,7 @@ def format_filter_help(filtname):
     fmodule = get_module(filtname)
 
     if (hasattr(fmodule, 'format_help')):
-        return fmodule.format_help();
+        return fmodule.format_help()
 
     # otherwise, use the help formatter of the default option parser
     fopt = DefaultFilterOptions(filtname)

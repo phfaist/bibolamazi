@@ -2,7 +2,6 @@
 import unittest
 
 import bibolamazi.core.bibfilter.factory as bffactory
-import bibolamazi.filters
 
 
 class TestWorks(unittest.TestCase):

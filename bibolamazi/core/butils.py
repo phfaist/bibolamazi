@@ -173,6 +173,10 @@ def quotearg(x):
 
 
 def guess_encoding_decode(dat, encoding=None):
+
+    if isinstance(dat, unicodestr):
+        return dat # already unicode
+
     if encoding:
         return dat.decode(encoding);
 

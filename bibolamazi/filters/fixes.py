@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
@@ -290,7 +297,7 @@ class FixesFilter(BibFilter):
             self.remove_full_braces_not_lang = None
 
         if protect_names is not None:
-            self.protect_names = dict([ (x.strip(), re.compile(ur'\b'+re.escape(x.strip())+ur'\b', re.IGNORECASE))
+            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+re.escape(x.strip())+r'\b', re.IGNORECASE))
                                         for x in protect_names.split(u',') ]);
         else:
             self.protect_names = None;
@@ -309,7 +316,7 @@ class FixesFilter(BibFilter):
 
         # make sure key (language alias) is made lower-case
         self.rename_language = dict([ (k.lower(), v)
-                                      for k, v in ColonCommaStrDict(rename_language).iteritems() ])
+                                      for k, v in iteritems(ColonCommaStrDict(rename_language)) ])
         self.rename_language_rx = None
         if self.rename_language:
             # e.g. with rename_language={'en':'english','de':'deutsch',
@@ -421,7 +428,7 @@ class FixesFilter(BibFilter):
             return x
 
         def filter_person(p):
-            return Person(string=thefilter(unicode(p)));
+            return Person(string=thefilter(unicodestr(p)));
             # does not work this way because of the way Person() splits at spaces:
             #parts = {}
             #for typ in ['first', 'middle', 'prelast', 'last', 'lineage']:
@@ -429,11 +436,11 @@ class FixesFilter(BibFilter):
             #return Person(**parts);
 
 
-        for (role,perslist) in entry.persons.iteritems():
+        for (role,perslist) in iteritems(entry.persons):
             for k in range(len(perslist)):
                 entry.persons[role][k] = filter_person(perslist[k]);
         
-        for (k,v) in entry.fields.iteritems():
+        for (k,v) in iteritems(entry.fields):
             entry.fields[k] = thefilter(v);
 
 
@@ -465,7 +472,7 @@ class FixesFilter(BibFilter):
 
 
         def filter_entry_remove_full_braces(entry, fieldlist):
-            for k,v in entry.fields.iteritems():
+            for k,v in iteritems(entry.fields):
                 if (fieldlist is None or k in fieldlist):
                     val = v.strip();
                     if (len(val) and val[0] == '{' and val[-1] == '}'):
@@ -490,11 +497,11 @@ class FixesFilter(BibFilter):
 
 
         def filter_protect_names(entry):
-            for key, val in entry.fields.iteritems():
+            for key, val in iteritems(entry.fields):
                 if key in ('url', 'file'):
                     continue
                 newval = val;
-                for n,r in self.protect_names.iteritems():
+                for n,r in iteritems(self.protect_names):
                     newval = r.sub(lambda m: '{'+n+'}', newval);
                 if (newval != val):
                     entry.fields[key] = newval;
@@ -519,17 +526,17 @@ class FixesFilter(BibFilter):
         #
         # title = "{\textquotedblleft}Relative State{\textquotedblright} Formulation of Quantum Mechanics"
         #
-        _rx_prcap_lead = ur'([^\w\{]|\\[A-Za-z]+|\{\\[A-Za-z]+\})*'
+        _rx_prcap_lead = r'([^\w\{]|\\[A-Za-z]+|\{\\[A-Za-z]+\})*'
         if (self.protect_capital_letter_after_dot):
             for fld in self.protect_capital_letter_after_dot:
                 if fld in entry.fields:
-                    entry.fields[fld] = re.sub(ur'(?P<dotlead>[.:]'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                    entry.fields[fld] = re.sub(r'(?P<dotlead>[.:]'+_rx_prcap_lead+r')(?P<ucletter>[A-Z])',
                                                lambda m: m.group('dotlead')+u'{'+m.group('ucletter')+u'}',
                                                entry.fields[fld])
         if (self.protect_capital_letter_at_begin):
             for fld in self.protect_capital_letter_at_begin:
                 if fld in entry.fields:
-                    entry.fields[fld] = re.sub(ur'^(?P<lead>'+_rx_prcap_lead+ur')(?P<ucletter>[A-Z])',
+                    entry.fields[fld] = re.sub(r'^(?P<lead>'+_rx_prcap_lead+r')(?P<ucletter>[A-Z])',
                                                lambda m: m.group('lead')+u'{'+m.group('ucletter')+u'}',
                                                entry.fields[fld])
 
@@ -539,17 +546,17 @@ class FixesFilter(BibFilter):
                     entry.fields[fld] = do_fix_mendeley_bug_urls(entry.fields[fld])
 
         _rx_dbl_quotes = [
-            re.compile(ur"``(?P<contents>.*?)''"),
+            re.compile(r"``(?P<contents>.*?)''"),
             # this pattern must be tested first, because otherwise we leave stray braces
-            re.compile(ur'\{\\textquotedblleft\}(?P<contents>.*?)\{\\textquotedblright\}'),
-            re.compile(ur'\\textquotedblleft(?P<contents>.*?)\\textquotedblright'),
+            re.compile(r'\{\\textquotedblleft\}(?P<contents>.*?)\{\\textquotedblright\}'),
+            re.compile(r'\\textquotedblleft(?P<contents>.*?)\\textquotedblright'),
         ]
         _rx_sgl_quotes = [
             # try to match correct quote in " `My dad's dog' is a nice book ".
-            re.compile(ur"`(?P<contents>.*?)'(?=\W|$)"),
+            re.compile(r"`(?P<contents>.*?)'(?=\W|$)"),
             # this pattern must be tested first, because otherwise we leave stray braces
-            re.compile(ur'\{\\textquoteleft\}(?P<contents>.*?)\{\\textquoteright\}'),
-            re.compile(ur'\\textquoteleft(?P<contents>.*?)\\textquoteright'),
+            re.compile(r'\{\\textquoteleft\}(?P<contents>.*?)\{\\textquoteright\}'),
+            re.compile(r'\\textquoteleft(?P<contents>.*?)\\textquoteright'),
         ]
         if (self.convert_dbl_quotes):
             for fld in self.convert_dbl_quotes:

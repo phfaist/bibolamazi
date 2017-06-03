@@ -19,6 +19,14 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 import collections
 import inspect
 import pickle
@@ -86,7 +94,7 @@ class BibUserCacheDic(collections.MutableMapping):
     def _guess_name_for_dbg(self):
         if not self.parent:
             return "<root>"
-        return next( (key for key, val in self.parent.iteritems()
+        return next( (key for key, val in iteritems(self.parent)
                       if val is self),
                      "<unknown>")
 
@@ -189,14 +197,15 @@ class BibUserCacheDic(collections.MutableMapping):
             if not self.parent:
                 logger.warning("BibUserCacheDic.new_value_set(): No parent set!")
             try:
-                self.parent.new_value_set(next( (k for k,v in self.parent.iteritems()
+                self.parent.new_value_set(next( (k for k,v in iteritems(self.parent)
                                                  if v is self) ))
             except StopIteration:
                 logger.warning("BibUserCacheDic.new_value_set(): Can't find ourselves in parent!")
 
         if self.tokenchecker:
             self.tokens[key] = self.tokenchecker.new_token(key=key, value=self.dic.get(key))
-            logger.longdebug("value changed in cache (key=%s), new value=%r, new token=%r", key, self.dic.get(key), self.tokens[key])
+            logger.longdebug("value changed in cache (key=%s), new value=%r, new token=%r",
+                             key, self.dic.get(key), self.tokens[key])
         if self.parent:
             self.parent.child_notify_changed(self)
                 
@@ -219,7 +228,10 @@ class BibUserCacheDic(collections.MutableMapping):
             self.parent.child_notify_changed(self)
 
     def iteritems(self):
-        return self.dic.iteritems()
+        return iteritems(self.dic)
+
+    def items(self):
+        return iteritems(self.dic)
 
     def __iter__(self):
         return iter(self.dic)
@@ -234,7 +246,7 @@ class BibUserCacheDic(collections.MutableMapping):
     def child_notify_changed(self, obj):
         # update cache validation tokens for this object
         if self.tokenchecker:
-            for key, val in self.dic.iteritems():
+            for key, val in iteritems(self.dic):
                 if val is obj:
                     self.tokens[key] = self.tokenchecker.new_token(key=key, value=val)
                     # don't break, as it could be that the same object is pointed to by
@@ -482,9 +494,9 @@ class BibUserCacheError(BibolamaziError):
     """
 
     def __init__(self, cache_name, message):
-        if (not isinstance(cache_name, basestring)):
+        if not isinstance(cache_name, basestring):
             cache_name = '<unknown>'
-        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+u"': "+unicode(message))
+        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+u"': "+unicodestr(message))
         self.cache_name = cache_name
         self.message = message
 

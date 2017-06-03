@@ -24,7 +24,13 @@ This module contains the code that implements Bibolamazi's main functionality. I
 provides the basic tools for the command-line interface.
 """
 
-from __future__ import print_function
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -118,7 +124,7 @@ def setup_filterpackage_from_argstr(argstr):
     try:
         ok = filterfactory.validate_filter_package(fpname, fpdir, raise_exception=True)
     except filterfactory.NoSuchFilterPackage as e:
-        raise BibolamaziError(unicode(e))
+        raise BibolamaziError(unicodestr(e))
 
     filterfactory.filterpath[fpname] = fpdir
     
@@ -225,7 +231,7 @@ def main(argv=sys.argv[1:]):
         raise
 
     except BibolamaziError as e:
-        logger.error("\n" + unicode(e))
+        logger.error("\n" + unicodestr(e))
 
     except:
         
