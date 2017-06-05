@@ -324,7 +324,7 @@ class FixesFilter(BibFilter):
             # '^en|de|german|french$'. Case INsensitive.
             self.rename_language_rx = re.compile(
                 r'^\s*(?P<lang>' +
-                "|".join([re.escape(k.strip()) for k in self.rename_language.iterkeys()]) +
+                "|".join([re.escape(k.strip()) for k in self.rename_language]) +
                 r'\s*)$',
                 flags=re.IGNORECASE
                 )
@@ -583,7 +583,7 @@ class FixesFilter(BibFilter):
 
         if (self.remove_doi_prefix):
             if 'doi' in entry.fields:
-                entry.fields['doi'] = re.sub(r'^\s*doi:\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
+                entry.fields['doi'] = re.sub(r'^\s*doi[ :]\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
         logger.longdebug("fixes filter, result: %s -> Authors=%r, fields=%r",
                          entry.key, entry.persons.get('author', None),
