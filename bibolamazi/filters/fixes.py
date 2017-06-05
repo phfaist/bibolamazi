@@ -257,9 +257,9 @@ class FixesFilter(BibFilter):
                 insert a blank after the `\\AA' or `\\o' otherwise.
         """
         
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.fix_space_after_escape = butils.getbool(fix_space_after_escape);
+        self.fix_space_after_escape = butils.getbool(fix_space_after_escape)
         self.fix_swedish_a = butils.getbool(fix_swedish_a); # OBSOLETE
 
         if (self.fix_swedish_a):
@@ -268,22 +268,22 @@ class FixesFilter(BibFilter):
                            " still work for backwards compatibility, but please consider changing to"
                            " the new option.")
 
-        self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex);
-        self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
+        self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex)
+        self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8)
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
             raise BibFilterError(self.name(),
-                                 "Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
+                                 "Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.")
 
-        self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
+        self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
 
         try:
-            self.remove_full_braces = butils.getbool(remove_full_braces);
+            self.remove_full_braces = butils.getbool(remove_full_braces)
             self.remove_full_braces_fieldlist = None; # all fields
         except ValueError:
             # not boolean, we have provided a field list.
-            self.remove_full_braces = True;
-            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ];
+            self.remove_full_braces = True
+            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ]
 
         if self.remove_full_braces:
             if not remove_full_braces_not_lang:
@@ -298,12 +298,12 @@ class FixesFilter(BibFilter):
 
         if protect_names is not None:
             self.protect_names = dict([ (x.strip(), re.compile(r'\b'+re.escape(x.strip())+r'\b', re.IGNORECASE))
-                                        for x in protect_names.split(u',') ]);
+                                        for x in protect_names.split(u',') ])
         else:
-            self.protect_names = None;
+            self.protect_names = None
 
-        self.remove_file_field = butils.getbool(remove_file_field);
-        self.remove_fields = CommaStrList(remove_fields);
+        self.remove_file_field = butils.getbool(remove_file_field)
+        self.remove_fields = CommaStrList(remove_fields)
         self.remove_doi_prefix = butils.getbool(remove_doi_prefix)
 
         self.map_annote_to_note = butils.getbool(map_annote_to_note)
@@ -399,11 +399,11 @@ class FixesFilter(BibFilter):
                         self.fix_mendeley_bug_urls,
                         self.protect_capital_letter_after_dot, self.protect_capital_letter_at_begin,
                         self.convert_dbl_quotes,self.dbl_quote_macro,self.convert_sgl_quotes,self.sgl_quote_macro
-                        ));
+                        ))
         
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def filter_bibentry(self, entry):
         #
@@ -417,31 +417,31 @@ class FixesFilter(BibFilter):
                 x = do_fix_space_after_escape(x)
             if (self.fix_swedish_a):
                 # OBSOLETE, but still accepted for backwards compatibility
-                x = re.sub(r'\\AA\s+', r'\AA{}', x);
-                x = re.sub(r'\\o\s+', r'\o{}', x);
+                x = re.sub(r'\\AA\s+', r'\AA{}', x)
+                x = re.sub(r'\\o\s+', r'\o{}', x)
             if (self.encode_utf8_to_latex):
                 # Need non_ascii_only=True because we might have e.g. braces or other
                 # LaTeX code we want to preserve.
-                x = latexencode.utf8tolatex(x, non_ascii_only=True);
+                x = latexencode.utf8tolatex(x, non_ascii_only=True)
             if (self.encode_latex_to_utf8):
-                x = latex2text.latex2text(x);
+                x = latex2text.latex2text(x)
             return x
 
         def filter_person(p):
-            return Person(string=thefilter(unicodestr(p)));
+            return Person(string=thefilter(unicodestr(p)))
             # does not work this way because of the way Person() splits at spaces:
             #parts = {}
             #for typ in ['first', 'middle', 'prelast', 'last', 'lineage']:
-            #    parts[typ] = thefilter(u" ".join(p.get_part(typ)));
-            #return Person(**parts);
+            #    parts[typ] = thefilter(u" ".join(p.get_part(typ)))
+            #return Person(**parts)
 
 
         for (role,perslist) in iteritems(entry.persons):
             for k in range(len(perslist)):
-                entry.persons[role][k] = filter_person(perslist[k]);
+                entry.persons[role][k] = filter_person(perslist[k])
         
         for (k,v) in iteritems(entry.fields):
-            entry.fields[k] = thefilter(v);
+            entry.fields[k] = thefilter(v)
 
 
         # additionally:
@@ -451,10 +451,10 @@ class FixesFilter(BibFilter):
                 return
             if ('phd' in re.sub(r'[^a-z]', '', entry.fields['type'].lower())):
                 # entry is phd type, so remove explicit type={}
-                del entry.fields['type'];
+                del entry.fields['type']
             
         if (self.remove_type_from_phd):
-            filter_entry_remove_type_from_phd(entry);
+            filter_entry_remove_type_from_phd(entry)
 
 
         #
@@ -474,7 +474,7 @@ class FixesFilter(BibFilter):
         def filter_entry_remove_full_braces(entry, fieldlist):
             for k,v in iteritems(entry.fields):
                 if (fieldlist is None or k in fieldlist):
-                    val = v.strip();
+                    val = v.strip()
                     if (len(val) and val[0] == '{' and val[-1] == '}'):
                         # remove the extra braces. But first, check that the braces
                         # enclose the full field, and we don't have e.g. "{Maxwell}'s
@@ -486,25 +486,25 @@ class FixesFilter(BibFilter):
                                                                                     tolerant_parsing=True)
                             if (pos + length == len(val)):
                                 # yes, all fine: the braces are one block for the field
-                                entry.fields[k] = val[1:-1];
+                                entry.fields[k] = val[1:-1]
                         except latexwalker.LatexWalkerError:
                             logger.longdebug("LatexWalkerError while checking enclosing braces for key %s,"
                                              " for field %s = `%s' --ignoring", entry.key, k, val)
 
         if self.remove_full_braces:
             if entry.fields.get('language','').lower() not in self.remove_full_braces_not_lang:
-                filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist);
+                filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist)
 
 
         def filter_protect_names(entry):
             for key, val in iteritems(entry.fields):
                 if key in ('url', 'file'):
                     continue
-                newval = val;
+                newval = val
                 for n,r in iteritems(self.protect_names):
-                    newval = r.sub(lambda m: '{'+n+'}', newval);
+                    newval = r.sub(lambda m: '{'+n+'}', newval)
                 if (newval != val):
-                    entry.fields[key] = newval;
+                    entry.fields[key] = newval
 
         if (self.map_annote_to_note):
             if 'annote' in entry.fields:
@@ -520,7 +520,7 @@ class FixesFilter(BibFilter):
                     entry.fields[fld] = do_auto_urlify(entry.fields[fld])
 
         if (self.protect_names):
-            filter_protect_names(entry);
+            filter_protect_names(entry)
 
         # include stuff like:
         #
@@ -575,7 +575,7 @@ class FixesFilter(BibFilter):
                     
         if (self.remove_file_field):
             if ('file' in entry.fields):
-                del entry.fields['file'];
+                del entry.fields['file']
 
         if (self.remove_fields):
             for fld in self.remove_fields:
@@ -630,7 +630,7 @@ def do_fix_space_after_escape(x):
             if (optarginfotuple is not None):
                 # recursively fix the arguments, in case they themselves have escapes with spaces
                 ns.args += do_fix_space_after_escape(ns.x[optargpos : optargpos+optarglen])
-                ns.pos = optargpos+optarglen;
+                ns.pos = optargpos+optarglen
 
         def addarg():
             (nodearg, npos, nlen) = latexwalker.get_latex_expression(x, ns.pos, strict_braces=False,
@@ -641,7 +641,7 @@ def do_fix_space_after_escape(x):
 
             # recursively fix the arguments, in case they themselves have escapes with spaces
             ns.args += do_fix_space_after_escape(argstr)
-            ns.pos = npos+nlen;
+            ns.pos = npos+nlen
 
         if (macrodef.optarg):
             addoptarg()
@@ -655,7 +655,7 @@ def do_fix_space_after_escape(x):
                     addoptarg()
                 else:
                     logger.debug("Unknown macro argument kind for macro %s: %s"
-                                 % (macrodef.macname, arg));
+                                 % (macrodef.macname, arg))
         else:
             for n in range(macrodef.numargs):
                 addarg()
@@ -729,7 +729,7 @@ def do_fix_mendeley_bug_urls(x):
 
 
 def bibolamazi_filter_class():
-    return FixesFilter;
+    return FixesFilter
 
 
 

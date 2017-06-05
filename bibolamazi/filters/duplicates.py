@@ -211,7 +211,7 @@ def normstr(x, lower=True):
     if lower:
         x2 = x2.lower();
     # remove any unicode compositions (accents, etc.)
-    x2 = re.sub(rb'[^\x00-\x7f]', b'', x2.encode('utf-8')).decode('utf-8')
+    x2 = re.sub(b'[^\\x00-\\x7f]', b'', x2.encode('utf-8')).decode('utf-8')
     ## additionally, remove any special LaTeX chars which may be written differently.
     #x2 = re.sub(r'\\([a-zA-Z]+|.)', '', x2);
     x2 = re.sub(r'''[\{\}\|\.\+\?\*\,\'\"\\]''', '', x2);
@@ -390,7 +390,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         def cleantitle(title):
             title = unicodedata.normalize('NFKD', unicodestr(delatex(title).lower()))
             # remove any unicode compositions (accents, etc.)
-            title = re.sub(rb'[^\x00-\x7f]', b'', title.encode('utf-8')).decode('utf-8')
+            title = re.sub(b'[^\\x00-\\x7f]', b'', title.encode('utf-8')).decode('utf-8')
             # remove any unusual characters
             title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
             # remove any inline math

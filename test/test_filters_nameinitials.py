@@ -1,4 +1,7 @@
 
+from __future__ import print_function, unicode_literals
+from builtins import str as unicodestr
+
 import unittest
 
 from pybtex.database import Entry, Person
@@ -14,9 +17,9 @@ class TestWorks(unittest.TestCase):
                                           Person('N Rosen')]})
         n = NameInitialsFilter()
         n.filter_bibentry(entry)
-        self.assertEqual(str(entry.persons['author'][0]), 'Einstein, A.')
-        self.assertEqual(str(entry.persons['author'][1]), 'Podolsky, B.')
-        self.assertEqual(str(entry.persons['author'][2]), 'Rosen, N.')
+        self.assertEqual(unicodestr(entry.persons['author'][0]), 'Einstein, A.')
+        self.assertEqual(unicodestr(entry.persons['author'][1]), 'Podolsky, B.')
+        self.assertEqual(unicodestr(entry.persons['author'][2]), 'Rosen, N.')
     
     def test_2(self):
         entry = Entry('article', fields={'url': 'https://example.com/doi/xfkdnsafldasknf'},
@@ -25,9 +28,9 @@ class TestWorks(unittest.TestCase):
                                           Person('N Rosen')]})
         n = NameInitialsFilter(only_single_letter_firsts='True')
         n.filter_bibentry(entry)
-        self.assertEqual(str(entry.persons['author'][0]), 'Einstein, Albert')
-        self.assertEqual(str(entry.persons['author'][1]), 'Podolsky, B.')
-        self.assertEqual(str(entry.persons['author'][2]), 'Rosen, N.')
+        self.assertEqual(unicodestr(entry.persons['author'][0]), 'Einstein, Albert')
+        self.assertEqual(unicodestr(entry.persons['author'][1]), 'Podolsky, B.')
+        self.assertEqual(unicodestr(entry.persons['author'][2]), 'Rosen, N.')
 
     def test_3(self):
         entry = Entry('article', fields={'url': 'https://example.com/doi/xfkdnsafldasknf'},
@@ -36,9 +39,9 @@ class TestWorks(unittest.TestCase):
                                           Person("Fr\\'ed\\'eric Dupond")]})
         n = NameInitialsFilter(names_to_utf8=True)
         n.filter_bibentry(entry)
-        self.assertEqual(str(entry.persons['author'][0]), 'Dupont, F.')
-        self.assertEqual(str(entry.persons['author'][1]), u'\N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER U WITH DIAERESIS}ssen, E.')
-        self.assertEqual(str(entry.persons['author'][2]), 'Dupond, F.')
+        self.assertEqual(unicodestr(entry.persons['author'][0]), 'Dupont, F.')
+        self.assertEqual(unicodestr(entry.persons['author'][1]), u'\N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER U WITH DIAERESIS}ssen, E.')
+        self.assertEqual(unicodestr(entry.persons['author'][2]), 'Dupond, F.')
 
 
 if __name__ == '__main__':

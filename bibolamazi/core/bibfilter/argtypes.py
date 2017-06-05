@@ -124,7 +124,7 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
             return hash(self.value)
 
     thecls = ThisEnumArgClass
-    thecls.__name__ = class_name
+    thecls.__name__ = str(class_name)
     # add docstring
     mapped_vals_list = [ "`%s'"%(x) for x in thecls._values_list ]
     if len(mapped_vals_list) > 1:
