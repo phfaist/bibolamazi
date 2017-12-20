@@ -28,8 +28,8 @@ from builtins import str as unicodestr
 from future.standard_library import install_aliases
 install_aliases()
 import sys
-def to_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
-def from_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
+def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
+def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
 
 
 import sys
@@ -947,7 +947,8 @@ class DefaultFilterOptions:
             #
             parts = [ from_native_str(x) for x in shlex.split(to_native_str(optionstring)) ]
         except ValueError as e:
-            raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s" %(e, optionstring.strip()),
+            raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s"
+                                          %(unicodestr(e), optionstring.strip()),
                                           self._filtername)
         
         try:

@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 import re
 import string
 
@@ -62,13 +69,15 @@ def _read_braced_expr(s, brace_type=None):
             continue
         if c in close_braces:
             if c != close_braces[brace_idx]:
-                raise ValueError("Opening brace '%s' closed with '%s' in '%s'"%(open_braces[brace_idx], c, s_orig))
+                raise ValueError("Opening brace '%s' closed with '%s' in '%s'" %
+                                 (open_braces[brace_idx], c, s_orig))
             expr += c
             return expr
         expr += s[0]
         s = s[1:]
 
-    raise ValueError("End of string while searching for closing brace '%s' in '%s'"%(close_braces[brace_idx], s_orig))
+    raise ValueError("End of string while searching for closing brace '%s' in '%s'" %
+                     (close_braces[brace_idx], s_orig))
 
 
 class FmtIfExpr(object):
@@ -96,7 +105,7 @@ class FmtIfExpr(object):
 
 class _Store:
     def __init__(self, d):
-        for (k,v) in d.iteritems():
+        for (k,v) in iteritems(d):
             setattr(self, k, v)
 
 class EntryFormatter(string.Formatter):

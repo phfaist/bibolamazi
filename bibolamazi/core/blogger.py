@@ -37,7 +37,13 @@ import os
 import sys
 import logging
 
-import bibolamazi.init
+
+# NOTE: This file is imported from bibolamazi.init! DO NOT IMPORT ANY OTHER
+# BIBOLAMAZI MODULES!
+#
+# IMPORTANT: DO NOT IMPORT ANY PYBTEX MODULES! They still need to be monkey-patched.
+#
+#import bibolamazi.init
 
 
 

@@ -57,6 +57,15 @@ import importlib
 base_dir = os.path.dirname(__file__)
 
 
+
+
+# add the LONGDEBUG level, and set our custom logger class
+# --------------------------------------------------------
+from .core import blogger as _blogger
+
+
+
+
 # # setup python path correctly.
 # # ----------------------------
 # for mod in third_party:
@@ -108,6 +117,20 @@ def _split_tex_string(string, sep=None, strip=True, filter_empty=False):
 #
 _pybtex_bibtex_utils.split_tex_string = _split_tex_string
 
+
+
+#
+# Patch for pybtex. Bug in pybtex.database.output.bibtex: will insist on
+# escaping everything into latex, even latex commands themselves....
+# so disable that.
+#
+import pybtex.database.output.bibtex as _pybtex_database_output_bibtex
+_pybtex_database_output_bibtex.Writer._encode = lambda self, text: text # do nothing please!!
+
+
+
+
+
 #
 # Patch for pybtex. Add __delitem__ to a OrderedCaseInsensitiveDict so that we can erase
 # fields in entry.fields
@@ -126,8 +149,4 @@ def _OrderedCaseInsensitiveDict_delitem(self, key):
     
 _pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem;
 
-
-# add the LONGDEBUG level, and set our custom logger class
-# --------------------------------------------------------
-from .core import blogger as _blogger
 

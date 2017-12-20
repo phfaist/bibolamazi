@@ -129,7 +129,7 @@ class BibUserCacheDic(collections.MutableMapping):
         This calls `validate_item()` for each item in the dictionary.
         """
 
-        keylist = self.dic.keys()
+        keylist = list(self.dic.keys())
 
         for key in keylist:
             self.validate_item(key)

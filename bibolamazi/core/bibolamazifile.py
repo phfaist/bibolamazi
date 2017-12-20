@@ -902,9 +902,8 @@ class BibolamaziFile(object):
                     self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
                 except factory.FilterError as e:
                     import traceback
-                    logger.debug("FilterError:\n" + traceback.format_exc())
-                    self._raise_parse_error(unicodestr(e),
-                                            lineno=cmd.lineno)
+                    logger.debug("FilterError:\n" + traceback.format_exc().decode('utf-8'))
+                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
 
                 # see if we have to register a new cache accessor
                 for req_cache in list(filterinstance.requested_cache_accessors()):
@@ -1225,8 +1224,9 @@ class BibolamaziFile(object):
                 #
                 # Write to bibtex output
                 #
-                w = outputbibtex.Writer()
-                w.write_stream(self._bibliographydata, f)
+                #w = outputbibtex.Writer()
+                #w.write_stream(self._bibliographydata, f)
+                f.write(self._bibliographydata.to_string('bibtex'))
             
             logger.info("Updated output file `"+self._fname+"'.")
 

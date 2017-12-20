@@ -28,6 +28,7 @@ from builtins import str as unicodestr
 
 
 import re
+import unicodedata
 import logging
 logger = logging.getLogger(__name__)
 
@@ -297,8 +298,25 @@ class FixesFilter(BibFilter):
             self.remove_full_braces_not_lang = None
 
         if protect_names is not None:
-            self.protect_names = dict([ (x.strip(), re.compile(r'\b'+re.escape(x.strip())+r'\b', re.IGNORECASE))
-                                        for x in protect_names.split(u',') ])
+            def mkpatternrx(x):
+                x = x.strip()
+                if not x:
+                    return tuple()
+                # x may be a name, e.g. 'Bell', but it may also be a more complex string, e.g. 'i.i.d.'.
+                #
+                pattern = re.escape(x)
+
+                # We need to make sure that a match doesn't begin or end in the
+                # middle of a word. (e.g., "Bell" shouldn't match in "doorbell")
+                if x[0].isalpha():
+                    pattern = r'\b' + pattern
+                if x[-1].isalpha():
+                    pattern = pattern + r'\b'
+
+                return (x, re.compile(pattern, re.IGNORECASE),)
+                    
+            self.protect_names = [ t for t in [ mkpatternrx(x) for x in protect_names.split(u',') ]
+                                   if len(t) ]
         else:
             self.protect_names = None
 
@@ -420,15 +438,18 @@ class FixesFilter(BibFilter):
                 x = re.sub(r'\\AA\s+', r'\AA{}', x)
                 x = re.sub(r'\\o\s+', r'\o{}', x)
             if (self.encode_utf8_to_latex):
-                # Need non_ascii_only=True because we might have e.g. braces or other
-                # LaTeX code we want to preserve.
-                x = latexencode.utf8tolatex(x, non_ascii_only=True)
+                # use custom encoder
+                x = custom_utf8tolatex(x)
             if (self.encode_latex_to_utf8):
                 x = latex2text.latex2text(x)
             return x
 
         def filter_person(p):
-            return Person(string=thefilter(unicodestr(p)))
+            oldpstr = unicodestr(p)
+            #print(oldpstr)
+            newpstr = thefilter(oldpstr)
+            #print(newpstr)
+            return Person(string=newpstr)
             # does not work this way because of the way Person() splits at spaces:
             #parts = {}
             #for typ in ['first', 'middle', 'prelast', 'last', 'lineage']:
@@ -443,6 +464,7 @@ class FixesFilter(BibFilter):
         for (k,v) in iteritems(entry.fields):
             entry.fields[k] = thefilter(v)
 
+        logger.longdebug("entry %s passed basic filter: %r", entry.key, entry)
 
         # additionally:
 
@@ -462,7 +484,8 @@ class FixesFilter(BibFilter):
         #
         if (self.rename_language):
             if 'language' in entry.fields:
-                logger.longdebug('Maybe fixing language in entry %s: lang=%r', entry.key, entry.fields['language'])
+                logger.longdebug('Maybe fixing language in entry %s: lang=%r',
+                                 entry.key, entry.fields['language'])
                 entry.fields['language'] = self.rename_language_rx.sub(
                     lambda m: self.rename_language.get(m.group('lang').lower(), m.group('lang')),
                     entry.fields['language']
@@ -496,16 +519,6 @@ class FixesFilter(BibFilter):
                 filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist)
 
 
-        def filter_protect_names(entry):
-            for key, val in iteritems(entry.fields):
-                if key in ('url', 'file'):
-                    continue
-                newval = val
-                for n,r in iteritems(self.protect_names):
-                    newval = r.sub(lambda m: '{'+n+'}', newval)
-                if (newval != val):
-                    entry.fields[key] = newval
-
         if (self.map_annote_to_note):
             if 'annote' in entry.fields:
                 thenote = ''
@@ -518,6 +531,45 @@ class FixesFilter(BibFilter):
             for fld in self.auto_urlify:
                 if fld in entry.fields:
                     entry.fields[fld] = do_auto_urlify(entry.fields[fld])
+
+        def filter_protect_names(entry):
+            def repl_ltx_str(n, r, x):
+                # scan string until next '{', read latex expression and skip it, etc.
+                lw = latexwalker.LatexWalker(x, tolerant_parsing=True)
+                pos = 0
+                newx = u''
+                therx = re.compile(r'((?P<openbrace>\{)|'+r.pattern+r')', re.IGNORECASE)
+                while True:
+                    m = therx.search(x, pos)
+                    if m is None:
+                        newx += x[pos:]
+                        break
+                    newpos = m.start()
+                    newx += x[pos:newpos]
+                    if m.group('openbrace'):
+                        # we encountered an opening brace, so we need to copy in everything verbatim
+                        (junknode, np, nl) = lw.get_latex_expression(newpos)
+                        # just copy the contents as is and move on
+                        newx += x[newpos:np+nl]
+                        newpos = np + nl
+                    else:
+                        # we found an instance of the string we wanted to protect, so protect it:
+                        newx += '{' + n + '}'
+                        newpos = m.end()
+
+                    # continue from our last position
+                    pos = newpos
+                    
+                return newx
+
+            for key, val in iteritems(entry.fields):
+                if key in ('url', 'file'):
+                    continue
+                newval = val
+                for n,r in self.protect_names:
+                    newval = repl_ltx_str(n, r, newval)
+                if (newval != val):
+                    entry.fields[key] = newval
 
         if (self.protect_names):
             filter_protect_names(entry)
@@ -595,6 +647,61 @@ class FixesFilter(BibFilter):
 # used to store variables in a way we can access from inner functions
 class _Namespace:
     pass
+
+
+# custom utf8_to_latex
+def custom_utf8tolatex(s, substitute_bad_chars=False):
+    u"""
+    See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
+    """
+
+    s = unicodestr(s) # make sure s is unicode
+    s = unicodedata.normalize('NFC', s)
+
+    if not s:
+        return ""
+
+    # assume there is already some LaTeX in, which we DON'T want to overwrite.
+    # Just substitute the weird chars which might not be protected...
+    ascii_custom_dic = {
+        #NO-- 34:"''", 		# character "
+        35:'\\#', 		# character #
+        #NO--36:'\\$', 		# character $
+        37:'\\%', 		# character %
+        38:'\\&', 		# character &
+        #NO-- 92:'\\textbackslash',	# the \ character itself
+        #NO-- 95:'\\_', 		# character _
+        #NO-- 123:'\\{', 	# character {
+        #NO-- 125:'\\}', 	# character }
+        #NO-- 126:'\\textasciitilde', # character ~
+    }
+
+    result = u""
+    for ch in s:
+        #logger.longdebug("Encoding char %r", ch)
+        if (ord(ch) < 127):
+            result += ascii_custom_dic.get(ord(ch), ch)
+        else:
+            lch = latexencode.utf82latex.get(ord(ch), None)
+            if (lch is not None):
+                # add brackets if needed, i.e. if we have a substituting macro.
+                # note: in condition, beware, that lch might be of zero length.
+                result += (  '{'+lch+'}' if lch[0:1] == '\\' else lch  )
+            elif ((ord(ch) >= 32 and ord(ch) <= 127) or
+                  (ch in "\n\r\t")):
+                # ordinary printable ascii char, just add it
+                result += ch
+            else:
+                # non-ascii char
+                logger.warning(u"Character cannot be encoded into LaTeX: U+%04X - `%s'" % (ord(ch), ch))
+                if (substitute_bad_chars):
+                    result += r'{\bfseries ?}'
+                else:
+                    # keep unescaped char
+                    result += ch
+
+    return result
+
 
 
 # helper function
