@@ -38,7 +38,7 @@
         </sizepolicy>
        </property>
        <property name="pixmap">
-        <pixmap resource="bibolamazi_res.qrc">:/pic/bibolamazi.png</pixmap>
+        <pixmap resource="bibolamazi_res.qrc">:/pic/bibolamazi.svg</pixmap>
        </property>
       </widget>
      </item>

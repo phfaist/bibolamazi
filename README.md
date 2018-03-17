@@ -1,4 +1,4 @@
-![bibolamazi](bibolamazi.png)
+![bibolamazi](bibolamazi.svg)
 
 Prepare consistent and uniform BibTeX files for your LaTeX documents
 

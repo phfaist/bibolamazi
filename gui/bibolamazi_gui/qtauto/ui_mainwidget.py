@@ -24,7 +24,7 @@ class Ui_MainWidget(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lblMain.sizePolicy().hasHeightForWidth())
         self.lblMain.setSizePolicy(sizePolicy)
-        self.lblMain.setPixmap(QtGui.QPixmap(":/pic/bibolamazi.png"))
+        self.lblMain.setPixmap(QtGui.QPixmap(":/pic/bibolamazi.svg"))
         self.lblMain.setObjectName("lblMain")
         self.horizontalLayout.addWidget(self.lblMain)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
