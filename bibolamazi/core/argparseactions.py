@@ -25,6 +25,14 @@ bibolamazi. You're most probably not interested in this API. (Not mentioning tha
 change if I feel the need for it.)
 """
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 import re
 import os
 import sys
@@ -335,7 +343,7 @@ def help_list_filters():
                  )
 
     full_filter_list = []
-    for (fp,fplist) in factory.detect_filter_package_listings().iteritems():
+    for (fp,fplist) in iteritems(factory.detect_filter_package_listings()):
         filter_list = [
             fmt_filter_helpline(f, fp)
             for f in fplist

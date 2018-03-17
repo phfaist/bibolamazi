@@ -34,6 +34,7 @@ install_aliases()
 from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen
 from urllib.error import HTTPError
+def tounicodeutf8(x): return x if isinstance(x, unicodestr) else x.decode('utf-8')
 
 import re
 import io
@@ -898,7 +899,7 @@ class BibolamaziFile(object):
                     self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
                 except factory.FilterError as e:
                     import traceback
-                    logger.debug("FilterError:\n" + traceback.format_exc().decode('utf-8'))
+                    logger.debug("FilterError:\n" + tounicodeutf8(traceback.format_exc()))
                     self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
 
                 # see if we have to register a new cache accessor

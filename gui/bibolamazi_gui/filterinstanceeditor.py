@@ -34,6 +34,7 @@ import os
 import os.path
 import re
 import logging
+import textwrap
 
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
@@ -260,7 +261,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
             # tool-tip documentation
             if (role == Qt.ToolTipRole):
-                return re.sub('\n\\s*', ' ', arg.doc)
+                return textwrap.fill(arg.doc, width=80)
 
             return None
 

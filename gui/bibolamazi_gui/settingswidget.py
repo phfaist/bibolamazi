@@ -307,7 +307,7 @@ class SettingsWidget(QDialog):
         if row == 0:
             return
 
-        fpitems = filters_factory.filterpath.items()
+        fpitems = list(filters_factory.filterpath.items())
         filters_factory.filterpath.clear()
         filters_factory.filterpath.update(reversed( fpitems[:row-1] + [fpitems[row], fpitems[row-1]] + fpitems[row+1:] ))
         self.ui.lstFilterPackages.reset()
@@ -323,7 +323,7 @@ class SettingsWidget(QDialog):
         if row >= len(filters_factory.filterpath)-1:
             return
 
-        fpitems = filters_factory.filterpath.items()
+        fpitems = list(filters_factory.filterpath.items())
         filters_factory.filterpath.clear()
         filters_factory.filterpath.update(reversed( fpitems[:row] + [fpitems[row+1], fpitems[row]] + fpitems[row+2:] ))
         self.ui.lstFilterPackages.reset()

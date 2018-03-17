@@ -137,9 +137,15 @@ def resolve_type(typename, in_module=None):
     logger.longdebug("Resolving type %s (no module)", typename)
 
     if (typename == 'str'):
-        return types.StringType
+        try:
+            return types.StringType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return str
     if (typename == 'bool'):
-        return types.BooleanType
+        try:
+            return types.BooleanType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return bool
 
     typestypename = (typename.title()+'Type') # e.g. "int" -> "IntType"
     return types.__dict__.get(typestypename, None)

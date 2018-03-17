@@ -162,7 +162,7 @@ class PrependOrderedDict(OrderedDict):
         try:
             if key in self:
                 del self[key]
-            ourself = self.items()
+            ourself = list(self.items())
             self.clear()
             self.update({key: value})
             self.update(ourself)
@@ -180,14 +180,14 @@ class PrependOrderedDict(OrderedDict):
     def set_at(self, idx, key, value):
         self.isupdating = True
         try:
-            items = self.items()
+            items = list(self.items())
             self.clear()
             self.update(items[:idx] + [ (key, value) ] + items[idx+1:])
         finally:
             self.isupdating = False
 
     def item_at(self, idx):
-        return self.items()[idx]
+        return list(self.items())[idx]
 
 
 
@@ -685,6 +685,7 @@ class DefaultFilterOptions:
             docstr = doc[m.end():thisend].strip()
             # just format whitespace, don't fill. This is for the GUI. we'll fill to a
             # certain width only when specifying this as the argparse help argument.
+            docstr = re.sub(r'\n\s*', '\n', docstr) # TextWrapper doesn't simplify whitespace apparently
             docstr = (textwrap.TextWrapper(width=100*len(docstr), replace_whitespace=True, drop_whitespace=True)
                       .fill(docstr))
             argdoclist.append(_ArgDoc(argname=m.group('argname'),
@@ -1010,7 +1011,13 @@ class DefaultFilterOptions:
             if (argval is None):
                 continue
 
-            set_kw_arg(optspec['kwargs'], arg, argval)
+            try:
+                set_kw_arg(optspec['kwargs'], arg, argval)
+            except ValueError as e:
+                raise FilterOptionsParseError(u"Error parsing key option value: %s -> %s (%s)\n\t%s"
+                                              %(unicodestr(arg), unicodestr(argval),
+                                                unicodestr(e), optionstring.strip()),
+                                              self._filtername)
 
         return optspec
 
