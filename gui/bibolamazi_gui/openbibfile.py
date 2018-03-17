@@ -22,10 +22,16 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
 
+import html
 import sys
 import logging
-import StringIO
 import os.path
 import re
 import textwrap
@@ -40,8 +46,9 @@ from bibolamazi.core import bibolamazifile
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from .favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
@@ -64,7 +71,7 @@ def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
                 )
         return m.group();
 
-    errortxt = unicode(Qt.escape(unicode(errortxt)))
+    errortxt = str(html.escape(errortxt, quote=True))
     errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
     try:
         # if wrap_pre = (start_tag, end_tag)
@@ -80,7 +87,7 @@ def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
 
 class PreformattedHtml(object):
     def __init__(self, html):
-        self.html = unicode(html)
+        self.html = str(html)
 
     def getHtml(self):
         return self.html
@@ -117,7 +124,7 @@ class LogToTextBrowserHandler(logging.Handler):
         try:
             html = txt.getHtml() # in case of a PreformattedHtml instance
         except AttributeError:
-            html = unicode(Qt.escape(txt)) # in case of a simple plain text string
+            html = str(html.escape(txt)) # in case of a simple plain text string
 
         sty = ''
         if levelno == logging.ERROR or levelno == logging.CRITICAL:
@@ -224,7 +231,7 @@ class ContextAttributeSetter:
 
     def __exit__(self, type, value, traceback):
         # clean-up
-        for i in xrange(len(self.attribpairs)):
+        for i in range(len(self.attribpairs)):
             (getm, setm, v) = self.attribpairs[i]
             setm(self.initvals[i])
 
@@ -271,12 +278,12 @@ class OpenBibFile(QWidget):
         self.updateTimer = QTimer(self)
         self.updateTimer.setInterval(500)
         self.updateTimer.setSingleShot(True)
-        QObject.connect(self.updateTimer, SIGNAL('timeout()'), self.reloadFile)
+        self.updateTimer.timeout.connect(self.reloadFile)
         
         self._flag_modified_externally = False
 
         self.fwatcher = QFileSystemWatcher(self)
-        QObject.connect(self.fwatcher, SIGNAL('fileChanged(QString)'), self.fileModifiedExternally)
+        self.fwatcher.fileChanged.connect(self.fileModifiedExternally)
         #self.delayedUpdateFileContents)
 
         self.shortcuts = [
@@ -350,7 +357,7 @@ class OpenBibFile(QWidget):
             QMessageBox.critical(self, "No File!", "No file to save to!")
             return
 
-        config_data = unicode(self.ui.txtConfig.toPlainText())
+        config_data = str(self.ui.txtConfig.toPlainText())
 
         # ignore changes caused by ourselves
         self.fwatcher.blockSignals(True)
@@ -402,7 +409,7 @@ class OpenBibFile(QWidget):
 
             self.ui.lblFileName.setText("<no file loaded>")
 
-            self.setWindowFilePath(QString())
+            self.setWindowFilePath(str())
             self.setWindowTitle("<no file loaded>")
             self.setWindowIcon(QIcon(':/pic/file.png'))
 
@@ -449,10 +456,10 @@ class OpenBibFile(QWidget):
 
         except butils.BibolamaziError as e:
             self.bibolamaziFile = None
-            QMessageBox.critical(self, "Load Error", u"Error loading file: %s" %(unicode(e)))
+            QMessageBox.critical(self, "Load Error", u"Error loading file: %s" %(str(e)))
             self._set_win_state(False,
                                 "<h3 style=\"color: rgb(127,0,0)\">Error reading file.</h3>\n"
-                                + bibolamazi_error_html(unicode(e), bibolamaziFile=self.bibolamaziFile))
+                                + bibolamazi_error_html(str(e), bibolamaziFile=self.bibolamaziFile))
             return
 
         self._set_win_state(True)
@@ -496,8 +503,8 @@ class OpenBibFile(QWidget):
                 'srcname': ('Source' if len(srclist) == 1 else 'Source List'), 
                 'srclist': "".join(
                     ["<li><a href=\"%(sourceurl)s\">%(sourcepath)s</a></li>" % {
-                        'sourcepath': Qt.escape(s),
-                        'sourceurl': Qt.escape(srcurl(s)),
+                        'sourcepath': html.escape(s),
+                        'sourceurl': html.escape(srcurl(s), quote=True),
                         }
                      for s in srclist
                      ]
@@ -588,9 +595,9 @@ class OpenBibFile(QWidget):
                         bibolamazimain.run_bibolamazi(bibolamazifile=self.bibolamaziFileName)
                         log2txtLog.addtolog(" --> Finished successfully. <--")
                     except butils.BibolamaziError as e:
-                        logger.error(unicode(e))
+                        logger.error(str(e))
                         log2txtLog.addtolog(" --> Finished with errors. <--")
-                        QMessageBox.warning(self, "Bibolamazi error", unicode(e))
+                        QMessageBox.warning(self, "Bibolamazi error", str(e))
 
         self.delayedUpdateFileContents()
                     
@@ -691,7 +698,7 @@ class OpenBibFile(QWidget):
         self._set_modified(True)
         logger.debug('modified!!')
 
-        self.bibolamaziFile.setConfigData(unicode(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
         self._bibolamazifile_reparse();
 
         self._do_update_edittools()
@@ -703,7 +710,7 @@ class OpenBibFile(QWidget):
         except BibolamaziError as e:
             # see if we can parse the error
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
-                                    bibolamazi_error_html(unicode(e), bibolamaziFile=self.bibolamaziFile))
+                                    bibolamazi_error_html(str(e), bibolamaziFile=self.bibolamaziFile))
             return
 
     @pyqtSlot()
@@ -750,7 +757,7 @@ class OpenBibFile(QWidget):
             # insert _after_ current cmd (-> +1 for next line, -1 to correct for offset starting at 1)
             insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend)))
 
-        insertcur.insertText(unicode(cmdtext)+'\n')
+        insertcur.insertText(str(cmdtext)+'\n')
         # select inserted text without the newline
         insertcur.movePosition(QTextCursor.Left)
         insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
@@ -843,14 +850,14 @@ class OpenBibFile(QWidget):
         self._ignore_change_for_edittools = False
 
         # now, reparse the config
-        self.bibolamaziFile.setConfigData(unicode(self.ui.txtConfig.toPlainText()))
+        self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
         self._bibolamazifile_reparse()
         
 
-    @pyqtSlot(QStringList)
+    @pyqtSlot('QStringList')
     def on_sourceListEditor_sourceListChanged(self, sourcelist):
 
-        sourcelist = [unicode(x) for x in list(sourcelist)]
+        sourcelist = [str(x) for x in list(sourcelist)]
 
         cmdtext = "src: " + ("\n     ".join([butils.quotearg(x) for x in sourcelist])) + "\n"
 
@@ -870,7 +877,7 @@ class OpenBibFile(QWidget):
         self._replace_current_cmd(cmdtext, 'filter')
         
 
-    @pyqtSlot(QString)
+    @pyqtSlot('QString')
     def on_filterInstanceEditor_filterHelpRequested(self, topic):
         self.requestHelpTopic.emit(str(topic))
 
@@ -887,9 +894,9 @@ class OpenBibFile(QWidget):
 
         cmdtext = []
         doc = self.ui.txtConfig.document();
-        for n in xrange(self.bibolamaziFile.configLineNo(cmd.lineno),
-                        self.bibolamaziFile.configLineNo(cmd.linenoend)+1):
-            cmdtext.append(unicode(doc.findBlockByNumber(n-1).text()))
+        for n in range(self.bibolamaziFile.configLineNo(cmd.lineno),
+                       self.bibolamaziFile.configLineNo(cmd.linenoend)+1):
+            cmdtext.append(str(doc.findBlockByNumber(n-1).text()))
         cmdtext = "\n".join(cmdtext)
 
         self.add_favorite_cmdtext(cmdtext)
@@ -900,9 +907,9 @@ class OpenBibFile(QWidget):
         #            Also add this option in the context menu.
         pass
 
-    @pyqtSlot(QString)
+    @pyqtSlot('QString')
     def add_favorite_cmdtext(self, cmdtext):
-        cmdtext = unicode(cmdtext)
+        cmdtext = str(cmdtext)
         
         self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmdtext[:30], cmd=cmdtext))
 

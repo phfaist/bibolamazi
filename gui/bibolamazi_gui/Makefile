@@ -22,7 +22,7 @@ clean:
 
 
 $(QTAUTODIR)/%_rc.py: %.qrc
-	pyrcc4 -o $@ $<
+	pyrcc5 -o $@ $<
 
 $(QTAUTODIR)/ui_%.py: %.ui
-	pyuic4 --from-imports -o $@ $<
+	pyuic5 --from-imports -o $@ $<

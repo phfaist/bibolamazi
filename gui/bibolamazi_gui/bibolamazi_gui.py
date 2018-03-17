@@ -23,6 +23,14 @@
 ################################################################################
 
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 import sys
 import os
 import os.path
@@ -31,8 +39,9 @@ import logging
 import subprocess
 import datetime
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 import bibolamazi.init
 
@@ -43,11 +52,12 @@ from bibolamazi.core import bibolamazifile
 from bibolamazi.core import main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core.bibfilter import argtypes
 from bibolamazi.core import version as bibolamaziversion
 
-import openbibfile
-import helpbrowser
-import settingswidget
+from . import openbibfile
+from . import helpbrowser
+from . import settingswidget
 
 from .favorites import FavoriteCmdsList
 
@@ -59,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 
 class BibolamaziApplication(QApplication):
-    def __init__(self):
+    def __init__(self, enable_software_updates=True):
         self.main_widget = None
         
         super(BibolamaziApplication, self).__init__(sys.argv)
@@ -71,7 +81,8 @@ class BibolamaziApplication(QApplication):
         self.setOrganizationName('Bibolamazi Project')
 
         # before main widget, so that main widget can create & connect relevant menu items
-        setup_software_updater()
+        if enable_software_updates:
+            setup_software_updater()
 
         # create & setup main widget
         self.main_widget = MainWidget()
@@ -126,7 +137,7 @@ class MainWidget(QWidget):
                 # seems that myratio is not reliable (I get 1.77777..), so just use 2x
                 #myratio = float(retinaresolution[0]) / mydesktop.width()
                 myratio = 2
-                print 'myratio=', myratio
+                print('myratio=', myratio)
                 #if myratio > 1.01:
                 self.mypict = QPicture()
                 mypaint = QPainter(self.mypict)
@@ -163,58 +174,69 @@ class MainWidget(QWidget):
             self.upd_checknow_action = QAction("Check for Updates Now", self)
             self.upd_checknow_action.triggered.connect(self.doCheckForUpdates)
 
+        self.myactions = {}
+        self.myactions['new'] = QAction("New", self)
+        self.myactions['new'].triggered.connect(self.on_btnNewFile_clicked)
+        self.myactions['new'].setShortcut(QKeySequence("Ctrl+N"))
+        self.myactions['open'] = QAction("Open", self)
+        self.myactions['open'].triggered.connect(self.on_btnOpenFile_clicked)
+        self.myactions['open'].setShortcut(QKeySequence("Ctrl+O"))
+        self.myactions['help'] = QAction("Open Help && Reference Browser", self)
+        self.myactions['help'].triggered.connect(self.on_btnHelp_clicked)
+        self.myactions['help'].setShortcut(QKeySequence("Ctrl+R"))
+        self.myactions['quit'] = QAction("Quit", self)
+        self.myactions['quit'].triggered.connect(self.on_btnQuit_clicked)
+        self.myactions['quit'].setShortcut(QKeySequence("Ctrl+Q"))
+        self.myactions['settings'] = QAction("Settings", self)
+        self.myactions['settings'].triggered.connect(self.on_btnSettings_clicked)
+        for a in self.myactions.values():
+            self.addAction(a)
+
         if (sys.platform.startswith('darwin')):
             # Mac OS X
             self.menubar = QMenuBar(None)
             filemenu = self.menubar.addMenu("File")
-            filemenu.addAction("New", self, SLOT('on_btnNewFile_clicked()'),
-                               QKeySequence("Ctrl+N"))
-            filemenu.addAction("Open", self, SLOT('on_btnOpenFile_clicked()'),
-                               QKeySequence("Ctrl+O"))
-            filemenu.addAction("Settings", self, SLOT('on_btnSettings_clicked()'))
+            filemenu.addAction(self.myactions['new'])
+            filemenu.addAction(self.myactions['open'])
+            filemenu.addAction(self.myactions['settings'])
             if (self.upd_checkenabled_action):
                 filemenu.addSeparator()
                 filemenu.addAction(self.upd_checkenabled_action)
             if (self.upd_checknow_action):
                 filemenu.addAction(self.upd_checknow_action)
             helpmenu = self.menubar.addMenu("Help")
-            helpmenu.addAction("Open Help && Reference Browser", self, SLOT('on_btnHelp_clicked()'),
-                               QKeySequence("Ctrl+R"))
+            helpmenu.addAction(self.myactions['help'])
         else:
-            self.shortcuts += [
-                (QAction("New", self), "Ctrl+N", self.on_btnNewFile_clicked),
-                (QAction("Open", self), "Ctrl+O", self.on_btnOpenFile_clicked),
-                (QAction("Help", self), "Ctrl+R", self.on_btnHelp_clicked),
-                (QAction("Quit", self), "Ctrl+Q", self.on_btnQuit_clicked),
-                (QAction("Settings", self), "Ctrl+P", self.on_btnSettings_clicked),
-                #
-                # PyQt Bug: these shortcuts cause segfaults!! workaround: use QAction's instead.
-                #
-                #QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
-                #          Qt.ApplicationShortcut),
-                #QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
-                #          Qt.ApplicationShortcut),
-                #QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
-                #          Qt.ApplicationShortcut),
-                #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
-                #          Qt.ApplicationShortcut),
-                ]
-            if (self.upd_checkenabled_action):
-                self.shortcuts += [
-                    #(self.upd_checkenabled_action, "Ctrl+U", None)
-                    ]
-            if (self.upd_checknow_action):
-                self.shortcuts += [
-                    (self.upd_checknow_action, "Ctrl+U", None)
-                    ]
+            #self.shortcuts += [
+            #    (self.myactions['new'], "Ctrl+N"),
+            #    (QAction("Open", self), "Ctrl+O"),
+            #    (QAction("Help", self), "Ctrl+R"),
+            #    (QAction("Quit", self), "Ctrl+Q"),
+            #    (QAction("Settings", self), "Ctrl+P"),
+            #    #
+            #    # PyQt Bug: these shortcuts cause segfaults!! workaround: use QAction's instead.
+            #    #
+            #    #QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
+            #    #          Qt.ApplicationShortcut),
+            #    #QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
+            #    #          Qt.ApplicationShortcut),
+            #    #QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
+            #    #          Qt.ApplicationShortcut),
+            #    #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
+            #    #          Qt.ApplicationShortcut),
+            #    ]
+            #if (self.upd_checkenabled_action):
+            #    self.shortcuts += [
+            #        #(self.upd_checkenabled_action, "Ctrl+U", None)
+            #        ]
+            #if (self.upd_checknow_action):
+            #    self.shortcuts += [
+            #        (self.upd_checknow_action, "Ctrl+U", None)
+            #        ]
             # now, setup the shortcuts.
-            for (a, key, slot) in self.shortcuts:
+            for a in self.myactions.values:
                 #print 'adding action with key %s' %(key)
-                a.setShortcut(QKeySequence(key))
-                if (slot is not None):
-                    a.triggered.connect(slot)
                 a.setShortcutContext(Qt.ApplicationShortcut)
-                self.addAction(a)
 
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
@@ -250,7 +272,7 @@ class MainWidget(QWidget):
         w.requestHelpTopic.connect(self.openHelpTopic)
 
 
-    @pyqtSlot(QString)
+    @pyqtSlot('QString')
     def openHelpTopic(self, path):
         self.on_btnHelp_clicked()
         self.helpbrowser.openHelpTopic(path)
@@ -258,19 +280,38 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnOpenFile_clicked(self):
-        fname = str(QFileDialog.getOpenFileName(self, 'Open Bibolamazi File', QString(),
-                                                'Bibolamazi Files (*.bibolamazi.bib);;All Files (*)'))
+        openFileDialog = QFileDialog(self, "Open Bibolamazi File", str(),
+                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)")
+
+        if sys.platform.startswith('darwin'):
+            # NOTE: BUG: OS X' file selection dialog won't understand the
+            # .bibolamazi.bib extension. So use Qt's file dialog.
+            openFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
+        
+        openFileDialog.setDefaultSuffix("bibolamazi.bib")
+        openFileDialog.setAcceptMode(QFileDialog.AcceptOpen)
+        openFileDialog.setFileMode(QFileDialog.AnyFile)
+        if not openFileDialog.exec_():
+            return
+        
+        selectedfiles = openFileDialog.selectedFiles()
+        if not selectedfiles:
+            return
+
+        assert len(selectedfiles) == 1
+
+        fname = selectedfiles[0]
         if (fname):
             self.openFile(fname)
+
         
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        saveFileDialog = QFileDialog(self, "Create Bibolamazi File", QString(),
-                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)");
+        saveFileDialog = QFileDialog(self, "Create Bibolamazi File", str(),
+                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)")
         if sys.platform.startswith('darwin'):
-            # NOTE: BUG: OS X' file selection dialog is so stupid it won't understand the
-            # .bibolamazi.bib extension and will force some silly warning dialong and mess up
-            # the extension completely. So use Qt's file dialog.
+            # NOTE: BUG: OS X' file selection dialog won't understand the
+            # .bibolamazi.bib extension. So use Qt's file dialog.
             saveFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
         
         saveFileDialog.setDefaultSuffix("bibolamazi.bib")
@@ -279,7 +320,11 @@ class MainWidget(QWidget):
         if not saveFileDialog.exec_():
             return
         
-        newfilename = [unicode(x) for x in saveFileDialog.selectedFiles()][0]
+        selectedfiles = saveFileDialog.selectedFiles()
+        if not selectedfiles:
+            return
+        assert len(selectedfiles) == 1
+        newfilename = selectedfiles[0]
             
         if (not newfilename):
             # cancelled
@@ -394,7 +439,7 @@ def run_main():
     # default level: set to root logger.  May be set externally via environment variable
     # (e.g. for debugging)
     if 'BIBOLAMAZI_LOG_LEVEL' in os.environ and os.environ['BIBOLAMAZI_LOG_LEVEL']:
-        logging.getLogger().setLevel(blogger.LogLevel(os.environ['BIBOLAMAZI_LOG_LEVEL']).levelno)
+        logging.getLogger().setLevel(argtypes.LogLevel(os.environ['BIBOLAMAZI_LOG_LEVEL']).levelno)
     else:
         logging.getLogger().setLevel(logging.INFO)
 
@@ -427,7 +472,7 @@ def run_main():
 
     args = app.arguments();
     _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE);
-    for k in xrange(1,len(args)): # skip program name == argv[0]
+    for k in range(1,len(args)): # skip program name == argv[0]
         fn = str(args[k])
         if (_rxscript.search(fn)):
             # our own script, bug on windows?

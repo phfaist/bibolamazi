@@ -22,11 +22,19 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
+
 from collections import namedtuple
 import logging
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
 import bibolamazi.init
 from .overlistbuttonwidget import OverListButtonWidgetBase
@@ -69,7 +77,7 @@ class FavoriteCmdsList(QObject):
     def loadFromSettings(self, settings):
         settings.beginGroup("Favorites")
 
-        ok = settings.contains("has_favorites") and settings.value("has_favorites").toBool()
+        ok = settings.contains("has_favorites") and settings.value("has_favorites")
         if not ok:
             logger.debug("Loading defaults for favorites")
             self.loadDefaults()
@@ -78,28 +86,33 @@ class FavoriteCmdsList(QObject):
         self.favlist[:] = []
         
         siz = settings.beginReadArray("favorite_cmds")
-        for i in xrange(siz):
+        for i in range(siz):
             settings.setArrayIndex(i)
-            self.favlist.append(FavoriteCmd(name=str(settings.value("name").toString()),
-                                            cmd=str(settings.value("cmd").toString())))
+            self.favlist.append(FavoriteCmd(name=self._get_settings_str(settings, "name"),
+                                            cmd=self._get_settings_str(settings, "cmd")))
         settings.endArray()
 
         settings.endGroup()
 
         self.favChanged.emit()
-        
+
+    def _get_settings_str(self, settings, field):
+        val = settings.value(field)
+        if val is None:
+            return ''
+        return str(val)
 
     def saveToSettings(self, settings):
         settings.beginGroup("Favorites")
 
-        settings.setValue("has_favorites", QVariant(True))
+        settings.setValue("has_favorites", True)
 
         settings.beginWriteArray("favorite_cmds", len(self.favlist))
-        for i in xrange(len(self.favlist)):
+        for i in range(len(self.favlist)):
             fav = self.favlist[i]
             settings.setArrayIndex(i)
-            settings.setValue("name", QVariant(QString(fav.name)))
-            settings.setValue("cmd", QVariant(QString(fav.cmd)))
+            settings.setValue("name", str(fav.name))
+            settings.setValue("cmd", str(fav.cmd))
         settings.endArray()
 
         settings.endGroup()
@@ -151,37 +164,37 @@ class FavoritesModel(QAbstractTableModel):
 
         if role == Qt.BackgroundRole:
             if self._edit_mode:
-                return QVariant(QBrush(QColor(255,230,230)))
-            return QVariant()
+                return QBrush(QColor(255,230,230))
+            return None
 
         if not index.isValid():
-            return QVariant()
+            return None
         
         col = index.column()
         row = index.row()
 
         if (row < 0 or row >= len(self._favcmds.favlist)):
-            return QVariant()
+            return None
 
         if (role == ROLE_FAV_EDITABLE):
-            return QVariant(self._edit_mode)
+            return self._edit_mode
 
         if (role == ROLE_CMD):
-            return QVariant(QString(self._favcmds.favlist[row].cmd))
+            return self._favcmds.favlist[row].cmd
 
         # argument name
         if (role == Qt.DisplayRole):
-            return QVariant(QString(self._favcmds.favlist[row].name))
+            return self._favcmds.favlist[row].name
 
         # editable name
         if (role == Qt.EditRole):
-            return QVariant(QString(self._favcmds.favlist[row].name))
+            return self._favcmds.favlist[row].name
         
         # tool-tip documentation
         if (role == Qt.ToolTipRole):
-            return QVariant(QString(self._favcmds.favlist[row].cmd))
+            return self._favcmds.favlist[row].cmd
 
-        return QVariant()
+        return None
 
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
@@ -193,7 +206,7 @@ class FavoritesModel(QAbstractTableModel):
         if (row < 0 or row >= len(self._favcmds.favlist)):
             return False
 
-        self._favcmds.favlist[row].name = str(value.toString())
+        self._favcmds.favlist[row].name = str('' if value is None else value)
         self.modelReset.emit()
 
         
@@ -208,19 +221,19 @@ class FavoritesModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if (orientation == Qt.Vertical):
-            return QVariant()
+            return None
 
         if (section == 0):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u""))
-            return QVariant()
+                return u""
+            return None
 
         if (section == 1):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u""))
-            return QVariant()
+                return u""
+            return None
 
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -236,7 +249,7 @@ class FavoritesModel(QAbstractTableModel):
         return Qt.MoveAction
 
     def mimeTypes(self):
-        return QStringList() << "application/x-bibolamazi-internalmove-favorites";
+        return [ "application/x-bibolamazi-internalmove-favorites" ];
 
     def mimeData(self, indexes):
         logger.longdebug("indexes=%r", indexes)
@@ -283,7 +296,7 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
         if not idx.isValid():
             return False
 
-        if idx.data(ROLE_FAV_EDITABLE).toBool():
+        if idx.data(ROLE_FAV_EDITABLE):
             # edit mode
             self.ui.btnInsert.hide()
             self.ui.btnEdit.hide()
@@ -304,7 +317,7 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
         if not curidx.isValid():
             return
 
-        self.insertCommand.emit( curidx.data(ROLE_CMD).toString() )
+        self.insertCommand.emit( curidx.data(ROLE_CMD) )
 
     @pyqtSlot()
     def on_btnEdit_clicked(self):

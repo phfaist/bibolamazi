@@ -22,6 +22,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -34,8 +41,10 @@ from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage,
 from bibolamazi.core import butils
 from bibolamazi.core.bibfilter.argtypes import EnumArgType, CommaStrList
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+
 
 from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
@@ -76,8 +85,8 @@ class RegisteredArgInputType:
 
     def setEditorData(self, editor):
         if (isinstance(self.type_arg_input, EnumArgType)):
-            for i in xrange(editor.count()):
-                if (unicode(editor.itemText(i)) == self.value):
+            for i in range(editor.count()):
+                if (str(editor.itemText(i)) == self.value):
                     editor.setCurrentIndex(i)
                     return
             return
@@ -87,7 +96,7 @@ class RegisteredArgInputType:
 
     def valueOf(self, editor):
         if (isinstance(self.type_arg_input, EnumArgType)):
-            val = unicode(editor.itemText(editor.currentIndex()))
+            val = str(editor.itemText(editor.currentIndex()))
             logger.debug("GOT VALUE: %r", val)
             return val
 
@@ -106,15 +115,15 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self.setFilterName(filtername)
 
 
-    optionStringChanged = pyqtSignal('QString')
+    optionStringChanged = pyqtSignal(str)
 
 
     def optionstring(self):
         return self._optionstring
 
-    @pyqtSlot(QString)
+    @pyqtSlot(str)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
-        filtername = unicode(filtername)
+        filtername = str(filtername)
 
         if (not force and self._filtername == filtername):
             return
@@ -127,7 +136,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if (filtername and filters_factory.filter_uses_default_arg_parser(filtername)):
                 self._fopts = filters_factory.DefaultFilterOptions(filtername)
         except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
-            logger.warning("No such filter, no such filter package or filtererror: %s", unicode(e))
+            logger.warning("No such filter, no such filter package or filtererror: %s", str(e))
             pass
 
         if (reset_optionstring):
@@ -139,9 +148,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             # we shan't emit anything anyway for a filter name change.
             pass
 
-    @pyqtSlot(QString)
+    @pyqtSlot(str)
     def setOptionString(self, optionstring, force=False, noemit=False):
-        optionstring = unicode(optionstring);
+        optionstring = str(optionstring);
 
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
         if (not force and optionstring == self._optionstring):
@@ -154,7 +163,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # parse the options
         try:
             optspec = self._fopts.parse_optionstring_to_optspec(optionstring)
-        except FilterError:
+        except (FilterError,ValueError):
+            logger.debug('error parsing option string, returning')
             return
 
         self._optionstring = optionstring
@@ -188,9 +198,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._emitLayoutChanged()
 
 
-    @pyqtSlot('QString')
+    @pyqtSlot(str)
     def removeArgument(self, argname):
-        argname = unicode(argname)
+        argname = str(argname)
         
         logger.debug('remove argument: %r', argname)
         
@@ -230,7 +240,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if (self._fopts is None):
-            return QVariant()
+            return None
         
         filteroptions = self._fopts.filterOptions()
 
@@ -238,7 +248,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         row = index.row()
 
         if (row < 0 or row >= len(filteroptions)):
-            return QVariant()
+            return None
 
         # the argument specification of the current row (_ArgDoc namedtuple instance)
         arg = filteroptions[row]
@@ -246,13 +256,13 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (col == 0):
             # argument name
             if (role == Qt.DisplayRole):
-                return QVariant(QString(self._fopts.getSOptNameFromArg(filteroptions[row].argname)))
+                return str(self._fopts.getSOptNameFromArg(filteroptions[row].argname))
 
             # tool-tip documentation
             if (role == Qt.ToolTipRole):
-                return QVariant(QString(arg.doc))
+                return re.sub('\n\\s*', ' ', arg.doc)
 
-            return QVariant()
+            return None
 
         # the value of the argument of the current row.
         val = self._kwargs.get(arg.argname)
@@ -262,16 +272,16 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
             if (role == overlistbuttonwidget.ROLE_OVERBUTTON):
                 if (val is not None):
-                    return QVariant(overlistbuttonwidget.OVERBUTTON_REMOVE)
-                return QVariant(overlistbuttonwidget.OVERBUTTON_ADD)
+                    return overlistbuttonwidget.OVERBUTTON_REMOVE
+                return overlistbuttonwidget.OVERBUTTON_ADD
 
             if (role == overlistbuttonwidget.ROLE_ARGNAME):
-                return QVariant(QString(arg.argname))
+                return str(arg.argname)
             
             if (role == Qt.DisplayRole):
                 if (val is None):
-                    return QVariant()
-                return QVariant(QString(unicode(val)))
+                    return None
+                return str(val)
 
             # request editing value of argument
             if (role == Qt.EditRole):
@@ -279,36 +289,36 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     fmodule = filters_factory.get_module(self._filtername, False)
                     typ = butils.resolve_type(arg.argtypename, fmodule)
                 else:
-                    typ = unicode
+                    typ = str
                 if (hasattr(typ, 'type_arg_input')):
                     editval = RegisteredArgInputType(typ, val)
-                elif (issubclass(typ, basestring) and val is None):
+                elif (issubclass(typ, str) and val is None):
                     editval = typ('')
                 elif (issubclass(typ, CommaStrList)):
-                    editval = unicode(val)
+                    editval = str(val)
                 else:
                     editval = typ(val)
-                return QVariant(editval)
-            return QVariant()
+                return editval
+            return None
 
-        return QVariant()
+        return None
 
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if (orientation == Qt.Vertical):
-            return QVariant()
+            return None
 
         if (section == 0):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u"Filter Option"))
-            return QVariant()
+                return str(u"Filter Option")
+            return None
 
         if (section == 1):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u"Value"))
-            return QVariant()
+                return str(u"Value")
+            return None
 
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -348,11 +358,6 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         arg = filteroptions[row]
 
-        value = value.toPyObject()
-        
-        if (isinstance(value, QString)):
-            value = unicode(value); # make sure we're dealing with Python strings and not Qt strings
-
         logger.debug("Got value: %r", value)
 
         # validate type
@@ -360,7 +365,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (arg.argtypename is not None):
             typ = butils.resolve_type(arg.argtypename, filters_factory.get_module(self._filtername, False))
         if (typ == None):
-            typ = unicode
+            typ = str
             
         value = typ(value)
 
@@ -380,7 +385,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def findArgByName(self, argname):
         filteroptions = self._fopts.filterOptions()
 
-        for row in xrange(len(filteroptions)):
+        for row in range(len(filteroptions)):
             if (filteroptions[row].argname == argname):
                 return row
 
@@ -401,15 +406,15 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 if (arg.argtypename == 'bool'):
                     slist.append('-d'+soptarg+('' if v else '=False'))
                 else:
-                    slist.append('-s'+soptarg+'='+butils.quotearg(unicode(v)))
+                    slist.append('-s'+soptarg+'='+butils.quotearg(str(v)))
                     
             done_args.append(arg.argname)
 
         # and add any extra args
-        for (k,v) in self._kwargs.iteritems():
+        for (k,v) in self._kwargs.items():
             if (k in done_args):
                 continue
-            slist.append('-s' + k + '=' + butils.quotearg(unicode(v)))
+            slist.append('-s' + k + '=' + butils.quotearg(str(v)))
 
         self._optionstring = " ".join(slist)
 
@@ -435,9 +440,9 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
             return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
         
         data = index.data(Qt.EditRole)
-        if (isinstance(data.toPyObject(), RegisteredArgInputType)):
+        if (isinstance(data, RegisteredArgInputType)):
             # do our own processing with some custom widgets.
-            rr = data.toPyObject()
+            rr = data
             w = rr.createWidget(parent, option)
             w.setProperty('_RegisteredArgInputType', data)
             return w
@@ -449,19 +454,19 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
     
     def setEditorData(self, editor, index):
         rr = editor.property('_RegisteredArgInputType')
-        if (not rr.isValid()):
+        if rr is None:
             return super(DefaultFilterOptionsDelegate, self).setEditorData(editor, index)
         
-        rr = rr.toPyObject()
+        rr = rr
         rr.setEditorData(editor) # the value is already contained in the rr object
 
     def setModelData(self, editor, model, index):
         rr = editor.property('_RegisteredArgInputType')
-        if (not rr.isValid()):
+        if rr is None:
             return super(DefaultFilterOptionsDelegate, self).setModelData(editor, model, index)
         
-        rr = rr.toPyObject()
-        model.setData(index, QVariant(rr.valueOf(editor)))
+        rr = rr
+        model.setData(index, rr.valueOf(editor))
 
 
 
@@ -505,23 +510,23 @@ class FilterInstanceEditor(QWidget):
         
 
     filterInstanceDefinitionChanged = pyqtSignal()
-    filterNameChanged = pyqtSignal('QString')
-    filterOptionsChanged = pyqtSignal('QString')
+    filterNameChanged = pyqtSignal(str)
+    filterOptionsChanged = pyqtSignal(str)
 
-    filterHelpRequested = pyqtSignal('QString')
+    filterHelpRequested = pyqtSignal(str)
 
     requestAddToFavorites = pyqtSignal()
     
 
     def filterName(self):
-        return unicode(self.ui.cbxFilter.currentText()).encode('utf-8')
+        return self.ui.cbxFilter.currentText()
 
     def optionString(self):
         return self._filteroptionsmodel.optionstring()
 
 
-    @pyqtSlot(QString, bool)
-    @pyqtSlot(QString)
+    @pyqtSlot(str, bool)
+    @pyqtSlot(str)
     def setFilterName(self, filtername, noemit=False, force=False, reset_optionstring=True):
         logger.debug("setFilterName(%r)", filtername)
         if (not force and self.ui.cbxFilter.currentText() == filtername):
@@ -540,7 +545,7 @@ class FilterInstanceEditor(QWidget):
             self.emitFilterNameChanged()
 
 
-    @pyqtSlot(QString)
+    @pyqtSlot(str)
     def setOptionString(self, optionstring, noemit=False, force=False):
         self._filteroptionsmodel.setOptionString(optionstring, force=force, noemit=noemit)
         self.ui.lstOptions.resizeColumnToContents(0)
@@ -556,9 +561,9 @@ class FilterInstanceEditor(QWidget):
         if (self._is_updating):
             return
         logger.debug("emitting filterNameChanged! filterName=%s", self.filterName())
-        self.filterNameChanged.emit(QString(self.filterName()))
+        self.filterNameChanged.emit(str(self.filterName()))
 
-    @pyqtSlot(QString)
+    @pyqtSlot(str)
     def on_cbxFilter_editTextChanged(self, s):
         if (self._is_updating):
             return
@@ -567,6 +572,6 @@ class FilterInstanceEditor(QWidget):
 
     @pyqtSlot()
     def on_btnFilterHelp_clicked(self):
-        self.filterHelpRequested.emit('filters/%s' %(QString(self.filterName())))
+        self.filterHelpRequested.emit('filters/%s' %(str(self.filterName())))
 
         

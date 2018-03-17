@@ -2,77 +2,62 @@
 
 # Form implementation generated from reading ui file 'filterinstanceeditor.ui'
 #
-# Created: Sun May 31 15:09:07 2015
-#      by: PyQt4 UI code generator 4.10.3
+# Created by: PyQt5 UI code generator 5.7.1
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
-
-try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    def _fromUtf8(s):
-        return s
-
-try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
-except AttributeError:
-    def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_FilterInstanceEditor(object):
     def setupUi(self, FilterInstanceEditor):
-        FilterInstanceEditor.setObjectName(_fromUtf8("FilterInstanceEditor"))
+        FilterInstanceEditor.setObjectName("FilterInstanceEditor")
         FilterInstanceEditor.resize(368, 361)
-        self.gridLayout = QtGui.QGridLayout(FilterInstanceEditor)
-        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.horizontalLayout = QtGui.QHBoxLayout()
-        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        self.label = QtGui.QLabel(FilterInstanceEditor)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        self.gridLayout = QtWidgets.QGridLayout(FilterInstanceEditor)
+        self.gridLayout.setObjectName("gridLayout")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.label = QtWidgets.QLabel(FilterInstanceEditor)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
         self.label.setSizePolicy(sizePolicy)
-        self.label.setObjectName(_fromUtf8("label"))
+        self.label.setObjectName("label")
         self.horizontalLayout.addWidget(self.label)
-        self.cbxFilter = QtGui.QComboBox(FilterInstanceEditor)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
+        self.cbxFilter = QtWidgets.QComboBox(FilterInstanceEditor)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(2)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.cbxFilter.sizePolicy().hasHeightForWidth())
         self.cbxFilter.setSizePolicy(sizePolicy)
         self.cbxFilter.setEditable(True)
-        self.cbxFilter.setInsertPolicy(QtGui.QComboBox.NoInsert)
-        self.cbxFilter.setObjectName(_fromUtf8("cbxFilter"))
+        self.cbxFilter.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
+        self.cbxFilter.setObjectName("cbxFilter")
         self.horizontalLayout.addWidget(self.cbxFilter)
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 2)
-        self.lstOptions = QtGui.QTreeView(FilterInstanceEditor)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
+        self.lstOptions = QtWidgets.QTreeView(FilterInstanceEditor)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lstOptions.sizePolicy().hasHeightForWidth())
         self.lstOptions.setSizePolicy(sizePolicy)
-        self.lstOptions.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
-        self.lstOptions.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+        self.lstOptions.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+        self.lstOptions.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
         self.lstOptions.setIndentation(0)
         self.lstOptions.setItemsExpandable(False)
         self.lstOptions.setAllColumnsShowFocus(True)
-        self.lstOptions.setObjectName(_fromUtf8("lstOptions"))
+        self.lstOptions.setObjectName("lstOptions")
         self.gridLayout.addWidget(self.lstOptions, 3, 0, 1, 2)
-        self.hlytButtons = QtGui.QHBoxLayout()
-        self.hlytButtons.setObjectName(_fromUtf8("hlytButtons"))
-        self.btnFilterHelp = QtGui.QPushButton(FilterInstanceEditor)
-        self.btnFilterHelp.setObjectName(_fromUtf8("btnFilterHelp"))
+        self.hlytButtons = QtWidgets.QHBoxLayout()
+        self.hlytButtons.setObjectName("hlytButtons")
+        self.btnFilterHelp = QtWidgets.QPushButton(FilterInstanceEditor)
+        self.btnFilterHelp.setObjectName("btnFilterHelp")
         self.hlytButtons.addWidget(self.btnFilterHelp)
-        self.btnAddFavorite = QtGui.QToolButton(FilterInstanceEditor)
+        self.btnAddFavorite = QtWidgets.QToolButton(FilterInstanceEditor)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/pic/bookmark.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/pic/bookmark.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnAddFavorite.setIcon(icon)
-        self.btnAddFavorite.setObjectName(_fromUtf8("btnAddFavorite"))
+        self.btnAddFavorite.setObjectName("btnAddFavorite")
         self.hlytButtons.addWidget(self.btnAddFavorite)
         self.gridLayout.addLayout(self.hlytButtons, 4, 0, 1, 2)
 
@@ -80,9 +65,10 @@ class Ui_FilterInstanceEditor(object):
         QtCore.QMetaObject.connectSlotsByName(FilterInstanceEditor)
 
     def retranslateUi(self, FilterInstanceEditor):
-        FilterInstanceEditor.setWindowTitle(_translate("FilterInstanceEditor", "Form", None))
-        self.label.setText(_translate("FilterInstanceEditor", "Filter:", None))
-        self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "Help: Filter Reference", None))
-        self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites", None))
+        _translate = QtCore.QCoreApplication.translate
+        FilterInstanceEditor.setWindowTitle(_translate("FilterInstanceEditor", "Form"))
+        self.label.setText(_translate("FilterInstanceEditor", "Filter:"))
+        self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "Help: Filter Reference"))
+        self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites"))
 
 from . import bibolamazi_res_rc

@@ -22,6 +22,12 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
 
 import re
 from collections import namedtuple
@@ -30,8 +36,8 @@ import bibolamazi.init
 # bibolamazi filters
 from bibolamazi.core.bibfilter import factory as filters_factory
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
 
 

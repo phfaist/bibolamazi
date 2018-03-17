@@ -22,9 +22,17 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 import bibolamazi.init
 from .qtauto.ui_overlistbuttonwidget import Ui_OverListButtonWidget
@@ -133,12 +141,10 @@ class OverListButtonWidget(OverListButtonWidgetBase):
         if (not idx.isValid()):
             return False
         
-        v = idx.data(ROLE_OVERBUTTON)
-        if (not v.isValid()):
+        whichbtn = idx.data(ROLE_OVERBUTTON)
+        if whichbtn is None:
             return False
         
-        whichbtn = v.toPyObject()
-
         if (whichbtn == OVERBUTTON_ADD):
             self.ui.btnAdd.show()
             self.ui.btnEdit.hide()
@@ -159,7 +165,7 @@ class OverListButtonWidget(OverListButtonWidgetBase):
         if (curidx is None):
             return
         self.addIndexClicked.emit(curidx)
-        self.addClicked.emit(curidx.data(ROLE_ARGNAME).toString())
+        self.addClicked.emit(curidx.data(ROLE_ARGNAME))
 
     @pyqtSlot()
     def on_btnEdit_clicked(self):
@@ -167,7 +173,7 @@ class OverListButtonWidget(OverListButtonWidgetBase):
         if (curidx is None):
             return
         self.editIndexClicked.emit(curidx)
-        self.editClicked.emit(curidx.data(ROLE_ARGNAME).toString())
+        self.editClicked.emit(curidx.data(ROLE_ARGNAME))
 
     @pyqtSlot()
     def on_btnRemove_clicked(self):
@@ -175,7 +181,7 @@ class OverListButtonWidget(OverListButtonWidgetBase):
         if (curidx is None):
             return
         self.removeIndexClicked.emit(curidx)
-        self.removeClicked.emit(curidx.data(ROLE_ARGNAME).toString())
+        self.removeClicked.emit(curidx.data(ROLE_ARGNAME))
 
 
     

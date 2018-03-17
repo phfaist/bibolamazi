@@ -22,6 +22,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 import sys
 import logging
 
@@ -33,8 +40,9 @@ from bibolamazi.core import butils
 from bibolamazi.core import argparseactions
 from bibolamazi.core.bibfilter import factory as filters_factory
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 from . import filterinstanceeditor
 from . import settingswidget
@@ -84,7 +92,7 @@ class HelpBrowser(QWidget):
         self.ui = Ui_HelpBrowser()
         self.ui.setupUi(self)
 
-        QObject.connect(self.ui.tabs, SIGNAL('tabCloseRequested(int)'), self.closeTab)
+        self.ui.tabs.tabCloseRequested.connect(self.closeTab)
 
         self.filterButtons = []
 
@@ -111,7 +119,7 @@ class HelpBrowser(QWidget):
             self.ui.lytHomeButtons.addWidget(fbutton, offsetlineno + int(n / ncols), n % ncols)
             n += 1
 
-            QObject.connect(fbutton, SIGNAL('clicked()'), self.openHelpTopicBySender)
+            fbutton.clicked.connect(self.openHelpTopicBySender)
 
         newrow = None
         if n % ncols == 0:
@@ -138,7 +146,7 @@ class HelpBrowser(QWidget):
                              self.ui.btnCmdLineHelp
                              ]
         for btn in static_help_btns:
-            QObject.connect(btn, SIGNAL('clicked()'), self.openHelpTopicBySender)
+            btn.clicked.connect(self.openHelpTopicBySender)
 
         self.shortcuts = [
             QShortcut(QKeySequence('Ctrl+W'), self, self.closeCurrentTab, self.closeCurrentTab),
@@ -165,7 +173,7 @@ class HelpBrowser(QWidget):
     @pyqtSlot()
     def openHelpTopicBySender(self):
         sender = self.sender()
-        path = str(sender.property('helppath').toString())
+        path = str(sender.property('helppath'))
         if (not path):
             logger.warning("Bad help topic path: %r", path)
             return
@@ -173,7 +181,7 @@ class HelpBrowser(QWidget):
         self.openHelpTopic(path)
         
 
-    @pyqtSlot(QString)
+    @pyqtSlot('QString')
     def openHelpTopic(self, spath):
         path = str(spath)
         pathitems = [x for x in path.split('/') if x];
@@ -181,7 +189,7 @@ class HelpBrowser(QWidget):
 
         # check to see if the tab is already open
         for tab in self.openTabs:
-            if (str(tab.property('helppath').toString()) == "/".join(pathitems)):
+            if (str(tab.property('helppath')) == "/".join(pathitems)):
                 # just raise this tab.
                 self.ui.tabs.setCurrentWidget(tab)
                 return
@@ -191,8 +199,8 @@ class HelpBrowser(QWidget):
             return
         widget.setProperty('helppath', "/".join(pathitems))
 
-        tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle').toString())
-        self.ui.tabs.setTabToolTip(tabindex, widget.property('HelpTabToolTip').toString())
+        tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle'))
+        self.ui.tabs.setTabToolTip(tabindex, widget.property('HelpTabToolTip'))
         self.ui.tabs.setCurrentIndex(tabindex)
 
         self.openTabs.append(widget)
@@ -256,7 +264,7 @@ class HelpBrowser(QWidget):
 
 
 
-HELP_WELCOME = ur"""
+HELP_WELCOME = r"""
 
 ======================================================================
 Bibolamazi -- Prepare consistent BibTeX files for your LaTeX documents

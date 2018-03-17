@@ -204,10 +204,6 @@ sources loaded. See doc for :py:class:`BibolamaziFile`.
 
 
 
-_key_duplsuffix = '.dupl.'
-_rx_repl_key_duplsuffix = re.compile(r'($|'+re.escape(_key_duplsuffix)+r'(?P<num>\d+)$)',
-                                     flags=re.IGNORECASE)
-
 
 
 class BibolamaziFile(object):
@@ -1057,24 +1053,26 @@ class BibolamaziFile(object):
                 # initialize bibliography data
                 self._bibliographydata = pybtex.database.BibliographyData()
 
+            hasconflictingkeys = False
+
             for key, entry in iteritems(bib_data.entries):
                 if (key in self._bibliographydata.entries):
-                    logger.warn('Repeated bibliography entry in other file: %s. Keeping first encountered entry.', key)
-                    continue
+                    oldkey = key
+                    n = 0
+                    hasconflictingkeys = True
+                    while key in self._bibliographydata.entries:
+                        n += 1
+                        key = oldkey + u".conflictkey." + str(n)
 
-                # TODO: Do this cleverly?
-                #
-                #if (key in self._bibliographydata.entries):
-                #    oldkey = key
-                #    duplcounter = 1
-                #    while key in self._bibliographydata.entries:
-                #        key = _rx_repl_key_duplsuffix.sub(_key_duplsuffix+str(duplcounter), key)
-                #        duplcounter += 1
-                #
-                #    logger.warn('Repeated bibliography entry in other file: %s. '+
-                #                'Renamed duplicate occurence to %s.', oldkey, key)
+                    entry.key = key
 
                 self._bibliographydata.add_entry(key, entry)
+
+            if hasconflictingkeys:
+                logger.info('File %s has conflicting bib keys from another file. '
+                            'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to make sure'
+                            'these entries are duplicates',
+                            oldkey, key)
 
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the

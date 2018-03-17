@@ -422,13 +422,18 @@ class DuplicatesFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, dupfile=None, warn=False, custom_bibalias=False,
+    def __init__(self, dupfile=None, ensure_conflict_keys_are_duplicates=True,
+                 warn=False, custom_bibalias=False,
                  keep_only_used_in_jobname=None, jobname_search_dirs=None,
                  *args):
         r"""DuplicatesFilter constructor.
 
         *dupfile: the name of a file to write latex code for defining duplicates to. This file
                   will be overwritten!!
+        *ensure_conflict_keys_are_duplicates(bool): If true (the default), then keys of the form
+               "xxxxxx.conflictkey.N" are verified to indeed be duplicates of the corresponding
+               "xxxxxx" entry. These conflict key entries are created when two files have entries
+               with the same key.
         *warn(bool): if this flag is set, dupfile is not mandatory, and a warning is issued
                for every duplicate entry found in the database.
         *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
@@ -446,6 +451,9 @@ class DuplicatesFilter(BibFilter):
         self.dupfile = dupfile
         self.warn = butils.getbool(warn)
         self.custom_bibalias = butils.getbool(custom_bibalias)
+
+        if ensure_conflict_keys_are_duplicates:
+            raise RuntimeError("Not Yet Implemented")
 
         if len(args) == 1:
             if self.dupfile is None:

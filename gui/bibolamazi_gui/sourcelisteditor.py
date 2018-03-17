@@ -22,6 +22,12 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
 
 import os
 import os.path
@@ -29,8 +35,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 import bibolamazi.init
 from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
@@ -45,7 +52,7 @@ class SourceListEditor(QWidget):
         
         self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
 
-        QObject.connect(self.ui.lstSources.model(), SIGNAL('layoutChanged()'), self.update_stuff_moved)
+        self.ui.lstSources.model().layoutChanged.connect(self.update_stuff_moved)
 
         self._is_updating = False
 
@@ -59,7 +66,7 @@ class SourceListEditor(QWidget):
     
 
     def sourceList(self):
-        return [str(self.ui.lstSources.item(i).text())  for i in xrange(self.ui.lstSources.count())]
+        return [str(self.ui.lstSources.item(i).text())  for i in range(self.ui.lstSources.count())]
 
 
     def setRefDir(self, refdir):
@@ -70,8 +77,8 @@ class SourceListEditor(QWidget):
         self._ref_dir = refdir;
         
 
-    @pyqtSlot(QStringList, bool)
-    @pyqtSlot(QStringList)
+    @pyqtSlot('QStringList', bool)
+    @pyqtSlot('QStringList')
     def setSourceList(self, sourcelist, noemit=False):
         sourcelist = [str(x) for x in list(sourcelist)];
         
@@ -108,7 +115,7 @@ class SourceListEditor(QWidget):
         if (self._is_updating):
             return
         logger.debug("emitting sourceListChanged()!")
-        self.sourceListChanged.emit(QStringList(self.sourceList()))
+        self.sourceListChanged.emit(list(self.sourceList()))
 
 
     @pyqtSlot()
@@ -160,7 +167,7 @@ class SourceListEditor(QWidget):
             self.ui.txtFile.setText(self.ui.lstSources.item(row).text())
 
 
-    @pyqtSlot(QString)
+    @pyqtSlot('QString')
     def on_txtFile_textChanged(self, text):
         row = self.ui.lstSources.currentRow()
         if (row < 0):
@@ -179,8 +186,8 @@ class SourceListEditor(QWidget):
             logger.debug("No row selected")
             return
         
-        fname = str(QFileDialog.getOpenFileName(self, 'Select BibTeX File', QString(),
-                                                'BibTeX Files (*.bib);;All Files (*)'))
+        fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
+                                                     'BibTeX Files (*.bib);;All Files (*)')
         logger.debug("fname=%r.", fname)
         if (not fname):
             return

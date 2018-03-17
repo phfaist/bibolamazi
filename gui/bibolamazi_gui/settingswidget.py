@@ -21,13 +21,21 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 import sys
 import os.path
 import logging
 logger = logging.getLogger(__name__)
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
@@ -78,26 +86,26 @@ class MyOrderedDictModel(QAbstractTableModel):
         row = index.row()
 
         if (row < 0 or row >= len(self._dic)):
-            return QVariant()
+            return None
 
         if role == Qt.BackgroundRole:
             valid = filters_factory.validate_filter_package(str(self._dic.item_at(row)[0]),
                                                             str(self._dic.item_at(row)[1]),
                                                             raise_exception=False)
             if not valid:
-                return QVariant(QBrush(QColor(255,200,200)))
-            return QVariant()
+                return QBrush(QColor(255,200,200))
+            return None
 
         if (col == 0):
             # argument name
             if (role == Qt.DisplayRole):
-                return QVariant(QString(self._dic.item_at(row)[0]))
+                return self._dic.item_at(row)[0]
 
             # tool-tip documentation
             if (role == Qt.ToolTipRole):
-                return QVariant(QString(self._dic.item_at(row)[0]))
+                return self._dic.item_at(row)[0]
 
-            return QVariant()
+            return None
         
         if (col == 1):
             # argument value
@@ -105,29 +113,29 @@ class MyOrderedDictModel(QAbstractTableModel):
             if (role == Qt.DisplayRole or role == Qt.EditRole):
                 val = self._dic.item_at(row)[1]
                 if (val is None):
-                    return QVariant()
-                return QVariant(QString(str(val)))
+                    return None
+                return str(val)
 
-            return QVariant()
+            return None
 
-        return QVariant()
+        return None
 
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if (orientation == Qt.Vertical):
-            return QVariant()
+            return None
 
         if (section == 0):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u"Filter Package"))
-            return QVariant()
+                return u"Filter Package"
+            return None
 
         if (section == 1):
             if (role == Qt.DisplayRole):
-                return QVariant(QString(u"Path"))
-            return QVariant()
+                return u"Path"
+            return None
 
-        return QVariant()
+        return None
 
 
     def flags(self, index):
@@ -155,11 +163,6 @@ class MyOrderedDictModel(QAbstractTableModel):
         if (row < 0 or row >= len(filters_factory.filterpath)):
             return False
 
-        value = value.toPyObject()
-        
-        if (isinstance(value, QString)):
-            value = unicode(value); # make sure we're dealing with Python strings and not Qt strings
-
         logger.debug("Got value: %r", value)
 
         if col == 0:
@@ -181,7 +184,11 @@ def setup_filterpackages_from_settings(s):
 
     s.beginGroup("BibolamaziCore")
 
-    fpstr = str(s.value("filterpath").toString())
+    sval = s.value("filterpath")
+    if sval is None:
+        fpstr = ''
+    else:
+        fpstr = str(sval)
 
     for fp in reversed(fpstr.split(os.pathsep)):
         # if we had 'filters=' from some old version, then replace that by 'bibolamazi.filters='
@@ -257,7 +264,7 @@ class SettingsWidget(QDialog):
     @pyqtSlot()
     def on_btnFilterPackageAdd_clicked(self):
 
-        thedir = str(QFileDialog.getExistingDirectory(self, "Locate Filter Package", QString()))
+        thedir = str(QFileDialog.getExistingDirectory(self, "Locate Filter Package", str()))
 
         thekey = os.path.basename(thedir)
         thedir = os.path.dirname(thedir)
@@ -347,8 +354,8 @@ class SettingsWidget(QDialog):
         s.beginGroup("BibolamaziCore")
 
         s.setValue("filterpath",
-                   QVariant(QString(os.pathsep.join(( "%s=%s"%(k,v if v else "")
-                                                      for k,v in filters_factory.filterpath.items() ))))
+                   os.pathsep.join(( "%s=%s"%(k,v if v else "")
+                                     for k,v in filters_factory.filterpath.items() ))
                    )
         # reset the filter cache.
         filters_factory.reset_filters_cache()
