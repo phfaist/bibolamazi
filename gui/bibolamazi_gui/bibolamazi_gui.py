@@ -105,21 +105,26 @@ class BibolamaziApplication(QApplication):
 
 def find_retina_resolution():
     try:
-        output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType'])
+        output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType']).decode('utf-8')
     except Exception as e:
         logger.info("Couldn't check for retina display: %s", e)
         return
     logger.debug("Got display information:\n%s", output)
-    m = re.search(r'Retina:\s*(?P<answer>Yes|No)', output, flags=re.IGNORECASE)
-    if not m:
-        return None
-    if m.group('answer').lower() != 'yes':
-        return None
-    m2 = re.search(r'Resolution:\s*(?P<resX>\d+)\s*x\s*(?P<resY>\d+)', output, flags=re.IGNORECASE)
-    if not m:
-        logger.info("Couldn't find resolution information for retina display.")
-        return None
-    return (int(m2.group('resX')), int(m2.group('resY')))
+
+    mres = re.search(r'Resolution:\s*(?P<resX>\d+)\s*x\s*(?P<resY>\d+)\s*(?P<retina>.*Retina)',
+                     output, flags=re.IGNORECASE)
+
+    if not mres.group('retina'):
+        # couldn't confirm it's Retina, try "Retina: Yes/No" field
+        mretina = re.search(r'Retina:\s*(?P<answer>Yes|No)', output, flags=re.IGNORECASE)
+        if not mretina:
+            return None
+
+    # yes, retina
+    logger.debug('got res=(%d,%d)', int(mres.group('resX')), int(mres.group('resY')))
+
+    return (int(mres.group('resX')), int(mres.group('resY')))
+
 
 class MainWidget(QWidget):
     def __init__(self):
@@ -129,7 +134,7 @@ class MainWidget(QWidget):
         self.ui.setupUi(self)
 
         # set up nice vector graphics on retina displays
-        if sys.platform.startswith("darwin") and QT_VERSION_STR.startswith("4.8."):
+        if sys.platform.startswith("darwin"):
             # use high-res SVG for retina displays
             retinaresolution = find_retina_resolution()
             if retinaresolution is not None:
@@ -137,7 +142,7 @@ class MainWidget(QWidget):
                 # seems that myratio is not reliable (I get 1.77777..), so just use 2x
                 #myratio = float(retinaresolution[0]) / mydesktop.width()
                 myratio = 2
-                print('myratio=', myratio)
+                logger.debug('myratio=%r', myratio)
                 #if myratio > 1.01:
                 self.mypict = QPicture()
                 mypaint = QPainter(self.mypict)
