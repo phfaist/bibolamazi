@@ -363,8 +363,13 @@ class ArxivNormalizeFilter(BibFilter):
                 d.update(arxivinfo)
                 note = self.note_string % TolerantReplacer(d);
             elif (self.note_string_fmt):
-                note = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
-                                               arxivinfo=arxivinfo).format(self.note_string_fmt)
+                try:
+                    note = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
+                                                   arxivinfo=arxivinfo).format(self.note_string_fmt)
+                except ValueError as e:
+                    logger.debug("Got ValueError while trying to format entry, most probably wrong format: %s",
+                                 unicodestr(e))
+                    raise BibFilterError('arXiv', "Invalid format for -sNoteStringFmt: %s"%(self.note_string_fmt))
 
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there

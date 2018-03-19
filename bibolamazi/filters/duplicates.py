@@ -311,10 +311,14 @@ again there's no guarantee. Also, if two entries refer to different versions of
 a paper one on the arXiv and the other published, they are NOT considered
 duplicates.
 
-If you set -sKeepOnlyUsedInJobname=.... with the base file name of your LaTeX
-document, then while sorting out the duplicates, we only keep those entries that
-are referred to from within the document. For this to work, you need to have
-called latex/pdflatex on your document first.
+If you set -dKeepOnlyUsed, then while sorting out the duplicates, we only keep
+those entries that are referred to from within the document. For this to work,
+you need to have called latex/pdflatex on your document first. The document is
+assumed to have the same base name as your bibolamazi file, for instance, if
+your bibolamazi file is called "myfile.bibolamazi.bib", then we assume that we
+can read the citations in the aux file produced by LaTeX called "myfile.aux".
+If this is not the case, you may specify the base name of your LaTeX document
+using the option "-sJobname=myfile".
 
 The dupfile will be by default self-contained, i.e. will contain all the
 definitions necessary so that you can use the different cite keys transparently
@@ -424,6 +428,7 @@ class DuplicatesFilter(BibFilter):
 
     def __init__(self, dupfile=None, ensure_conflict_keys_are_duplicates=True,
                  warn=False, custom_bibalias=False,
+                 keep_only_used=None, jobname=None,
                  keep_only_used_in_jobname=None, jobname_search_dirs=None,
                  *args):
         r"""DuplicatesFilter constructor.
@@ -432,16 +437,22 @@ class DuplicatesFilter(BibFilter):
                   will be overwritten!!
         *ensure_conflict_keys_are_duplicates(bool): If true (the default), then keys of the form
                "xxxxxx.conflictkey.N" are verified to indeed be duplicates of the corresponding
-               "xxxxxx" entry. These conflict key entries are created when two files have entries
-               with the same key.
+               "xxxxxx" entry. These conflict key entries are created when two bibtex sources 
+               have entries with the same key.
         *warn(bool): if this flag is set, dupfile is not mandatory, and a warning is issued
                for every duplicate entry found in the database.
         *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
                in the file given in `dupfile', and will rely on a user-defined implementation
                of `\bibalias`.
-        *keep_only_used_in_jobname: only keep entries which are referenced in LaTeX job Jobname.
-               The corresponding AUX file is searched for and analyzed, see only_used filter.
-               Note that this has no effect if the `dupfile' is not set.
+        *keep_only_used(bool): if TRUE, then only keep entries which are referenced in the
+               LaTeX file.  Use the --jobname option to specify which LaTeX jobname to look at.
+               Note that this has no effect if the `dupfile' is not set.  
+        *jobname: If --keep-only-used is specified, then look for used citations in the LaTeX
+               file with this base name.  See also the only_used filter. The corresponding AUX
+               file is searched for and analyzed. If --jobname is not specified, then the
+               LaTeX file name is guessed from the bibolamazi file name, as for the only_used
+               filter.
+        *keep_only_used_in_jobname: OBSOLTE
         *jobname_search_dirs(CommaStrList): (use with keep_only_used_in_jobname) search for the
                AUX file in the given directories, as for the only_used filter.
         """
@@ -465,9 +476,21 @@ class DuplicatesFilter(BibFilter):
             raise BibFilterError("duplicates", "Received unexpected positional arguments (at most one expected, "
                                  "the dupfile name): [%s]"%(",".join(["%s"%(x) for x in args])))
 
-        if not keep_only_used_in_jobname:
-            keep_only_used_in_jobname = None
-        self.keep_only_used_in_jobname = keep_only_used_in_jobname
+        self.keep_only_used = False
+        self.jobname = None
+        
+        if keep_only_used_in_jobname:
+            logger.warning("duplicates filter: the -sKeepOnlyUsedInJobname=<jobname> option is now obsolete. "
+                           "Please replace this option by '-dKeepOnlyUsed -sJobname=<jobname>'")
+            self.keep_only_used = True
+            self.jobname = keep_only_used_in_jobname
+
+        if keep_only_used is not None:
+            if keep_only_used_in_jobname:
+                logger.warning("duplicates filter: options -sKeepOnlyUsedInJobname=<jobname> and "
+                               " -dKeepOnlyUsed may not be specified simultaneously")
+            self.keep_only_used = keep_only_used
+            self.jobname = jobname
 
         if jobname_search_dirs is not None:
             jobname_search_dirs = CommaStrList(jobname_search_dirs)
@@ -648,13 +671,19 @@ class DuplicatesFilter(BibFilter):
 
         used_citations = None
         
-        if self.keep_only_used_in_jobname:
+        if self.keep_only_used:
             if not self.dupfile:
-                logger.warning("Option -sKeepOnlyUsedInJobname has no effect without -sDupfile=... !")
+                logger.warning("Option -dKeepOnlyUsed has no effect without -sDupfile=... !")
             else:
-                logger.debug("Getting list of used citations from %s.aux." %(self.keep_only_used_in_jobname))
+                jobname = self.jobname
+                if not jobname:
+                    # use bibolamazi file base name
+                    jobname = re.sub(r'(\.bibolamazi)?\.bib$', '', os.path.basename(bibolamazifile.fname()))
+                    logger.debug("Using jobname %s guessed from bibolamazi file name", jobname)
+            
+                logger.debug("Getting list of used citations from %s.aux.", jobname)
                 used_citations = auxfile.get_all_auxfile_citations(
-                    self.keep_only_used_in_jobname, bibolamazifile, self.name(),
+                    jobname, bibolamazifile, self.name(),
                     self.jobname_search_dirs, return_set=True
                 )
 

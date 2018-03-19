@@ -133,7 +133,7 @@ class LogToTextBrowserHandler(logging.Handler):
             sty = "color: rgb(204,102,0); font-weight: bold;"
         elif levelno == logging.INFO:
             sty = "color: #000000; font-weight: normal;"
-        elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
+        elif levelno == logging.DEBUG or levelno == blogger.LONGDEBUG:
             sty = "color: #7f7f7f; font-weight: normal;"
         else:
             # unknown level
@@ -602,6 +602,8 @@ class OpenBibFile(QWidget):
                         e = sys.exc_info()[1]
                         stre = str(e)
                         logger.error(stre)
+                        import traceback
+                        logger.error(traceback.format_exc())
                         log2txtLog.addtolog(" --> INTERNAL ERROR <--")
                         QMessageBox.warning(self, "[ERROR]", stre)
 
