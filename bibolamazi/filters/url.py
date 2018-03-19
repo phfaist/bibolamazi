@@ -63,13 +63,13 @@ class UrlNormalizeFilter(BibFilter):
           - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI identifier or
                          an ArXiv ID is present. [default: False]
           - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, i.e. of the form
-                         `http://dx.doi.org/<DOI>`  [default: True]
+                         `http(s)://dx.doi.org/<DOI>`  [default: True]
           - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
-                         form `http://arxiv.org/abs/<ID>`  [default: True]
+                         form `http(s)://arxiv.org/abs/<ID>`  [default: True]
           - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL that is a DOI
-                         lookup, i.e. `http://dx.doi.org/<DOI>`  [default: False]
+                         lookup, i.e. `https://dx.doi.org/<DOI>`  [default: False]
           - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL that links
-                         to the arXiv page, i.e. `http://arxiv.org/abs/<ARXIV-ID>`  [default: False]
+                         to the arXiv page, i.e. `https://arxiv.org/abs/<ARXIV-ID>`  [default: False]
           - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all the other
                          stripping rules, keep only the first remaining URL, if any.  [default: False]
           - StripForTypes: strip all URLs specified for entries among the given list of types. Common
@@ -138,27 +138,27 @@ class UrlNormalizeFilter(BibFilter):
 
         if (self.stripdoiurl):
             for url in urls:
-                if re.match(r'^http://dx.doi.org/', url):
+                if re.match(r'^https?://dx.doi.org/', url):
                     urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.striparxivurl):
             for url in urls:
-                if re.match(r'^http://arxiv.org/abs/', url):
+                if re.match(r'^https?://arxiv.org/abs/', url):
                     urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromdoi):
             if ('doi' in entry.fields):
-                urls.append("http://dx.doi.org/"+entry.fields['doi'])
+                urls.append("https://dx.doi.org/"+entry.fields['doi'])
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.urlfromarxiv):
             if (arxivinfo is not None):
-                urls.append("http://arxiv.org/abs/"+arxivinfo['arxivid'])
+                urls.append("https://arxiv.org/abs/"+arxivinfo['arxivid'])
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 

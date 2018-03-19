@@ -60,7 +60,7 @@ from pybtex.utils import OrderedCaseInsensitiveDict
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-from bibolamazi.core.bibfilter import BibFilter, factory
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError, factory
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class BibolamaziFileParseError(BibolamaziError):
             if (lineno is not None):
                 where += ", line %d" %(lineno)
                 
-        BibolamaziError.__init__(self, msg, where=where)
+        super(BibolamaziFileParseError, self).__init__(msg, where=where)
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
@@ -82,15 +82,22 @@ class NotBibolamaziFileError(BibolamaziFileParseError):
     file---most probably, it does not contain a valid configuration section.
     """
     def __init__(self, msg, fname=None, lineno=None):
-        BibolamaziFileParseError.__init__(self, msg=msg, fname=fname, lineno=lineno)
+        super(NotBibolamaziFileError, self).__init__(msg=msg, fname=fname, lineno=lineno)
 
 class BibolamaziBibtexSourceError(BibolamaziError):
     def __init__(self, msg, fname=None):
-        where = fname
-
-        BibolamaziError.__init__(self, msg, where=where)
+        super(BibolamaziBibtexSourceError, self).__init__(msg, where=fname)
 
 
+class BibFilterInternalError(BibolamaziError):
+    def __init__(self, fname, filtername, filter_exc, tbmsg):
+        self.filtername = filtername
+        self.filter_exc = filter_exc
+        self.tbmsg = tbmsg
+        msg = "Internal filter error in `%s': %s\n\n%s" % (filtername, unicodestr(filter_exc), tbmsg)
+        super(BibFilterInternalError, self).__init__(msg)
+
+        
 def _repl(s, dic):
     for (k,v) in iteritems(dic):
         s = re.sub(k, v, s)
@@ -273,7 +280,7 @@ class BibolamaziFile(object):
         time is set before loading the cache.
         """
         
-        logger.debug("Opening bibolamazi file `%s'" %(fname))
+        logger.debug("Opening bibolamazi file `%s'", fname)
         self._fname = None
         self._dir = None
         self._use_cache = use_cache
@@ -363,7 +370,7 @@ class BibolamaziFile(object):
                     logger.longdebug("File "+repr(self._fname)+" opened.")
                     self._read_config_stream(f, self._fname)
             except IOError as e:
-                raise BibolamaziError("Can't open file `%s': %s" %(self._fname, unicodestr(e)))
+                raise BibolamaziError("Can't open file `%s': %s", self._fname, unicodestr(e))
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()
@@ -789,12 +796,12 @@ class BibolamaziFile(object):
         self._config_data = self._config_data_from_input_lines(config_block)
         self._rest = content[ST_REST]
 
-        logger.longdebug(("Parsed general bibolamazifile structure: len(header)=%d"+
-                      "; len(config)=%d; len(config_data)=%d; len(rest)=%d") %
-                     ( len(self._header),
-                       len(self._config),
-                       len(self._config_data),
-                       len(self._rest) ) )
+        logger.longdebug("Parsed general bibolamazifile structure: len(header)=%d"
+                         "; len(config)=%d; len(config_data)=%d; len(rest)=%d",
+                         len(self._header) ,
+                         len(self._config),
+                         len(self._config_data),
+                         len(self._rest) )
 
 
         logger.longdebug("config data is"+ "\n--------------------------------\n"
@@ -883,7 +890,7 @@ class BibolamaziFile(object):
                 self._source_lists.append(thesrc_list)
                 self._sources.append('') # this will be set later to which source in the
                 #                          list was actually accessed.
-                logger.debug("Added source list %r" % (thesrc_list))
+                logger.debug("Added source list %r", thesrc_list)
                 continue
             if (cmd.cmd == "filter"):
                 filname = cmd.info['filtername']
@@ -940,8 +947,8 @@ class BibolamaziFile(object):
         self._bibliographydata = None
 
         if (not len(self._source_lists)):
-            logger.warning("File `%s': No source files specified. You need source files to provide bib entries!"
-                           %(self._fname))
+            logger.warning("File `%s': No source files specified. You need source files to provide bib entries!",
+                           self._fname)
 
         # now, populate all bibliographydata.
         for k in range(len(self._source_lists)):
@@ -957,10 +964,10 @@ class BibolamaziFile(object):
             cachefname = self.cacheFileName()
             try:
                 with open(cachefname, 'rb') as f:
-                    logger.longdebug("Reading cache file %s" %(cachefname))
+                    logger.longdebug("Reading cache file %s", cachefname)
                     self._user_cache.loadCache(f)
             except (IOError, EOFError,):
-                logger.debug("Cache file `%s' nonexisting or not readable." %(cachefname))
+                logger.debug("Cache file `%s' nonexisting or not readable.", cachefname)
                 pass
         else:
             logger.debug("As requested, I have not attempted to load any existing cache file.")
@@ -1000,7 +1007,7 @@ class BibolamaziFile(object):
             ok = self._populate_from_src(src)
             if ok:
                 return src
-        logger.warning("Ignoring nonexisting source list: %s" %(", ".join(srclist)))
+        logger.warning("Ignoring nonexisting source list: %s", ", ".join(srclist))
         return None
 
     def _populate_from_src(self, src):
@@ -1022,7 +1029,7 @@ class BibolamaziFile(object):
                 if (f is None):
                     return None
                 data = butils.guess_encoding_decode(f.read())
-                logger.longdebug(" ... successfully read %d chars from URL resouce." % len(data))
+                logger.longdebug(" ... successfully read %d chars from URL resouce.", len(data))
                 f.close()
             except IOError:
                 # ignore source, will have to try next in list
@@ -1036,7 +1043,7 @@ class BibolamaziFile(object):
                 # ignore source, will have to try next in list
                 return None
 
-        logger.info("Found Source: %s" %(src))
+        logger.info("Found Source: %s", src)
 
         try:
             # parse bibtex
@@ -1054,13 +1061,13 @@ class BibolamaziFile(object):
                 # initialize bibliography data
                 self._bibliographydata = pybtex.database.BibliographyData()
 
-            hasconflictingkeys = False
+            numconflictingkeys = 0
 
             for key, entry in iteritems(bib_data.entries):
                 if (key in self._bibliographydata.entries):
                     oldkey = key
                     n = 0
-                    hasconflictingkeys = True
+                    numconflictingkeys += 1
                     while key in self._bibliographydata.entries:
                         n += 1
                         key = oldkey + u".conflictkey." + str(n)
@@ -1069,11 +1076,10 @@ class BibolamaziFile(object):
 
                 self._bibliographydata.add_entry(key, entry)
 
-            if hasconflictingkeys:
-                logger.info('File %s has conflicting bib keys from another file. '
-                            'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to make sure'
-                            'these entries are duplicates',
-                            oldkey, key)
+            if numconflictingkeys > 0:
+                logger.info('Bibtex source file %s has %d conflicting bibtex key(s) from another file. '
+                            'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to '
+                            'make sure these entries are duplicates', src, numconflictingkeys)
 
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the
@@ -1131,37 +1137,55 @@ class BibolamaziFile(object):
         # full list of entries (possibly adding/deleting entries etc.), or it can act on a single
         # entry.
         #
-        action = filter_instance.action()
 
-        logger.info("Filter: %s" %(filter_instance.getRunningMessage()))
+        filtername = ''
 
-        filter_instance.prerun(self)
+        try:
+            filtername = filter_instance.name()
+            action = filter_instance.action()
 
-        #
-        # pass the whole bibolamazifile to the filter. the filter can actually do
-        # whatever it wants with it (!!)
-        #
-        if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
-            filter_instance.filter_bibolamazifile(self)
+            logger.info("Filter: %s", filter_instance.getRunningMessage())
 
-            logger.debug('filter '+filter_instance.name()+' filtered the full bibolamazifile.')
-            return
+            filter_instance.prerun(self)
 
-        #
-        # filter all the bibentries one by one throught the filter. The filter can only
-        # process a single bibentry at a time.
-        #
-        if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
+            #
+            # pass the whole bibolamazifile to the filter. the filter can actually do
+            # whatever it wants with it (!!)
+            #
+            if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
+                filter_instance.filter_bibolamazifile(self)
 
-            bibdata = self.bibliographyData()
+                logger.debug('filter '+filter_instance.name()+' filtered the full bibolamazifile.')
+                return
 
-            for (k, entry) in iteritems(bibdata.entries):
-                filter_instance.filter_bibentry(entry)
+            #
+            # filter all the bibentries one by one throught the filter. The filter can only
+            # process a single bibentry at a time.
+            #
+            if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
 
-            logger.debug('filter '+filter_instance.name()+' filtered each of the the bibentries one by one.');
-            return
+                bibdata = self.bibliographyData()
 
-        raise ValueError("Bad value for BibFilter.action(): "+repr(action))
+                for (k, entry) in iteritems(bibdata.entries):
+                    filter_instance.filter_bibentry(entry)
+
+                logger.debug('filter '+filter_instance.name()+' filtered each of the the bibentries one by one.');
+                return
+
+            raise ValueError("Bad value for BibFilter.action(): "+repr(action))
+
+        except BibFilterError as e:
+            # filter error -- just propagate this, all the info is there already
+            raise
+        except:
+            # filter caused an exception which is not a BibFilterError -- this
+            # shouldn't happen normally, so it's an internal filter error.  Turn
+            # this into a BibolamaziError so that "runFilter()" only raises
+            # BibolamaziError's.
+            import traceback
+            raise BibFilterInternalError(fname=self._fname, filtername=filtername,
+                                         filter_exc=sys.exc_info()[1],
+                                         tbmsg=traceback.format_exc())
         
 
 
@@ -1233,10 +1257,10 @@ class BibolamaziFile(object):
         if (cachefname and self._user_cache and self._user_cache.hasCache()):
             try:
                 with open(cachefname, 'wb') as f:
-                    logger.debug("Writing cache to file %s" %(cachefname))
+                    logger.debug("Writing cache to file %s", cachefname)
                     self._user_cache.saveCache(f)
             except IOError as e:
-                logger.debug("Couldn't save cache to file `%s'." %(cachefname))
+                logger.debug("Couldn't save cache to file `%s'.", cachefname)
                 pass
 
         

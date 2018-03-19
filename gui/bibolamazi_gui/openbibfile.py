@@ -29,7 +29,7 @@ from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
 
-import html
+from html import escape as htmlescape
 import sys
 import logging
 import os.path
@@ -71,7 +71,7 @@ def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
                 )
         return m.group();
 
-    errortxt = str(html.escape(errortxt, quote=True))
+    errortxt = str(htmlescape(errortxt, quote=True))
     errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
     try:
         # if wrap_pre = (start_tag, end_tag)
@@ -124,7 +124,7 @@ class LogToTextBrowserHandler(logging.Handler):
         try:
             html = txt.getHtml() # in case of a PreformattedHtml instance
         except AttributeError:
-            html = str(html.escape(txt)) # in case of a simple plain text string
+            html = str(htmlescape(txt)) # in case of a simple plain text string
 
         sty = ''
         if levelno == logging.ERROR or levelno == logging.CRITICAL:
@@ -503,8 +503,8 @@ class OpenBibFile(QWidget):
                 'srcname': ('Source' if len(srclist) == 1 else 'Source List'), 
                 'srclist': "".join(
                     ["<li><a href=\"%(sourceurl)s\">%(sourcepath)s</a></li>" % {
-                        'sourcepath': html.escape(s),
-                        'sourceurl': html.escape(srcurl(s), quote=True),
+                        'sourcepath': htmlescape(s),
+                        'sourceurl': htmlescape(srcurl(s), quote=True),
                         }
                      for s in srclist
                      ]
@@ -598,6 +598,12 @@ class OpenBibFile(QWidget):
                         logger.error(str(e))
                         log2txtLog.addtolog(" --> Finished with errors. <--")
                         QMessageBox.warning(self, "Bibolamazi error", str(e))
+                    except:
+                        e = sys.exc_info()[1]
+                        stre = str(e)
+                        logger.error(stre)
+                        log2txtLog.addtolog(" --> INTERNAL ERROR <--")
+                        QMessageBox.warning(self, "[ERROR]", stre)
 
         self.delayedUpdateFileContents()
                     

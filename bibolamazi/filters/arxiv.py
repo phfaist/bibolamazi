@@ -249,7 +249,7 @@ class ArxivNormalizeFilter(BibFilter):
             raise BibFilterError('arXiv', "Can't give both -sNoteString and -sNoteStringFmt !")
         if not self.note_string and not self.note_string_fmt:
             # nothing given, defaults to:
-            self.note_string_fmt = "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}"
+            self.note_string_fmt = "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}"
         self.no_archive_prefix = no_archive_prefix;
         self.default_archive_prefix = default_archive_prefix;
         self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids);

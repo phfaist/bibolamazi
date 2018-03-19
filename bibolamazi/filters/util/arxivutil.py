@@ -28,11 +28,15 @@ from future.standard_library import install_aliases
 install_aliases()
 
 
-import arxiv2bib
 import re
-#from urllib2 import URLError, HTTPError # --> from future.standard_library import install_aliases
+from urllib.error import URLError, HTTPError # see above, patched to work on Py2
+import textwrap
+import time
+import math
 import logging
 logger = logging.getLogger(__name__)
+
+import arxiv2bib
 
 from bibolamazi.core.bibusercache import BibUserCacheAccessor, BibUserCacheError
 from bibolamazi.core.bibusercache.tokencheckers import EntryFieldsTokenChecker 
@@ -117,7 +121,7 @@ def detectEntryArXivInfo(entry):
           'doi': <DOI of entry if any, otherwise None>
           'year': <Year in preprint arXiv ID number. 4-digit, string type.>
           'isoldarxivid': <Whether the arXiv ID is of old style, i.e. 'primary-class/XXXXXXX'>
-          'isnewarxivid': <Whether the arXiv ID is of new style, i.e. 'XXXX.XXXX+' (with 4 or more digits after dot)>
+          'isnewarxivid': <Whether the arXiv ID is of new style, i.e. 'XXXX.XXXX+' (with 4 or more digits after dot)>,
         }
 
     Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
@@ -127,7 +131,7 @@ def detectEntryArXivInfo(entry):
     If no arXiv information was detected, then this function returns None.
     """
     
-    fields = entry.fields;
+    fields = entry.fields
 
     d =  { 'primaryclass': None ,
            'arxivid': None ,
@@ -137,7 +141,7 @@ def detectEntryArXivInfo(entry):
            'year': None,
            'isoldarxivid': None,
            'isnewarxivid': None,
-           };
+           }
 
     #
     # NOTE: If you add/change the fields that are used here, make sure you update the
@@ -165,7 +169,7 @@ def detectEntryArXivInfo(entry):
         d['published'] = False
     else:
         logger.longdebug('No decisive information about whether this entry is published: %s (type %s), '
-                         'defaulting to True.', entry.key, entry.type);
+                         'defaulting to True.', entry.key, entry.type)
 
 
     def extract_pure_id(x, primaryclass=None):
@@ -181,20 +185,20 @@ def detectEntryArXivInfo(entry):
     if ('eprint' in fields):
         # this gives the arxiv ID
         try:
-            d['arxivid'] = extract_pure_id(fields['eprint'], primaryclass=fields.get('primaryclass', None));
-            m = re.match('^([-\w.]+)/', d['arxivid']);
+            d['arxivid'] = extract_pure_id(fields['eprint'], primaryclass=fields.get('primaryclass', None))
+            m = re.match('^([-\w.]+)/', d['arxivid'])
             if (m):
-                d['primaryclass'] = m.group(1);
+                d['primaryclass'] = m.group(1)
         except IndexError as e:
             logger.longdebug("Indexerror: invalid arXiv ID [%r/]%r: %s",
                              fields.get('primaryclass',None), fields['eprint'], e)
             logger.warning("Entry `%s' has invalid arXiv ID %r", entry.key, fields['eprint'])
 
     if ('primaryclass' in fields):
-        d['primaryclass'] = fields['primaryclass'];
+        d['primaryclass'] = fields['primaryclass']
 
     if ('archiveprefix' in fields):
-        d['archiveprefix'] = fields['archiveprefix'];
+        d['archiveprefix'] = fields['archiveprefix']
 
 
     def processNoteField(notefield, d, isurl=False):
@@ -205,7 +209,7 @@ def detectEntryArXivInfo(entry):
             rxlist = _rxarxiv
 
         for rx in rxlist:
-            m = rx.search(notefield);
+            m = rx.search(notefield)
             if m:
                 if (not d['arxivid']):
                     try:
@@ -219,20 +223,20 @@ def detectEntryArXivInfo(entry):
                         pass
                 if (not d['primaryclass']):
                     try:
-                        d['primaryclass'] = m.group('primaryclass');
+                        d['primaryclass'] = m.group('primaryclass')
                     except IndexError:
                         pass
             if d['arxivid'] and d['primaryclass']:
                 return
                 
     if ('note' in fields):
-        processNoteField(fields['note'], d);
+        processNoteField(fields['note'], d)
 
     if ('annote' in fields):
-        processNoteField(fields['annote'], d);
+        processNoteField(fields['annote'], d)
 
     if ('url' in fields):
-        processNoteField(fields['url'], d, isurl=True);
+        processNoteField(fields['url'], d, isurl=True)
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -333,6 +337,10 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         `idlist` can be any iterable.
         """
 
+        logger.longdebug("fetchArxivApiInfo(): idlist=%r", idlist)
+
+        # first, see which IDs of the idlist we actually need to fetch
+        
         cache_entrydic = self.cacheDic()['fetched']
         logger.longdebug("fetchArxivApiInfo(): "
                          "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
@@ -343,29 +351,73 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         logger.longdebug("fetchArxivApiInfo(): in the cache, we have keys %r",
                          cache_entrydic.keys())
 
-        missing_ids = []
-        #debug_allids = []
+        still_to_fetch = []
         for aid in idlist:
-            #debug_allids.append(aid)
-            if (aid not in cache_entrydic  or
-                cache_entrydic.get(aid) is None  or
-                isinstance(cache_entrydic.get(aid), arxiv2bib.ReferenceErrorInfo)):
-                missing_ids.append(aid)
+            if (aid not in cache_entrydic  or cache_entrydic.get(aid) is None  or
+                cache_entrydic.get(aid).get('error', False)):
+                still_to_fetch.append(aid)
 
-        #logger.longdebug("fetchArxivApiInfo(): debug_allids=%r, missing_ids=%r", debug_allids, missing_ids)
+        logger.longdebug("fetchArxivApiInfo(): still_to_fetch=%r", still_to_fetch)
+        
 
-        if not missing_ids:
-            logger.longdebug('nothing to fetch: no missing ids')
-            # nothing to fetch
-            return True
+        # make sure we're not requesting more than batch_len arxiv ids at a time
+        # (or URLs can get too long and we'll get a HTTP 414 "URL too long" response)
+        batch_len = 64
+        sleep_interval = 1 # 1 req/second: see https://groups.google.com/d/msg/arxiv-api/wcPh0w38XN0/p7vKsxjb6ykJ
 
-        logger.info("Fetching missing information from the arXiv API...")
-        logger.debug('fetching missing id list %r' %(missing_ids))
+        num_batches, rest = divmod(len(still_to_fetch), batch_len)
+        if rest:
+            num_batches += 1
+        k = 0
+
+        logger.longdebug("fetchArxivApiInfo(): We need to fetch keys: %r", still_to_fetch)
+
+        while still_to_fetch:
+            thisbatch = still_to_fetch[:batch_len]
+            logger.info("Fetching information from arXiv.org (%d/%d)", k+1, num_batches)
+            
+            # At the second time, wait a little while.  Don't make rapid fire
+            # requests to the arxiv because they don't like that:
+            # https://arxiv.org/help/robots
+            if k > 0:
+                time.sleep(sleep_interval)
+            
+            ok = self._do_fetch_arxiv_api_info(thisbatch)
+            if not ok:
+                # logs
+                logger.info("Fetching information from arXiv.org failed :(")
+                return False
+
+            k += 1
+            still_to_fetch = still_to_fetch[len(thisbatch):]
+
+        if k > 0:
+            # message only if we actually fetched anything
+            logger.info("Fetching information from arXiv.org done.")
+            
+        return True
+
+    def _do_fetch_arxiv_api_info(self, idlist):
+
+        if ArxivFetchedAPIInfoCacheAccessor.arxiv_403_received:
+            logger.warning("Not fetching any more arXiv data because we've been "
+                           "previously sent a \"HTTP 403 Forbidden\" response. "
+                           "See https://arxiv.org/help/robots")
+            return None
+
+        cache_entrydic = self.cacheDic()['fetched']
+
+        logger.debug('fetching missing id list %r', idlist)
         try:
-            arxivdict = arxiv2bib.arxiv2bib_dict(missing_ids)
-            logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
-        except URLError as error:
-            if isinstance(error, HTTPError) and error.getcode() == 403:
+
+            arxivdict = arxiv2bib.arxiv2bib_dict(idlist)
+            # USE FOR DEBUGGING:
+            #arxivdict = {}
+            #logger.critical("DEACTIVATED ARXIV QUERY FOR DEBUGGING")
+
+        except HTTPError as error:
+            if error.getcode() == 403:
+                ArxivFetchedAPIInfoCacheAccessor.arxiv_403_received = True
                 raise BibArxivApiFetchError(
                     textwrap.dedent("""\
                     Error fetching ArXiv API Info: ** 403 Forbidden **
@@ -376,28 +428,29 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
                     For more information, see http://arxiv.org/help/robots.
                     """))
-            else:
-                msg = (("%d: %s" %(error.code, error.reason)) if isinstance(error, HTTPError)
-                       else error.reason)
-                logger.warning("HTTP Connection Error: %s.", msg)
-                logger.warning("ArXiv API information will not be retreived, and your bibliography "
-                               "might be incomplete.")
-                return False
-                #
-                # Don't raise an error, in case the guy is running bibolamazi on his laptop on the
-                # train. In that case he might prefer some missing entries rather than a critical failure.
-                #
-                #            raise BibFilterError(
-                #                filtname,
-                #                "HTTP Connection Error: {0}".format(error.getcode())
-                #                )
+            logger.warning("HTTP connection error %d: %s.", error.code, error.reason)
+            logger.warning("ArXiv API information will not be retreived, and your bibliography "
+                           "might be incomplete.")
+            return False
+        except URLError as error:
+            logger.warning("Error fetching info from arXiv.org: %s.", error.reason)
+            logger.warning("ArXiv API information will not be retreived, and your bibliography "
+                           "might be incomplete.")
+            return False
+
+        logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
 
         for (k,ref) in iteritems(arxivdict):
             logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
             cache_entrydic[k]['reference'] = ref
-            bibtex = ref.bibtex()
-            cache_entrydic[k]['bibtex'] = bibtex
 
+            if ref is None or isinstance(ref, arxiv2bib.ReferenceErrorInfo):
+                cache_entrydic[k]['error'] = '<UNKNOWN ERROR>' if ref is None else unicodestr(ref)
+                cache_entrydic[k]['bibtex'] = ''
+            else:
+                cache_entrydic[k]['error'] = None
+                bibtex = ref.bibtex()
+                cache_entrydic[k]['bibtex'] = bibtex
 
         logger.longdebug("arxiv api info: Got all references. cacheDic() is now:  %r", self.cacheDic())
         logger.longdebug("... and cacheObject().cachedic is now:  %r", self.cacheObject().cachedic)
@@ -411,7 +464,8 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
             {
               'reference':  <arxiv2bib.Reference>,
-              'bibtex': <bibtex string>
+              'bibtex': <bibtex string>,
+              'error': <None or an error string>,
             }
 
         for the given arXiv id in the cache. If the information is not in the cache,
@@ -420,10 +474,15 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         Don't forget to first call :py:meth:`fetchArxivApiInfo()` to retrieve the
         information in the first place.
 
-        Note the reference part may be a :py:class:`arxiv2bib.ReferenceErrorInfo`, if
-        there was an error retreiving the reference.
+        Note the reference part may be a
+        :py:class:`arxiv2bib.ReferenceErrorInfo`, if there was an error
+        retreiving the reference.  In that case, the key 'error' contains an
+        error string.
         """
         return self.cacheDic()['fetched'].get(arxivid, None)
+
+ArxivFetchedAPIInfoCacheAccessor.arxiv_403_received = False
+
 
 
 
@@ -481,18 +540,23 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         needs_to_be_completed = []
 
         #
-        # Do a first scan through all the bibdata entries, and detect the API information
-        # using only what we have. We'll do a query to the arXiv API in a second step
-        # below.
+        # Do a first scan through all the bibdata entries, and detect the API
+        # information using only what we have (to figure out the arxiv
+        # ID!). We'll do a query to the arXiv API in a second step below.
         #
         for k,v in iteritems(bibdata.entries):
-            if (k in entrydic):
+            # arxiv info is in cache and updated with info fetched from the arXiv API
+            if (k in entrydic and entrydic[k] is not None  and
+                entrydic[k].get('updated_with_api_info', False)):
                 continue
-            arinfo = detectEntryArXivInfo(v);
-            entrydic[k] = arinfo;
-            logger.longdebug("got arXiv information for `%s': %r.", k, arinfo)
+
+            # else, there's something to refresh and update
+
+            arinfo = detectEntryArXivInfo(v)
+            entrydic[k] = arinfo
+            logger.longdebug("detected arXiv information for `%s': %r", k, arinfo)
             
-            if (entrydic[k] is not None):
+            if (arinfo is not None):
                 needs_to_be_completed.append( (k, arinfo['arxivid'],) )
 
         logger.longdebug("complete_cache(): needs_to_be_completed=%r\nentrydic=%r\n",
@@ -504,14 +568,48 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         #
         arxiv_api_accessor.fetchArxivApiInfo( (x[1] for x in needs_to_be_completed), )
 
+        fail_aids = []
         for (k,aid) in needs_to_be_completed:
             api_info = arxiv_api_accessor.getArxivApiInfo(aid)
-            if (api_info is None):
-                logger.warning("Failed to fetch arXiv information for %s", aid);
+            if (api_info is None or api_info['error'] or 'reference' not in api_info):
+                errstr = ""
+                if api_info:
+                    errstr = ": " + api_info['error']
+                logger.debug("Failed to fetch arXiv information for %s%s", aid, errstr)
+                fail_aids.append(aid)
                 continue
+
+            ref = api_info['reference']
+            logger.longdebug("%s: %s: api_info is %r, ref is %r", k, aid, api_info, ref)
+
+            primaryclass = ref.category
+            try:
+                doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
+            except:
+                logger.debug("Couldn't get DOI field for %s from %r", aid, ref)
+                pass
             
-            entrydic[k]['primaryclass'] = self._reference_category(api_info['reference'])
-            entrydic[k]['doi'] = self._reference_doi(api_info['reference']);
+            if (primaryclass and entrydic[k]['primaryclass'] and
+                entrydic[k]['primaryclass'] != primaryclass):
+                logger.warning("Conflicting primaryclass values for entry %s (%s): "
+                               "%s (given in bibtex) != %s (retreived from the arxiv)",
+                               k, aid, entrydic[k]['primaryclass'], primaryclass)
+            else:
+                entrydic[k]['primaryclass'] = primaryclass
+
+            if (doi and entrydic[k]['doi'] and entrydic[k]['doi'] != doi):
+                logger.warning("Conflicting doi values for entry %s (%s): "
+                               "%s (given in bibtex) != %s (retreived from the arxiv)",
+                               k, aid, entrydic[k]['doi'], doi)
+            else:
+                entrydic[k]['doi'] = doi
+                
+            entrydic[k]['updated_with_api_info'] = True
+
+        if fail_aids:
+            joined = ", ".join(fail_aids if len(fail_aids) <= 8 else fail_aids[:7]+['...'])
+            logger.warning("Failed to fetch information from the arXiv for %d entries: %s",
+                           len(fail_aids), joined)
 
 
     def getArXivInfo(self, entrykey):
@@ -530,21 +628,21 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         return entrydic.get(entrykey, None)
 
 
-    def _reference_doi(self, ref):
-        try:
-            doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
-        except:
-            return None
-        if (doi):
-            return doi
-        return None
-
-    def _reference_category(self, ref):
-        try:
-            return ref.category;
-        except AttributeError:
-            # happens for ReferenceErrorInfo, for example
-            return None
+    #def _reference_doi(self, ref):
+    #    try:
+    #        doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
+    #    except:
+    #        return None
+    #    if (doi):
+    #        return doi
+    #    return None
+    #
+    #def _reference_category(self, ref):
+    #    try:
+    #        return ref.category
+    #    except AttributeError:
+    #        # happens for ReferenceErrorInfo, for example
+    #        return None
 
 
 

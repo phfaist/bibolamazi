@@ -1,19 +1,27 @@
 #!/usr/bin/env python
 
+
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import str as unicodestr
+
 import sys
+PY2 = (sys.version_info[0] == 2)
 import os.path
 import argparse
 import pickle
 import textwrap
 import pydoc
-import StringIO
+from io import StringIO
 import locale
 
 sys.path += [os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))]
 
-import bibolamazi_init
+import bibolamazi.init
 
-from core.bibusercache import BibUserCacheDic, BibUserCacheList
+from bibolamazi.core.bibusercache import BibUserCacheDic, BibUserCacheList
 
 
 parser = argparse.ArgumentParser('showcache')
@@ -34,7 +42,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
     kwargs['f'] = f
     if isinstance(cacheobj, BibUserCacheDic):
         ncount = 0
-        for (key, val) in cacheobj.dic.iteritems():
+        for (key, val) in iteritems(cacheobj.dic):
             f.write("\n" + " "*indent + key + ": ")
             dump_bibcacheobj(val, name=key, indent=indent+indent_step, **kwargs)
             if key in cacheobj.tokens:
@@ -49,7 +57,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
             dump_bibcacheobj(val, name='<item>', indent=indent+indent_step, **kwargs)
         return
     # display as string:
-    s = unicode(cacheobj)
+    s = unicodestr(cacheobj)
     if len(s) < 50:
         f.write(s)
         return
@@ -61,7 +69,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
     return
 
 
-f = StringIO.StringIO()
+f = StringIO()
 
 f.write("\n")
 f.write("Cache Dump\n")
@@ -74,6 +82,9 @@ dump_bibcacheobj(cache['cachedic'], f=f)
 f.write("\n" + "=" * 90 + "\n\n\n")
 
 encoding = locale.getdefaultlocale()[1];
-pydoc.pager(f.getvalue().encode(encoding if encoding else 'utf-8'))
+if PY2:
+    pydoc.pager(f.getvalue().encode(encoding if encoding else 'utf-8'))
+else:
+    pydoc.pager(f.getvalue())
 
 sys.exit(0)

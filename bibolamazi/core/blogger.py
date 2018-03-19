@@ -33,6 +33,19 @@ This allows for the user to be rather specific about which type of messages
 she/he would like to see.
 """
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
+from urllib.parse import urlparse, urlencode
+from urllib.request import urlopen
+from urllib.error import HTTPError
+def tounicodeutf8(x): return x if isinstance(x, unicodestr) else x.decode('utf-8')
+
+
 import os
 import sys
 import logging
@@ -252,7 +265,7 @@ class ConditionalFormatter(logging.Formatter):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
 
-        u = dict([(k,v) for k,v in record.__dict__.iteritems()])
+        u = dict([(k,v) for k,v in iteritems(record.__dict__)])
         msg = record.message
         if callable(fmt):
             u['message'] = msg
@@ -316,7 +329,8 @@ level 3.
 
 _simple_console_logging_setup_done = False
 
-def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr, level=None, capture_warnings=True):
+def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr,
+                                 level=None, capture_warnings=True):
     """
     Sets up the given logger object for simple console output.
 
@@ -333,8 +347,8 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr, 
     _simple_console_logging_setup_done = True
 
     # create console handler
-    ch = logging.StreamHandler(stream=stream);
-    ch.setLevel(logging.NOTSET); # propagate all messages
+    ch = logging.StreamHandler(stream=stream)
+    ch.setLevel(logging.NOTSET) # propagate all messages
 
     # create formatter and add it to the handlers
 
@@ -360,10 +374,10 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr, 
 
     # instance of our personalized log messages formatter
     formatter = BibolamaziConsoleFormatter(ttycolors=ttycolors)
-    ch.setFormatter(formatter);
+    ch.setFormatter(formatter)
     
     # add the handlers to the logger
-    logger.addHandler(ch);
+    logger.addHandler(ch)
 
     # for accessing the bibolamazi formatter. This is so that the main module
     # can set the level at which the logrecord position info (module, line no,

@@ -213,7 +213,7 @@ def get_args_parser():
 
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout'));
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout', 'output'));
 
 
 
@@ -285,6 +285,7 @@ def run_bibolamazi(bibolamazifile, **kwargs):
     kwargs2 = {
         'use_cache': True,
         'cache_timeout': None,
+        'output': None
         }
     kwargs2.update(kwargs);
     args = ArgsStruct(bibolamazifile, **kwargs2)

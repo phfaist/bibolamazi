@@ -441,7 +441,7 @@ class FixesFilter(BibFilter):
                 # use custom encoder
                 x = custom_utf8tolatex(x)
             if (self.encode_latex_to_utf8):
-                x = latex2text.latex2text(x)
+                x = latex2text.latex2text(x, tolerant_parsing=True)
             return x
 
         def filter_person(p):
