@@ -951,10 +951,17 @@ class BibolamaziFile(object):
                            self._fname)
 
         # now, populate all bibliographydata.
+        num_conflicting_keys = 0
         for k in range(len(self._source_lists)):
             srclist = self._source_lists[k]
-            src = self._populate_from_srclist(srclist)
+            src, this_num_conflicting_keys = self._populate_from_srclist(srclist)
             self._sources[k] = src
+            num_conflicting_keys += this_num_conflicting_keys
+
+        if num_conflicting_keys:
+            logger.info("There were multiple uses of the same entry key(s) in the bibtex source files. "
+                        "Use the 'duplicate' filter's -dEnsureConflictKeysAreDuplicates option to "
+                        "make sure these entries are duplicates")
 
 
         # Now, try to load the cache
@@ -1002,15 +1009,21 @@ class BibolamaziFile(object):
 
 
     def _populate_from_srclist(self, srclist):
+        #
+        # returns (src-or-None, num_conflicting_keys)
+        #
         for src in srclist:
             # try to populate from this source
-            ok = self._populate_from_src(src)
+            ok, numconflictingkeys = self._populate_from_src(src)
             if ok:
-                return src
+                return (src, numconflictingkeys)
         logger.warning("Ignoring nonexisting source list: %s", ", ".join(srclist))
-        return None
+        return (None,0)
 
     def _populate_from_src(self, src):
+        #
+        # returns (ok, num_conflicting_keys)
+        #
         bib_data = None
 
         is_url = False
@@ -1027,13 +1040,13 @@ class BibolamaziFile(object):
             try:
                 f = urlopen(src)
                 if (f is None):
-                    return None
+                    return (False,0)
                 data = butils.guess_encoding_decode(f.read())
                 logger.longdebug(" ... successfully read %d chars from URL resouce.", len(data))
                 f.close()
             except IOError:
                 # ignore source, will have to try next in list
-                return None
+                return (False,0)
         else:
             logger.debug("Opening file %r", src)
             try:
@@ -1041,7 +1054,7 @@ class BibolamaziFile(object):
                     data = butils.guess_encoding_decode(f.read())
             except IOError:
                 # ignore source, will have to try next in list
-                return None
+                return (False,0)
 
         logger.info("Found Source: %s", src)
 
@@ -1073,20 +1086,21 @@ class BibolamaziFile(object):
                         key = oldkey + u".conflictkey." + str(n)
 
                     entry.key = key
+                    logger.debug("Key conflict in source file %s: renamed %s -> %s", src, oldkey, key)
 
                 self._bibliographydata.add_entry(key, entry)
 
-            if numconflictingkeys > 0:
-                logger.info('Bibtex source file %s has %d conflicting bibtex key(s) from another file. '
-                            'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to '
-                            'make sure these entries are duplicates', src, numconflictingkeys)
+            #if numconflictingkeys > 0:
+            #    logger.info('Bibtex source file %s has %d conflicting bibtex key(s) from another file. '
+            #                'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to '
+            #                'make sure these entries are duplicates', src, numconflictingkeys)
 
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the
             # BibTeX data itself: the file itself was properly found. So raise an error.
             raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
 
-        return True
+        return (True, numconflictingkeys)
 
 
 

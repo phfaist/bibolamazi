@@ -590,7 +590,8 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 pass
             
             if (primaryclass and entrydic[k]['primaryclass'] and
-                entrydic[k]['primaryclass'] != primaryclass):
+                # compare overlap only, so that 'cond-mat' and 'cond-mat.stat-mech' don't generate the warning
+                entrydic[k]['primaryclass'][:len(primaryclass)] != primaryclass[:len(entrydic[k]['primaryclass'])]):
                 logger.warning("Conflicting primaryclass values for entry %s (%s): "
                                "%s (given in bibtex) != %s (retreived from the arxiv)",
                                k, aid, entrydic[k]['primaryclass'], primaryclass)

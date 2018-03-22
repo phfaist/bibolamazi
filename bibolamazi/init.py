@@ -147,6 +147,6 @@ def _OrderedCaseInsensitiveDict_delitem(self, key):
     self.order.remove(key_ok)
     super(_pybtex_utils.OrderedCaseInsensitiveDict, self).__delitem__(key_ok)
     
-_pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem;
+_pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem
 
 

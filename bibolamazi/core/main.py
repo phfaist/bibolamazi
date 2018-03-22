@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2014 by Philippe Faist                                       #
+#   Copyright (C) 2018 by Philippe Faist                                       #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -298,11 +298,12 @@ def run_bibolamazi_args(args):
     #
 
     logger.debug(textwrap.dedent("""
-    Bibolamazi Version %(ver)s by Philippe Faist (C) 2015
+    Bibolamazi Version %(ver)s by Philippe Faist (C) %(copy_year)s
 
     Use option --help for help information.
     """         %   {
-                     'ver': version.version_str
+                     'ver': version.version_str,
+                     'copy_year': version.copyright_year,
                      }));
 
 

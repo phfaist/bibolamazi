@@ -31,7 +31,8 @@ from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
-
+import sys
+PY2 = (sys.version_info[0] == 2)
 
 import re
 import os
@@ -59,10 +60,13 @@ def run_pager(text):
     """
     Call `pydoc.pager()` in a unicode-safe way.
     """
-    encoding = locale.getpreferredencoding()
-    if not encoding:
-        encoding = "utf-8"
-    return pydoc.pager(text.encode(encoding, 'ignore'))
+    if PY2:
+        encoding = locale.getpreferredencoding()
+        if not encoding:
+            encoding = "utf-8"
+        return pydoc.pager(text.encode(encoding, 'ignore'))
+    else:
+        return pydoc.pager(text)
 
 
 class store_or_count(argparse.Action):
@@ -195,7 +199,7 @@ class store_key_bool(argparse.Action):
                 storeval = getbool(key[eqindex+1:])
                 key = key[:eqindex];
             except ValueError as e:
-                exc = self.exception(unicode(e))
+                exc = self.exception(unicodestr(e))
                 exc.opt_dest = self.dest
                 raise exc
 
@@ -271,18 +275,18 @@ class opt_action_help(argparse.Action):
 
         from bibolamazi.core.bibfilter import factory
         try:
-            helptext = factory.format_filter_help(thefilter);
-            run_pager(helptext);
-            parser.exit();
+            helptext = factory.format_filter_help(thefilter)
+            run_pager(helptext)
+            parser.exit()
         except factory.NoSuchFilter as e:
-            logger.error(unicode(e))
-            parser.exit();
+            logger.error(unicodestr(e))
+            parser.exit()
         except factory.NoSuchFilterPackage as e:
-            logger.error(unicode(e))
-            parser.exit();
+            logger.error(unicodestr(e))
+            parser.exit()
         except Exception as e:
-            logger.error(unicode(e))
-            parser.exit();
+            logger.error(unicodestr(e))
+            parser.exit()
 
 
 
