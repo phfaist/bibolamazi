@@ -28,6 +28,10 @@ from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
+import sys
+def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
+def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
+
 
 from html import escape as htmlescape
 import sys
@@ -93,7 +97,7 @@ class PreformattedHtml(object):
         return self.html
 
     def __str__(self):
-        return self.html.encode('utf-8')
+        return to_native_str(self.html)
     def __unicode__(self):
         return self.html
 
@@ -252,7 +256,7 @@ class OpenBibFile(QWidget):
         self.ui.setupUi(self)
 
         self.resize(QSize(1200,800))
-        self.ui.splitEditConfig.setSizes([100,1])
+        self.ui.splitEditConfig.setSizes([700,500])
 
         self.ui.txtConfig.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
@@ -326,6 +330,11 @@ class OpenBibFile(QWidget):
 
     # use close() to close the widget and file
     def closeEvent(self, closeEvent):
+        if hasattr(self, '_closedcalled'): # don't call below code twice...
+            return super(OpenBibFile, self).closeEvent(closeEvent)
+
+        self._closedcalled = True
+        
         if (self._modified):
             ans = QMessageBox.question(self, 'Save Changes',
                                        "Save changes to file `%s'?" %(self.bibolamaziFileName),

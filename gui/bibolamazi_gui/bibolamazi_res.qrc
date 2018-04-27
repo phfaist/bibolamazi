@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>pic/question.png</file>
     <file>pic/rightarrow.png</file>
     <file>pic/bookmark.png</file>
     <file>pic/bibolamazi.svg</file>

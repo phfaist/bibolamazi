@@ -34,14 +34,19 @@ class Ui_OpenBibFile(object):
         self.splitEditConfig.setOrientation(QtCore.Qt.Horizontal)
         self.splitEditConfig.setObjectName("splitEditConfig")
         self.txtConfig = QtWidgets.QTextEdit(self.splitEditConfig)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(9)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.txtConfig.sizePolicy().hasHeightForWidth())
         self.txtConfig.setSizePolicy(sizePolicy)
         self.txtConfig.setAcceptRichText(False)
         self.txtConfig.setObjectName("txtConfig")
         self.stackEditTools = QtWidgets.QStackedWidget(self.splitEditConfig)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.stackEditTools.sizePolicy().hasHeightForWidth())
+        self.stackEditTools.setSizePolicy(sizePolicy)
         self.stackEditTools.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.stackEditTools.setFrameShadow(QtWidgets.QFrame.Raised)
         self.stackEditTools.setObjectName("stackEditTools")
@@ -132,7 +137,7 @@ class Ui_OpenBibFile(object):
         self.txtLog.setHtml("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'Courier 10 Pitch\';\"><br /></p></body></html>")
         self.txtLog.setAcceptRichText(False)
         self.txtLog.setOpenLinks(False)
@@ -205,8 +210,8 @@ class Ui_OpenBibFile(object):
         self.txtInfo.setHtml(_translate("OpenBibFile", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Lucida Grande\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:20px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic; color:#b1311d;\">&lt;no file open&gt;</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:20px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'Lucida Grande\'; font-style:italic; color:#b1311d;\">&lt;no file open&gt;</span></p></body></html>"))
         self.tabs.setTabText(self.tabs.indexOf(self.pageInfo), _translate("OpenBibFile", "BIbolamazi File Info"))
         self.tabs.setTabText(self.tabs.indexOf(self.pageBibEntries), _translate("OpenBibFile", "Preview Bib Entries"))
         self.lblVerbosity.setText(_translate("OpenBibFile", "Log verbosity level (for next run):"))

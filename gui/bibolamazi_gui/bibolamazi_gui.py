@@ -99,6 +99,7 @@ class BibolamaziApplication(QApplication):
             else:
                 self.main_widget.openFile(event.file())
             return True
+            
         return super(BibolamaziApplication, self).event(event)
 
 
@@ -258,7 +259,7 @@ class MainWidget(QWidget):
             elif isinstance(ret, tuple):
                 if len(ret) == 3:
                     QMessageBox.critical(self, "Error: Software Update Check",
-                                         ret[2]);
+                                         ret[2])
                     return
                 # if ret[0]==True, then update installed but not restarted.
                 # if ret[0]==False, then udpate exists, but not installed.
@@ -266,6 +267,7 @@ class MainWidget(QWidget):
                     
         
     def openFile(self, fname):
+        logger.info("Opening file %r", fname)
         w = openbibfile.OpenBibFile()
         w.setFavoriteCmdsList(self.favoriteCmdsList)
         w.setOpenFile(fname)
@@ -273,6 +275,7 @@ class MainWidget(QWidget):
         w.raise_()
         w.fileClosed.connect(self.bibFileClosed)
         self.openbibfiles.append(w)
+        logger.debug("openbibfile object = %r, self.openbibfiles = %r", w, self.openbibfiles)
 
         w.requestHelpTopic.connect(self.openHelpTopic)
 
@@ -342,8 +345,8 @@ class MainWidget(QWidget):
             return
 
         try:
-            bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-            bfile.saveToFile();
+            bfile = bibolamazifile.BibolamaziFile(newfilename, create=True)
+            bfile.saveToFile()
         except Exception as e:
             QMessageBox.critical(self, "Error", "Error: Can't create file: %s"%(e))
             return
@@ -359,6 +362,7 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnQuit_clicked(self):
+        logger.info("App quit")
         self.close()
 
 
@@ -375,16 +379,20 @@ class MainWidget(QWidget):
     def bibFileClosed(self):
         sender = self.sender()
         if (not sender in self.openbibfiles):
-            logger.warning("Widget sender of fileClosed() not in our openbibfiles list!!")
+            logger.warning("Widget sender %r of fileClosed() not in our openbibfiles list %r!!",
+                           sender, self.openbibfiles)
             return
-        logger.debug("file is closed.")
+        logger.debug("file is closed (sender=%r).", sender)
         self.openbibfiles.remove(sender)
 
     def closeEvent(self, event):
         logger.debug("Close!!")
 
-        for w in self.openbibfiles:
-            ans = w.close()
+        # close open bib files one by one
+        while len(self.openbibfiles):
+            w = self.openbibfiles[0]
+            ans = w.close() # this will call bibFileClosed and remove the window
+                            # from the openbibfiles list
             if not ans:
                 # if the widget cancels the close, then abort
                 event.ignore()
@@ -425,7 +433,7 @@ def setup_software_updater():
 
     swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
 
-    swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False);
+    swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False)
     swu_source.add_release_filter(swu_sourcefilter_devel)
 
     swu_updater = upd_core.Updater(current_version=bibolamaziversion.version_str, #'0.9', ## DEBUG!!! 
@@ -462,7 +470,7 @@ def run_main():
 
     logger.debug("starting application")
 
-    app = BibolamaziApplication();
+    app = BibolamaziApplication()
 
     try:
         # load filter packages from environment ...
@@ -475,8 +483,8 @@ def run_main():
                             "Please edit your settings.")
         pass
 
-    args = app.arguments();
-    _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE);
+    args = app.arguments()
+    _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE)
     for k in range(1,len(args)): # skip program name == argv[0]
         fn = str(args[k])
         if (_rxscript.search(fn)):
@@ -485,7 +493,7 @@ def run_main():
             continue
         
         logger.debug("opening arg: %s", fn)
-        app.main_widget.openFile(fn);
+        app.main_widget.openFile(fn)
 
     sys.exit(app.exec_())
     

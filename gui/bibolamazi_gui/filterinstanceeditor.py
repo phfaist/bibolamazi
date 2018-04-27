@@ -40,7 +40,7 @@ import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
 from bibolamazi.core import butils
-from bibolamazi.core.bibfilter.argtypes import EnumArgType, CommaStrList
+from bibolamazi.core.bibfilter.argtypes import EnumArgType, CommaStrList, ColonCommaStrDict
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_filter_list():
+    logger.debug("filterinstanceeditor.get_filter_list()")
     filter_pkg_list = filters_factory.detect_filter_package_listings()
     filter_list = []
     for (fpkg, flist) in filter_pkg_list.items():
@@ -63,6 +64,7 @@ def get_filter_list():
             filter_list += flist
         else:
             filter_list += [ fpkg+':'+f for f in flist ]
+    logger.debug("filterinstanceeditor.get_filter_list(): filter_list=%r", filter_list)
     return filter_list
 
 
@@ -124,6 +126,11 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     @pyqtSlot(str)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
+
+        if filtername is None:
+            # not initialized yet.
+            return
+
         filtername = str(filtername)
 
         if (not force and self._filtername == filtername):
@@ -237,6 +244,18 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     #        typ = butils.resolve_type(arg.argtypename, fmodule)
     #        return typ()
     #    return str('')
+
+
+    def argdocForIndex(self, index):
+        filteroptions = self._fopts.filterOptions()
+        #col = index.column()
+        #if (col < 0 or col >= 2):
+        #    return None
+        row = index.row()
+        if (row < 0 or row >= len(filteroptions)):
+            return None
+        arg = filteroptions[row]
+        return arg.doc
         
 
     def data(self, index, role=Qt.DisplayRole):
@@ -297,8 +316,11 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     editval = typ('')
                 elif (issubclass(typ, CommaStrList)):
                     editval = str(val)
+                elif (issubclass(typ, ColonCommaStrDict)):
+                    editval = str(val)
                 else:
-                    editval = typ(val)
+                    #editval = typ(val)
+                    editval = str(val) # always resort to string so that something can be edited
                 return editval
             return None
 
@@ -417,7 +439,13 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                 continue
             slist.append('-s' + k + '=' + butils.quotearg(str(v)))
 
-        self._optionstring = " ".join(slist)
+        optstring = " ".join(slist)
+        if len(optstring) > 80:
+            # long option string, so keep each option on a separate line
+            indentstr = " "*(len("filter: ") + len(self._filtername) + 1)
+            optstring = ("\n" + indentstr).join(slist)
+
+        self._optionstring = optstring
 
         logger.debug("option string is now %r", self._optionstring)
             
@@ -435,6 +463,10 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
         super(DefaultFilterOptionsDelegate, self).__init__(parentView)
         self._view = parentView
 
+
+    def sizeHint(self, option, index):
+        # add vertical spacing
+        return super(DefaultFilterOptionsDelegate, self).sizeHint(option, index) + QSize(0,6)
 
     def createEditor(self, parent, option, index):
         if (index.column() != 1):
@@ -472,6 +504,9 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
 
 
 
+# ------------------------------------------------------------------------------
+
+
 
 class FilterInstanceEditor(QWidget):
     def __init__(self, parent):
@@ -481,7 +516,7 @@ class FilterInstanceEditor(QWidget):
 
         self.ui = Ui_FilterInstanceEditor()
         self.ui.setupUi(self)
-        
+
         for filtername in get_filter_list():
             self.ui.cbxFilter.addItem(filtername)
 
@@ -496,6 +531,8 @@ class FilterInstanceEditor(QWidget):
         
         self.ui.lstOptions.setModel(self._filteroptionsmodel)
         self.ui.lstOptions.setItemDelegate(self._filteroptionsdelegate)
+
+        self.ui.lstOptions.selectionModel().currentChanged.connect(self.option_selected)
 
         self._filteroptionsmodel.optionStringChanged.connect(self.filterOptionsChanged)
         ##self._filteroptionsmodel.dataChanged.connect(self._filteroptionsdelegate.update_buttons)
@@ -548,12 +585,16 @@ class FilterInstanceEditor(QWidget):
 
     @pyqtSlot(str)
     def setOptionString(self, optionstring, noemit=False, force=False):
+        logger.debug("setOptionString()")
         self._filteroptionsmodel.setOptionString(optionstring, force=force, noemit=noemit)
-        self.ui.lstOptions.resizeColumnToContents(0)
-        self.ui.lstOptions.setColumnWidth(2, 20)
+        self.option_selected(self.ui.lstOptions.selectionModel().currentIndex())
+        #self.ui.lstOptions.resizeColumnToContents(0)
+        #self.ui.lstOptions.setColumnWidth(0, self.ui.lstOptions.width()/3)
+        #self.ui.lstOptions.setColumnWidth(1, 100)
         ##self._filteroptionsdelegate.update_buttons()
 
     def setFilterInstanceDefinition(self, filtername, optionstring, noemit=False):
+        logger.debug("setFilterInstanceDefinition()")
         self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=True)
         self.setOptionString(optionstring, noemit=noemit)
 
@@ -564,11 +605,24 @@ class FilterInstanceEditor(QWidget):
         logger.debug("emitting filterNameChanged! filterName=%s", self.filterName())
         self.filterNameChanged.emit(str(self.filterName()))
 
+
+    def showEvent(self, event):
+
+        self.ui.lstOptions.setColumnWidth(0, self.ui.lstOptions.width()/3)
+
+        return super(FilterInstanceEditor, self).showEvent(event)
+
     @pyqtSlot(str)
     def on_cbxFilter_editTextChanged(self, s):
         if (self._is_updating):
             return
         self.setFilterName(s, force=True, reset_optionstring=False)
+
+
+    @pyqtSlot('QModelIndex', 'QModelIndex')
+    def option_selected(self, currentindex, previousindex=None):
+        doc = self._filteroptionsmodel.argdocForIndex(currentindex)
+        self.ui.lblOptionHelp.setText(doc if doc else "")
 
 
     @pyqtSlot()

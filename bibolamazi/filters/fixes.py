@@ -348,11 +348,16 @@ class FixesFilter(BibFilter):
                 )
 
         if fix_mendeley_bug_urls:
+            # see if "True/False" was given
             try:
+                val = butils.getbool(fix_mendeley_bug_urls)
+                if val:
+                    self.fix_mendeley_bug_urls = ['url']
+                else:
+                    self.fix_mendeley_bug_urls = []
+            except ValueError:
+                # comma-str-list given
                 self.fix_mendeley_bug_urls = CommaStrList(fix_mendeley_bug_urls)
-            except TypeError:
-                # just passed, e.g., `True`
-                self.fix_mendeley_bug_urls = ['url']
         else:
             self.fix_mendeley_bug_urls = []
 

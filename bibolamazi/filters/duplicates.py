@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2013 by Philippe Faist                                       #
+#   Copyright (C) 2013-2018 by Philippe Faist                                  #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -276,7 +276,7 @@ def normalize_month(x):
 
 
 HELP_AUTHOR = u"""\
-Duplicates filter by Philippe Faist, (C) 2013, GPL 3+
+Duplicates filter by Philippe Faist, (C) 2013-2018, GPL 3+
 """
 
 HELP_DESC = u"""\

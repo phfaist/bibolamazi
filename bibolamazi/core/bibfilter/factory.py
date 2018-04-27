@@ -317,6 +317,18 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             fpmod = importlib.import_module(filterpackname)
             logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, filterpackname))
             mod = importlib.import_module('.'+name, package=filterpackname)
+        except ModuleNotFoundError:
+            exc_type, exc_value, tb_root = sys.exc_info()
+
+            logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
+                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__), unicodestr(exc_value))
+            logger.debug("sys.path was: %r", sys.path)
+            
+            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
+                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   is_caused_by_module=False)
+            mod = None
         except ImportError:
             exc_type, exc_value, tb_root = sys.exc_info()
 
@@ -324,9 +336,10 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
                          name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__), unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
-            # Attempt to understand whether the ImportError was due to a missing module
-            # (e.g. invalid module name), or if the module was found but the code had an
-            # invalid import statement. For that, see hack at:
+            # On Python 2, attempt to understand whether the ImportError was due
+            # to a missing module (e.g. invalid module name), or if the module
+            # was found but the code had an invalid import statement. For that,
+            # see hack at:
             # http://lucumr.pocoo.org/2011/9/21/python-import-blackbox/
             caused_by_module = True
             logger.longdebug("[was caused by module?] will inspect stack frames:\n%s",
@@ -335,18 +348,6 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             logger.longdebug("tb1 = %r", tb1)
             if re.search(r'\bimportlib(?:[/.]__init__[^/]{0,4})?$', tb1[0]): # or:  tb1[2] == 'import_module':
                 caused_by_module = False
-            ##tb_last_frame_mod_name = tb.tb_frame.f_globals.get('__name__')
-            ##if tb_last_frame_mod_name == 'importlib':
-            ##    # it is importlib that raised the exception, not the filter module
-            ##    caused_by_module = False
-            #tb = tb_root
-            #while tb is not None:
-            #    tb_frame_mod_name = tb.tb_frame.f_globals.get('__name__')
-            #    logger.longdebug("[was caused by module?] checking frame: __name__ is %s", tb_frame_mod_name)
-            #    if tb_frame_mod_name == (filterpackname+'.'+name):
-            #        caused_by_module = True
-            #        break
-            #    tb = tb.tb_next
 
             # and so, now deal with the exception. Maybe log a warning for the user in
             # case the module has an erroneous import statement.
@@ -493,10 +494,10 @@ def detect_filters(force_redetect=False):
 
     # ----
     
+    logger.debug("detect_filters(force_redetect=%r) ... filter path is %r", force_redetect, filterpath)
+
     _filter_list = []
     _filter_package_listings = OrderedDict()
-
-    logger.debug("Detecting filters ... filter path is %r", filterpath)
 
     for (filterpack, filterdir) in iteritems(filterpath):
         oldsyspath = sys.path
@@ -523,7 +524,7 @@ def detect_filters(force_redetect=False):
         finally:
             sys.path = oldsyspath
 
-    logger.debug('Filters detected.')
+    logger.debug('detect_filters(): Filters detected')
     logger.longdebug("_filter_list=%r, _filter_package_listings=%r", _filter_list, _filter_package_listings)
 
     return _filter_list
@@ -652,7 +653,7 @@ _add_epilog="""
 Have a lot of fun!
 """
 
-class DefaultFilterOptions:
+class DefaultFilterOptions(object):
     def __init__(self, filtername, fclass=None):
         self._filtername = filtername
 
