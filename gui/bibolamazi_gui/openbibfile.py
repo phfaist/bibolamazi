@@ -829,9 +829,10 @@ class OpenBibFile(QWidget):
         if (cmd.cmd == "package"):
             try:
                 fp, fdir = filterfactory.parse_filterpackage_argstr(cmd.text.strip())
-            except BibolamaziError:
+                fdir = htmlescape(fdir)
+            except BibolamaziError as e:
                 fp = "&lt;error>"
-                fdir = "&lt;error>"
+                fdir = "<span style=\"color: #800000\">{}</span>".format(htmlescape(str(e)))
             self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspagePackage)
             return
@@ -891,6 +892,12 @@ class OpenBibFile(QWidget):
         cmdtext = "src: " + ("\n     ".join([butils.quotearg(x) for x in sourcelist])) + "\n"
 
         self._replace_current_cmd(cmdtext, "src")
+
+
+    @pyqtSlot(str)
+    def on_filterPackagePathEditor_filterPackagePathChanged(self, fpath):
+
+        self._replace_current_cmd("package: " + fpath + "\n", "package")
 
 
     @pyqtSlot()

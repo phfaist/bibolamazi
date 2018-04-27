@@ -1,7 +1,13 @@
 
-Writing a New Filter
-====================
+.. _devel-filter:
 
+Writing a New Filter (Full Version)
+===================================
+
+
+Here we document how filters work in their full glory. For a quick start, you
+might want to read first :ref:`how to develop a quick-n-dirty filter
+<devel-filter-easy>`.
 
 .. toctree::
    :maxdepth: 2
@@ -49,7 +55,7 @@ There are two main objects your module should define at the very least:
   object. For example::
 
     def bibolamazi_filter_class():
-        return ArxivNormalizeFilter;
+        return ArxivNormalizeFilter
 
 You may want to have a look at :ref:`devel-filter-example` for an example of a custom
 filter.

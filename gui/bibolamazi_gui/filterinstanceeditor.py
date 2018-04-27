@@ -54,6 +54,16 @@ from . import overlistbuttonwidget
 logger = logging.getLogger(__name__)
 
 
+
+def is_class_and_is_sub_class(x, kl):
+    # graceful simple "no" answer if issubclass throws TypeError
+    try:
+        return issubclass(x, kl)
+    except Exception:
+        return False
+
+
+
 def get_filter_list():
     logger.debug("filterinstanceeditor.get_filter_list()")
     filter_pkg_list = filters_factory.detect_filter_package_listings()
@@ -115,15 +125,22 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._finfo = None
         self._fopts = None
         self._optionstring = None
+        self._optionstring_error = None
         
         self.setFilterName(filtername)
 
 
     optionStringChanged = pyqtSignal(str)
 
+    optionStringSetError = pyqtSignal(str)
+    optionStringClearError = pyqtSignal()
+
 
     def optionstring(self):
         return self._optionstring
+
+    def errorString(self):
+        return self._optionstring_error
 
     @pyqtSlot(str)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
@@ -167,7 +184,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         optionstring = str(optionstring);
 
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
-        if (not force and optionstring == self._optionstring):
+        if (not force and optionstring == self._optionstring and self._optionstring_error is None):
             return
 
         if (self._fopts is None):
@@ -177,9 +194,18 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # parse the options
         try:
             optspec = self._fopts.parse_optionstring_to_optspec(optionstring)
-        except (FilterError,ValueError):
-            logger.debug('error parsing option string, returning')
+        except Exception as e:
+            logger.debug("error parsing option string.")
+            errstr = str(e)
+            if not errstr:
+                errstr = "Unknown error"
+            self._optionstring_error = errstr
+            self.optionStringSetError.emit(errstr)
             return
+
+        if self._optionstring_error is not None:
+            self._optionstring_error = None
+            self.optionStringClearError.emit()
 
         self._optionstring = optionstring
 
@@ -321,14 +347,18 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     typ = str
                 if (hasattr(typ, 'type_arg_input')):
                     editval = RegisteredArgInputType(typ, val)
-                elif (issubclass(typ, str) and val is None):
+                elif (is_class_and_is_sub_class(typ, str) and val is None):
                     editval = typ('')
-                elif (issubclass(typ, CommaStrList)):
+                elif (is_class_and_is_sub_class(typ, CommaStrList)):
                     editval = str(val)
-                elif (issubclass(typ, ColonCommaStrDict)):
+                elif (is_class_and_is_sub_class(typ, ColonCommaStrDict)):
                     editval = str(val)
                 elif typ in [bool, int, float, str]:
-                    editval = typ(val) # resort to Qt's editor for these types.
+                    try:
+                        editval = typ(val) # resort to Qt's editor for these types.
+                    except Exception:
+                        # in case typ(val) generates an exception because val is invalid ...?
+                        editval = typ()
                 else:
                     editval = str(val) # always resort to string so that something can be edited
                 return editval
@@ -562,6 +592,8 @@ class FilterInstanceEditor(QWidget):
         self._filterargbtn.editIndexClicked.connect(self.ui.lstOptions.edit)
 
         self._filteroptionsmodel.optionStringChanged.connect(self._filterargbtn.updateDisplay)
+        self._filteroptionsmodel.optionStringSetError.connect(self.show_optionstring_error)
+        self._filteroptionsmodel.optionStringClearError.connect(self.clear_optionstring_error)
 
         self._is_updating = False
         
@@ -604,7 +636,7 @@ class FilterInstanceEditor(QWidget):
 
     @pyqtSlot(str)
     def setOptionString(self, optionstring, noemit=False, force=False):
-        logger.debug("setOptionString()")
+        logger.debug("setOptionString(%s)", optionstring)
         self._filteroptionsmodel.setOptionString(optionstring, force=force, noemit=noemit)
         self.option_selected(self.ui.lstOptions.selectionModel().currentIndex())
         #self.ui.lstOptions.resizeColumnToContents(0)
@@ -617,6 +649,18 @@ class FilterInstanceEditor(QWidget):
         self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=True)
         self.setOptionString(optionstring, noemit=noemit)
 
+
+    @pyqtSlot(str)
+    def show_optionstring_error(self, errstr):
+        self.ui.lblErrorMsg.setText("Error: " + errstr)
+        self.ui.lblErrorMsg.setVisible(True)
+        self.ui.lstOptions.setEnabled(False)
+
+    @pyqtSlot()
+    def clear_optionstring_error(self):
+        self.ui.lblErrorMsg.setVisible(False)
+        self.ui.lstOptions.setEnabled(True)
+        
     @pyqtSlot()
     def emitFilterNameChanged(self):
         if (self._is_updating):

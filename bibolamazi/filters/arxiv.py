@@ -262,7 +262,7 @@ class ArxivNormalizeFilter(BibFilter):
 
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def requested_cache_accessors(self):
         return [

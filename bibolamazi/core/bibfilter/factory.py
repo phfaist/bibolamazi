@@ -50,6 +50,7 @@ import bibolamazi.init
 from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
+from bibolamazi.core.bibfilter import BibFilter
 
 
 logger = logging.getLogger(__name__)
@@ -67,16 +68,24 @@ class NoSuchFilter(Exception):
     Signifies that the requested filter was not found. See also `get_module()`.
     """
     def __init__(self, fname, errorstr=None):
-        Exception.__init__(self, "No such filter or import error: "+fname+(": "+errorstr if errorstr else ""))
+        super(NoSuchFilter, self).__init__("No such filter or import error: "+fname+
+                                           (": "+errorstr if errorstr else ""))
+
+class ModuleNotAValidFilter(NoSuchFilter):
+    """
+    Signifies that a given module does not expose a valid bibolamazi filter.
+    """
+    def __init__(self, fname, errorstr=None):
+        super(ModuleNotAValidFilter, self).__init__(fname, errorstr)
 
 class NoSuchFilterPackage(Exception):
     """
     Signifies that the requested filter package was not found. See also `get_module()`.
     """
     def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
-        Exception.__init__(self, "No such filter package or import error: `"+ fpname + "'"
-                           + (" (dir=`%s')"%(fpdir) if fpdir is not None else "")
-                           + (": "+errorstr if errorstr else ""))
+        super(NoSuchFilterPackage, self).__init__("No such filter package or import error: `"+ fpname + "'"
+                                                  + (" (dir=`%s')"%(fpdir) if fpdir is not None else "")
+                                                  + (": "+errorstr if errorstr else ""))
         
 
 @python_2_unicode_compatible
@@ -94,7 +103,7 @@ class FilterError(Exception):
     def __init__(self, errorstr, name=None):
         self.name = name
         self.errorstr = errorstr
-        Exception.__init__(self, unicodestr(self))
+        super(FilterError, self).__init__(unicodestr(self))
 
     def setName(self, name):
         self.name = name
@@ -279,7 +288,7 @@ def validate_filter_package(fpname, fpdir, raise_exception=True):
         sys.path = [fpdir] + sys.path
     try:
         mod = importlib.import_module(fpname)
-    except ImportError:
+    except (ImportError,TypeError):  # raises TypeError if fpname is '.modulename'
         if raise_exception:
             raise NoSuchFilterPackage(fpname, fpdir=fpdir)
         return False
@@ -508,9 +517,15 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
 
             # is a filter module? -- re-load with get_module() for proper handling of import errors
             m = get_module(modname, raise_nosuchfilter=False, filterpackage=filterpackage)
-            if (m is None or not hasattr(m, 'bibolamazi_filter_class')):
-                logger.longdebug("Module %s: failed to load or doesn't have bibolamazi_filter_class()", modname)
+            if m is None:
+                logger.longdebug("Module %s: failed to load", modname)
                 continue
+            try:
+                fcl = get_filter_class(modname, fmodule=m)
+            except ModuleNotAValidFilter:
+                logger.warning("Module %s does not define a valid bibolamazi filter", modname)
+                continue
+
 
             # yes, _is_ a filter module.
             if modname not in _filter_package_listings[filterpackname]:
@@ -573,11 +588,159 @@ def detect_filters(force_redetect=False, filterpath=filterpath):
 
 
 
-def get_filter_class(name, filterpackage=None, filterpath=filterpath):
-    
-    fmodule = get_module(name, filterpackage=filterpackage, filterpath=filterpath)
+_simple_filter_class_template = """\
+from bibolamazi.core.bibfilter import BibFilter
 
-    return fmodule.bibolamazi_filter_class()
+# in case fn's default argument values refer to custom types in that module
+from {fmodulename} import *
+
+import sys
+
+import logging
+logger = logging.getLogger("filter." + "{filtername}")
+
+class simplefilter_{filtername}(BibFilter):
+
+    helpauthor = "<Author Unknown>"
+    helpdescription = "<No Description>"
+    helptext = {filter_fn_doc_str}
+
+    def __init__(self, {init_signature}):
+        {init_fields_doc_str}
+        
+        super(simplefilter_{filtername}, self).__init__()
+
+        self.kwargs = dict({init_kwargs_set_dict})
+
+        logger.debug('Instantiated {filtername} instance with arguments %r', self.kwargs)
+
+    def getRunningMessage(self):
+        return "running filter {filtername}"
+
+    def action(self):
+        return {bib_filter_action_type}
+
+    def requested_cache_accessors(self):
+        return []
+
+    def filter_bibolamazifile(self, bibolamazifile):
+        # in case we are filtering a bibolamazifile
+        sys.modules["{fmodulename}"].bib_filter_bibolamazifile(bibolamazifile=bibolamazifile, **self.kwargs)
+
+    def filter_bibentry(self, entry):
+        # in case we are filtering a single entry
+        fn = sys.modules["{fmodulename}"].bib_filter_entry
+        fn(entry=entry, {entry_fn_bibolamazifile_kwarg} **self.kwargs)
+
+"""
+
+def get_filter_class(name, filterpackage=None, filterpath=filterpath, fmodule=None):
+    """
+    Call::
+
+      get_filter_class(name, filterpackage=None, filterpath=filterpath)
+
+    or::
+
+      get_filter_class(name, fmodule=already_imported_fmodule)
+
+    """
+
+    if not fmodule:
+        fmodule = get_module(name, filterpackage=filterpackage, filterpath=filterpath)
+
+    if hasattr(fmodule, 'bibolamazi_filter_class'):
+        return fmodule.bibolamazi_filter_class()
+
+    # other ways to define a filter -- quick-n-dirty minimal way
+    is_simple_entry_filter = hasattr(fmodule, 'bib_filter_entry')
+    is_simple_bibolamazifile_filter = hasattr(fmodule, 'bib_filter_bibolamazifile')
+    if is_simple_entry_filter or is_simple_bibolamazifile_filter:
+
+        if is_simple_entry_filter and is_simple_bibolamazifile_filter:
+            raise ModuleNotAValidFilter(("Custom simple filter %s may not define both "
+                                         "bib_filter_entry() and bib_filter_bibolamazifile().")%(name))
+
+        # the following is highly inspired from Python's
+        # collections.namedtuple() definition
+
+        if is_simple_entry_filter:
+            simple_filter_action_type = 'BibFilter.BIB_FILTER_SINGLE_ENTRY'
+            simple_filter_fn = fmodule.bib_filter_entry
+        elif is_simple_bibolamazifile_filter:
+            simple_filter_action_type = 'BibFilter.BIB_FILTER_BIBOLAMAZIFILE'
+            simple_filter_fn = fmodule.bib_filter_bibolamazifile
+        else:
+            raise RuntimeError("Shouldn't be here")
+
+        # inspect the fn's signature and declare arguments for documentation
+        argspec = inspect_getargspec(simple_filter_fn)
+        nargs = argspec[0]
+        # one value for EACH argument (first values set to None)
+        argdefvals = argspec[3]
+        argdefvals = [None]*(len(nargs)-len(argdefvals)) + list(argdefvals)
+        init_signature_list = []
+        init_kwargs_set_dict_list = []
+        init_fields_doc_dict = {}
+        for i in range(len(nargs)):
+            if nargs[i] == 'entry':
+                continue
+            if nargs[i] == 'bibolamazifile':
+                continue
+            typname = type(argdefvals[i]).__name__
+            typinfo = ''
+            if typname in ['bool', 'int']:
+                typinfo = typname
+            init_signature_list.append('%s=%r'%(nargs[i], argdefvals[i]))
+            init_kwargs_set_dict_list.append('%s=%s'%(nargs[i], nargs[i]))
+            init_fields_doc_dict[nargs[i]] = _ArgDoc(argname=nargs[i],
+                                                     argtypename=typinfo,
+                                                     doc='<no documentation available>')
+
+        # special case, see if the entry filter accepts bibolamazi= kw arg
+        entry_fn_bibolamazifile_kwarg = ''
+        if is_simple_entry_filter and 'bibolamazifile' in nargs:
+            entry_fn_bibolamazifile_kwarg = 'bibolamazifile=self.bibolamaziFile(), '
+
+        fn_docstring = textwrap.dedent(simple_filter_fn.__doc__)
+
+        fn_argdoclist, fn_docstring_docpart = parseArgdoc(fn_docstring)
+        if not fn_docstring_docpart:
+            fn_docstring_docpart = '<no documentation available>'
+
+        fn_argdocs = dict([(x.argname, x) for x in fn_argdoclist])
+        init_fields_doc_dict.update(fn_argdocs)
+            
+        # now, format class definition source
+        cls_source = _simple_filter_class_template.format(
+            filtername=name,
+            fmodulename=fmodule.__name__,
+            filter_fn_doc_str=repr(fn_docstring_docpart),
+            bib_filter_action_type=simple_filter_action_type,
+            init_signature=", ".join(init_signature_list),
+            init_kwargs_set_dict=", ".join(init_kwargs_set_dict_list),
+            init_fields_doc_str=repr("Arguments:"  +  "\n".join([
+                '  * ' + x.argname + ('('+x.argtypename+')' if x.argtypename else '') + ':'
+                + x.doc
+                for x in init_fields_doc_dict.values()
+            ])),
+            entry_fn_bibolamazifile_kwarg=entry_fn_bibolamazifile_kwarg
+            )
+
+        logger.longdebug("Creating simple filter class, source = \n%s", cls_source)
+
+        # Execute the template string in a temporary namespace and support
+        # tracing utilities by setting a value for frame.f_globals['__name__']
+        namespace = dict(__name__='bibolamazisimplefilter_%s' % name)
+        exec(cls_source, namespace)
+        result = namespace['simplefilter_%s' % name]
+        result._source = cls_source
+
+        return result
+
+
+    raise ModuleNotAValidFilter(name, "Module is not a valid filter definition")
+
 
 
 class FilterInfo(object):
@@ -592,7 +755,7 @@ class FilterInfo(object):
         self.name = name
         self.filterpath = filterpath
         self.fmodule = get_module(name, filterpath=filterpath)
-        self.fclass = self.fmodule.bibolamazi_filter_class()
+        self.fclass = get_filter_class(name, fmodule=self.fmodule)
 
         self.uses_default_argparse = not hasattr(self.fmodule, 'parse_args')
 
@@ -704,7 +867,84 @@ class FilterArgumentParser(argparse.ArgumentParser):
         raise FilterOptionsParseError(msg, self._filtername)
 
 
-_rxargdoc = re.compile(r'^\s*(-\s*|\*)(?P<argname>\w+)\s*(\((?P<argtypename>\w+)\))?\s*:\s*', re.MULTILINE)
+_rxargdoc = re.compile(r'^\s*(-\s*|\*)\s*(?P<argname>\w+)\s*(\((?P<argtypename>\w+)\))?\s*:\s*', re.MULTILINE)
+
+
+def parseArgdoc(doc):
+    """
+    Parses argument documentation from a docstring.  Extracts lists of argument
+    documentation in a relatively crude way.  Expects arguments to be documented
+    in lines of the form::
+
+      * argument_name (type) :  Here comes the documentation of the argument. It
+        may span several lines, that is ok.
+      *arg2: as you can see, whitespace is optional and ignored; the type
+             name is also not necessary.
+      - arg3: also, argument listings may begin with a dash instead of an asterisk
+
+    The argument list is expected to be a the end of the docstring. I.e.,
+    anything that follows the argument list will be included in the doc of the
+    last argument!
+
+    If there is a line with the single word 'Arguments' (with possible
+    punctuation), e.g.::
+
+        Arguments:
+
+    Then argdocs are processed only after that line.
+
+    Returns a tuple (argdoclist, fndoc). The `argdoclist` is a list of objects
+    (actually, named tuples), with the fields 'argname', 'argtypename', and
+    'doc'.  If an argtypename is absent, it is set to an empty value.  The
+    `fndoc` is a string corresponding to the rest of the docstring before the
+    argument documentation.
+    """
+    if (doc is None):
+        doc = ''
+
+    # If there is a "Arguments" title line, then everything before that is
+    # regular doc we shouldn't parse
+
+    argumentstitlem = re.search(re.compile(r'^[^A-Za-z]*Arguments[^A-Za-z]*$', flags=re.MULTILINE), doc)
+
+    prebegindoc = ''
+    if argumentstitlem is not None:
+        prebegindoc = doc[:argumentstitlem.begin()] + '\n'
+        doc = doc[argumentstitlem.end():]
+
+    # now find argdocs.
+
+    argdocspos = []
+    for m in re.finditer(_rxargdoc, doc):
+        argdocspos.append(m)
+
+    argdoclist = []
+    begindoc = None
+    for k in range(len(argdocspos)):
+        m = argdocspos[k]
+        if (begindoc is None):
+            begindoc = doc[:m.start()]
+        thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc))
+        # adjust whitespace in docstr
+        docstr = doc[m.end():thisend].strip()
+        # just format whitespace, don't fill to a fixed width. This is for the
+        # GUI. we'll fill to a certain width only when specifying this as the
+        # argparse help argument.
+        docstr = re.sub(r'\n\s*', '\n', docstr) # TextWrapper doesn't simplify whitespace apparently
+        docstr = (textwrap.TextWrapper(width=100*len(docstr), replace_whitespace=True, drop_whitespace=True)
+                  .fill(docstr))
+        argdoclist.append(_ArgDoc(argname=m.group('argname'),
+                                  argtypename=m.group('argtypename'),
+                                  doc=docstr))
+
+    if begindoc is None:
+        # there were no argdocs
+        begindoc = doc
+
+    begindoc = prebegindoc + begindoc
+    
+    return argdoclist, textwrap.dedent(begindoc.strip())
+
 
 _add_epilog="""
 
@@ -727,29 +967,8 @@ class DefaultFilterOptions(object):
         (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
 
         # get some doc about the parameters
-        doc = fclass.__init__.__doc__
-        if (doc is None):
-            doc = ''
-        argdocspos = []
-        for m in re.finditer(_rxargdoc, doc):
-            argdocspos.append(m)
-        argdoclist = []
-        begindoc = None
-        for k in range(len(argdocspos)):
-            m = argdocspos[k]
-            if (begindoc is None):
-                begindoc = doc[:m.start()]
-            thisend = (argdocspos[k+1].start() if k < len(argdocspos)-1 else len(doc))
-            # adjust whitespace in docstr
-            docstr = doc[m.end():thisend].strip()
-            # just format whitespace, don't fill. This is for the GUI. we'll fill to a
-            # certain width only when specifying this as the argparse help argument.
-            docstr = re.sub(r'\n\s*', '\n', docstr) # TextWrapper doesn't simplify whitespace apparently
-            docstr = (textwrap.TextWrapper(width=100*len(docstr), replace_whitespace=True, drop_whitespace=True)
-                      .fill(docstr))
-            argdoclist.append(_ArgDoc(argname=m.group('argname'),
-                                      argtypename=m.group('argtypename'),
-                                      doc=docstr))
+        docstr = fclass.__init__.__doc__
+        argdoclist, fndocpart = parseArgdoc(docstr)
         argdocs = dict([(x.argname, x) for x in argdoclist])
 
         self._use_auto_case = True
@@ -1042,6 +1261,17 @@ class DefaultFilterOptions(object):
                 kwargs[argname] = argval # raw type if we can't figure one out (could be
                                          # extra kwargs argument, or not documented)
 
+        def safe_set_kw_arg(kwargs, argname, argval):
+            try:
+                set_kw_arg(kwargs, argname, argval)
+            except Exception as e:
+                raise FilterOptionsParseError(
+                    "Error parsing key option value: %s -> %s (%s)\n\t%s"
+                    %(unicodestr(arg), unicodestr(argval),
+                      unicodestr(e), optionstring.strip()),
+                    self._filtername)
+
+
         for (arg, argval) in iteritems(dargs):
             if (varargs and arg == '_args'):
                 optspec['_args'] = argval
@@ -1061,7 +1291,7 @@ class DefaultFilterOptions(object):
                 # get all the set args
                 for (key, v) in argval:
                     thekey = self.getArgNameFromSOpt(key)
-                    set_kw_arg(optspec['kwargs'], thekey, v)
+                    safe_set_kw_arg(optspec['kwargs'], thekey, v)
 
                     logger.debug("Set option `%s' to `%s'" %(thekey, v))
 
@@ -1070,13 +1300,7 @@ class DefaultFilterOptions(object):
             if (argval is None):
                 continue
 
-            try:
-                set_kw_arg(optspec['kwargs'], arg, argval)
-            except ValueError as e:
-                raise FilterOptionsParseError(u"Error parsing key option value: %s -> %s (%s)\n\t%s"
-                                              %(unicodestr(arg), unicodestr(argval),
-                                                unicodestr(e), optionstring.strip()),
-                                              self._filtername)
+            safe_set_kw_arg(optspec['kwargs'], arg, argval)
 
         return optspec
 

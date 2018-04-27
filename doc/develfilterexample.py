@@ -1,3 +1,6 @@
+#
+# Full-featured bibolamazi filter example
+#
 
 import random # for example purposes
 

@@ -206,7 +206,7 @@ class Ui_OpenBibFile(object):
 
         self.retranslateUi(OpenBibFile)
         self.tabs.setCurrentIndex(0)
-        self.stackEditTools.setCurrentIndex(3)
+        self.stackEditTools.setCurrentIndex(0)
         self.cbxVerbosity.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(OpenBibFile)
 

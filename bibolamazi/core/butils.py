@@ -146,9 +146,28 @@ def resolve_type(typename, in_module=None):
             return types.BooleanType
         except AttributeError: # Python 3 doesn't have types.BooleanType etc.
             return bool
+    if (typename == 'int'):
+        try:
+            return types.IntType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return int
+    if (typename == 'float'):
+        try:
+            return types.FloatType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return float
+    if (typename == 'bytes'):
+        try:
+            return types.StringType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return bytes
+    if (typename == 'complex'):
+        try:
+            return types.ComplexType
+        except AttributeError: # Python 3 doesn't have types.BooleanType etc.
+            return complex
 
-    typestypename = (typename.title()+'Type') # e.g. "int" -> "IntType"
-    return types.__dict__.get(typestypename, None)
+    raise ValueError("Unknown type name: %s"%(typename))
 
 
 def quotearg(x):

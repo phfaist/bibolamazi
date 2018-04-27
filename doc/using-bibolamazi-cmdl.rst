@@ -149,44 +149,44 @@ Querying Available Filters and Filter Documentation
 
 A complete list of available filters, along with a short description, is obtained by::
 
-    > bibolamazi --list-filters
+  > bibolamazi --list-filters
 
 Run that command to get an up-to-date list. At the time of writing, the list of
 filters is::
 
-    > bibolamazi --list-filters
+  > bibolamazi --list-filters
 
-    List of available filters:
-    --------------------------
-    
-    Package `bibolamazi.filters':
-    
-      arxiv         ArXiv clean-up filter: normalizes the way each biblographic
-                    entry refers to arXiv IDs.
-      citearxiv     Filter that fills BibTeX files with relevant entries to cite
-                    with \cite{1211.1037}
-      citeinspirehep Filter that fills BibTeX files with relevant entries to cite
-                    with e.g.  \cite{inspire:PhysRev.47.777--EPR+paper}
-      citekey       Set the citation key of entries in a standard format
-      duplicates    Produces LaTeX rules to make duplicate entries aliases of one
-                    another.
-      echo          Echo a custom message in the bibolamazi log
-      fixes         Fixes filter: perform some various known fixes for bibtex
-                    entries
-      nameinitials  Name Initials filter: Turn full first names into only initials
-                    for all entries.
-      only_used     Filter that keeps only BibTeX entries which are referenced in
-                    the LaTeX document
-      orderentries  Order bibliographic entries in bibtex file
-      url           Remove or add URLs from entries according to given rules, e.g.
-                    whether DOI or ArXiv ID are present
-    
-    --------------------------
-    
-    Filter packages are listed in the order they are searched.
-    
-    Use  bibolamazi --help <filter>  for more information about a specific filter
-    and its options.
+  List of available filters:
+  --------------------------
+  
+  Package `bibolamazi.filters':
+  
+    arxiv         ArXiv clean-up filter: normalizes the way each biblographic
+                  entry refers to arXiv IDs.
+    citearxiv     Filter that fills BibTeX files with relevant entries to cite
+                  with \cite{1211.1037}
+    citeinspirehep Filter that fills BibTeX files with relevant entries to cite
+                  with e.g.  \cite{inspire:PhysRev.47.777--EPR+paper}
+    citekey       Set the citation key of entries in a standard format
+    duplicates    Produces LaTeX rules to make duplicate entries aliases of one
+                  another.
+    echo          Echo a custom message in the bibolamazi log
+    fixes         Fixes filter: perform some various known fixes for bibtex
+                  entries
+    nameinitials  Name Initials filter: Turn full first names into only initials
+                  for all entries.
+    only_used     Filter that keeps only BibTeX entries which are referenced in
+                  the LaTeX document
+    orderentries  Order bibliographic entries in bibtex file
+    url           Remove or add URLs from entries according to given rules, e.g.
+                  whether DOI or ArXiv ID are present
+  
+  --------------------------
+  
+  Filter packages are listed in the order they are searched.
+  
+  Use  bibolamazi --help <filter>  for more information about a specific filter
+  and its options.
 
 .. note::
    The ``--list-filters`` option must be given after any ``--filterpackage`` options.
@@ -202,21 +202,27 @@ command-line options or with an environment variable.
 You can specify additional filter packages with the command-line option
 ``--filter-package``::
 
-    > bibolamazi myfile.bibolamazi.bib --filter-package 'package1=/path/to/filter/pack'
+  > bibolamazi myfile.bibolamazi.bib --filter-package 'package1=/path/to/filter/pack'
+
+or using the alternative syntax::
+
+  > bibolamazi myfile.bibolamazi.bib --filter-package '/path/to/filter/pack/package1'
 
 The argument to ``--filter-package`` is of the form
-'packagename=/path/to/the/filter/package'. Note that the path is which path must
-be added to python's ``sys.path`` in order to import the ``filterpackagename``
-package itself, i.e. the last item of the path must not be the package
-directory.
+'packagename=/path/to/the/filter/package' or '/path/to/filter/package'. Note
+that in the first syntax, the path is which path must be added to python's
+``sys.path`` in order to import the ``filterpackagename`` package itself,
+i.e. the last item of the path must not be the package directory; in the second
+syntax, the path should point to the python package directory itself, i.e., the
+directory which contains the ``__init__.py`` file.
 
 This option may be repeated several times to import different filter
 packages. The order is relevant; the packages specified last will be searched
 for first.
 
 You may also set the environment variable ``BIBOLAMAZI_FILTER_PATH``. The format
-is ``filterpack1=/path/to/somewhere:filterpack2=/path/to/otherplace:...``,
-i.e. a list of filter package specifications separated by ':' (Linux/Mac) or ';'
+is a list of filter package specifications separated by ':' (Linux/Mac) or ';'
 (Windows). Each filter package specification has the same format as the
-command-line option argument. In the environment variable, the first given
-filter packages are searched first.
+command-line option argument (i.e., a key-value pair
+``pkgname=/path/for/import``, or ``/path/to/filter/pkgname``).  In the
+environment variable, the first given filter packages are searched first.

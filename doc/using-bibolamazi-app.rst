@@ -165,8 +165,9 @@ Filters are organized into *filter packages*. All built-in filters are in the
 package named `bibolamazi.filters`. If you want to write your own filters, or
 use someone else's own filters, then you can install further filter packages.
 
-A *filter package* is a Python package, i.e. a directory containing a ``__init__.py``
-file, which contains python modules that implement the bibolamazi filter API.
+A *filter package* is a Python package, i.e. a directory containing a
+``__init__.py`` file, which contains python modules that implement the
+bibolamazi filter API. (The ``__init__.py`` file is usually empty.)
 
 If you develop your own filters, it is recommended to group them in a filter
 package, and not for example fiddle with the built-in filter package. Put your
@@ -174,10 +175,18 @@ filters in a directory called, say, `myfilters`, and place an additional empty
 file in it called `__init__.py`. This will create a python package named
 `myfilters` with your filters as submodules.
 
-To register the filter packages so that bibolamazi knows where to look for your
-filters, open the settings dialog, and click "Add filter package ..."; choose
-the directory corresponding to your filter package (e.g. `myfilters`). Now you
-can refer in your bibolamazi file to the filters within your filter package with
-the syntax ``myfilters:filtername`` or simply ``filtername`` (as long as the
-filter name does not clash with another filter of the same name in a different
-filter package).
+You can include filter packages from within a bibolamazi file by using the
+syntax::
+
+  package: path/to/filter/pkgname
+
+The path should point to a directory which is a valid python package, i.e.,
+which contains a ``__init__.py`` file.
+
+You may also register filter packages at specific locations in a way which
+applies to all bibolamazi files.  Open the settings dialog, and click "Add
+filter package ..."; choose the directory corresponding to your filter package
+(e.g. `myfilters`). Now you can refer in your bibolamazi file to the filters
+within your filter package with the syntax ``myfilters:filtername`` or simply
+``filtername`` (as long as the filter name does not clash with another filter of
+the same name in a different filter package).

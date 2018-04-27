@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Bibolamazi'
-copyright = u'2014, Philippe Faist'
+copyright = u'2014\N{EN DASH}2018, Philippe Faist'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -99,7 +99,8 @@ autoclass_content = "both"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+#html_theme = 'default'
+html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -141,7 +142,11 @@ html_static_path = ['_static']
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
 # see http://stackoverflow.com/a/19007358/1694896
-html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'], }
+html_sidebars = {
+    '**': [ 'about.html',
+            'navigation.html',
+            'searchbox.html', ],
+ }
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -175,6 +180,17 @@ html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Bibolamazidoc'
+
+
+html_theme_options = {
+    'logo': 'bibolamazi.svg',
+    #'github_button': True,
+    'github_user': 'phfaist',
+    'github_repo': 'bibolamazi',
+    'font_family': 'Lato, sans-serif',
+    'head_font_family': 'Lato, sans-serif',
+    'font_size': '13pt',
+}
 
 
 # -- Options for LaTeX output --------------------------------------------------

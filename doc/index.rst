@@ -16,6 +16,7 @@ Table of Contents:
    download-and-install
    using-bibolamazi-app
    using-bibolamazi-cmdl
+   devel-filter-easy
    devel-filter
    bibolamazi.core
    bibolamazi.filters.util
