@@ -909,7 +909,7 @@ def parseArgdoc(doc):
 
     prebegindoc = ''
     if argumentstitlem is not None:
-        prebegindoc = doc[:argumentstitlem.begin()] + '\n'
+        prebegindoc = doc[:argumentstitlem.start()] + '\n'
         doc = doc[argumentstitlem.end():]
 
     # now find argdocs.

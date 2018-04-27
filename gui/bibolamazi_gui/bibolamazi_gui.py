@@ -240,7 +240,7 @@ class MainWidget(QWidget):
             #        (self.upd_checknow_action, "Ctrl+U", None)
             #        ]
             # now, setup the shortcuts.
-            for a in self.myactions.values:
+            for a in self.myactions.values():
                 #print 'adding action with key %s' %(key)
                 a.setShortcutContext(Qt.ApplicationShortcut)
 
