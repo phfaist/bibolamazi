@@ -195,6 +195,10 @@ def setup_filterpackages_from_settings(s):
         if fp == 'filters=':
             fp = 'bibolamazi.filters='
 
+        if not fp: # ignore truly empty entries
+            continue
+
+        logger.debug("Adding filter package from settings: fp=\"%s\"", fp)
         main.setup_filterpackage_from_argstr(fp)
 
     s.endGroup()

@@ -112,6 +112,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def __init__(self, filtername=None, optionstring=None, parent=None):
         super(DefaultFilterOptionsModel, self).__init__(parent)
         self._filtername = None
+        self._finfo = None
         self._fopts = None
         self._optionstring = None
         
@@ -140,9 +141,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         self._fopts = None
         try:
-            # remember: filter_uses_default_arg_parser() may also raise NoSuchFilter
-            if (filtername and filters_factory.filter_uses_default_arg_parser(filtername)):
-                self._fopts = filters_factory.DefaultFilterOptions(filtername)
+            # remember: FilterInfo() may also raise NoSuchFilter
+            self._finfo = filters_factory.FilterInfo(filtername)
+            self._fopts = self._finfo.defaultFilterOptions()
         except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
             logger.warning("No such filter, no such filter package or filtererror: %s", str(e))
             pass
@@ -158,6 +159,11 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     @pyqtSlot(str)
     def setOptionString(self, optionstring, force=False, noemit=False):
+
+        if not self._fopts:
+            logger.warning("Can't set option string because we can't manage filter options for this filter")
+            return None
+
         optionstring = str(optionstring);
 
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
@@ -247,6 +253,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
 
     def argdocForIndex(self, index):
+        if not self._fopts:
+            return None
+        
         filteroptions = self._fopts.filterOptions()
         #col = index.column()
         #if (col < 0 or col >= 2):
@@ -318,8 +327,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                     editval = str(val)
                 elif (issubclass(typ, ColonCommaStrDict)):
                     editval = str(val)
+                elif typ in [bool, int, float, str]:
+                    editval = typ(val) # resort to Qt's editor for these types.
                 else:
-                    #editval = typ(val)
                     editval = str(val) # always resort to string so that something can be edited
                 return editval
             return None
@@ -374,7 +384,10 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         if (role != Qt.EditRole):
             return False
 
-        filteroptions = self._fopts.filterOptions()
+        if self._fopts:
+            filteroptions = self._fopts.filterOptions()
+        else:
+            filteroptions = []
 
         if (row < 0 or row >= len(filteroptions)):
             return False
@@ -406,6 +419,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         return True
 
     def findArgByName(self, argname):
+        if not self._fopts:
+            return None
+
         filteroptions = self._fopts.filterOptions()
 
         for row in range(len(filteroptions)):
@@ -416,6 +432,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     
 
     def _update_optionstring(self):
+        if not self._fopts:
+            return None
+
         slist = []
         for arg in self._pargs:
             slist.append(butils.quotearg(arg))

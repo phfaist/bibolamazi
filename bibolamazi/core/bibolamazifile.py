@@ -213,7 +213,7 @@ sources loaded. See doc for :py:class:`BibolamaziFile`.
 
 
 
-_bibolamazifile_commands = ['src', 'package', 'filter']
+BIBOLAMAZIFILE_COMMANDS = ['src', 'package', 'filter']
 
 
 
@@ -863,7 +863,7 @@ class BibolamaziFile(object):
                 continue
 
             # try to match to a new command
-            mcmd = re.match(r'^\s{0,1}(' + '|'.join(_bibolamazifile_commands) + r'):\s*', cline)
+            mcmd = re.match(r'^\s{0,1}(' + '|'.join(BIBOLAMAZIFILE_COMMANDS) + r'):\s*', cline)
             if (not mcmd):
                 if (latestcmd.cmd is None):
                     # no command

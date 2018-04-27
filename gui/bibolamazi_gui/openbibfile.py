@@ -817,7 +817,7 @@ class OpenBibFile(QWidget):
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageBase)
             return
         
-        if (cmd.cmd == 'src'):
+        if (cmd.cmd == "src"):
             thesrcs = shlex.split(cmd.text)
             self.ui.sourceListEditor.setSourceList(thesrcs, noemit=True)
             self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
@@ -878,7 +878,7 @@ class OpenBibFile(QWidget):
 
         cmdtext = "src: " + ("\n     ".join([butils.quotearg(x) for x in sourcelist])) + "\n"
 
-        self._replace_current_cmd(cmdtext, 'src')
+        self._replace_current_cmd(cmdtext, "src")
 
 
     @pyqtSlot()
@@ -891,7 +891,7 @@ class OpenBibFile(QWidget):
 
         cmdtext = "filter: " + filtername + ' ' + optionstring + "\n"
 
-        self._replace_current_cmd(cmdtext, 'filter')
+        self._replace_current_cmd(cmdtext, "filter")
         
 
     @pyqtSlot('QString')

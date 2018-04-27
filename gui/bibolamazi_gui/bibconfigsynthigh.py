@@ -35,6 +35,7 @@ from collections import namedtuple
 import bibolamazi.init
 # bibolamazi filters
 from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core.bibolamazifile import BIBOLAMAZIFILE_COMMANDS
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -43,6 +44,9 @@ from PyQt5.QtGui import *
 
 rxsrc = re.compile(r'^\s*(?P<src>src:)', re.MULTILINE)
 rxfilter = re.compile(r'^\s*(?P<filter>filter:)\s+(?P<filtername>[-:\w]+)', re.MULTILINE)
+rxcmdother = re.compile(r'^\s*(?P<cmd>('
+                        + '|'.join([x for x in BIBOLAMAZIFILE_COMMANDS if x not in ['src', 'filter']])
+                        + r'):)', re.MULTILINE)
 rxcomment = re.compile(r'^\s*%%.*$', re.MULTILINE)
 _rx_not_odd_num_backslashes = r'(((?<=[^\\])|^)(\\\\)*)';
 rxstring1 = re.compile(_rx_not_odd_num_backslashes+r'(?P<str>\"([^"\\]|\\\\|\\\")*\")', re.MULTILINE)
@@ -60,6 +64,9 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
         self.fmt_filter = QTextCharFormat()
         self.fmt_filter.setFontWeight(QFont.Bold)
         self.fmt_filter.setForeground(QColor(127,0,0))
+
+        self.fmt_cmdother = QTextCharFormat()
+        self.fmt_cmdother.setFontWeight(QFont.Bold)
 
         self.fmt_filtername = QTextCharFormat()
         self.fmt_filtername.setForeground(QColor(0, 0, 127))
@@ -97,6 +104,9 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             #pcache.add_filter(line=blockno, filtername=m.group('filtername'))
                 
             self.setFormat(m.start('filtername'), len(m.group('filtername')), fmtname)
+
+        for m in rxcmdother.finditer(text):
+            self.setFormat(m.start('cmd'), len(m.group('cmd')), self.fmt_cmdother)
 
         for m in rxstring1.finditer(text):
             self.setFormat(m.start('str'), len(m.group('str')), self.fmt_string)

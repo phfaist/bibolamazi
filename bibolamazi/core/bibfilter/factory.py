@@ -49,6 +49,8 @@ import traceback
 import bibolamazi.init
 from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
 from bibolamazi.core import butils
+from bibolamazi.core.butils import BibolamaziError
+
 
 logger = logging.getLogger(__name__)
 
@@ -503,14 +505,11 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
             if modname not in _filter_package_listings[filterpackname]:
                 _filter_package_listings[filterpackname].append(modname)
 
-            if modname not in _filter_list:
-                _filter_list.append(modname)
-
     # ----
     
     logger.debug("detect_filter_package_listings(force_redetect=%r, filterpath=%r)", force_redetect, filterpath)
 
-    if force_redetect:
+    if not _filter_package_listings or force_redetect:
         _filter_package_listings = OrderedDict()
 
     for (filterpack, filterdir) in iteritems(filterpath):
@@ -530,7 +529,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
                 logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicodestr(e))
                 continue
             #thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
-            detect_filters_in_package(filterpackage, filterpack, filterpath=filterpath)
+            detect_filters_in_package(filterpackage, filterpack)
 
             if filterpack in _filter_precompiled_cache:
                 logger.longdebug("Loading precompiled filters from package %s...", filterpack)
@@ -544,7 +543,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
 
     logger.debug("detect_filter_package_listings(): Filters detected")
 
-    return _filter_pacakge_listings
+    return _filter_package_listings
 
 def detect_filters(force_redetect=False, filterpath=filterpath):
 
@@ -570,68 +569,105 @@ def get_filter_class(name, filterpackage=None, filterpath=filterpath):
     return fmodule.bibolamazi_filter_class()
 
 
+class FilterInfo(object):
+    """
+    Information about a given filter.
 
+    NEED DOC
+
+    NOTE: Constructor may raise 'NoSuchFilter'.
+    """
+    def __init__(self, name, filterpath=filterpath):
+        self.name = name
+        self.filterpath = filterpath
+        self.fmodule = get_module(name, filterpath=filterpath)
+        self.fclass = self.fmodule.bibolamazi_filter_class()
+
+        self.uses_default_argparse = not hasattr(self.fmodule, 'parse_args')
+
+    def parseOptionStringArgs(self, optionstring):
+
+        pargs = []
+        kwargs = {}
+
+        if not self.uses_default_argparse:
+            x = self.fmodule.parse_args(optionstring)
+            try:
+                (pargs, kwargs) = x
+            except (TypeError, ValueError):
+                raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)",
+                                  name=self.name)
+        else:
+            fopts = self.defaultFilterOptions()
+            (pargs, kwargs) = fopts.parse_optionstring(optionstring)
+
+        return (pargs, kwargs)
+
+    def validateOptionStringArgs(self, pargs, kwargs):
+        """
+        Validate the arguments as OK to pass to constructor, i.e. that all argument
+        names are correct.
+
+        We use inspect.getcallargs() to inspect the filter class constructor's
+        signature.
+
+        Raises :py:exc:`FilterCreateArgumentError` if the validation fails.
+        """
+        try:
+            pargs2 = [None]+pargs; # extra argument for `self` slot
+            inspect.getcallargs(self.fclass.__init__, *pargs2, **kwargs)
+        except Exception as e:
+            import traceback
+            logger.debug("Filter exception:\n" + traceback.format_exc())
+            raise FilterCreateArgumentError(unicodestr(e), self.name)
+    
+
+    def defaultFilterOptions(self):
+        """
+
+        Return `None` if the filter doesn't use the default arg parsing mechanism.
+        """
+        if not self.uses_default_argparse:
+            return None
+        return DefaultFilterOptions(self.name, fclass=self.fclass)
+
+    def makeFilter(self, optionstring):
+        """
+        Instantiate the filter with the given option string.
+        """
+
+        (pargs, kwargs) = self.parseOptionStringArgs(optionstring)
+
+        # make sure arguments are valid
+        self.validateOptionStringArgs(pargs, kwargs)
+
+        # and finally, instantiate the filter.
+        logger.debug(self.name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
+                     ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')')
+
+        # exceptions caught here are those thrown from the filter constructor itself.
+        try:
+            return self.fclass(*pargs, **kwargs)
+        except Exception as e:
+            import traceback
+            logger.debug("Filter exception:\n" + traceback.format_exc())
+            msg = unicodestr(e)
+            if (not isinstance(e, FilterError) and e.__class__ != Exception):
+                # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
+                msg = e.__class__.__name__ + ": " + msg
+            raise FilterCreateError(msg, self.name)
+
+
+
+    
 def make_filter(name, options, filterpath=filterpath):
     """
     Main filter instance factory function: Create the filter instance.
 
-    `options` is the unparsed option string.
-
-    DOC NEEDED.
+    This is a simple wrapper for `FilterInfo(...).makeFilter(...)`.
     """
 
-    fmodule = get_module(name, filterpath=filterpath)
-
-    fclass = fmodule.bibolamazi_filter_class()
-
-    pargs = []
-    kwargs = {}
-    if isinstance(options, (basestring,str)):
-        #
-        # parse option string
-        #
-        optionstring = options
-        if (hasattr(fmodule, 'parse_args')):
-            x = fmodule.parse_args(optionstring)
-            try:
-                (pargs, kwargs) = x
-            except (TypeError, ValueError):
-                raise FilterError("Filter's parse_args() didn't return a tuple (args, kwargs)", name=name)
-        else:
-            fopts = DefaultFilterOptions(name, fclass=fclass)
-            (pargs, kwargs) = fopts.parse_optionstring(optionstring)
-    else:
-        #
-        # 'options' is already a ready-to-use tuple (pargs, kwargs)
-        #
-        pargs, kwargs = options
-
-    # first, validate the arguments to the function call with inspect.getcallargs()
-    try:
-        pargs2 = [None]+pargs; # extra argument for `self` slot
-        inspect.getcallargs(fclass.__init__, *pargs2, **kwargs)
-    except Exception as e:
-        import traceback
-        logger.debug("Filter exception:\n" + traceback.format_exc())
-        raise FilterCreateArgumentError(unicodestr(e), name)
-
-    # and finally, instantiate the filter.
-
-    logger.debug(name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
-                  ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')')
-
-    # exceptions caught here are those thrown from the filter constructor itself.
-    try:
-        return fclass(*pargs, **kwargs)
-    except Exception as e:
-        import traceback
-        logger.debug("Filter exception:\n" + traceback.format_exc())
-        msg = unicodestr(e)
-        if (not isinstance(e, FilterError) and e.__class__ != Exception):
-            # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
-            msg = e.__class__.__name__ + ": " + msg
-        raise FilterCreateError(msg, name)
-
+    return FilterInfo(name, filterpath=filterpath).makeFilter(options)
 
 
 
