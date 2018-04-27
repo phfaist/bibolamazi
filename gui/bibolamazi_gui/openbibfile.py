@@ -49,6 +49,7 @@ from bibolamazi.core.blogger import logger
 from bibolamazi.core import bibolamazifile
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
+from bibolamazi.core.bibfilter import factory as filterfactory
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -57,6 +58,7 @@ from PyQt5.QtWidgets import *
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from .favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
 from . import filterinstanceeditor
+from . import filterpackagepatheditor
 from . import settingswidget
 
 from .qtauto.ui_openbibfile import Ui_OpenBibFile
@@ -822,6 +824,16 @@ class OpenBibFile(QWidget):
             self.ui.sourceListEditor.setSourceList(thesrcs, noemit=True)
             self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
+            return
+
+        if (cmd.cmd == "package"):
+            try:
+                fp, fdir = filterfactory.parse_filterpackage_argstr(cmd.text.strip())
+            except BibolamaziError:
+                fp = "&lt;error>"
+                fdir = "&lt;error>"
+            self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
+            self.ui.stackEditTools.setCurrentWidget(self.ui.toolspagePackage)
             return
 
         if (cmd.cmd == "filter"):

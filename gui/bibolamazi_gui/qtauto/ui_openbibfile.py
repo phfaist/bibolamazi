@@ -100,6 +100,15 @@ class Ui_OpenBibFile(object):
         self.filterInstanceEditor.setObjectName("filterInstanceEditor")
         self.verticalLayout_5.addWidget(self.filterInstanceEditor)
         self.stackEditTools.addWidget(self.toolspageFilter)
+        self.toolspagePackage = QtWidgets.QWidget()
+        self.toolspagePackage.setObjectName("toolspagePackage")
+        self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.toolspagePackage)
+        self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_6.setObjectName("verticalLayout_6")
+        self.filterPackagePathEditor = FilterPackagePathEditor(self.toolspagePackage)
+        self.filterPackagePathEditor.setObjectName("filterPackagePathEditor")
+        self.verticalLayout_6.addWidget(self.filterPackagePathEditor)
+        self.stackEditTools.addWidget(self.toolspagePackage)
         self.verticalLayout_2.addWidget(self.splitEditConfig)
         self.tabs.addTab(self.pageConfig, "")
         self.pageInfo = QtWidgets.QWidget()
@@ -197,7 +206,7 @@ class Ui_OpenBibFile(object):
 
         self.retranslateUi(OpenBibFile)
         self.tabs.setCurrentIndex(0)
-        self.stackEditTools.setCurrentIndex(0)
+        self.stackEditTools.setCurrentIndex(3)
         self.cbxVerbosity.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(OpenBibFile)
 
@@ -223,5 +232,6 @@ class Ui_OpenBibFile(object):
         self.lblFileName.setText(_translate("OpenBibFile", "some text here"))
 
 from ..filterinstanceeditor import FilterInstanceEditor
+from ..filterpackagepatheditor import FilterPackagePathEditor
 from ..sourcelisteditor import SourceListEditor
 from . import bibolamazi_res_rc

@@ -239,15 +239,26 @@ def reset_filters_cache():
 
 
 def parse_filterpackage_argstr(argstr):
+    """
+    Parse filter package specification given as
+    \"filterpackage=path/to/the/package\" or \"filterpackage=\" or
+    \"path/to/the/package\"
+    """
 
     if not argstr:
         raise BibolamaziError("Invalid filter package: No filter package specified")
 
     fpparts = argstr.split('=',1)
-    fpname = fpparts[0].strip()
-    fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
+    if len(fpparts) == 1:
+        path = fpparts[0].strip()
+        fpname = os.path.basename(path)
+        fpdir = os.path.dirname(path)
+    else:
+        fpname = fpparts[0].strip()
+        fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
 
-    if re.search(r'[^a-zA-Z0-9_\.]', fpname):
+
+    if not fpname or re.search(r'[^a-zA-Z0-9_\.]', fpname):
         raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
                               "Did you get the filterpackage syntax wrong? "
                               "Syntax: '<packagename>[=<path>]'." %(fpname))

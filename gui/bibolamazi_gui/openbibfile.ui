@@ -86,7 +86,7 @@
            <enum>QFrame::Raised</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="toolspageBase">
            <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -182,6 +182,25 @@
             </property>
             <item>
              <widget class="FilterInstanceEditor" name="filterInstanceEditor" native="true"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="toolspagePackage">
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="FilterPackagePathEditor" name="filterPackagePathEditor" native="true"/>
             </item>
            </layout>
           </widget>
@@ -431,6 +450,12 @@ p, li { white-space: pre-wrap; }
    <class>FilterInstanceEditor</class>
    <extends>QWidget</extends>
    <header>..filterinstanceeditor.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FilterPackagePathEditor</class>
+   <extends>QWidget</extends>
+   <header>..filterpackagepatheditor.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
