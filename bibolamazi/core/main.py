@@ -109,17 +109,7 @@ def setup_filterpackage_from_argstr(argstr):
     variable BIBOLAMAZI_FILTER_PATH.
     """
 
-    if not argstr:
-        return
-
-    fpparts = argstr.split('=',1)
-    fpname = fpparts[0]
-    fpdir = fpparts[1] if len(fpparts) >= 2 and fpparts[1] else None
-
-    if re.search(r'[^a-zA-Z0-9_\.]', fpname):
-        raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
-                              "Did you get the filterpackage syntax wrong? "
-                              "Syntax: '<packagename>[=<path>]'." %(fpname))
+    (fpname, fpdir) = filterfactory.parse_filterpackage_argstr(argstr)
 
     try:
         ok = filterfactory.validate_filter_package(fpname, fpdir, raise_exception=True)

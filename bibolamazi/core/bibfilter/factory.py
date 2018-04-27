@@ -204,7 +204,6 @@ filterpath = PrependOrderedDict([
 # information about filters and modules etc.
 
 
-_filter_list = None
 _filter_package_listings = None
 _filter_modules = {}
 
@@ -227,19 +226,40 @@ def load_precompiled_filters(filterpackage, precompiled_modules):
 
 
 def reset_filters_cache():
-    global _filter_list
     global _filter_package_listings
     global _filter_modules
     global _filter_precompiled_cache
 
-    _filter_list = None
     _filter_package_listings = None
     _filter_modules = {}
     # of course, don't reset the precompiled cache!!
 
 
-# utility to warn the user of invalid --filterpackage option
+
+def parse_filterpackage_argstr(argstr):
+
+    if not argstr:
+        raise BibolamaziError("Invalid filter package: No filter package specified")
+
+    fpparts = argstr.split('=',1)
+    fpname = fpparts[0].strip()
+    fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
+
+    if re.search(r'[^a-zA-Z0-9_\.]', fpname):
+        raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
+                              "Did you get the filterpackage syntax wrong? "
+                              "Syntax: '<packagename>[=<path>]'." %(fpname))
+
+    return (fpname, fpdir)
+
+
 def validate_filter_package(fpname, fpdir, raise_exception=True):
+    """
+    Make sure given filter package at given directory is valid.
+
+    Utility to warn the user of invalid `--filterpackage` option
+    """
+
     oldsyspath = sys.path
     mod = None
     if fpdir:
@@ -252,14 +272,16 @@ def validate_filter_package(fpname, fpdir, raise_exception=True):
         return False
     finally:
         sys.path = oldsyspath
-    return True if mod else False
+
+    if mod:
+        return True
+
+    return False
 
 
 # store additional information about the modules.
 
-def get_module(name, raise_nosuchfilter=True, filterpackage=None):
-
-    global filterpath
+def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=filterpath):
 
     name = str(name)
 
@@ -279,10 +301,9 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 
     import_errors = []
 
-    def get_module_in_filterpackage(filterpackname):
+    def get_module_in_filterpackage(filterpackname, filterdir):
 
         global _filter_precompiled_cache
-        global filterpath
         
         logger.longdebug("Attempting to load filter %s from package %s", name, filterpackname)
 
@@ -309,7 +330,6 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
             
         # first, search the actual module.
         oldsyspath = sys.path
-        filterdir = filterpath[filterpackname]
         if filterdir:
             sys.path = [filterdir] + sys.path
         try:
@@ -383,7 +403,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
         if filterpackage not in filterpath:
             raise NoSuchFilterPackage(filterpackage, fpdir=None)
 
-        mod = get_module_in_filterpackage(filterpackage)
+        mod = get_module_in_filterpackage(filterpackage, filterpath[filterpackage])
 
         if mod is None and raise_nosuchfilter:
             extrainfo = ""
@@ -405,7 +425,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 
     # explore filter packages
     for filterpack in filterpath.keys():
-        mod = get_module_in_filterpackage(filterpack)
+        mod = get_module_in_filterpackage(filterpack, filterpath[filterpack])
         if mod is not None:
             break
 
@@ -427,25 +447,19 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None):
 _rxpysuffix = re.compile(r'\.py[co]?$')
 
 
-def detect_filters(force_redetect=False):
-    global _filter_list
+def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
+
     global _filter_package_listings
     global _filter_precompiled_cache
-    global filterpath
 
-    if (_filter_list is not None and not force_redetect):
-        return _filter_list
-    
 
-    def detect_filters_in_module(filterpackage, filterpackname):
+    def detect_filters_in_package(filterpackage, filterpackname):
         """
-        Explores the module `filterpackage` (to which one refers by the name `filterpackname`)
+        Explores the package `filterpackage` (to which one refers by the name `filterpackname`)
         for available filters.
         """
 
-        global _filter_list
         global _filter_package_listings
-        global filterpath
 
         logger.debug('looking for filters in package %r (%s) in %s',
                      filterpackage, filterpackname, filterpackage.__path__)
@@ -494,12 +508,18 @@ def detect_filters(force_redetect=False):
 
     # ----
     
-    logger.debug("detect_filters(force_redetect=%r) ... filter path is %r", force_redetect, filterpath)
+    logger.debug("detect_filter_package_listings(force_redetect=%r, filterpath=%r)", force_redetect, filterpath)
 
-    _filter_list = []
-    _filter_package_listings = OrderedDict()
+    if force_redetect:
+        _filter_package_listings = OrderedDict()
 
     for (filterpack, filterdir) in iteritems(filterpath):
+
+        if filterpack in _filter_package_listings:
+            # don't need to re-detect. (If force_redetect was set, then we have
+            # already cleared the corresponding entry)
+            continue
+
         oldsyspath = sys.path
         try:
             if filterdir:
@@ -510,7 +530,7 @@ def detect_filters(force_redetect=False):
                 logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicodestr(e))
                 continue
             #thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
-            detect_filters_in_module(filterpackage, filterpack)
+            detect_filters_in_package(filterpackage, filterpack, filterpath=filterpath)
 
             if filterpack in _filter_precompiled_cache:
                 logger.longdebug("Loading precompiled filters from package %s...", filterpack)
@@ -518,58 +538,49 @@ def detect_filters(force_redetect=False):
                     logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
                     if fname not in _filter_package_listings[filterpack]:
                         _filter_package_listings[filterpack].append(fname)
-                    if fname not in _filter_list:
-                        _filter_list.append(fname)
 
         finally:
             sys.path = oldsyspath
 
-    logger.debug('detect_filters(): Filters detected')
-    logger.longdebug("_filter_list=%r, _filter_package_listings=%r", _filter_list, _filter_package_listings)
+    logger.debug("detect_filter_package_listings(): Filters detected")
 
-    return _filter_list
+    return _filter_pacakge_listings
 
-def detect_filter_package_listings():
-    detect_filters()
-    #print("detected filters. _filter_package_listings=%r\n" %(_filter_package_listings))
-    return _filter_package_listings
+def detect_filters(force_redetect=False, filterpath=filterpath):
+
+    detect_filter_package_listings(force_redetect=force_redetect, filterpath=filterpath)
+
+    # now collect filter names
+    filter_list = []
+    for (filterpack, filterdir) in iteritems(filterpath):
+        for fname in _filter_package_listings[filterpack]:
+            if fname not in filter_list:
+                filter_list.append(fname)
+
+    logger.longdebug("filter_list=%r, _filter_package_listings=%r", filter_list, _filter_package_listings)
+
+    return filter_list
 
 
-def get_filter_class(name, filterpackage=None):
+
+def get_filter_class(name, filterpackage=None, filterpath=filterpath):
     
-    fmodule = get_module(name, filterpackage=filterpackage)
+    fmodule = get_module(name, filterpackage=filterpackage, filterpath=filterpath)
 
     return fmodule.bibolamazi_filter_class()
 
 
-def filter_uses_default_arg_parser(name):
 
-    fmodule = get_module(name)
-
-    if (hasattr(fmodule, 'parse_args')):
-        return False
-    return True
-
-def filter_arg_parser(name):
-    """If the filter `name` uses the default-based argument parser, then returns
-    a DefaultFilterOptions object that is initialized with the options available
-    for the given filter `name`.
-
-    If the filter has its own option parsing mechanism, this returns `None`.
+def make_filter(name, options, filterpath=filterpath):
     """
-    
-    fmodule = get_module(name)
+    Main filter instance factory function: Create the filter instance.
 
-    if (hasattr(fmodule, 'parse_args')):
-        return None
+    `options` is the unparsed option string.
 
-    return DefaultFilterOptions(name)
+    DOC NEEDED.
+    """
 
-
-
-def make_filter(name, options):
-
-    fmodule = get_module(name)
+    fmodule = get_module(name, filterpath=filterpath)
 
     fclass = fmodule.bibolamazi_filter_class()
 

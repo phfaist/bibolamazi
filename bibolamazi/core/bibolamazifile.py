@@ -61,6 +61,7 @@ from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError, factory
+from bibolamazi.core.bibfilter.factory import PrependOrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,8 @@ sources loaded. See doc for :py:class:`BibolamaziFile`.
 
 
 
+_bibolamazifile_commands = ['src', 'package', 'filter']
+
 
 
 class BibolamaziFile(object):
@@ -359,6 +362,7 @@ class BibolamaziFile(object):
             self._cmds = None
             self._sources = None
             self._source_lists = []
+            self._filterpath = PrependOrderedDict()
             self._filters = []
             self._cache_accessors = {} # dict { class-type: class-instance }
             self._bibliographydata = None
@@ -525,6 +529,24 @@ class BibolamaziFile(object):
         This function may be called in the state :py:const:`BIBOLAMAZIFILE_LOADED`.
         """
         return self._sources
+
+    def filterPath(self):
+        """
+        Return the list of additional filter paths set by the bibolamazi file using
+        'package:' commands.
+
+        See also fullFilterPath().
+        """
+        return self._filterpath
+
+    def fullFilterPath(self):
+        """
+        Return the full search path used when creating filter instances from this
+        bibolamazi file.
+
+        See also filterPath().
+        """
+        return PrependOrderedDict(list(self._filterpath.items()) + list(factory.filterpath.items()))
 
     def filters(self):
         """
@@ -695,6 +717,7 @@ class BibolamaziFile(object):
         # parse commands
         self._sources = []
         self._source_lists = []
+        self._filterpath = PrependOrderedDict()
         self._filters = []
         self._cache_accessors = {}
 
@@ -840,7 +863,7 @@ class BibolamaziFile(object):
                 continue
 
             # try to match to a new command
-            mcmd = re.match(r'^\s{0,1}(src|filter):\s*', cline)
+            mcmd = re.match(r'^\s{0,1}(' + '|'.join(_bibolamazifile_commands) + r'):\s*', cline)
             if (not mcmd):
                 if (latestcmd.cmd is None):
                     # no command
@@ -882,8 +905,12 @@ class BibolamaziFile(object):
         # parse commands
         self._sources = []
         self._source_lists = []
+        self._filterpath = PrependOrderedDict()
         self._filters = []
         self._cache_accessors = {}
+
+        full_filter_path = self.fullFilterPath()
+
         for cmd in cmds:
             if (cmd.cmd == "src"):
                 thesrc_list = shlex.split(cmd.text)
@@ -892,11 +919,29 @@ class BibolamaziFile(object):
                 #                          list was actually accessed.
                 logger.debug("Added source list %r", thesrc_list)
                 continue
+
+            if (cmd.cmd == "package"):
+                filterpkgstring = cmd.text.strip()
+                fpname, fpdir = factory.parse_filterpackage_argstr(filterpkgstring)
+                if fpdir is not None:
+                    # allow relative files, expand $VARS and ~, etc.
+                    fpdir = self.resolveSourcePath(fpdir)
+                    
+                ok = factory.validate_filter_package(fpname, fpdir, raise_exception=False)
+                if not ok:
+                    logger.warning("Invalid filter package: %s [dir %r]", fpname, fpdir)
+
+                self._filterpath[fpname] = fpdir
+
+                # update full filter path
+                full_filter_path = self.fullFilterPath()
+                continue
+
             if (cmd.cmd == "filter"):
                 filname = cmd.info['filtername']
                 filoptions = cmd.text
                 try:
-                    filterinstance = factory.make_filter(filname, filoptions)
+                    filterinstance = factory.make_filter(filname, filoptions, filterpath=full_filter_path)
                     filterinstance.setBibolamaziFile(self)
                     filterinstance.setInvokationName(filname)
                     self._filters.append(filterinstance)
