@@ -36,10 +36,28 @@ sys.path.insert(0, bibolamazigui_dir)
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filterfactory
 
+
+#import hack_pkg_resources_entry_points
+
+
 ##
 ## All the python files under 'filters/'
 ##
 #filterlist = hookutils.collect_submodules('filters')
+
+#
+# Hack for pybtex plugins, because pybtex uses pkg_resources.iter_entry_points()
+#
+# pybtex_entry_pts = ["pybtex.database.input",
+#                     "pybtex.database.output",
+#                     "pybtex.backends",
+#                     "pybtex.style.labels",
+#                     "pybtex.style.names",
+#                     "pybtex.style.sorting",
+#                     "pybtex.style.formatting",]                    
+# for pkgname in pybtex_entry_pts:
+#     hack_pkg_resources_entry_points.register_entry_points(pkgname)
+
 
 ##
 ## pre-compile filter list
@@ -65,6 +83,9 @@ if sys.platform.startswith('darwin'):
         f.write("[Paths]\nPrefix = MacOS/PyQt5/Qt")
     add_data_files += [ ( os.path.join(tmp_genfiles_dir, 'qt.conf'), '.',) ]
 
+
+#runhookentrypts = hack_pkg_resources_entry_points.generate_runtime_hook(tmp_genfiles_dir)
+
 ##
 ## PyInstaller config part
 ##
@@ -77,10 +98,13 @@ a = Analysis(['bin/bibolamazi_gui'],
                  #os.path.join(bibolamazi_path, '3rdparty', x)
                  #    for x in bibolamazi.init.third_party
                  #],
-             hiddenimports=['PyQt5', #'updater4pyi',
-                 'bibolamazi_compiled_filter_list'],
+             hiddenimports=[
+                 'PyQt5',
+                 'bibolamazi_compiled_filter_list'
+             ],# + hack_pkg_resources_entry_points.get_hidden_imports(),
              hookspath=[],#[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
-             datas=add_data_files
+             datas=add_data_files,
+             #runtime_hooks=[ runhookentrypts ],
              )
 
 if (sys.platform.startswith('win')):

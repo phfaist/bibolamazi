@@ -235,7 +235,7 @@ class SettingsWidget(QDialog):
 
         if (self.swu_interface is None or self.swu_sourcefilter_devel is None):
             self.ui.tabUpdates.setEnabled(False)
-            self.ui.tabs.removeWidget(self.ui.tabUpdates)
+            self.ui.tabs.removeTab(self.ui.tabs.indexOf(self.ui.tabUpdates))
         else:
             self.ui.tabUpdates.setEnabled(True)
             self.ui.chkUpdates.setChecked(self.swu_interface.checkForUpdatesEnabled())

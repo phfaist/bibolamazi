@@ -38,6 +38,7 @@ import re
 import logging
 import subprocess
 import datetime
+import pkg_resources
 
 
 
@@ -57,6 +58,7 @@ from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
 from bibolamazi.core import version as bibolamaziversion
 
+
 from . import openbibfile
 from . import helpbrowser
 from . import settingswidget
@@ -69,6 +71,40 @@ from .qtauto.ui_mainwidget import Ui_MainWidget
 
 logger = logging.getLogger(__name__)
 
+
+
+# class _HackPybtexPlugins(object):
+#     def __init__(self, plugins, orig_find_plugin):
+#         self.plugins = plugins
+#         self.orig_find_plugin = orig_find_plugin
+
+#     def hack_find_plugin(self, plugin_group, name=None, filename=None):
+#         logger.debug("_HackPybtexPlugins.hack_find_plugin(%r,%r,%r)", plugin_group, name, filename)
+#         if not filename and plugin_group in plugins and name in plugins.get(plugin_group, {}):
+#             logger.debug("Hacked pybtex.find_plugin: already have preloaded plugin module")
+#             return plugins[plugin_group][name]
+#         return self.orig_find_plugin(plugin_group, name, filename)
+
+
+# def hack_pybtex_plugins():
+#     #
+#     # If app is frozen with pyinstaller, pybtex needs help finding its plugins
+#     #
+
+#     import pybtex.plugin
+
+#     from pybtex.database.input.bibtex import Parser as inputbibtex_Parser
+#     from pybtex.database.output.bibtex import Writer as outputbibtex_Writer
+#     from pybtex.backends.latex import Backend as backendlatex_Backend
+
+#     theplugins = {'pybtex.database.input':  {'bibtex': inputbibtex_Parser},
+#                   'pybtex.database.output': {'bibtex': outputbibtex_Writer},
+#                   'pybtex.backends':        {'latex': backendlatex_Backend}, }
+
+#     hackobj = _HackPybtexPlugins(theplugins, pybtex.plugin.find_plugin)
+#     pybtex.plugin.find_plugin = hackobj.hack_find_plugin
+
+#     logger.debug("Sucessfully hacked pybtex.plugin's find_plugin.")
 
 
 class BibolamaziApplication(QApplication):
@@ -446,6 +482,9 @@ def run_main():
     logger.debug("starting application")
 
     app = BibolamaziApplication()
+
+    #if getattr(sys, 'frozen', False):
+    #    hack_pybtex_plugins()
 
     try:
         # load filter packages from environment ...

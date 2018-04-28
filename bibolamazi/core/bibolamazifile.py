@@ -1308,7 +1308,11 @@ class BibolamaziFile(object):
                 #
                 #w = outputbibtex.Writer()
                 #w.write_stream(self._bibliographydata, f)
-                f.write(self._bibliographydata.to_string('bibtex'))
+                #
+                #f.write(self._bibliographydata.to_string('bibtex'))
+                #
+                w = outputbibtex.Writer()
+                f.write(w.to_string(self._bibliographydata))
             
             logger.info("Updated output file `"+self._fname+"'.")
 
