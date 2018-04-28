@@ -65,13 +65,13 @@ class Ui_FilterInstanceEditor(object):
         self.cbxFilter.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
         self.cbxFilter.setObjectName("cbxFilter")
         self.horizontalLayout.addWidget(self.cbxFilter)
-        self.btnFilterHelp = QtWidgets.QToolButton(FilterInstanceEditor)
+        self.btnFilterHelp = QtWidgets.QPushButton(FilterInstanceEditor)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/pic/question.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnFilterHelp.setIcon(icon)
         self.btnFilterHelp.setObjectName("btnFilterHelp")
         self.horizontalLayout.addWidget(self.btnFilterHelp)
-        self.btnAddFavorite = QtWidgets.QToolButton(FilterInstanceEditor)
+        self.btnAddFavorite = QtWidgets.QPushButton(FilterInstanceEditor)
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(":/pic/bookmark.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btnAddFavorite.setIcon(icon1)
@@ -85,9 +85,10 @@ class Ui_FilterInstanceEditor(object):
     def retranslateUi(self, FilterInstanceEditor):
         _translate = QtCore.QCoreApplication.translate
         FilterInstanceEditor.setWindowTitle(_translate("FilterInstanceEditor", "Form"))
-        self.lblErrorMsg.setText(_translate("FilterInstanceEditor", "Error: this and that"))
+        self.lblErrorMsg.setText(_translate("FilterInstanceEditor", "Error: ..."))
         self.label.setText(_translate("FilterInstanceEditor", "Filter:"))
-        self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "?"))
+        self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "info"))
         self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites"))
+        self.btnAddFavorite.setText(_translate("FilterInstanceEditor", "add"))
 
 from . import bibolamazi_res_rc

@@ -354,24 +354,33 @@ class FavoritesItemDelegate(QStyledItemDelegate):
         self.initStyleOption(options, index)
         options.text = ""
 
-        htmlitem = self._htmlitem(index)
+        htmlitem = self._htmlitem(index, bare=True)
 
         doc = QTextDocument()
         doc.setHtml(htmlitem)
         doc.setTextWidth(options.rect.width())
         return QSize(doc.idealWidth(), doc.size().height())
 
-    def _htmlitem(self, index):
+    def _htmlitem(self, index, bare=False):
 
         favcmd = index.data(ROLE_FAVCMD_OBJECT)
-        return (
+
+        html = (
             "<html><head/><body>"+
-            "<p style=\"font-weight:bold; margin: 3px 0px 0px 0px;\">" + htmlescape(favcmd.name) + "</p>" +
-            "<p style=\"font-weight:italic; font-size: 0.9em; color: #808080; margin: 5px 0px 3px 0px;\">" +
-            htmlescape(favcmd.cmd) + "</p>" +
-            "</body></html>"
-        )
-    
+            "<p style=\"font-weight:bold; margin: 3px 0px 0px 0px;\">" + htmlescape(favcmd.name) + "</p>"
+            )
+
+        html += "<p style=\"font-weight:italic; font-size: 0.9em; color: #808080; margin: 5px 0px 5px 0px;\">"
+        if not bare:
+            html += htmlescape(favcmd.cmd.strip())
+        else:
+            html += "&nbsp;"
+        html += "</p>"
+
+        html += "</body></html>"
+
+        return html
+
 
 class FavoritesOverBtns(OverListButtonWidgetBase):
     def __init__(self, itemview):

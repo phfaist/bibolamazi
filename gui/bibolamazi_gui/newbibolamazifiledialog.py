@@ -62,6 +62,10 @@ class NewBibolamazifileDialog(QDialog):
         self.ui = Ui_NewBibolamazifileDialog()
         self.ui.setupUi(self)
 
+        palette = self.ui.txtSources.palette()
+        palette.setColor(QPalette.Base, palette.color(QPalette.Window))
+        self.ui.txtSources.setPalette(palette)
+
         self.ui.btnSrcAdd.setVisible(False)
         self.ui.btnSrcClear.setVisible(False)
         self.ui.chkDuplicatesFilter.setVisible(False)
@@ -117,25 +121,27 @@ class NewBibolamazifileDialog(QDialog):
     @pyqtSlot()
     def on_btnSrcAdd_clicked(self):
         
-        fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
-                                                     'BibTeX Files (*.bib);;All Files (*)')
-        logger.debug("selected fname = %r", fname)
-        if not fname:
+        fnamelist, _filter = QFileDialog.getOpenFileNames(self, 'Select BibTeX File(s)', str(),
+                                                          'BibTeX Files (*.bib);;All Files (*)')
+        logger.debug("selected fname list = %r", fnamelist)
+        if not fnamelist or not fnamelist[0]:
             return
 
-        self.data.src.append(fname)
+        self.data.src += fnamelist
         self.updateSrcDisplay()
 
     def updateSrcDisplay(self):
         if self.data.src:
-            self.ui.lblSources.setText(
-                "<html><body><ol>"
-                + "".join([ "<li>"+htmlescape(x)+"</li>" for x in self.data.src ])
-                + "</ol></body></html>"
-            )
+            html = "<html><head/><body>"
+            if len(self.data.src) == 1:
+                html += "<p>" + htmlescape(self.data.src[0]) + "</p>"
+            else:
+                html += "<ol>" + "".join([ "<li>"+htmlescape(x)+"</li>" for x in self.data.src ]) + "</ol>"
+            html += "</body></html>"
+            self.ui.txtSources.setHtml(html)
         else:
-            self.ui.lblSources.setText(
-                "<html><body><p style=\"color: #808080; font-style:italic\">(no sources set)</p></body></html>"
+            self.ui.txtSources.setHtml(
+                "<html><head/><body><p style=\"color: #808080; font-style:italic\">(no sources set)</p></body></html>"
             )
 
 
@@ -226,7 +232,7 @@ class NewBibolamazifileDialog(QDialog):
 """
 
         if len(self.data.src):
-            bibolamazi_config += "\n\n".join( [ 'src: '+x for x in self.data.src ] )
+            bibolamazi_config += "\n".join( [ 'src: '+x for x in self.data.src ] )
         else:
             bibolamazi_config += "src: <INSERT-SOURCE-PATH-HERE>"
 
@@ -366,7 +372,7 @@ filter: arxiv -sMode=eprint
               %(thesespublishedopt)s
 
 """%dict(thesespublishedopt=thesespublishedopt))
-            elif self.ui.rdbtnArxivUnpub_unpubnote.isChecked():
+            elif self.ui.rdbtnArxivPub_unpubnote.isChecked():
                 bibolamazi_config += ("""
 %%%% Include a 'note = {arXiv:...}' field with arXiv identifier:
 filter: arxiv -sMode=note
@@ -374,7 +380,7 @@ filter: arxiv -sMode=note
               %(thesespublishedopt)s
 
 """%dict(thesespublishedopt=thesespublishedopt))
-            elif self.ui.rdbtnArxivUnpub_strip.isChecked():
+            elif self.ui.rdbtnArxivPub_strip.isChecked():
                 bibolamazi_config += ("""
 %%%% Strip out arxiv information entirely
 filter: arxiv -sMode=strip

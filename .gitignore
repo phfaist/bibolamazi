@@ -3,7 +3,9 @@
 *.pyo
 .bzr
 .bzrignore
-gui/_precompiled_filters_build
+build
+dist
+gui/_tmp_genfiles
 gui/build
 gui/dist
 *.bibolamazicache

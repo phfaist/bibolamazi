@@ -15,11 +15,11 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QTabWidget" name="gbxFilterPackages">
+    <widget class="QTabWidget" name="tabs">
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabFilterPackages" native="true">
+     <widget class="QWidget" name="tabFilterPackages">
       <attribute name="title">
        <string>Filter Packages</string>
       </attribute>

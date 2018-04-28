@@ -4,7 +4,7 @@ GUI INTERFACE TO BIBOLAMAZI
 ---------------------------
 
 This directory contains instructions to build packages for the graphical interface for
-bibolamazi, written in PyQt4.
+bibolamazi, written in PyQt5.
 
 To install the graphical interface, proceed as usual with `setup.py`.
 

@@ -6,19 +6,19 @@ import os
 import os.path
 import re
 
-from hooks import hookutils
+#from hooks import hookutils
 
 ## WARNING: Assuming that CWD is inside the `gui/' directory !!
 
-#bibolamazi_path = '/home/pfaist/ETH/PhD/util/bibolamazi'
 # NOTE: cannot use __file__ here as it refers to the Python PyInstaller egg ?!?
 bibolamazi_path = os.path.realpath(os.path.join(os.getcwd(), '..'))
+bibolamazigui_dir = os.path.join(bibolamazi_path, 'gui')
 
 
 ##
 ## Make sure some modules are accessible.
 ##
-import updater4pyi
+#import updater4pyi
 #import pybtex
 #import arxiv2bib
 #import pylatexenc
@@ -28,10 +28,11 @@ import updater4pyi
 ## set up our import paths well first of all for this same script.
 ##
 sys.path.insert(0, bibolamazi_path)
-sys.path.insert(0, os.path.join(bibolamazi_path, 'gui'))
-sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pybtex'))
-sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'arxiv2bib'))
-sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pylatexenc'))
+sys.path.insert(0, bibolamazigui_dir)
+# no longer have 3rd party libraries in repo
+#sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pybtex'))
+#sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'arxiv2bib'))
+#sys.path.insert(0, os.path.join(bibolamazi_path, '3rdparty', 'pylatexenc'))
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filterfactory
 
@@ -43,17 +44,26 @@ from bibolamazi.core.bibfilter import factory as filterfactory
 ##
 ## pre-compile filter list
 ##
-precompiled_filters_dir = '_precompiled_filters_build';
+tmp_genfiles_dirname = '_tmp_genfiles'
+tmp_genfiles_dir = os.path.join(bibolamazigui_dir, tmp_genfiles_dirname)
 #import filters
 filternames = filterfactory.detect_filters()
-if (not os.path.isdir(precompiled_filters_dir)):
-    os.mkdir(precompiled_filters_dir)
-with open(os.path.join(precompiled_filters_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
+if not os.path.isdir(tmp_genfiles_dir):
+    os.mkdir(tmp_genfiles_dir)
+with open(os.path.join(tmp_genfiles_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:
     f.write("""\
 filter_list = %r
 from bibolamazi.filters import %s
 """ %(filternames, ", ".join(filternames)))
 
+
+add_data_files = []
+
+if sys.platform.startswith('darwin'):
+    # qt.conf for MacOS X
+    with open(os.path.join(tmp_genfiles_dir,'qt.conf'), 'w') as f:
+        f.write("[Paths]\nPrefix = MacOS/PyQt5/Qt")
+    add_data_files += [ ( os.path.join(tmp_genfiles_dir, 'qt.conf'), '.',) ]
 
 ##
 ## PyInstaller config part
@@ -62,13 +72,15 @@ a = Analysis(['bin/bibolamazi_gui'],
              pathex=[
                  os.path.join(bibolamazi_path,'gui'),
                  bibolamazi_path,
-                 precompiled_filters_dir,
-                 ] + [
-                 os.path.join(bibolamazi_path, '3rdparty', x)
-                 for x in bibolamazi.init.third_party
-                 ],
-             hiddenimports=['updater4pyi', 'bibolamazi_compiled_filter_list'],
-             hookspath=[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
+                 tmp_genfiles_dir,
+                 ], #+ [ # no longer 3rdparty dir
+                 #os.path.join(bibolamazi_path, '3rdparty', x)
+                 #    for x in bibolamazi.init.third_party
+                 #],
+             hiddenimports=['PyQt5', #'updater4pyi',
+                 'bibolamazi_compiled_filter_list'],
+             hookspath=[],#[os.path.join(bibolamazi_path,'gui','pyi-hooks')],
+             datas=add_data_files
              )
 
 if (sys.platform.startswith('win')):
@@ -119,7 +131,7 @@ if (sys.platform.startswith('darwin')):
 </plist>
 ''', infoplistdata);
     if nsubs != 1:
-        print "WARNING: COULDN'T MODIFY INFO.PLIST!!"
+        print("WARNING: COULDN'T MODIFY INFO.PLIST!!")
     else:
         with open(plistname, 'w') as f:
             f.write(infoplistdata)

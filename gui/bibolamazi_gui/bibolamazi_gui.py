@@ -39,6 +39,8 @@ import logging
 import subprocess
 import datetime
 
+
+
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -384,35 +386,37 @@ swu_sourcefilter_devel = None
 
 
 def setup_software_updater():
-    if (not hasattr(sys, '_MEIPASS')):
-        # not pyinstaller-packaged
-        return
+    pass
 
-    global swu_updater, swu_interface, swu_source, swu_sourcefilter_devel
+    # if (not hasattr(sys, '_MEIPASS')):
+    #     # not pyinstaller-packaged
+    #     return
 
-    import logging
-    from updater4pyi import upd_core, upd_source, upd_iface, upd_log
-    from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
-    from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
+    # global swu_updater, swu_interface, swu_source, swu_sourcefilter_devel
 
-    # updater4pyi's logger will use our main logger anyway.
-    #upd_log.setup_logger(logging.DEBUG)
+    # import logging
+    # from updater4pyi import upd_core, upd_source, upd_iface, upd_log
+    # from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
+    # from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
 
-    # DEBUG:
-    #upd_iface.DEFAULT_INIT_CHECK_DELAY = datetime.timedelta(days=0, seconds=3, microseconds=0) # seconds
-    #upd_iface.DEFAULT_CHECK_INTERVAL = datetime.timedelta(days=0, seconds=10, microseconds=0) # seconds
+    # # updater4pyi's logger will use our main logger anyway.
+    # #upd_log.setup_logger(logging.DEBUG)
 
-    swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
+    # # DEBUG:
+    # #upd_iface.DEFAULT_INIT_CHECK_DELAY = datetime.timedelta(days=0, seconds=3, microseconds=0) # seconds
+    # #upd_iface.DEFAULT_CHECK_INTERVAL = datetime.timedelta(days=0, seconds=10, microseconds=0) # seconds
 
-    swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False)
-    swu_source.add_release_filter(swu_sourcefilter_devel)
+    # swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
 
-    swu_updater = upd_core.Updater(current_version=bibolamaziversion.version_str, #'0.9', ## DEBUG!!! 
-                                   update_source=swu_source)
+    # swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False)
+    # swu_source.add_release_filter(swu_sourcefilter_devel)
 
-    swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
-                                         parent=QApplication.instance())
-    swu_interface.start()
+    # swu_updater = upd_core.Updater(current_version=bibolamaziversion.version_str, #'0.9', ## DEBUG!!! 
+    #                                update_source=swu_source)
+
+    # swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
+    #                                      parent=QApplication.instance())
+    # swu_interface.start()
 
 
 

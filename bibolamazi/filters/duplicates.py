@@ -532,7 +532,12 @@ class DuplicatesFilter(BibFilter):
             ]
 
 
-    def compare_entries_same(self, a, b, cache_a, cache_b):
+    def compare_entries(self, a, b, cache_a, cache_b):
+        """
+        Returns a tuple `(is_same, reason)` of a boolean and a string. The `reason`
+        is a human-readable explanations of why the entries are considered the
+        same or not.
+        """
 
         # compare author list first
 
@@ -542,8 +547,7 @@ class DuplicatesFilter(BibFilter):
         bpers = cache_b['pers']
 
         if (len(apers) != len(bpers)):
-            logger.longdebug("  Author list lengths %d and %d differ", len(apers), len(bpers))
-            return False
+            return False, "Author list lengths %d and %d differ"%(len(apers), len(bpers))
 
         for k in range(len(apers)):
             (lasta, ina) = apers[k]
@@ -551,8 +555,7 @@ class DuplicatesFilter(BibFilter):
             # use Levenshtein distance to detect possible typos or alternative spellings
             # (e.g. Koenig vs Konig). Allow approx. one such typo per 8 characters.
             if (levenshtein(lasta, lastb) > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
-                logger.longdebug("  Authors %r and %r differ", (lasta, ina), (lastb, inb))
-                return False
+                return False, "Authors %r and %r differ"%((lasta, ina), (lastb, inb))
 
         logger.longdebug("Author list matches! %r and %r ",apers,bpers)
 
@@ -572,21 +575,18 @@ class DuplicatesFilter(BibFilter):
 
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
-            logger.longdebug("  Years %r and %r differ", a.fields.get('year', None), b.fields.get('year', None))
-            return False
+            logger.longdebug
+            return False, "Years %r and %r differ"%(a.fields.get('year', None), b.fields.get('year', None))
 
         if (compare_neq_fld(a.fields, b.fields, 'month', filt=normalize_month)):
-            logger.longdebug("  Months %r and %r differ", a.fields.get('month', None), b.fields.get('month', None))
-            return False
+            return False, "Months %r and %r differ"%(a.fields.get('month', None), b.fields.get('month', None))
 
         doi_a = a.fields.get('doi')
         doi_b = b.fields.get('doi')
         if (doi_a and doi_b and doi_a != doi_b):
-            logger.longdebug("  DOI's %r and %r differ", doi_a, doi_b)
-            return False
+            return False, "DOI's %r and %r differ"%(doi_a, doi_b)
         if (doi_a and doi_a == doi_b):
-            logger.longdebug("  DOI's %r and %r are the same --> DUPLICATES", doi_a, doi_b)
-            return True
+            return True, "DOI's %r and %r are the same"%(doi_a, doi_b)
 
         arxiv_a = cache_a['arxivinfo']
         arxiv_b = cache_b['arxivinfo']
@@ -596,21 +596,18 @@ class DuplicatesFilter(BibFilter):
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] != arxiv_b['arxivid']):
-            logger.longdebug("  arXiv IDS %r and %r differ", arxiv_a['arxivid'], arxiv_b['arxivid'])
-            return False
+            return False, "arXiv IDS %r and %r differ"%(arxiv_a['arxivid'], arxiv_b['arxivid'])
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] == arxiv_b['arxivid']):
-            logger.longdebug("  arXiv IDS %r and %r same --> DUPLICATES", arxiv_a['arxivid'], arxiv_b['arxivid'])
-            return True
+            return True, "arXiv IDS %r and %r same"%(arxiv_a['arxivid'], arxiv_b['arxivid'])
 
 
         # if they have different notes, then they're different entries
         note_cl_a = cache_a['note_cleaned']
         note_cl_b = cache_b['note_cleaned']
         if (note_cl_a and note_cl_b and note_cl_a != note_cl_b):
-            logger.longdebug("  Notes (cleaned up) %r and %r differ", note_cl_a, note_cl_b)
-            return False
+            return False, "Notes (cleaned up) %r and %r differ"%(note_cl_a, note_cl_b)
 
         # create abbreviations of the journals by keeping only the uppercase letters
         j_abbrev_a = cache_a['j_abbrev']
@@ -621,35 +618,31 @@ class DuplicatesFilter(BibFilter):
              (levenshtein(j_abbrev_a[:len(j_abbrev_b)], j_abbrev_b[:len(j_abbrev_a)])
               > (1+int(min(len(j_abbrev_a),len(j_abbrev_b))/4))
              ) ):
-            logger.longdebug("  Journal (parsed & simplified) %r and %r differ", j_abbrev_a, j_abbrev_b)
-            return False
+            return False, "Journal (parsed & simplified) %r and %r differ"%(j_abbrev_a, j_abbrev_b)
 
         if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
-            logger.longdebug("  Volumes %r and %r differ", a.fields.get('volume', None), b.fields.get('volume', None))
-            return False
+            return False, "Volumes %r and %r differ"%(a.fields.get('volume', None), b.fields.get('volume', None))
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
-            logger.longdebug("  Numbers %r and %r differ", a.fields.get('number', None), b.fields.get('number', None))
-            return False
+            return False, "Numbers %r and %r differ"%(a.fields.get('number', None), b.fields.get('number', None))
 
         titlea = cache_a['title_clean']
         titleb = cache_b['title_clean']
 
         if (titlea and titleb and titlea != titleb):
-            logger.longdebug("  Titles %r and %r differ.", titlea, titleb)
-            return False
+            return False, "Titles %r and %r differ"%(titlea, titleb)
 
         # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
         #
         #if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
         #    print("pages differ!")
         #    import pdb; pdb.set_trace()
-        #    return False
+        #    return False, "pages differ ....."
 
-        logger.longdebug("  Entries %s and %s match.", a.key, b.key)
+        #logger.longdebug("Entries %s and %s match.", a.key, b.key)
 
         # well at this point the publications are pretty much duplicates
-        return True
+        return True, "Entries do not differ on the relevant fields"
         
 
     def update_entry_with_duplicate(self, origkey, origentry, duplkey, duplentry):
@@ -746,10 +739,12 @@ class DuplicatesFilter(BibFilter):
                     logger.warning("Entry with conflict key %s has no corresponding entry %s", key, origkey)
                     continue
 
-                if not self.compare_entries_same(entry, bibdata.entries[origkey],
-                                                 dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                 dupl_entryinfo_cache_accessor.get_entry_cache(origkey)):
-                    logger.warning("Entry with conflict key %s is NOT a duplicate of entry %s", key, origkey)
+                same, reason = self.compare_entries(entry, bibdata.entries[origkey],
+                                                    dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                                                    dupl_entryinfo_cache_accessor.get_entry_cache(origkey))
+                if not same:
+                    logger.warning("Entry with conflict key %s is NOT a duplicate of entry %s: %s",
+                                   key, origkey, reason)
 
                 # entries are proper duplicates as expected, remove the conflictkey entry
                 logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s", key, origkey)
@@ -765,17 +760,21 @@ class DuplicatesFilter(BibFilter):
                 is_duplicate_of = None
                 duplicate_original_is_unused = False
                 for (nkey, nentry) in iteritems(newbibdata.entries):
-                    if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                 dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
-                        logger.longdebug('    ... matches existing entry %s!', nkey)
+                    same, reason = self.compare_entries(entry, nentry,
+                                                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                                                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
+                    if same:
+                        logger.debug("Entry %s is duplcate of existing entry %s: %s", key, nkey, reason)
                         is_duplicate_of = nkey
                         break
                 for (nkey, nentry) in iteritems(unused.entries):
                     #if nkey in unused_respawned:
                     #    continue
-                    if self.compare_entries_same(entry, nentry, dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                 dupl_entryinfo_cache_accessor.get_entry_cache(nkey)):
-                        logger.longdebug('    ... matches existing entry %s!', nkey)
+                    same, reason = self.compare_entries(entry, nentry,
+                                                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                                                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
+                    if same:
+                        logger.debug("Entry %s is duplcate of existing entry %s: %s", key, nkey, reason)
                         is_duplicate_of = nkey
                         duplicate_original_is_unused = True
                         break

@@ -278,6 +278,8 @@ class OpenBibFile(QWidget):
         self.ui.sourceListEditor.requestAddToFavorites.connect(self.add_favorite_cmd)
         self.ui.sourceListEditor.requestAddSourceList.connect(self.on_btnAddSourceList_clicked)
 
+        self.ui.btnSelectedMultipleAddFavorite.clicked.connect(self.add_favorite_selection)
+
         self.bibolamaziFileName = None
         self.bibolamaziFile = None
 
@@ -816,14 +818,61 @@ class OpenBibFile(QWidget):
 
         return None
 
+    def _get_current_bibolamazi_cmdlist(self):
+
+        if (not self.bibolamaziFile):
+            logger.warning("No bibolamazi file open")
+            return
+
+        cmds = self.bibolamaziFile.configCmds()
+        if (cmds is None):
+            # file is not yet parsed
+            return None
+
+        cur = self.ui.txtConfig.textCursor()
+        block = cur.block()
+        thisline = cur.block().blockNumber()+1
+        thisline = self.bibolamaziFile.fileLineNo(thisline)
+
+        if cur.hasSelection():
+            cur2 = QTextCursor(cur)
+            cur2.setPosition(cur.anchor())
+            otherline = cur2.block().blockNumber()+1
+            otherline = self.bibolamaziFile.fileLineNo(otherline)
+        else:
+            otherline = thisline
+
+        minline = min(thisline, otherline)
+        maxline = max(thisline, otherline)
+
+        logger.longdebug("searching for cmds between lines %d and %d", minline, maxline)
+        cmdlist = []
+        for cmd in cmds:
+            logger.longdebug("\t -- testing cmd %r", cmd)
+            if cmd.lineno <= maxline and cmd.linenoend >= minline:
+                # got the current cmd
+                logger.longdebug("\tGot cmd: %r", cmd)
+                cmdlist.append(cmd)
+
+        return cmdlist
+
+
     def _do_update_edittools(self):
         if self._ignore_change_for_edittools:
             return
 
-        cmd = self._get_current_bibolamazi_cmd()
-        if (cmd is None):
+        cmdlist = self._get_current_bibolamazi_cmdlist()
+        if (not cmdlist): # None, or empty list
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageBase)
             return
+
+        if len(cmdlist) > 1:
+            # several commands selected
+            self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSelectedMultiple)
+            return
+
+        # single command selected
+        cmd = cmdlist[0]
         
         if (cmd.cmd == "src"):
             thesrcs = shlex.split(cmd.text)
@@ -950,14 +999,19 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def add_favorite_selection(self):
-        # ### TODO : get selection (QTextCursor::selectedText()) ... and add favorite.
-        #            Also add this option in the context menu.
-        pass
+        selected_text = self.ui.txtConfig.textCursor().selectedText()
 
-    @pyqtSlot('QString')
+        logger.debug("Selected text: %r", selected_text)
+        self.add_favorite_cmdtext(selected_text)
+
+    @pyqtSlot(str)
     def add_favorite_cmdtext(self, cmdtext):
         cmdtext = str(cmdtext)
-        
-        self.favoriteCmdsList.addFavorite(FavoriteCmd(name=cmdtext[:30], cmd=cmdtext))
+
+        shorttext = cmdtext
+        if len(shorttext) > 27:
+            shorttext = shorttext[:30] + '...'
+
+        self.favoriteCmdsList.addFavorite(FavoriteCmd(name=shorttext, cmd=cmdtext))
 
         QMessageBox.information(self, "Favorite Added", "Added this command to your favorites.")

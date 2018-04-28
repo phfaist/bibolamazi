@@ -99,9 +99,12 @@ p, li { white-space: pre-wrap; }
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="btnAddFavorite">
+      <widget class="QPushButton" name="btnAddFavorite">
        <property name="toolTip">
         <string>Add this source list to your favorites</string>
+       </property>
+       <property name="text">
+        <string>add</string>
        </property>
        <property name="icon">
         <iconset resource="bibolamazi_res.qrc">

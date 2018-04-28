@@ -1005,8 +1005,8 @@ class BibolamaziFile(object):
 
         if num_conflicting_keys:
             logger.info("There were multiple uses of the same entry key(s) in the bibtex source files. "
-                        "Use the 'duplicate' filter's -dEnsureConflictKeysAreDuplicates option to "
-                        "make sure these entries are duplicates")
+                        "(The 'duplicate' filter's -dEnsureConflictKeysAreDuplicates "
+                        "feature would check that these entries are indeed duplicates)")
 
 
         # Now, try to load the cache
