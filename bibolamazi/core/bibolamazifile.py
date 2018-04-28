@@ -374,7 +374,7 @@ class BibolamaziFile(object):
                     logger.longdebug("File "+repr(self._fname)+" opened.")
                     self._read_config_stream(f, self._fname)
             except IOError as e:
-                raise BibolamaziError("Can't open file `%s': %s", self._fname, unicodestr(e))
+                raise BibolamaziError("Can't open file `%s': %s"%(self._fname, unicodestr(e)))
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()
@@ -706,10 +706,10 @@ class BibolamaziFile(object):
         # provide us an initialized instance
         self.load(None, to_state=BIBOLAMAZIFILE_INIT)
 
-        self._header = _TEMPLATE_HEADER
-        self._config = _TEMPLATE_CONFIG
-        self._config_data = self._config_data_from_block(_TEMPLATE_CONFIG)
-        self._rest = ''#_TEMPLATE_REST
+        self._header = TEMPLATE_HEADER
+        self._config = TEMPLATE_CONFIG
+        self._config_data = self._config_data_from_block(TEMPLATE_CONFIG)
+        self._rest = ''
 
         # store raw cmds
         self._cmds = []
@@ -1327,7 +1327,7 @@ class BibolamaziFile(object):
 
 
 
-_TEMPLATE_HEADER = """\
+TEMPLATE_HEADER = """\
 
 %
 % This bibliography database uses BIBOLAMAZI:
@@ -1348,13 +1348,16 @@ _TEMPLATE_HEADER = """\
 
 """
 
-_TEMPLATE_CONFIG = u"""\
+TEMPLATE_CONFIG = u"""\
 %%%-BIB-OLA-MAZI-BEGIN-%%%
 %
 % %% This bibliography database uses BIBOLAMAZI:
 % %%
 % %%     https://github.com/phfaist/bibolamazi
 % %%
+%
+% %% Use this file as your latex bibliography bibtex file, i.e.
+% %% \bibliography{<this-file-name>.bibolamazi.bib}
 %
 % %% This is the BIBOLAMAZI configuration section. Additional two leading
 % %% percent signs indicate comments within the configuration.

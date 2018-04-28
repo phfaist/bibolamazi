@@ -67,7 +67,9 @@ def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=N
             pass
 
     if (not allaux):
-        raise BibFilterError(filtername, "Can't analyze citations: can't find `%s.aux'." %(jobname))
+        raise BibFilterError(filtername,
+                             ("Can't analyze citations: can't find `%s.aux'. "
+                              "Please run latex first on your document.")%(jobname))
 
     #
     # parse allaux for \citation{...}

@@ -219,7 +219,7 @@ class FixesFilter(BibFilter):
         """
         Constructor method for FixesFilter
 
-        Filter Arguments:
+        Arguments:
           - fix_space_after_escape(bool): transform `\\AA berg' and `M\\o ller' into `\\AA{}berg',
                `M\\o{}ller' to avoid bibtex styles from wrongfully splitting these words.
           - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
@@ -234,7 +234,8 @@ class FixesFilter(BibFilter):
           - remove_fields(CommaStrList): removes given fields from all entries.
           - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
           - map_annote_to_note(bool): maps `annote' bibtex field to a `note' field
-          - auto_urlify: automatically wrap URLs into `\\url{}' commands
+          - auto_urlify: automatically wrap URLs into `\\url{}' commands. True/False, or a comma-separated
+                list of fields to act on
           - rename_language(ColonCommaStrDict): replace e.g. `de' by `Deutsch'. Use
                 format `alias1:language1,alias2:language2...'.
           - fix_mendeley_bug_urls: fix the `url' field for Mendeley's

@@ -162,17 +162,24 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             self._finfo = filters_factory.FilterInfo(filtername)
             self._fopts = self._finfo.defaultFilterOptions()
         except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
-            logger.warning("No such filter, no such filter package or filtererror: %s", str(e))
-            pass
+            stre = str(e)
+            logger.warning("Error:: %s", stre)
+            self._optionstring_error = stre
+            self.optionStringSetError.emit(stre)
+            return
+
+        # self.optionStringClearError will be emitted, if appropriate after
+        # successful parsing of option string
 
         if (reset_optionstring):
             self.setOptionString('', force=True, noemit=noemit)
         else:
             self.setOptionString(self._optionstring, force=True, noemit=noemit)
 
-        if (not noemit):
-            # we shan't emit anything anyway for a filter name change.
-            pass
+        #if (not noemit):
+        #    # we shan't emit anything anyway for a filter name change.
+        #    pass
+
 
     @pyqtSlot(str)
     def setOptionString(self, optionstring, force=False, noemit=False):
@@ -596,6 +603,8 @@ class FilterInstanceEditor(QWidget):
         self._filteroptionsmodel.optionStringClearError.connect(self.clear_optionstring_error)
 
         self._is_updating = False
+
+        self.clear_optionstring_error()
         
 
     filterInstanceDefinitionChanged = pyqtSignal()
@@ -613,6 +622,8 @@ class FilterInstanceEditor(QWidget):
     def optionString(self):
         return self._filteroptionsmodel.optionstring()
 
+    def errorString(self):
+        return self._filteroptionsmodel.errorString()
 
     @pyqtSlot(str, bool)
     @pyqtSlot(str)

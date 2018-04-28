@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_FavoritesOverBtns(object):
     def setupUi(self, FavoritesOverBtns):
         FavoritesOverBtns.setObjectName("FavoritesOverBtns")
-        FavoritesOverBtns.resize(192, 32)
+        FavoritesOverBtns.resize(197, 32)
         FavoritesOverBtns.setWindowOpacity(0.8)
         self.horizontalLayout = QtWidgets.QHBoxLayout(FavoritesOverBtns)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
@@ -38,8 +38,6 @@ class Ui_FavoritesOverBtns(object):
         self.btnEdit.setIconSize(QtCore.QSize(10, 16))
         self.btnEdit.setObjectName("btnEdit")
         self.horizontalLayout.addWidget(self.btnEdit)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 5, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem1)
         self.btnDelete = QtWidgets.QToolButton(FavoritesOverBtns)
         icon2 = QtGui.QIcon()
         icon2.addPixmap(QtGui.QPixmap(":/pic/lstbtnremove.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -47,6 +45,8 @@ class Ui_FavoritesOverBtns(object):
         self.btnDelete.setIconSize(QtCore.QSize(10, 16))
         self.btnDelete.setObjectName("btnDelete")
         self.horizontalLayout.addWidget(self.btnDelete)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 5, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem1)
         self.btnInsert = QtWidgets.QPushButton(FavoritesOverBtns)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)

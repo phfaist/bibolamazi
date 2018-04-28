@@ -70,7 +70,7 @@ class OnlyUsedFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, jobname, search_dirs=[]):
+    def __init__(self, jobname=None, search_dirs=[]):
         """OnlyUsedFilter constructor.
 
         Arguments:

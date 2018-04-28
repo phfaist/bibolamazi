@@ -30,11 +30,14 @@ from builtins import range
 from builtins import str as unicodestr
 
 
+from html import escape as htmlescape
+
 from collections import namedtuple
 import logging
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 import bibolamazi.init
 from .overlistbuttonwidget import OverListButtonWidgetBase
@@ -43,25 +46,42 @@ from .qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
 logger = logging.getLogger(__name__)
 
 
-class FavoriteCmd:
-    def __init__(self, name, cmd):
+class FavoriteCmd(object):
+    def __init__(self, name, cmd, builtin=False):
         self.name = name
         self.cmd = cmd
+        self.builtin = builtin
 
 
-default_cmds = [
-    FavoriteCmd(name="fixes (standard; for LaTeX)",
-                cmd=("filter: fixes -dFixSwedishA -dEncodeUtf8ToLatex -dRemoveTypeFromPhd "
-                     "-sRemoveFullBraces=title -sProtectNames=Einstein,Maxwell,Landauer,"
-                     "Shannon,Neumann,Szilard,Bell,I,II,III,IV,XIV -dRemoveFileField")),
+builtin_cmds = [
+    FavoriteCmd(name="fixes (simple)",
+                cmd=("""\
+filter: fixes -dFixSpaceAfterEscape -dRemoveTypeFromPhd -dRemoveFileField -dEncodeUtf8ToLatex"""),
+                builtin=True),
+    FavoriteCmd(name="fixes (extensive)",
+                cmd=("""\
+filter: fixes -dFixSpaceAfterEscape
+              -dEncodeUtf8ToLatex
+              -dRemoveTypeFromPhd
+              -sRemoveFullBraces=title
+              -sRemoveFullBracesNotLang=german
+              -sProtectNames="Maxwell,Landauer,Neumann,Szilard,Bell,I,II,IV,XIV,C++,Gram,ALPS,Ehrenfest,Pauli,Monte,Carlo,CVX,Finetti,Rényi,R{\\'e}nyi,R{\\'{e}}nyi,Golden-Thompson,QBism,Boltzmann,Birkhoff,Gibbs,Einstein,Podolsky,Rosen,Hamiltonian,Petz,AdS,CFT"
+              -dRemoveFileField
+              -sRenameLanguage=en:english,French:frenchb,German:german,Deutsch:german
+              -dFixMendeleyBugUrls"""),
+                builtin=True),
     FavoriteCmd(name="arxiv (for notes & verbose)",
-                cmd="filter: arxiv -sMode=eprint -sUnpublishedMode=eprint -dThesesCountAsPublished -dWarnJournalRef"),
+                cmd="filter: arxiv -sMode=eprint -sUnpublishedMode=eprint -dThesesCountAsPublished -dWarnJournalRef",
+                builtin=True),
     FavoriteCmd(name="arxiv (for articles & finalizing)",
-                cmd="filter: arxiv -sMode=strip -sUnpublishedMode=unpublished-note"),
+                cmd="filter: arxiv -sMode=strip -sUnpublishedMode=unpublished-note",
+                builtin=True),
     FavoriteCmd(name="url (standard cleanup)",
-                cmd="filter: url -dStripAllIfDoiOrArxiv -dStripDoiUrl -dStripArxivUrl -dKeepFirstUrlOnly"),
+                cmd="filter: url -dStripAllIfDoiOrArxiv -dStripDoiUrl -dStripArxivUrl -dKeepFirstUrlOnly",
+                builtin=True),
     FavoriteCmd(name="orderentries (alphabetically by cite key)",
-                cmd="filter: orderentries -sOrder=alphabetical"),
+                cmd="filter: orderentries -sOrder=alphabetical",
+                builtin=True),
     ];
 
 class FavoriteCmdsList(QObject):
@@ -72,20 +92,14 @@ class FavoriteCmdsList(QObject):
     favChanged = pyqtSignal()
 
     def loadDefaults(self):
-        self.favlist[:] = default_cmds
+        self.favlist[:] = builtin_cmds
 
     def loadFromSettings(self, settings):
         settings.beginGroup("Favorites")
 
-        ok = settings.contains("has_favorites") and settings.value("has_favorites")
-        if not ok:
-            logger.debug("Loading defaults for favorites")
-            self.loadDefaults()
-            return
-
-        self.favlist[:] = []
+        self.favlist[:] = builtin_cmds
         
-        siz = settings.beginReadArray("favorite_cmds")
+        siz = settings.beginReadArray("custom_favorite_cmds")
         for i in range(siz):
             settings.setArrayIndex(i)
             self.favlist.append(FavoriteCmd(name=self._get_settings_str(settings, "name"),
@@ -105,11 +119,11 @@ class FavoriteCmdsList(QObject):
     def saveToSettings(self, settings):
         settings.beginGroup("Favorites")
 
-        settings.setValue("has_favorites", True)
+        custom_favlist = [x for x in self.favlist if not x.builtin]
 
-        settings.beginWriteArray("favorite_cmds", len(self.favlist))
-        for i in range(len(self.favlist)):
-            fav = self.favlist[i]
+        settings.beginWriteArray("custom_favorite_cmds", len(custom_favlist))
+        for i in range(len(custom_favlist)):
+            fav = custom_favlist[i]
             settings.setArrayIndex(i)
             settings.setValue("name", str(fav.name))
             settings.setValue("cmd", str(fav.cmd))
@@ -137,7 +151,8 @@ class FavoriteCmdsList(QObject):
 
 ROLE_CMD            = Qt.UserRole + 2014
 ROLE_FAV_EDITABLE   = ROLE_CMD + 1
-
+ROLE_FAVCMD_OBJECT  = ROLE_CMD + 2
+ROLE_CMD_IS_BUILTIN = ROLE_CMD + 3
 
 class FavoritesModel(QAbstractTableModel):
     def __init__(self, favcmds, parent):
@@ -160,12 +175,21 @@ class FavoritesModel(QAbstractTableModel):
             return 0;
         return 1;
 
-    def data(self, index, role=Qt.DisplayRole):
 
-        if role == Qt.BackgroundRole:
-            if self._edit_mode:
-                return QBrush(QColor(255,230,230))
-            return None
+    def flags(self, index):
+        if self._edit_mode:
+            if not index.isValid():
+                return Qt.ItemIsDropEnabled
+            flags = (Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled)
+            row = index.row()
+            if row >= 0 and row < len(self._favcmds.favlist):
+                if not self._favcmds.favlist[row].builtin:
+                    flags = (flags | Qt.ItemIsEditable)
+            return flags
+        return (Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+
+
+    def data(self, index, role=Qt.DisplayRole):
 
         if not index.isValid():
             return None
@@ -176,11 +200,28 @@ class FavoritesModel(QAbstractTableModel):
         if (row < 0 or row >= len(self._favcmds.favlist)):
             return None
 
+        if role == Qt.BackgroundRole:
+            if self._favcmds.favlist[row].builtin:
+                return QBrush(QColor(255,255,235))
+            else:
+                if self._edit_mode:
+                    return QBrush(QColor(255,230,230))
+                else:
+                    return QBrush(QColor(235,255,255))
+
+            return None
+
         if (role == ROLE_FAV_EDITABLE):
             return self._edit_mode
 
         if (role == ROLE_CMD):
             return self._favcmds.favlist[row].cmd
+
+        if (role == ROLE_CMD_IS_BUILTIN):
+            return self._favcmds.favlist[row].builtin
+
+        if (role == ROLE_FAVCMD_OBJECT):
+            return self._favcmds.favlist[row]
 
         # argument name
         if (role == Qt.DisplayRole):
@@ -208,7 +249,7 @@ class FavoritesModel(QAbstractTableModel):
 
         self._favcmds.favlist[row].name = str('' if value is None else value)
         self.modelReset.emit()
-
+        return True
         
 
     def removeFavorite(self, row):
@@ -234,16 +275,6 @@ class FavoritesModel(QAbstractTableModel):
             return None
 
         return None
-
-
-    def flags(self, index):
-        if self._edit_mode:
-            if not index.isValid():
-                return Qt.ItemIsDropEnabled
-            return (Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsDragEnabled)
-
-        return Qt.ItemIsEnabled
-
 
     def supportedDropActions(self):
         return Qt.MoveAction
@@ -282,6 +313,66 @@ class FavoritesModel(QAbstractTableModel):
 
 
 
+class FavoritesItemDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent):
+        super(FavoritesItemDelegate, self).__init__(parent=parent)
+
+    def paint(self, painter, option, index):
+
+        painter.save()
+
+        options = QStyleOptionViewItem(option)
+        self.initStyleOption(options, index)
+        options.text = ""
+
+        htmlitem = self._htmlitem(index)
+
+        doc = QTextDocument()
+        doc.setHtml(htmlitem)
+
+        style = QApplication.style() if options.widget is None \
+            else options.widget.style()
+        style.drawControl(QStyle.CE_ItemViewItem, options, painter)
+
+        ctx = QAbstractTextDocumentLayout.PaintContext()
+
+        if option.state & QStyle.State_Selected:
+            ctx.palette.setColor(QPalette.Text, option.palette.color(
+                                 QPalette.Active, QPalette.HighlightedText))
+
+        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
+        painter.translate(textRect.topLeft())
+        painter.setClipRect(textRect.translated(-textRect.topLeft()))
+        doc.documentLayout().draw(painter, ctx)
+
+        painter.restore()        
+
+    def sizeHint(self, option, index):
+
+        options = QStyleOptionViewItem(option)
+        self.initStyleOption(options, index)
+        options.text = ""
+
+        htmlitem = self._htmlitem(index)
+
+        doc = QTextDocument()
+        doc.setHtml(htmlitem)
+        doc.setTextWidth(options.rect.width())
+        return QSize(doc.idealWidth(), doc.size().height())
+
+    def _htmlitem(self, index):
+
+        favcmd = index.data(ROLE_FAVCMD_OBJECT)
+        return (
+            "<html><head/><body>"+
+            "<p style=\"font-weight:bold; margin: 3px 0px 0px 0px;\">" + htmlescape(favcmd.name) + "</p>" +
+            "<p style=\"font-weight:italic; font-size: 0.9em; color: #808080; margin: 5px 0px 3px 0px;\">" +
+            htmlescape(favcmd.cmd) + "</p>" +
+            "</body></html>"
+        )
+    
+
 class FavoritesOverBtns(OverListButtonWidgetBase):
     def __init__(self, itemview):
         super(FavoritesOverBtns, self).__init__(itemview=itemview)
@@ -299,9 +390,9 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
         if idx.data(ROLE_FAV_EDITABLE):
             # edit mode
             self.ui.btnInsert.hide()
-            self.ui.btnEdit.hide()
             self.ui.btnEndEdit.show()
-            self.ui.btnDelete.show()
+            self.ui.btnEdit.setVisible(True if not idx.data(ROLE_CMD_IS_BUILTIN) else False)
+            self.ui.btnDelete.setVisible(True if not idx.data(ROLE_CMD_IS_BUILTIN) else False)
             return True
 
         # else: normal, not editable
@@ -317,10 +408,16 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
         if not curidx.isValid():
             return
 
-        self.insertCommand.emit( curidx.data(ROLE_CMD) )
+        self.insertCommand.emit( "\n" + curidx.data(ROLE_CMD) + "\n" )
 
     @pyqtSlot()
     def on_btnEdit_clicked(self):
+        curidx = self.curIndex()
+        if curidx.isValid() and curidx.data(ROLE_FAV_EDITABLE):
+            # already in edit mode, initiate edit of item text:
+            self.itemView().edit(curidx)
+            return
+
         self.itemView().model().setEditMode(True)
         self.itemView().setCurrentIndex(self.curIndex())
         self.updateDisplay()
@@ -334,6 +431,8 @@ class FavoritesOverBtns(OverListButtonWidgetBase):
     @pyqtSlot()
     def on_btnDelete_clicked(self):
         curidx = self.curIndex()
+        if curidx.data(ROLE_CMD_IS_BUILTIN):
+            QMessageBox.critical(self, "Built-in", "You can't remove a built-in favorite command")
         if QMessageBox.question(self, "Confirm deletion",
                                 "Are you sure you want to delete this favorite command?",
                                 QMessageBox.Yes|QMessageBox.No,

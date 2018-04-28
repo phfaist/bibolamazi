@@ -210,12 +210,6 @@ class ArxivNormalizeFilter(BibFilter):
                    from all unpublished entries.
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
                    unpublished entries
-          - note_string: (obsolete, prefer -sNoteStringFmt) the string to insert in the `note' field
-                   (for modes 'unpublished-note', 'note', and 'unpublished-note-notitle'). Use
-                   `%(arxivid)s' to include the ArXiv ID itself in the string. Default:
-                   '{arXiv:%(arxivid)s}'. Possible substitutions keys are
-                   'arxivid','primaryclass','published','doi'. You can't specify both (-sNoteString
-                   and -sNoteStringFmt).
           - note_string_fmt: the string to insert in the `note' field for modes 'unpublished-note',
                    'note' and 'unpublished-note-notitle'. This field uses Python's new advanced
                    formatting mini-language (see `string.Formatter`). The available fields and
@@ -234,6 +228,12 @@ class ArxivNormalizeFilter(BibFilter):
                    database, but for which the arXiv.org API reports a published version, we produce
                    a warning (this is the default; set this option to false to suppress these
                    warnings).
+          - note_string: (OBSOLETE, prefer -sNoteStringFmt) the string to insert in the `note' field
+                   (for modes 'unpublished-note', 'note', and 'unpublished-note-notitle'). Use
+                   `%(arxivid)s' to include the ArXiv ID itself in the string. Default:
+                   '{arXiv:%(arxivid)s}'. Possible substitutions keys are
+                   'arxivid', 'primaryclass', 'published', and 'doi'. You can't specify both options
+                   -sNoteString and -sNoteStringFmt.
         """
         
         BibFilter.__init__(self);

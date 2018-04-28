@@ -92,8 +92,11 @@
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
              <widget class="QLabel" name="lblFavorites">
-              <property name="pixmap">
-               <pixmap resource="bibolamazi_res.qrc">:/pic/bookmark.png</pixmap>
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Favorite commands&amp;nbsp;&amp;nbsp;&lt;img src=&quot;:/pic/bookmark.png&quot;&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="textFormat">
+               <enum>Qt::RichText</enum>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -108,11 +111,6 @@
             </item>
             <item>
              <widget class="QTreeView" name="treeFavorites">
-              <property name="font">
-               <font>
-                <italic>true</italic>
-               </font>
-              </property>
               <property name="dragDropMode">
                <enum>QAbstractItemView::InternalMove</enum>
               </property>

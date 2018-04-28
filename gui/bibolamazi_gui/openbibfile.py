@@ -56,7 +56,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
-from .favorites import FavoriteCmd, FavoritesModel, FavoritesOverBtns;
+from .favorites import FavoriteCmd, FavoritesModel, FavoritesItemDelegate, FavoritesOverBtns
 from . import filterinstanceeditor
 from . import filterpackagepatheditor
 from . import settingswidget
@@ -75,7 +75,7 @@ def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
                 bibolamaziFile.configLineNo(int(m.group('lineno'))),
                 m.group()
                 )
-        return m.group();
+        return m.group()
 
     errortxt = str(htmlescape(errortxt, quote=True))
     errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
@@ -111,21 +111,21 @@ class LogToTextBrowserHandler(logging.Handler):
     def addtolog(self, txt, levelno=logging.INFO):
         #chfmt = QTextCharFormat()
         #if levelno == logging.ERROR or levelno == logging.CRITICAL:
-        #    chfmt.setForeground(QColor(255,0,0));
-        #    chfmt.setFontWeight(QFont.Bold);
+        #    chfmt.setForeground(QColor(255,0,0))
+        #    chfmt.setFontWeight(QFont.Bold)
         #elif levelno == logging.WARNING:
-        #    chfmt.setForeground(QColor(204, 102, 0));
-        #    chfmt.setFontWeight(QFont.Bold);
+        #    chfmt.setForeground(QColor(204, 102, 0))
+        #    chfmt.setFontWeight(QFont.Bold)
         #elif levelno == logging.INFO:
-        #    chfmt.setForeground(QColor(0,0,0));
-        #    chfmt.setFontWeight(QFont.Normal);
+        #    chfmt.setForeground(QColor(0,0,0))
+        #    chfmt.setFontWeight(QFont.Normal)
         #elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
-        #    chfmt.setForeground(QColor(127,127,127));
-        #    chfmt.setFontWeight(QFont.Normal);
+        #    chfmt.setForeground(QColor(127,127,127))
+        #    chfmt.setFontWeight(QFont.Normal)
         #else:
         #    # unknown level
-        #    chfmt.setForeground(QColor(127,127,127));
-        #    chfmt.setFontWeight(QFont.Normal);
+        #    chfmt.setForeground(QColor(127,127,127))
+        #    chfmt.setFontWeight(QFont.Normal)
 
         try:
             html = txt.getHtml() # in case of a PreformattedHtml instance
@@ -163,7 +163,7 @@ class LogToTextBrowserHandler(logging.Handler):
 
 class LogToTextBrowser:
     def __init__(self, textedit, bibolamaziFile, thelogger=logging.getLogger()):
-        self.ch = LogToTextBrowserHandler(textedit);
+        self.ch = LogToTextBrowserHandler(textedit)
         self.ch.setLevel(logging.NOTSET); # propagate all messages
 
         self.bibolamaziFile = bibolamaziFile
@@ -174,8 +174,8 @@ class LogToTextBrowser:
                                                       LONGDEBUG='  -- %(message)s',
                                                       WARNING='WARNING: %(message)s',
                                                       ERROR=self._fmt_error,
-                                                      CRITICAL='CRITICAL: %(message)s');
-        self.ch.setFormatter(self.formatter);
+                                                      CRITICAL='CRITICAL: %(message)s')
+        self.ch.setFormatter(self.formatter)
 
         self.logger = thelogger
 
@@ -296,7 +296,7 @@ class OpenBibFile(QWidget):
             QShortcut(QKeySequence('Ctrl+W'), self, self.close, self.close),
             QShortcut(QKeySequence('Ctrl+S'), self, self.saveToFile, self.saveToFile),
             QShortcut(QKeySequence(Qt.CTRL|Qt.Key_Return), self, self.runBibolamazi, self.runBibolamazi),
-            ];
+            ]
 
         self._ignore_change_for_edittools = False
         self._needs_update_txtbibentries = False
@@ -307,8 +307,11 @@ class OpenBibFile(QWidget):
     def setFavoriteCmdsList(self, favoriteCmdsList):
         self.favoriteCmdsList = favoriteCmdsList
 
-        self._favorites_model = FavoritesModel(favcmds=self.favoriteCmdsList, parent=self);
-        self.ui.treeFavorites.setModel(self._favorites_model);
+        self._favorites_model = FavoritesModel(favcmds=self.favoriteCmdsList, parent=self)
+        self.ui.treeFavorites.setModel(self._favorites_model)
+
+        self._favorites_delegate = FavoritesItemDelegate(parent=self)
+        self.ui.treeFavorites.setItemDelegate(self._favorites_delegate)
         
 
     def setOpenFile(self, filename):
@@ -325,7 +328,7 @@ class OpenBibFile(QWidget):
 
 
     def hasUnsavedModifications(self):
-        return self._modified;
+        return self._modified
 
     def fileName(self):
         return self.bibolamaziFileName
@@ -454,7 +457,7 @@ class OpenBibFile(QWidget):
 
         if (not self.bibolamaziFileName):
             with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
-                self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">no file loaded.</h3>");
+                self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">no file loaded.</h3>")
                 self.ui.txtConfig.setPlainText("")
             return
 
@@ -499,9 +502,9 @@ class OpenBibFile(QWidget):
         def srcurl(s):
             if (re.match(r'^\w+:/', s)):
                 # already URL
-                return s;
+                return s
             s = self.bibolamaziFile.resolveSourcePath(s)
-            return 'file:///'+s;
+            return 'file:///'+s
 
         sources = []
         for srcline in self.bibolamaziFile.sourceLists():
@@ -520,13 +523,13 @@ class OpenBibFile(QWidget):
                      for s in srclist
                      ]
                     )
-                });
+                })
                 
         filters = []
         for fil in self.bibolamaziFile.filters():
             filters.append('''<div class="filter"><div class="filtertitle">Filter: <a href="helptopic:/filters/%(filtername)s">%(filtername)s</a></div><div class="filterdescription">%(filterdescription)s</div></div>''' % { 'filtername': fil.name(),
                      'filterdescription': fil.getHelpDescription(),
-                    });
+                    })
 
         thehtml = textwrap.dedent('''\
         <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -559,7 +562,7 @@ class OpenBibFile(QWidget):
           </head><body><div class="container"><h1>Sources</h1>%(sourceshtml)s<h1>Filters</h1>%(filtershtml)s</div></body></html>''') % {
             'sourceshtml': "".join(sources),
             'filtershtml': "".join(filters)
-            };
+            }
 
         self.ui.txtInfo.setHtml(thehtml)
         
@@ -651,7 +654,7 @@ class OpenBibFile(QWidget):
 
     def _open_anchor(self, url):
         if (url.scheme() == "helptopic"):
-            self.requestHelpTopic.emit(url.path());
+            self.requestHelpTopic.emit(url.path())
             return
 
         if (url.scheme() == "action"):
@@ -718,7 +721,7 @@ class OpenBibFile(QWidget):
         logger.debug('modified!!')
 
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
-        self._bibolamazifile_reparse();
+        self._bibolamazifile_reparse()
 
         self._do_update_edittools()
 
@@ -746,7 +749,7 @@ class OpenBibFile(QWidget):
         filter_list = filterinstanceeditor.get_filter_list()
 
         (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
-                                              filter_list);
+                                              filter_list)
         if (not ok):
             # cancelled
             return
@@ -776,10 +779,13 @@ class OpenBibFile(QWidget):
             # insert _after_ current cmd (-> +1 for next line, -1 to correct for offset starting at 1)
             insertcur = QTextCursor(doc.findBlockByNumber(self.bibolamaziFile.configLineNo(cmd.linenoend)))
 
-        insertcur.insertText(str(cmdtext)+'\n')
+        cmdtext = str(cmdtext)
+
+        insertcur.insertText(cmdtext+'\n')
         # select inserted text without the newline
-        insertcur.movePosition(QTextCursor.Left)
-        insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+        #insertcur.movePosition(QTextCursor.Left)
+        insertcur.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, len(cmdtext)+1)
+        #insertcur.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
         self.ui.txtConfig.setTextCursor(insertcur)
 
 
@@ -789,7 +795,7 @@ class OpenBibFile(QWidget):
             logger.warning("No bibolamazi file open")
             return
 
-        cmds = self.bibolamaziFile.configCmds();
+        cmds = self.bibolamaziFile.configCmds()
         if (cmds is None):
             # file is not yet parsed
             return None
@@ -904,9 +910,14 @@ class OpenBibFile(QWidget):
     def on_filterInstanceEditor_filterInstanceDefinitionChanged(self):
         filtername = self.ui.filterInstanceEditor.filterName()
         optionstring = self.ui.filterInstanceEditor.optionString()
+        errorstring = self.ui.filterInstanceEditor.errorString()
 
         logger.debug('on_filterInstanceEditor_filterInstanceDefinitionChanged() '
-                     'filtername=%r, optionstring=%r', filtername, optionstring)
+                     'filtername=%r, optionstring=%r, errorstring=%r',
+                     filtername, optionstring, errorstring)
+
+        if errorstring is not None:
+            return
 
         cmdtext = "filter: " + filtername + ' ' + optionstring + "\n"
 
@@ -929,7 +940,7 @@ class OpenBibFile(QWidget):
         logger.debug("Adding command %s on lines %d--%d to favorites: %r", cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
 
         cmdtext = []
-        doc = self.ui.txtConfig.document();
+        doc = self.ui.txtConfig.document()
         for n in range(self.bibolamaziFile.configLineNo(cmd.lineno),
                        self.bibolamaziFile.configLineNo(cmd.linenoend)+1):
             cmdtext.append(str(doc.findBlockByNumber(n-1).text()))

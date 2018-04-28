@@ -523,7 +523,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
             try:
                 fcl = get_filter_class(modname, fmodule=m)
             except ModuleNotAValidFilter:
-                logger.warning("Module %s does not define a valid bibolamazi filter", modname)
+                logger.debug("Module %s does not define a valid bibolamazi filter", modname)
                 continue
 
 

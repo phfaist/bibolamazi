@@ -60,6 +60,7 @@ from . import helpbrowser
 from . import settingswidget
 
 from .favorites import FavoriteCmdsList
+from .newbibolamazifiledialog import NewBibolamazifileDialog
 
 from .qtauto.ui_mainwidget import Ui_MainWidget
 
@@ -315,43 +316,13 @@ class MainWidget(QWidget):
         
     @pyqtSlot()
     def on_btnNewFile_clicked(self):
-        saveFileDialog = QFileDialog(self, "Create Bibolamazi File", str(),
-                                     "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)")
-        if sys.platform.startswith('darwin'):
-            # NOTE: BUG: OS X' file selection dialog won't understand the
-            # .bibolamazi.bib extension. So use Qt's file dialog.
-            saveFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
-        
-        saveFileDialog.setDefaultSuffix("bibolamazi.bib")
-        saveFileDialog.setAcceptMode(QFileDialog.AcceptSave)
-        saveFileDialog.setFileMode(QFileDialog.AnyFile)
-        if not saveFileDialog.exec_():
-            return
-        
-        selectedfiles = saveFileDialog.selectedFiles()
-        if not selectedfiles:
-            return
-        assert len(selectedfiles) == 1
-        newfilename = selectedfiles[0]
+
+        dlg = NewBibolamazifileDialog(self)
+
+        dlg.bibolamaziFileCreated.connect(self.openFile)
+
+        dlg.show()
             
-        if (not newfilename):
-            # cancelled
-            return
-
-        if (os.path.exists(newfilename)):
-            QMessageBox.critical(self, "File Exists",
-                                 "Cowardly refusing to overwrite existing file `%s'. Please remove it first."
-                                 %(newfilename))
-            return
-
-        try:
-            bfile = bibolamazifile.BibolamaziFile(newfilename, create=True)
-            bfile.saveToFile()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", "Error: Can't create file: %s"%(e))
-            return
-
-        self.openFile(newfilename)
 
     @pyqtSlot()
     def on_btnHelp_clicked(self):
