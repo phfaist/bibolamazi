@@ -14,13 +14,22 @@
    <string>Bibolamazi Help &amp; Reference</string>
   </property>
   <layout class="QGridLayout" name="lyt">
-   <property name="margin">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
     <number>0</number>
    </property>
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabs">
      <property name="currentIndex">
-      <number>0</number>
+      <number>-1</number>
      </property>
      <property name="documentMode">
       <bool>true</bool>
@@ -31,105 +40,6 @@
      <property name="movable">
       <bool>true</bool>
      </property>
-     <widget class="QWidget" name="tabHome">
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
-      <attribute name="title">
-       <string>Home</string>
-      </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="margin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QScrollArea" name="scrlFilters">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
-         </property>
-         <property name="lineWidth">
-          <number>0</number>
-         </property>
-         <property name="widgetResizable">
-          <bool>true</bool>
-         </property>
-         <widget class="QWidget" name="wFilters">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>857</width>
-            <height>527</height>
-           </rect>
-          </property>
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <layout class="QGridLayout" name="lytHomeButtons">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="btnWelcome">
-             <property name="text">
-              <string>Welcome - basic Bibolamazi usage</string>
-             </property>
-             <property name="helppath" stdset="0">
-              <string notr="true">general/welcome</string>
-             </property>
-             <property name="bibolamaziHelpButtonType" stdset="0">
-              <string>intro</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="btnFilterList">
-             <property name="text">
-              <string>Annotated Filter List</string>
-             </property>
-             <property name="helppath" stdset="0">
-              <string notr="true">general/filter-list</string>
-             </property>
-             <property name="bibolamaziHelpButtonType" stdset="0">
-              <string>intro</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QPushButton" name="btnCmdLineHelp">
-             <property name="text">
-              <string>Bibolamazi command-line help</string>
-             </property>
-             <property name="helppath" stdset="0">
-              <string notr="true">general/cmdline</string>
-             </property>
-             <property name="bibolamaziHelpButtonType" stdset="0">
-              <string>epilog</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QPushButton" name="btnVersion">
-             <property name="text">
-              <string>Bibolamazi Version</string>
-             </property>
-             <property name="helppath" stdset="0">
-              <string notr="true">general/version</string>
-             </property>
-             <property name="bibolamaziHelpButtonType" stdset="0">
-              <string>epilog</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
   </layout>

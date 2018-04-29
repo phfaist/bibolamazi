@@ -75,7 +75,7 @@ class NameInitialsFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, only_single_letter_firsts=False, names_to_utf8=True, *roles, **kwargs):
+    def __init__(self, only_single_letter_firsts=False, names_to_utf8=True, *roles):
         """
         Arguments:
           - only_single_letter_firsts(bool): Make proper initials (e.g. C. H. Bennett)

@@ -73,27 +73,27 @@ class store_or_count(argparse.Action):
     def __init__(self, option_strings, dest, nargs='?', **kwargs):
         # some checks
         if nargs != '?':
-            raise ValueError('store_or_const: nargs must be "?"');
+            raise ValueError('store_or_const: nargs must be "?"')
 
         if ('type' in kwargs):
-            raise TypeError("Can't enforce a type on a store_or_count option!");
+            raise TypeError("Can't enforce a type on a store_or_count option!")
         
-        super(store_or_count, self).__init__(option_strings, dest, nargs=nargs, const=None, **kwargs);
+        super(store_or_count, self).__init__(option_strings, dest, nargs=nargs, const=None, **kwargs)
 
 
     def __call__(self, parser, namespace, values, option_string):
                 
         try:
-            val = getattr(namespace, self.dest);
+            val = getattr(namespace, self.dest)
         except AttributeError:
-            val = 0;
+            val = 0
 
         # count -vv as -v -v
         if (isinstance(values, basestring) and not option_string.startswith('--') and len(option_string) > 1):
             optstr = option_string[1:]
             while values.startswith(optstr):
                 # add an additional count for each additional specification of the option.
-                val += 1;
+                val += 1
                 values = values[len(optstr):] # strip that from the values
             if not values:
                 values = None
@@ -106,7 +106,7 @@ class store_or_count(argparse.Action):
         # get the argument of -v (e.g.,  -v2  or  --verbose 2  or  --verbose=2 )
         if (isinstance(values, basestring)):
             try:
-                values = int(values);
+                values = int(values)
             except ValueError:
                 opt_name = ", ".join(self.option_strings)
                 parser.error(u"Invalid argument to %s: `%s' (maybe use %s option at the end of the command?)"
@@ -114,15 +114,15 @@ class store_or_count(argparse.Action):
 
         if (values is not None):
             # value provided
-            val = int(values);
+            val = int(values)
         else:
-            val += 1;
+            val += 1
         
-        setattr(namespace, self.dest, val);
+        setattr(namespace, self.dest, val)
 
 
 
-rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL);
+rxkeyval = re.compile(r'^([\w.-]+)=(.*)$', re.DOTALL)
 
 class store_key_val(argparse.Action):
     """
@@ -139,13 +139,13 @@ class store_key_val(argparse.Action):
             option_strings=option_strings,
             dest=dest,
             nargs=nargs,
-            **kwargs);
+            **kwargs)
 
 
     def __call__(self, parser, namespace, values, option_string):
         # parse key-value pair in values
         if (isinstance(values, list)):
-            values = values[0];
+            values = values[0]
         m = rxkeyval.match(values)
         if not m:
             raise self.exception("cannot parse key=value pair: "+repr(values))
@@ -184,7 +184,7 @@ class store_key_bool(argparse.Action):
             dest=dest,
             nargs=nargs,
             const=bool(const),
-            **kwargs);
+            **kwargs)
 
 
     def __call__(self, parser, namespace, values, option_string):
@@ -193,29 +193,29 @@ class store_key_bool(argparse.Action):
 
         storeval = self.const
 
-        eqindex = key.find('=');
+        eqindex = key.find('=')
         if (eqindex != -1):
             try:
                 storeval = getbool(key[eqindex+1:])
-                key = key[:eqindex];
+                key = key[:eqindex]
             except ValueError as e:
                 exc = self.exception(unicodestr(e))
                 exc.opt_dest = self.dest
                 raise exc
 
         if (not self.dest):
-            setattr(namespace, key, self.const);
+            setattr(namespace, key, self.const)
         else:
             try:
-                d = getattr(namespace, self.dest);
+                d = getattr(namespace, self.dest)
                 if d is None:
-                    d = [];
+                    d = []
             except AttributeError:
-                d = [];
+                d = []
             d.append(
                 (key, storeval,)
-                );
-            setattr(namespace, self.dest, d);
+                )
+            setattr(namespace, self.dest, d)
 
 
 
@@ -231,7 +231,7 @@ class store_key_const(argparse.Action):
             dest=dest,
             nargs=nargs,
             const=const,
-            **kwargs);
+            **kwargs)
 
 
     def __call__(self, parser, namespace, values, option_string):
@@ -239,16 +239,16 @@ class store_key_const(argparse.Action):
         key = values[0]
 
         if (not self.dest):
-            setattr(namespace, key, self.const);
+            setattr(namespace, key, self.const)
         else:
             try:
-                d = getattr(namespace, self.dest);
+                d = getattr(namespace, self.dest)
                 if d is None:
-                    d = [];
+                    d = []
             except AttributeError:
-                d = [];
-            d.append(key);
-            setattr(namespace, self.dest, d);
+                d = []
+            d.append(key)
+            setattr(namespace, self.dest, d)
 
 
 def helptext_prolog():
@@ -257,7 +257,7 @@ Bibolamazi Version %(version)s by Philippe Faist (C) %(copyrightyear)s
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 
 """ % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
-        } );
+        } )
     
 
 
@@ -300,7 +300,7 @@ Bibolamazi by Philippe Faist
 Licensed under the terms of the GNU Public License GPL, version 3 or higher.
 """ % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
 }
-        sys.stdout.write(helptext);
+        sys.stdout.write(helptext)
         parser.exit()
 
 
@@ -333,7 +333,7 @@ Package `%(filterpackage)s':
 
 def help_list_filters():
 
-    import textwrap;
+    import textwrap
     from bibolamazi.core.bibfilter import factory
 
     def fmt_filter_helpline(f, fp):
@@ -357,7 +357,7 @@ def help_list_filters():
                                               'filterlistcontents': "\n".join(filter_list)}
             )
 
-    return FILTERS_HELP % {'full_filter_list': "\n\n".join(full_filter_list)};
+    return FILTERS_HELP % {'full_filter_list': "\n\n".join(full_filter_list)}
 
 
 
@@ -366,14 +366,14 @@ class opt_list_filters(argparse.Action):
         if nargs != 0:
             raise ValueError('nargs for opt_list_filters must be == 0')
 
-        argparse.Action.__init__(self, nargs=0, **kwargs);
+        argparse.Action.__init__(self, nargs=0, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
 
         all_text = help_list_filters()
 
-        run_pager(all_text);
-        parser.exit();
+        run_pager(all_text)
+        parser.exit()
 
 
 
@@ -383,26 +383,26 @@ class opt_init_empty_template(argparse.Action):
         if nargs != 1:
             raise ValueError('nargs for init_empty_template must be == 1')
         
-        argparse.Action.__init__(self, nargs=1, **kwargs);
+        argparse.Action.__init__(self, nargs=1, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
 
         from . import bibolamazifile
 
         try:
-            newfilename = values[0];
+            newfilename = values[0]
         except IndexError:
-            newfilename = values;
+            newfilename = values
 
         if (os.path.exists(newfilename)):
             logger.error("Cowardly refusing to overwrite existing file `%s'. Remove it first."
                          %(newfilename))
-            parser.exit(9);
+            parser.exit(9)
 
-        bfile = bibolamazifile.BibolamaziFile(newfilename, create=True);
-        bfile.saveToFile();
+        bfile = bibolamazifile.BibolamaziFile(newfilename, create=True)
+        bfile.saveToFile()
 
-        parser.exit();
+        parser.exit()
 
 
 
@@ -416,7 +416,7 @@ class opt_set_verbosity(argparse.Action):
         if nargs != 0 and nargs != 1:
             raise ValueError('nargs for opt_set_verbosity must be 0 or 1')
         
-        argparse.Action.__init__(self, nargs=nargs, type=int, **kwargs);
+        argparse.Action.__init__(self, nargs=nargs, type=int, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
 
@@ -450,7 +450,7 @@ class opt_set_fine_log_levels(argparse.Action):
         if nargs != 1:
             raise ValueError('nargs for opt_set_fine_log_levels must be == 1')
         
-        argparse.Action.__init__(self, nargs=nargs, **kwargs);
+        argparse.Action.__init__(self, nargs=nargs, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
         #

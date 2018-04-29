@@ -291,7 +291,7 @@ produced in the bibliography.
 
 The dupfile, which contains the necessary definitions to make keys aliases of
 their duplicate entries, is specifed via the `--dupfile' option as
-`--dupfile=dupfile.tex' or with `-sDupfile=dupfile.tex'.
+`--dupfile=yourdupfile.tex' or with `-sDupfile=yourdupfile.tex'.
 
 In your main LaTeX document, you need to add the following command in the
 preamble:

@@ -1015,6 +1015,9 @@ class DefaultFilterOptions(object):
         self._filteroptions = []
         self._filtervaroptions = []
 
+        self._filtervarargs = True if varargs else False
+        self._filtervarkwargs = True if keywords else False
+
         def make_filter_option(farg):
             fopt = farg.replace('_', '-')
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
@@ -1155,6 +1158,14 @@ class DefaultFilterOptions(object):
     def filterVarOptions(self):
         """This gives a list of `_ArgDoc` named tuples."""
         return self._filtervaroptions
+
+    def filterAcceptsVarArgs(self):
+        """Returns `True` if the filter can accept additional positional arguments."""
+        return self._filtervarargs
+
+    def filterAcceptsVarKwargs(self):
+        """Returns `True` if the filter can accept additional keyword arguments."""
+        return self._filtervarkwargs
 
     def optionSpec(self, argname):
         l = [x for x in self._filteroptions if x.argname == argname]
@@ -1383,5 +1394,9 @@ def format_filter_help(filtname):
 
     # otherwise, use the help formatter of the default option parser
     fopt = DefaultFilterOptions(filtname)
-    return fopt.format_filter_help()
+
+    if fopt is not None:
+        return fopt.format_filter_help()
+
+    return "<NO HELP AVAILBLE>" 
     

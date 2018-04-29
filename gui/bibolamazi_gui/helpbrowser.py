@@ -31,6 +31,9 @@ from builtins import str as unicodestr
 
 import sys
 import logging
+from html import escape as htmlescape
+
+import markdown2
 
 import bibolamazi.init
 from bibolamazi.core import main as bibolamazimain
@@ -53,35 +56,134 @@ logger = logging.getLogger(__name__)
 
 
 
+_HTML_CSS = '''
+html, body {
+  background-color: #ffffff;
+  color: #303030;
+}
+.content {
+}
+p {
+  margin-top: 0pt;
+  margin-bottom: 1em;
+}
+p, a, li, span {
+  font-size: 14pt;
+}
+em, i {
+  font-size: 14pt;
+  font-style: italic;
+}
+strong, b {
+  font-size: 14pt;
+  font-style: bold;
+}
+code {
+  font-size: 13pt;
+}
+.code-meta {
+  color: #80b0b0;
+  font-style: italic;
+}
+.shadow {
+  color: #a0a0a0;
+}
+pre { margin-left: 25px; }
+pre.txtcontent { margin-left: 0px; }
+a { color: #0000a0; text-decoration: none }
 
-_HOME_TAB_STYLESHEET = '''
-QWidget {
+li {
+  margin-bottom: 0.35em;
 }
-
-#wFilters {
-    padding: 10px 50px 10px 50px;
-    background-color: white;
+dt {
+  font-weight: bold;
 }
-
-
-QPushButton {
-    color: rgba(255,255,255,255);
-    padding: 8px 2px;
+dd {
+  margin-left: 100px;
 }
-QPushButton {
-    /* light blue */
-    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(0, 113, 188, 255), stop:0.9 rgba(64, 91, 110, 255));
+table {
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
-QPushButton[bibolamaziHelpButtonType="filter"] {
-    /* bordeau */
-    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(158, 0, 93, 255), stop:0.9 rgba(82, 55, 71, 255));
+th {
+  font-weight: bold;
+  text-align: left;
+  padding-right: 5px;
+  color: #600030;
 }
-QPushButton[bibolamaziHelpButtonType="intro"] {
-    /* dark blue */
-	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(27, 20, 100, 255), stop:0.9 rgba(77, 75, 99, 255));
+td {
+  padding-bottom: 0.3em;
+}
+td.indent {
+  padding-left: 2em;
+}
+td p.inner {
+  margin-bottom: 0.1em;
 }
 '''
 
+TABLE_WIDTH = "600"
+
+
+
+class HelpTopicPage(object):
+    def __init__(self, content_type=None, content=None, title=None, tooltip=None):
+        self._content_type = content_type
+        self._content = content
+        self._title = title
+        self._tooltip = tooltip
+
+    @staticmethod
+    def makeMarkdownPage(markdown, title=None, tooltip=None):
+        return HelpTopicPage('markdown', markdown, title, tooltip)
+
+    @staticmethod
+    def makeTxtPage(txt, title=None, tooltip=None):
+        return HelpTopicPage('txt', txt, title, tooltip)
+
+    @staticmethod
+    def makeFullHtmlPage(html, title=None, tooltip=None):
+        return HelpTopicPage('html', html, title, tooltip)
+
+    @staticmethod
+    def makeHtmlFragmentPage(html, title=None, tooltip=None):
+        return HelpTopicPage('htmlfragment', html, title, tooltip)
+
+
+    def contentAsMarkdown(self):
+        if self._content_type == 'txt':
+            return self._content
+        elif self._content_type == 'markdown':
+            return self._content
+        else:
+            raise ValueError("Can't convert %s to markdown"%(self._content_type))
+
+    def contentAsHtml(self):
+        html_top = ("<html><head><style type=\"text/css\">" + _HTML_CSS + "</style>" +
+                    "<body><table width=\""+TABLE_WIDTH+"\" style=\"margin-left:50px\">" +
+                    "<tr><td class=\"content\">")
+        html_bottom = "</td></tr></table></body></html>"
+        if self._content_type == 'txt':
+            return (html_top
+                    + "<pre class=\"txtcontent\">" + htmlescape(self._content) + "</pre>"
+                    + html_bottom)
+        elif self._content_type == 'markdown':
+            return (html_top
+                    + markdown2.markdown(self._content,
+                                         extras=["footnotes", "fenced-code-blocks", "smarty-pants", "tables"])
+                    + html_bottom)
+        elif self._content_type == 'html':
+            return self._content
+        elif self._content_type == 'htmlfragment':
+            return html_top + self._content + html_bottom
+        else:
+            raise ValueError("Can't convert %s to markdown"%(self._content_type))
+
+    def title(self):
+        return self._title
+
+    def tooltip(self):
+        return self._tooltip
 
 
 
@@ -94,63 +196,19 @@ class HelpBrowser(QWidget):
 
         self.ui.tabs.tabCloseRequested.connect(self.closeTab)
 
-        self.filterButtons = []
-
         self.openTabs = []
-
-
-        # home buttons
-        # ------------
-
-        self.ui.lytHomeButtons.setContentsMargins(60, 30, 60, 30)
-
-        vspc1 = QSpacerItem(20, 5, QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.ui.lytHomeButtons.addItem(vspc1, 1, 0)
-
-        offsetlineno = 2 # start at 1, because the first row has the 'welcome' and 'filter list' buttons.
-        n = 0 # count how many filters we've treated already.
-        ncols = 2
-
-        for filt in filterinstanceeditor.get_filter_list():
-            fbutton = QPushButton('%s' % (filt), self)
-            fbutton.setProperty('helppath', 'filters/%s' %(filt))
-            fbutton.setProperty('bibolamaziHelpButtonType', 'filter')
-            fbutton.setToolTip(filters_factory.get_filter_class(filt).getHelpDescription())
-            self.ui.lytHomeButtons.addWidget(fbutton, offsetlineno + int(n / ncols), n % ncols)
-            n += 1
-
-            fbutton.clicked.connect(self.openHelpTopicBySender)
-
-        newrow = None
-        if n % ncols == 0:
-            newrow = offsetlineno + n / ncols
-        else:
-            newrow = offsetlineno + (1 + int(n / ncols))
-
-        vspc3 = QSpacerItem(20, 5, QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.ui.lytHomeButtons.addItem(vspc3, newrow, 0)
-
-        self.ui.lytHomeButtons.addWidget(self.ui.btnCmdLineHelp, newrow+1, 0)
-        self.ui.lytHomeButtons.addWidget(self.ui.btnVersion, newrow+1, 1)
-        vspc2 = QSpacerItem(20, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        self.ui.lytHomeButtons.addItem(vspc2, newrow+2, 0)
-
-        # avoid python garbage collection
-        self.vspcButtons = [vspc1, vspc2]
-
-        self.ui.tabHome.setStyleSheet(_HOME_TAB_STYLESHEET)
-
-        static_help_btns = [ self.ui.btnWelcome,
-                             self.ui.btnVersion,
-                             self.ui.btnFilterList,
-                             self.ui.btnCmdLineHelp
-                             ]
-        for btn in static_help_btns:
-            btn.clicked.connect(self.openHelpTopicBySender)
 
         self.shortcuts = [
             QShortcut(QKeySequence('Ctrl+W'), self, self.closeCurrentTab, self.closeCurrentTab),
             ]
+
+
+        # new home page
+        # -------------
+
+        self.openHelpTopic('/') # welcome page.
+
+
 
 
     @pyqtSlot()
@@ -167,7 +225,7 @@ class HelpBrowser(QWidget):
     def closeTab(self, index):
         if (index == 0):
             return
-        del self.openTabs[index-1]
+        del self.openTabs[index]
         self.ui.tabs.removeTab(index)
 
     @pyqtSlot()
@@ -181,11 +239,19 @@ class HelpBrowser(QWidget):
         self.openHelpTopic(path)
         
 
-    @pyqtSlot('QString')
-    def openHelpTopic(self, spath):
-        path = str(spath)
-        pathitems = [x for x in path.split('/') if x];
+    @pyqtSlot('QUrl')
+    def openHelpTopicUrl(self, url):
+        if url.scheme() in ['http', 'https',]:
+            QDesktopServices.openUrl(url)
+            return
 
+        self.openHelpTopic(url.toString())
+
+
+    @pyqtSlot(str)
+    def openHelpTopic(self, path):
+
+        pathitems = [x for x in path.split('/') if x]
 
         # check to see if the tab is already open
         for tab in self.openTabs:
@@ -194,7 +260,7 @@ class HelpBrowser(QWidget):
                 self.ui.tabs.setCurrentWidget(tab)
                 return
 
-        widget = self.makeHelpTopicTab(pathitems)
+        widget = self.makeHelpTopicWidget(pathitems, parent=self.ui.tabs)
         if (widget is None):
             return
         widget.setProperty('helppath', "/".join(pathitems))
@@ -206,69 +272,232 @@ class HelpBrowser(QWidget):
         self.openTabs.append(widget)
 
 
+    def makeHelpTopicWidget(self, pathitems, parent=None):
 
-    def makeHelpTopicTab(self, pathitems):
-        if (not len(pathitems)):
-            logger.warning("makeHelpTopicTab(): No Path specified!")
-            return
+        helptopicpage = self.getHelpTopicPage(pathitems)
+        if not helptopicpage:
+            return None
 
-        font = settingswidget.get_typewriter_font(self)
+        logger.longdebug("Help page text = \n%s", helptopicpage.contentAsHtml())
+
+        tb = QTextBrowser(parent)
+
+        tb.setOpenLinks(False)
+        tb.anchorClicked.connect(self.openHelpTopicUrl)
+
+        #tb.setViewportMargins(50,20,50,40)
+
+        tb.setHtml(helptopicpage.contentAsHtml())
+        tb.setProperty("HelpTabTitle", helptopicpage.title())
+        if helptopicpage.tooltip:
+            tb.setProperty("HelpTabToolTip", helptopicpage.tooltip())
+
+        return tb
+        
+
+    def getHelpTopicPage(self, pathitems):
+        """
+        Return a `HelpTopicPage` object or `None`.
+        """
+
+        def big_html_link(txt, link):
+            return """<a style="text-decoration: underline; font-size: 16pt" href="{link}">{txt}</a>""".format(
+                txt=txt, link=link
+                )
+
+        if len(pathitems) == 0:
+            # home page
+
+            home_src = "<h1>Help &amp; Reference Browser</h1>\n\n"
+
+            home_src += ("<p>" + big_html_link("Welcome to bibolamazi", "/general/welcome")
+                         + " \N{EM DASH} " +
+                         big_html_link("Annotated filter list", "/general/filter-list")
+                         + " \N{EM DASH} " +
+                         big_html_link("Bibolamazi version information", "/general/version")
+                         + " \N{EM DASH} " +
+                         big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
+                         + " \N{EM DASH} " +
+                         big_html_link("Bibolamazi command-line help", "/general/cmdline")
+                         + "</p>\n\n")
+
+            home_src += "<h2>Filters</h2>\n\n"
+
+            home_src += "<ul>\n"
+            for filt in filterinstanceeditor.get_filter_list():
+                home_src += (
+                    "<li>&nbsp;<a href=\"filters/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
+                    )
+            home_src += "</ul>\n"
+
+            return HelpTopicPage.makeHtmlFragmentPage(home_src, "Home")
 
         if (pathitems[0] == 'filters'):
+            
             if (len(pathitems) < 2):
-                logger.warning("makeHelpTopicTab(): No filter specified!!")
+                logger.warning("getHelpTopicPage(): No filter specified!!")
                 return
+
             filtname = pathitems[1]
 
-            tb = QTextBrowser(self.ui.tabs)
-            tb.setFont(font)
-            tb.setText(filters_factory.format_filter_help(filtname))
+            return _mk_filter_help_page(filtname)
 
-            tb.setProperty('HelpTabTitle', '%s filter' %(filtname))
-            tb.setProperty('HelpTabToolTip', filters_factory.get_filter_class(filtname).getHelpDescription())
-            return tb
+
+        if (pathitems[0] == 'rawfilterdoc'):
+
+            if (len(pathitems) < 2):
+                logger.warning("getHelpTopicPage(): No filter specified!!")
+                return
+
+            filtname = pathitems[1]
+
+            filtertxt = filters_factory.format_filter_help(filtname)
+            title = '%s filter (raw doc)'%(filtname)
+            desc = filters_factory.get_filter_class(filtname).getHelpDescription()
+            return HelpTopicPage.makeTxtPage(filtertxt, title, desc)
+
 
         if (pathitems[0] == 'general'):
             if (len(pathitems) < 2):
-                logger.warning("makeHelpTopicTab(): No help topic general page specified!!")
+                logger.warning("getHelpTopicPage(): No help topic general page specified!!")
                 return
 
-            tb = QTextBrowser(self.ui.tabs)
-            tb.setFont(font)
-
             if pathitems[1] == 'welcome':
-                tb.setPlainText(HELP_WELCOME)
-                tb.setProperty('HelpTabTitle', 'Welcome')
+                return HelpTopicPage.makeMarkdownPage(HELP_WELCOME, "Welcome")
             elif pathitems[1] == 'version':
-                tb.setPlainText(argparseactions.helptext_prolog())
-                tb.setProperty('HelpTabTitle', 'Version')
+                return HelpTopicPage.makeTxtPage(argparseactions.helptext_prolog(), "Version")
             elif pathitems[1] == 'cmdline':
-                tb.setPlainText(argparseactions.helptext_prolog() +
-                                bibolamazimain.get_args_parser().format_help())
-                tb.setProperty('HelpTabTitle', 'Command-Line Help')
+                return HelpTopicPage.makeTxtPage(
+                    argparseactions.helptext_prolog() +
+                    bibolamazimain.get_args_parser().format_help(),
+                    "Command-Line Help")
             elif pathitems[1] == 'filter-list':
-                tb.setPlainText(argparseactions.help_list_filters())
-                tb.setProperty('HelpTabTitle', 'Filter List')
-            else:
-                tb.setPlainText('<Unknown help page>')
-                tb.setProperty('HelpTabTitle', '<Unknown>')
+                return _mk_filter_list_page()
 
-            tb.setProperty('HelpTabToolTip', '')
-            return tb
+            return None
                 
-        logger.warning("makeHelpTopicTab(): Unknown help topic: %r", "/".join(pathitems))
+        logger.warning("getHelpTopicPage(): Unknown help topic: %r", "/".join(pathitems))
         return None
 
 
 
 
+def _mk_filter_list_page():
+    
+    html = "<h1>List of filters</h1>\n\n"
+
+    for (fp,fplist) in iteritems(filters_factory.detect_filter_package_listings()):
+
+        html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
+
+        html += "<table>"
+        for f in fplist:
+            html += ("<tr><th><a href=\"/filters/{filtname}\">{filtname}</a></th></tr>"+
+                     "<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">{filtdesc}</td></tr>").format(
+                         filtname=f,
+                         filtdesc=filters_factory.get_filter_class(f, filterpackage=fp).getHelpDescription()
+                     )
+        html += "</table>"
+
+    html += "<p><em>Filter packages are listed in the order they are searched.</em></p>"
+
+    return HelpTopicPage.makeHtmlFragmentPage(html, "Filter List")
+
+
+def _mk_filter_help_page(filtname):
+    
+    filtinfo = filters_factory.FilterInfo(filtname)
+
+    title = filtname + ' filter'
+
+    fopt = filtinfo.defaultFilterOptions()
+
+    if fopt:
+        # we're in business
+
+        html = "<h1>Filter: {}</h1>\n\n".format(filtname)
+
+        html += "<p>" + htmlescape(filtinfo.fclass.getHelpAuthor()) + "</p>\n\n"
+        html += "<p>" + htmlescape(filtinfo.fclass.getHelpDescription()) + "</p>\n\n"
+
+        html += "<h2>Filter Options:</h2>\n\n"
+
+        html += "<table width=\""+TABLE_WIDTH+"\">"
+
+        for arg in fopt.filterOptions():
+            html += "<tr><th>" + htmlescape(fopt.getSOptNameFromArg(arg.argname)) + "</th></tr>"
+            html += "<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">"
+            html += "<p class=\"inner\">" + htmlescape(arg.doc) + "</p>"
+
+            if arg.argtypename:
+                typ = butils.resolve_type(arg.argtypename, filtinfo.fmodule)
+                if typ is bool:
+                    html += ("<p class=\"inner shadow\">Expects a boolean argument type" +
+                             " (True/1/Yes/On or False/0/No/Off)</p>")
+                elif typ is int:
+                    html += ("<p class=\"inner shadow\">Expects an integer as argument</p>")
+                elif hasattr(typ, '__doc__') and typ.__doc__: # e.g., is not None
+                    docstr = typ.__doc__.strip()
+                    if len(docstr):
+                        html += ("<p class=\"inner shadow\">Expects argument type " +
+                                 "<code>" + htmlescape(arg.argtypename) + "</code>: "
+                                 + docstr + "</p>")
+
+            html += "</td></tr>\n"
+
+        if fopt.filterAcceptsVarArgs():
+            html += "<tr><th>(...)</th></tr>"
+            html += ("<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">This filter accepts "
+                     "additional positional arguments (see doc below)</td></tr>")
+        if fopt.filterAcceptsVarKwargs():
+            html += "<tr><th>(...=...)</th></tr>"
+            html += ("<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">This filter accepts "
+                     "additional named/keyword arguments (see doc below)</td></tr>")
+
+        html += "</table>"
+
+        html += """
+
+<p>Pass options with the syntax <code>-s</code><span
+class="code-meta">OptionName</span><code>="</code><span class="code-meta">option
+value</span><code>"</code> or <code>-d</code><span
+class="code-meta">OptionName[</span><code>=True</code><span
+class="code-meta">|</span><code>False</code><span class="code-meta">]</span>.
+The form <code>-sXXX</code> is for passing strings (which must be quoted if
+comprising spaces or special characters), and the form <code>-dXXX</code> is for
+specifying boolean ON/OFF switches.</p>
+
+"""
+
+        html += "<h2>Filter Documentation:</h2>\n\n"
+
+        html += "<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText()) + "</div>\n\n"
+
+        html += ("<p style=\"margin-top: 2em\"><a href=\"/rawfilterdoc/"+filtname+"\">" +
+                 "View this filter's raw documentation</a></p>\n\n")
+        
+        return HelpTopicPage.makeHtmlFragmentPage(html, title)
+
+    if hasattr(filtinfo.fmodule, 'format_help'):
+        return HelpTopicPage.makeTxtPage(
+            "FILTER " + filtname + "\n\n" +
+            filtinfo.fclass.getHelpDescription() +
+            filtinfo.fmodule.format_help(),
+            title
+        )
+
+    return HelpTopicPage.makeMarkdownPage(
+        "*No documentation available for filter {}*".format(filtname),
+        title
+    )
+    
+
 
 
 HELP_WELCOME = r"""
 
-======================================================================
-Bibolamazi -- Prepare consistent BibTeX files for your LaTeX documents
-======================================================================
+Bibolamazi --- Prepare consistent BibTeX files for your LaTeX documents
+=======================================================================
 
 Bibolamazi lets you prepare consistent and uniform BibTeX files for your LaTeX
 documents. It lets you prepare your BibTeX entries as you would like them to
@@ -279,10 +508,10 @@ turning them into initials, converting unicode characters to latex escapes, etc.
 What Bibolamazi Does
 --------------------
 
-Bibolamazi works by reading your reference bibtex files---the ``sources'', which
+Bibolamazi works by reading your reference bibtex files---the "sources", which
 might for example have been generated by your favorite bibliography manager or
 provided by your collaborators---and merging them all into a new file, applying
-specific rules, or ``filters'', such as turning all the first names into
+specific rules, or "filters", such as turning all the first names into
 initials or normalizing the way arxiv IDs are presented.
 
 The Bibolamazi file is this new file, in which all the required bibtex entries
@@ -311,7 +540,7 @@ a new one), you’ll immediately be prompted to edit its configuration section.
 Sources are the normal bibtex files from which bibtex entries are read. A source
 is specified using the bibolamazi command
 
-  src: source-file.bib  [ alternative-source-file.bib  ... ]
+    src: source-file.bib  [ alternative-source-file.bib  ... ]
 
 Alternative source locations can be specified, in case the first file does not
 exist. This is convenient to locate a file which might be in different locations
@@ -321,16 +550,16 @@ which will be downloaded automatically.
 
 You can specify several sources by repeating the src: command.
 
-  src: first-source.bib  alternative-first-source.bib
-  src: second-source.bib
-  ...
+    src: first-source.bib  alternative-first-source.bib
+    src: second-source.bib
+    ...
 
 Remember: the *first* readable source of *each* source command will be read, and
 merged into the bibolamazi file.
 
 Filters are rules to apply on the whole bibliography database. Their syntax is
 
-  filter: filter_name  <filter-options>
+    filter: filter_name  <filter-options>
 
 The filter is usually meant to deal with a particular task, such as for example
 changing all first names of authors into initials.
@@ -349,14 +578,11 @@ What now?
 We suggest at this point that you create a new bibolamazi file, and get started
 with the serious stuff :)
 
-You might want to have a look at the documentation. It is available at:
-
-  http://bibolamazi.readthedocs.org/en/latest/
+You might want to have a look at the documentation. It is available at
+[https://bibolamazi.readthedocs.org/en/latest/](https://bibolamazi.readthedocs.org/en/latest/).
 
 If you want an example, you can have a look at the directory
-
-  https://github.com/phfaist/bibolamazi/tree/master/test
-
+[https://github.com/phfaist/bibolamazi/tree/master/tests_basic](https://github.com/phfaist/bibolamazi/tree/master/tests_basic)
 and, in particular the bibolamazi files `testX.bibolamazi.bib`.
 
 
@@ -366,9 +592,7 @@ Command-line
 Please note that you can also use bibolamazi in command-line. If you installed
 the precompiled application, you'll need to install the command-line version
 again. Go to
-
-  https://github.com/phfaist/bibolamazi
-
+[https://github.com/phfaist/bibolamazi](https://github.com/phfaist/bibolamazi)
 and follow the instructions there.
 
 """
