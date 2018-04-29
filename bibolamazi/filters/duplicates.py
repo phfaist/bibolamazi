@@ -320,7 +320,8 @@ assumed to have the same base name as your bibolamazi file, for instance, if
 your bibolamazi file is called "myfile.bibolamazi.bib", then we assume that we
 can read the citations in the aux file produced by LaTeX called "myfile.aux".
 If this is not the case, you may specify the base name of your LaTeX document
-using the option "-sJobname=myfile".
+using the option "-sJobname=myfile". Note -dKeepOnlyUsed only works if you are
+merging duplicates (i.e., you didn't set -dMergeDuplicates=False).
 
 The dupfile will be by default self-contained, i.e. will contain all the
 definitions necessary so that you can use the different cite keys transparently
@@ -451,7 +452,7 @@ class DuplicatesFilter(BibFilter):
                of `\bibalias`.
         *keep_only_used(bool): if TRUE, then only keep entries which are referenced in the
                LaTeX file.  Use the --jobname option to specify which LaTeX jobname to look at.
-               Note that this has no effect if the `dupfile' is not set.  
+               Note: This option has no effect if the `merge_duplicates' option is off.
         *jobname: If --keep-only-used is specified, then look for used citations in the LaTeX
                file with this base name.  See also the only_used filter. The corresponding AUX
                file is searched for and analyzed. If --jobname is not specified, then the
