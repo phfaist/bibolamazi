@@ -95,6 +95,12 @@ modindex_common_prefix = [ 'core.', 'filters.util.', ]
 autoclass_content = "both"
 
 
+# some variables to be available in our pages
+rst_epilog = '.. |BIBOLAMAZI_VERSION| replace:: ' + release
+
+
+
+
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -187,9 +193,9 @@ html_theme_options = {
     #'github_button': True,
     'github_user': 'phfaist',
     'github_repo': 'bibolamazi',
-    'font_family': 'Lato, sans-serif',
-    'head_font_family': 'Lato, sans-serif',
-    'font_size': '13pt',
+    'font_family': '"Lato", sans-serif',
+    'head_font_family': '"Lato", sans-serif',
+    'font_size': '12pt',
 }
 
 

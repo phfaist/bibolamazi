@@ -15,6 +15,7 @@ Table of Contents:
    introduction-to-bibolamazi
    download-and-install
    using-bibolamazi-app
+   bibolamazi-config-section
    using-bibolamazi-cmdl
    devel-filter-easy
    devel-filter
@@ -31,3 +32,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
+Version
+=======
+
+Documentation built from bibolamazi version |BIBOLAMAZI_VERSION|.
