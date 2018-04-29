@@ -399,7 +399,8 @@ def _mk_filter_list_page():
                      )
         html += "</table>"
 
-    html += "<p><em>Filter packages are listed in the order they are searched.</em></p>"
+    html += ("<p style=\"margin-top: 2em\"><em>Filter packages are listed in the order " +
+             "they are searched.</em></p>")
 
     return HelpTopicPage.makeHtmlFragmentPage(html, "Filter List")
 
