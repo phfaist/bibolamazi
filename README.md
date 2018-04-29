@@ -46,8 +46,3 @@ under the [GNU General Public License (GPL)][gpl], Version 3 or higher.
 
 [gpl]: http://www.gnu.org/copyleft/gpl.html
 
-This project also contains some [third party code][3rdparty] (in the directory
-`3rdparty`).
-
-[3rdparty]: http://bibolamazi.readthedocs.org/en/latest/credits-contact/
-
