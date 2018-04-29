@@ -40,6 +40,8 @@ install_requires = _parse_requires('pip_requirements.txt'),
 sys.stderr.write("(Requirements: %s)\n\n\n" % (install_requires))
 
 
+packages = find_packages(include=['bibolamazi.*'], exclude=['bibolamazi_gui', 'bibolamazi_gui.*'])
+#print("packages = %r"%packages)
 
 setup(
     name = "bibolamazi",
@@ -65,7 +67,7 @@ setup(
 
     # could also include long_description, download_url, classifiers, etc.
 
-    packages = find_packages(exclude=['bibolamazi_gui', 'bibolamazi_gui.*']),
+    packages = packages,
     zip_safe = True,
     scripts = ['bin/bibolamazi'],
 
