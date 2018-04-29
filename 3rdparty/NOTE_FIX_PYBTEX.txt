@@ -1,7 +1,0 @@
-
-
-NOTE: PHF: FIXED A COUPLE BUGS IN PYBTEX
-----------------------------------------
-
-The fixes are performed as monkey-patches in :py:mod:`bibolamazi.init`. See
-comments and documentation there.
