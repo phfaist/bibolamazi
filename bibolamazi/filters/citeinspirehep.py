@@ -19,12 +19,22 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 import re
 import os
 import os.path
 import io
 import logging
 logger = logging.getLogger(__name__)
+
+# make sure html.parser is imported (and detected by pyinstaller)
+import html.parser
 
 import requests
 from bs4 import BeautifulSoup
@@ -211,7 +221,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                                key, r.status_code, r.text)
                 continue
 
-            soup = BeautifulSoup(r.text)
+            soup = BeautifulSoup(r.text, "html.parser")
             quicknotes = soup.find_all(class_='quicknote')
             if (quicknotes):
                 logger.warning("Could not fetch reference for key `%s':\n\t%s", key,
@@ -395,14 +405,14 @@ class CiteInspireHEPFilter(BibFilter):
         #
         thebibdata = bibolamazifile.bibliographyData();
 
-        for (userkey, key) in used_keys_dic.iteritems():
+        for (userkey, key) in iteritems(used_keys_dic):
             # get the bibtex data
             dat = cache_accessor.getInspireHEPInfo(key)
 
             # parse bibtex
             parser = inputbibtex.Parser()
             new_bib_data = None
-            with io.StringIO(unicode(dat['bibtex'])) as stream:
+            with io.StringIO(unicodestr(dat['bibtex'])) as stream:
                 new_bib_data = parser.parse_stream(stream);
             
             # and add them to the main list

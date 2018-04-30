@@ -19,11 +19,21 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
+
+
 import re
 import os
 import os.path
 import io
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 import logging
 logger = logging.getLogger(__name__)
 
@@ -32,7 +42,7 @@ import pybtex.database.input.bibtex as inputbibtex;
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
-from bibolamazi.core.butils import getbool;
+from bibolamazi.core.butils import getbool
 
 import arxiv2bib
 from .util import arxivutil
@@ -186,7 +196,7 @@ class CiteArxivFilter(BibFilter):
             # parse bibtex
             parser = inputbibtex.Parser();
             new_bib_data = None;
-            with io.StringIO(unicode(dat['bibtex'])) as stream:
+            with io.StringIO(unicodestr(dat['bibtex'])) as stream:
                 new_bib_data = parser.parse_stream(stream);
             
             # and add them to the main list
@@ -206,5 +216,5 @@ class CiteArxivFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return CiteArxivFilter;
+    return CiteArxivFilter
 

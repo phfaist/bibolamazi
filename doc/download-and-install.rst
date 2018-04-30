@@ -38,7 +38,7 @@ You may now start using Bibolamazi normally. To read more on bibolamazi, skip to
 Installing the Command-Line Interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bibolamazi runs with Python 2.7 (this is there by default on most linux and Mac systems).
+Bibolamazi runs with Python 3 (this is there by default on most linux and Mac systems).
 
 Additionally, the graphical user interface requires PyQt4_. If you're on a linux
 distribution, it's most probably in your distribution packages. Note you only need PyQt4
