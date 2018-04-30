@@ -49,7 +49,10 @@ setup(
     # of the bibolamazi library, make sure we have the same version.
     #
     # we should NOT list PyQt4 here, because of http://stackoverflow.com/a/4628806/1694896 .
-    install_requires = ['bibolamazi=='+bibolamaziversion.version_str],
+    install_requires = [
+        'bibolamazi=='+bibolamaziversion.version_str,
+        'markdown2',
+    ],
 
     package_data = {
         # If any package contains *.txt or *.rst files, include them:

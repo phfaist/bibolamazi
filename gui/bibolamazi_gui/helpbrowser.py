@@ -68,18 +68,18 @@ p {
   margin-bottom: 1em;
 }
 p, a, li, span {
-  font-size: 14pt;
+  font-size: %(fontsize)s;
 }
 em, i {
-  font-size: 14pt;
+  font-size: %(fontsize)s;
   font-style: italic;
 }
 strong, b {
-  font-size: 14pt;
+  font-size: %(fontsize)s;
   font-style: bold;
 }
 code {
-  font-size: 13pt;
+  font-size: %(fontsize_code)s;
 }
 .code-meta {
   color: #80b0b0;
@@ -91,6 +91,11 @@ code {
 pre { margin-left: 25px; }
 pre.txtcontent { margin-left: 0px; }
 a { color: #0000a0; text-decoration: none }
+
+.biglink{
+  text-decoration: underline;
+  font-size: %(fontsize_big)s;
+}
 
 li {
   margin-bottom: 0.35em;
@@ -112,6 +117,7 @@ th {
   color: #600030;
 }
 td {
+  font-size: %(fontsize)s;
   padding-bottom: 0.3em;
 }
 td.indent {
@@ -158,8 +164,12 @@ class HelpTopicPage(object):
         else:
             raise ValueError("Can't convert %s to markdown"%(self._content_type))
 
-    def contentAsHtml(self):
-        html_top = ("<html><head><style type=\"text/css\">" + _HTML_CSS + "</style>" +
+    def contentAsHtml(self, fontsize_pt=12, fontsize_code_pt=12):
+        html_top = ("<html><head><style type=\"text/css\">" +
+                    _HTML_CSS % {'fontsize': "%dpt"%(fontsize_pt),
+                                 'fontsize_big': "%dpt"%(fontsize_pt+2),
+                                 'fontsize_code': "%dpt"%(fontsize_code_pt) } +
+                    "</style></head>" +
                     "<body><table width=\""+TABLE_WIDTH+"\" style=\"margin-left:50px\">" +
                     "<tr><td class=\"content\">")
         html_bottom = "</td></tr></table></body></html>"
@@ -278,6 +288,11 @@ class HelpBrowser(QWidget):
         if not helptopicpage:
             return None
 
+        fontsize_pt = QFontInfo(self.font()).pointSize() + 1
+        fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize()
+
+        html = helptopicpage.contentAsHtml(fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
+
         logger.longdebug("Help page text = \n%s", helptopicpage.contentAsHtml())
 
         tb = QTextBrowser(parent)
@@ -301,7 +316,7 @@ class HelpBrowser(QWidget):
         """
 
         def big_html_link(txt, link):
-            return """<a style="text-decoration: underline; font-size: 16pt" href="{link}">{txt}</a>""".format(
+            return """<a class="biglink" href="{link}">{txt}</a>""".format(
                 txt=txt, link=link
                 )
 
