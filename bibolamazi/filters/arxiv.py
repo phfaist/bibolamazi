@@ -165,16 +165,25 @@ The available fields and subfields are:
         'isnewarxivid' =>  boolean which is True if the arXiv id is of the
                            new-type format 'XXXX.XXXX'
 
-You may also use the following presets as fields:
+You may also use the format '{if:(expr)(val-if-true)(val-if-false)}', for
+instance: '{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}'
 
-    'notefmt_default' => default format, of the type '{arXiv:XXXX.XXXX
-                         [quant-ph]}' or '{arXiv:quant-ph/XXXXXXX}'
+The following presets may be also used as fields:
+
+    'notefmt_default' => default format, of the type '{arXiv:XXXX.XXXX}' or
+                         '{arXiv:quant-ph/XXXXXXX}'
 
     'notefmt_href'    => default format, produced with a hyperlink using
                          the \\href command
 
-You may also use the format '{if:(expr)(val-if-true)(val-if-false)}', for
-instance: '{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}'
+    'notefmt_primcl_default', 'notefmt_primcl_href
+                      => same as default formats, but with the primary class
+                         added for new-style IDs, e.g.
+                         '{arXiv:XXXX.XXXX [quant-ph]}'
+
+For instance:
+
+    arxiv -sMode=unpublished-note -sNoteStringFmt="{notefmt_primcl_href}"
 
 """
 
@@ -211,9 +220,17 @@ Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode
 
 _default_notestring_fmts = {
     'notefmt_default': (
-        "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}"
+        "{{arXiv:{arxiv.arxivid}}}"
     ),
     'notefmt_href': (
+        "\\href{{https://arxiv.org/abs/{arxiv.arxivid}}}{{" +
+        "arXiv:{arxiv.arxivid}" +
+        "}}"
+    ),
+    'notefmt_primcl_default': (
+        "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}"
+    ),
+    'notefmt_primcl_href': (
         "\\href{{https://arxiv.org/abs/{arxiv.arxivid}}}{{" +
         "arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}" +
         "}}"

@@ -71,20 +71,20 @@ def _mk_braced_pair_rx(mid):
 _rxarxiv_in_url = (# not tuple, just a multiline expression
     []
     + _mk_braced_pair_rx(
-        r'\\href\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
+        r'\\href\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
         )
     + _mk_braced_pair_rx(
-        r'\\(?:url|href)\s*\{\s*(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
+        r'\\(?:url|href)\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
         )
     + _mk_braced_pair_rx(
-        r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*'
+        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*'
         )
     )
 # And these regexes are the most tolerant ones, we'll check for these more or less
 # everywhere except in the URL fields.
 _rxarxiv = _rxarxiv_in_url + (# not tuple, just a multiline expression
     _mk_braced_pair_rx(
-        r'(?:http://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
+        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
         )
     + _mk_braced_pair_rx(
         r'(?:arXiv[-.:/\s]+)?((?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r'/)?' + _RX_ARXIVID_NUM + r')'
@@ -426,7 +426,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                     row. If you continue to do this, arXiv.org may interpret your requests
                     as a denial of service attack.
 
-                    For more information, see http://arxiv.org/help/robots.
+                    For more information, see https://arxiv.org/help/robots.
                     """))
             logger.warning("HTTP connection error %d: %s.", error.code, error.reason)
             logger.warning("ArXiv API information will not be retreived, and your bibliography "
