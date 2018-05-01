@@ -236,9 +236,21 @@ class CiteKeyFilter(BibFilter):
                 return ''
             return inf[field]
         
+
+        def get_authors(entry):
+            if 'author' in entry.persons:
+                return entry.persons['author']
+            return []
+
+        def get_first_author(entry):
+            authors = get_authors(entry)
+            if not len(authors):
+                return ""
+            return getlast(get_authors(entry)[0], lower=False)[0]
+
         fld_fn = {
-            'author': lambda entry: getlast(entry.persons['author'][0], lower=False)[0],
-            'authors': lambda entry: "".join([getlast(a, lower=False)[0] for a in entry.persons['author']])[0:25],
+            'author': lambda entry: get_first_author(entry),
+            'authors': lambda entry: "".join([getlast(a, lower=False)[0] for a in get_authors(entry)])[0:25],
             'year': lambda entry: entry.fields.get('year', ''),
             'year2': lambda entry: '%02d' % (int(entry.fields.get('year', '')) % 100),
             'journal_abb': lambda entry: fmtjournal(entry.fields.get('journal', '')),
@@ -263,7 +275,7 @@ class CiteKeyFilter(BibFilter):
 
         newbibdata = BibliographyData()
         
-        class Jump: pass
+        class Jump(Exception): pass
         
         for (key, entry) in iteritems(bibdata.entries):
 
@@ -304,9 +316,9 @@ class CiteKeyFilter(BibFilter):
                     logger.warning("`%s': Citation key `%s' already used: using `%s' instead.",
                                    keyorig, key, newkey)
                 # add the entry
-                newbibdata.add_entry(newkey, entry);
+                newbibdata.add_entry(newkey, entry)
 
-        bibolamazifile.setBibliographyData(newbibdata);
+        bibolamazifile.setEntries(iteritems(newbibdata.entries))
 
         return
 
