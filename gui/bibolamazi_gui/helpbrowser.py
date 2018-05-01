@@ -164,11 +164,11 @@ class HelpTopicPage(object):
         else:
             raise ValueError("Can't convert %s to markdown"%(self._content_type))
 
-    def contentAsHtml(self, fontsize_pt=12, fontsize_code_pt=12):
+    def contentAsHtml(self):
         html_top = ("<html><head><style type=\"text/css\">" +
-                    _HTML_CSS % {'fontsize': "%dpt"%(fontsize_pt),
-                                 'fontsize_big': "%dpt"%(fontsize_pt+2),
-                                 'fontsize_code': "%dpt"%(fontsize_code_pt) } +
+                    _HTML_CSS % {'fontsize': "medium",
+                                 'fontsize_big': "large",
+                                 'fontsize_code': "medium" } +
                     "</style></head>" +
                     "<body><table width=\""+TABLE_WIDTH+"\" style=\"margin-left:50px\">" +
                     "<tr><td class=\"content\">")
@@ -288,21 +288,29 @@ class HelpBrowser(QWidget):
         if not helptopicpage:
             return None
 
-        fontsize_pt = QFontInfo(self.font()).pointSize() + 1
-        fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize()
+        #if sys.platform.startswith('darwin'):
+        #    fontsize_pt = QFontInfo(self.font()).pointSize() + 1
+        #    fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize() + 1
+        #else:
+        #    fontsize_pt = QFontInfo(self.font()).pointSize() + 1
+        #    fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize()
 
-        html = helptopicpage.contentAsHtml(fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
+        html = helptopicpage.contentAsHtml()#fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
 
-        logger.longdebug("Help page text = \n%s", helptopicpage.contentAsHtml())
+        logger.longdebug("Help page text = \n%s", html)
 
         tb = QTextBrowser(parent)
+
+        font = tb.font()
+        font.setPointSize(QFontInfo(font).pointSize()+1)
+        tb.setFont(font)
 
         tb.setOpenLinks(False)
         tb.anchorClicked.connect(self.openHelpTopicUrl)
 
         #tb.setViewportMargins(50,20,50,40)
 
-        tb.setHtml(helptopicpage.contentAsHtml())
+        tb.setHtml(html)
         tb.setProperty("HelpTabTitle", helptopicpage.title())
         if helptopicpage.tooltip:
             tb.setProperty("HelpTabToolTip", helptopicpage.tooltip())
