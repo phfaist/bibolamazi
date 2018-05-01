@@ -416,6 +416,19 @@ class ArxivNormalizeFilter(BibFilter):
             # directly leave entry stripped.
             return
 
+        if (arxivinfo['primaryclass']):
+            # see if we want to set the primary class
+            ok = True
+            if self.no_primary_class:
+                ok = False
+            elif '/' in arxivinfo['arxivid'] and self.no_primary_class_for_old_ids:
+                # quant-ph/XXXZZZZ old id
+                ok = False
+            # maybe set the primary class:
+            if ok:
+                entry.fields['primaryclass'] = arxivinfo['primaryclass']
+
+
         origentryfields = CaseInsensitiveDict(iteritems(entry.fields))
 
         def add_note(entry, arxivinfo):
@@ -486,17 +499,6 @@ class ArxivNormalizeFilter(BibFilter):
                     entry.fields['archiveprefix'] = arxivinfo['archiveprefix']
             entry.fields['arxivid'] = arxivinfo['arxivid']
             entry.fields['eprint'] = arxivinfo['arxivid']
-            if (arxivinfo['primaryclass']):
-                # see if we want to set the primary class
-                ok = True
-                if self.no_primary_class:
-                    ok = False
-                elif '/' in arxivinfo['arxivid'] and self.no_primary_class_for_old_ids:
-                    # quant-ph/XXXZZZZ old id
-                    ok = False
-                # maybe set the primary class:
-                if ok:
-                    entry.fields['primaryclass'] = arxivinfo['primaryclass']
 
             return
         
