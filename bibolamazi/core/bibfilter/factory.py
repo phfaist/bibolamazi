@@ -61,6 +61,15 @@ inspect_getargspec = inspect.getargspec if sys.version_info[0] <= 2 else lambda 
 
 
 
+if sys.hexversion < 0x03060000:
+    # Python < 3.6 doesn't have ModuleNotFoundError -- define dummy class here;
+    # the ImportError branch will be picked up anyway
+    class ModuleNotFoundError(Exception):
+        pass
+
+
+
+
 # some exception classes.
 
 class NoSuchFilter(Exception):
@@ -363,7 +372,8 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__), unicodestr(exc_value))
+                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__),
+                         unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
             
             deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
@@ -375,13 +385,14 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__), unicodestr(exc_value))
+                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__),
+                         unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
-            # On Python 2, attempt to understand whether the ImportError was due
-            # to a missing module (e.g. invalid module name), or if the module
-            # was found but the code had an invalid import statement. For that,
-            # see hack at:
+            # On Python 2 and Python < 3.6, attempt to understand whether the
+            # ImportError was due to a missing module (e.g. invalid module
+            # name), or if the module was found but the code had an invalid
+            # import statement. For that, see hack at:
             # http://lucumr.pocoo.org/2011/9/21/python-import-blackbox/
             caused_by_module = True
             logger.longdebug("[was caused by module?] will inspect stack frames:\n%s",

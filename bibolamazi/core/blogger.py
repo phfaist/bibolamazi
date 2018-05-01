@@ -341,14 +341,15 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr,
     global _simple_console_logging_setup_done
 
     if _simple_console_logging_setup_done:
+        print("Simple console logging already set up!!")
         logger.warning("Simple console logging already set up!")
         return
     
     _simple_console_logging_setup_done = True
 
     # create console handler
-    ch = logging.StreamHandler(stream=stream)
-    ch.setLevel(logging.NOTSET) # propagate all messages
+    ch = logging.StreamHandler(stream)
+    #ch.setLevel(logging.NOTSET) # propagate all messages
 
     # create formatter and add it to the handlers
 

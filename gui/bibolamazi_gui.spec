@@ -82,6 +82,11 @@ if sys.platform.startswith('darwin'):
     with open(os.path.join(tmp_genfiles_dir,'qt.conf'), 'w') as f:
         f.write("[Paths]\nPrefix = MacOS/PyQt5/Qt")
     add_data_files += [ ( os.path.join(tmp_genfiles_dir, 'qt.conf'), '.',) ]
+else:
+    # qt.conf for other platforms
+    with open(os.path.join(tmp_genfiles_dir,'qt.conf'), 'w') as f:
+        f.write("[Paths]\nPrefix = PyQt5/Qt")
+    add_data_files += [ ( os.path.join(tmp_genfiles_dir, 'qt.conf'), '.',) ]
 
 
 #runhookentrypts = hack_pkg_resources_entry_points.generate_runtime_hook(tmp_genfiles_dir)
@@ -175,10 +180,10 @@ else:
               a.zipfiles,
               a.datas,
               name=exename,
-              debug=False,
+              debug=True,#False,
               strip=None,
-              upx=True,
-              console=False,
+              upx=False,#True,
+              console=True,#False,
               **kwargs
               )
     
