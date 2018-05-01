@@ -98,7 +98,7 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             try:
                 # try to load the filter module to see if it exists
                 filtmodule = filters_factory.get_module(m.group('filtername'))
-            except (filters_factory.NoSuchFilter, filters_factory.NoSuchFilterPackage):
+            except Exception:
                 fmtname = self.fmt_filtername_nonex
 
             #pcache.add_filter(line=blockno, filtername=m.group('filtername'))

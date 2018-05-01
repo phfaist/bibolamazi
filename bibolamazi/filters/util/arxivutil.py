@@ -87,7 +87,7 @@ _rxarxiv = _rxarxiv_in_url + (# not tuple, just a multiline expression
         r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
         )
     + _mk_braced_pair_rx(
-        r'(?:arXiv[-.:/\s]+)?((?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r'/)?' + _RX_ARXIVID_NUM + r')'
+        r'(?:arXiv[-.:/\s]+)?((?:(?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r')/)?' + _RX_ARXIVID_NUM + r')'
         )
     )
 
@@ -200,6 +200,7 @@ def detectEntryArXivInfo(entry):
     if ('archiveprefix' in fields):
         d['archiveprefix'] = fields['archiveprefix']
 
+    logger.longdebug("processed doi,eprint,primaryclass,archiveprefix fields -> d = %r", d)
 
     def processNoteField(notefield, d, isurl=False):
 
@@ -211,11 +212,14 @@ def detectEntryArXivInfo(entry):
         for rx in rxlist:
             m = rx.search(notefield)
             if m:
+                #logger.longdebug("Note field %r: arxiv rx %r matched", notefield, rx.pattern)
                 if (not d['arxivid']):
                     try:
                         primaryclass = None
                         try: primaryclass = m.group('primaryclass')
                         except IndexError: pass
+
+                        #logger.longdebug("arxivid (maybe with prim-class) = %r", m.group('arxivid'))
 
                         d['arxivid'] = extract_pure_id(m.group('arxivid'), primaryclass=primaryclass)
                     except IndexError as e:
@@ -223,11 +227,15 @@ def detectEntryArXivInfo(entry):
                         pass
                 if (not d['primaryclass']):
                     try:
-                        d['primaryclass'] = m.group('primaryclass')
+                        primaryclass = m.group('primaryclass')
+                        if primaryclass not in ['abs', 'pdf', 'abs/', 'pdf/']:
+                            d['primaryclass'] = primaryclass
                     except IndexError:
                         pass
             if d['arxivid'] and d['primaryclass']:
                 return
+
+            #logger.longdebug("d = %r", d)
                 
     if ('note' in fields):
         processNoteField(fields['note'], d)
@@ -237,6 +245,8 @@ def detectEntryArXivInfo(entry):
 
     if ('url' in fields):
         processNoteField(fields['url'], d, isurl=True)
+
+    logger.longdebug("processed note,annote,url fields -> d = %r", d)
 
     if (d['arxivid'] is None):
         # no arXiv info.
@@ -266,6 +276,8 @@ def detectEntryArXivInfo(entry):
         # 91->1991, 89->2089 (arXiv started in 1991)
         d['year'] = unicodestr(1990 + (int(m.group('year')) - 90) % 100)
         
+    logger.longdebug("finished detection -> d = %r", d)
+
     return d
 
 
