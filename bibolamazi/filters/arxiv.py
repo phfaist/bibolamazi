@@ -62,17 +62,20 @@ ArXiv clean-up filter by Philippe Faist, (C) 2013, GPL 3+
 """
 
 HELP_DESC = u"""\
-ArXiv clean-up filter: normalizes the way each biblographic entry refers to arXiv IDs.
+ArXiv clean-up filter: tune the way each biblographic entry refers to arXiv IDs
 """
 
 HELP_TEXT = u"""
 There are two common ways to include arXiv IDs in bib files:
+
     @unpublished{Key,
       authors = ...
       ...
       note = {arXiv:XXXX.YYYY}
     }
+
 and
+
     @article{Key,
       ...
       journal = {ArXiv e-prints},
@@ -82,48 +85,62 @@ and
       eprint = {XXXX.YYYY}
     }
 
-And of course, each bibtex style handles maybe one but not the other, and then they appear
-differently, and so on. In addition, if you want to add an arXiv ID to published articles,
-it may also appear either in the note={} or in the eprint={} tag.
+And of course, each bibtex style handles maybe one but not the other, and then
+they appear differently, and so on. In addition, if you want to add an arXiv ID
+to published articles, it may also appear either in the note={} or in the
+eprint={} tag.
 
-THIS FILTER will detect the various ways of declaring arXiv information and extract it for
-each entry. Then this information is reproduced in each entry using a single of the above
-conventions, depending on the provided options. Entries with no arxiv information are left
-untouched. Different behaviors can be set independently for published articles and
-unpublished with arxiv IDs, specified as operating modes.
+THIS FILTER will detect the various ways of declaring arXiv information and
+extract it for each entry. Then this information is reproduced in each entry
+using a single of the above conventions, depending on the provided
+options. Entries with no arxiv information are left untouched. Different
+behaviors can be set independently for published articles and unpublished with
+arxiv IDs, specified as operating modes.
 
 MODES:
-    "none"    -- don't do anything--a no-op. Useful to act e.g. only on unpublished articles.
-    "strip"   -- remove the arxiv information completely. Note that arXiv URLs are left, use
-                 the `url` filter if you want to strip those.
-    "unpublished-note"  -- set the entry type to "unpublished", and add or append to the
-                 note={} the string "arXiv:XXXX.YYYY". Any journal field is stripped.
-    "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally, strip the
-                 `title' field (useful for revtex styles)
-    "note"    -- just add or append to the note={} the string "arXiv:XXXX.YYYY". Don't change
-                 the entry type. This mode is appropriate for entries that are published. 
-                 The string "arXiv:XXXX.YYYY" can be changed by specifying the
-                 -sNoteString="arXiv:%(arxivid)s" option [use `%(arxivid)s' to include the
-                 arXiv ID].
-    "eprint"  -- keep the entry type as "article", and adds the tags "archivePrefix",
-                 "eprint" and "arxivid" set to the detected arXiv ID, as well as a tag
-                 "primaryclass" set to the primary archive (e.g. "quant-ph") if that
-                 information was detected. For unpublished articles, also set
-                 journal={ArXiv e-prints} (or given arxiv journal name in filter options)
 
-ArXiv information is determined by inspecting the fields 'arxivid', 'eprint', 'primaryclass',
-and 'note'. The entry is determined as unpublished if it is of type "unpublished", or if it
-has no journal name, or if the journal name contains "arxiv".
+    "none"    -- don't do anything--a no-op. Useful to act e.g. only on
+                 unpublished articles.
 
-Missing information, if an arXiv ID was detected, is queried on the arxiv.org database using
-the arxiv.org API (via the arxiv2bib module, Copyright (c) 2012, Nathan Grigg, New BSD License.
-See the original copyright in the folder '3rdparty/arxiv2bib/' of this project)
+    "strip"   -- remove the arxiv information completely. Note that arXiv URLs
+                 are left, use the `url` filter if you want to strip those.
+
+    "unpublished-note"  -- set the entry type to "unpublished", and add or
+                 append to the note={} the string "arXiv:XXXX.YYYY". Any
+                 journal field is stripped.
+
+    "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally,
+                 strip the `title' field (useful for revtex styles)
+
+    "note"    -- just add or append to the note={} the string
+                 "arXiv:XXXX.YYYY". Don't change the entry type. This mode is
+                 appropriate for entries that are published.  The string
+                 "arXiv:XXXX.YYYY" can be changed by specifying the
+                 -sNoteString="arXiv:%(arxivid)s" option [use `%(arxivid)s' to
+                 include the arXiv ID].
+
+    "eprint"  -- keep the entry type as "article", and adds the tags
+                 "archivePrefix", "eprint" and "arxivid" set to the detected
+                 arXiv ID, as well as a tag "primaryclass" set to the primary
+                 archive (e.g. "quant-ph") if that information was detected. For
+                 unpublished articles, also set journal={ArXiv e-prints} (or
+                 given arxiv journal name in filter options)
+
+ArXiv information is determined by inspecting the fields 'arxivid', 'eprint',
+'primaryclass', and 'note'. The entry is determined as unpublished if it is of
+type "unpublished", or if it has no journal name, or if the journal name
+contains "arxiv".
+
+Missing information, if an arXiv ID was detected, is queried on the arxiv.org
+database using the arxiv.org API (via the arxiv2bib module, Copyright (c) 2012,
+Nathan Grigg, New BSD License.  See the original copyright in the folder
+'3rdparty/arxiv2bib/' of this project)
 
 
 NOTE FIELD FORMATTING (-sNoteStringFmt):
 
-This is based on Python's new string formatting mini-language. Include fields with the syntax
-`{format-str}':
+This is based on Python's new string formatting mini-language. Include fields
+with the syntax `{format-str}':
 
     -sNoteStringFmt="arXiv:{arxiv.arxivid} [{arxiv.primaryclass}]"
 
@@ -136,13 +153,28 @@ The available fields and subfields are:
     'f' =>  object with all entry's bibtex fields (access as 'f.<FIELD>')
     'arxiv' =>  object with properties: (access as 'arxiv.<FIELD>')
         'primaryclass' =>  primary class, if available
-        'arxivid' =>  the (minimal) arXiv ID (in format XXXX.XXXX  or  archive/XXXXXXX)
+        'arxivid' =>  the (minimal) arXiv ID (in format XXXX.XXXX
+                      or  archive/XXXXXXX)
         'archiveprefix' =>  value of the 'archiveprefix' field
-        'published' =>  True/False <whether this entry was published in a journal other than arxiv
+        'published' =>  True/False <whether this entry was published in a
+                        journal other than arxiv
         'doi' =>  DOI of entry if any, otherwise None
         'year' =>  Year in preprint arXiv ID number. 4-digit, string type.
-        'isoldarxivid' =>  boolean which is True if the arXiv id is of the format 'archive/XXXXXXX'
+        'isoldarxivid' =>  boolean which is True if the arXiv id is of the
+                           old-type format 'archive/XXXXXXX'
+        'isnewarxivid' =>  boolean which is True if the arXiv id is of the
+                           new-type format 'XXXX.XXXX'
 
+You may also use the following presets as fields:
+
+    'notefmt_default' => default format, of the type '{arXiv:XXXX.XXXX
+                         [quant-ph]}' or '{arXiv:quant-ph/XXXXXXX}'
+
+    'notefmt_href'    => default format, produced with a hyperlink using
+                         the \\href command
+
+You may also use the format '{if:(expr)(val-if-true)(val-if-false)}', for
+instance: '{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}'
 
 """
 
@@ -174,6 +206,35 @@ _modes = [
 
 Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
 
+
+
+
+_default_notestring_fmts = {
+    'notefmt_default': (
+        "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}"
+    ),
+    'notefmt_href': (
+        "\\href{{https://arxiv.org/abs/{arxiv.arxivid}}}{{" +
+        "arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}" +
+        "}}"
+    ),
+}
+
+class NoteFmtStrSubFormatter(object):
+    def __init__(self, efmt, fmt):
+        self.efmt = efmt
+        self.fmt = fmt
+
+    def __format__(self, fmtval):
+        if fmtval:
+            raise ValueError("No additional format information expected for {"+self.fmtkey+"}")
+        return self.efmt.format(self.fmt)
+
+def _add_dflt_notestrfmt_keywords(efmt):
+    efmt.addKeywords(dict([
+        (k, NoteFmtStrSubFormatter(efmt, f))
+        for k, f in iteritems(_default_notestring_fmts)
+        ]))
 
 
 # --- the filter object itself ---
@@ -248,8 +309,8 @@ class ArxivNormalizeFilter(BibFilter):
         if (self.note_string and self.note_string_fmt):
             raise BibFilterError('arXiv', "Can't give both -sNoteString and -sNoteStringFmt !")
         if not self.note_string and not self.note_string_fmt:
-            # nothing given, defaults to:
-            self.note_string_fmt = "{{arXiv:{arxiv.arxivid}{if:(arxiv.isnewarxivid)( [{arxiv.primaryclass}])}}}"
+            # nothing given, set default format
+            self.note_string_fmt = "{notefmt_default}"
         self.no_archive_prefix = no_archive_prefix;
         self.default_archive_prefix = default_archive_prefix;
         self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids);
@@ -364,8 +425,10 @@ class ArxivNormalizeFilter(BibFilter):
                 note = self.note_string % TolerantReplacer(d);
             elif (self.note_string_fmt):
                 try:
-                    note = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
-                                                   arxivinfo=arxivinfo).format(self.note_string_fmt)
+                    efmt = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
+                                                   arxivinfo=arxivinfo)
+                    _add_dflt_notestrfmt_keywords(efmt)
+                    note = efmt.format(self.note_string_fmt)
                 except ValueError as e:
                     logger.debug("Got ValueError while trying to format entry, most probably wrong format: %s",
                                  unicodestr(e))

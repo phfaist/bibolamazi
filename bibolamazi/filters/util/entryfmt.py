@@ -33,6 +33,7 @@ import bibolamazi.core.bibolamazifile
 from pybtex.database import BibliographyData, Entry, Person
 
 from bibolamazi.filters.util.arxivutil import ArxivInfoCacheAccessor
+from bibolamazi.core.bibfilter import BibFilterError
 
 
 braces = [ ('{', '}'),
@@ -141,6 +142,9 @@ class EntryFormatter(string.Formatter):
         })
 
 
+    def addKeywords(self, kw):
+        self.d.update(kw)
+
     def format(self, fmt):
         return self.vformat(fmt, [], self.d)
 
@@ -158,4 +162,7 @@ class EntryFormatter(string.Formatter):
         if kwargs is None:
             kwargs = self.d
 
-        return super(EntryFormatter, self).get_value(key, args, kwargs)
+        try:
+            return super(EntryFormatter, self).get_value(key, args, kwargs)
+        except KeyError:
+            raise BibFilterError("<unknown>", "Invalid substitution key: %s"%(key))
