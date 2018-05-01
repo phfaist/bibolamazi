@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -258,7 +265,7 @@ class CiteKeyFilter(BibFilter):
         
         class Jump: pass
         
-        for (key, entry) in bibdata.entries.iteritems():
+        for (key, entry) in iteritems(bibdata.entries):
 
             keyorig = key
             
@@ -312,8 +319,8 @@ def bibolamazi_filter_class():
 
 
 def delatex(s):
-    if (not isinstance(s, unicode)):
-        s = unicode(s.decode('utf-8'))
+    if (not isinstance(s, unicodestr)):
+        s = unicodestr(s.decode('utf-8'))
     return latex2text.latex2text(s);
 
 

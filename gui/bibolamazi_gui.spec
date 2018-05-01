@@ -183,7 +183,7 @@ else:
               debug=True,#False,
               strip=None,
               upx=False,#True,
-              console=True,#False,
+              console=False,
               **kwargs
               )
     
