@@ -728,10 +728,12 @@ class DuplicatesFilter(BibFilter):
             # first, go through the whole bibliography, and make sure that any
             # entry of the form 'xxxxx.conflictkey.N' is a duplicate of 'xxxx'
             rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
+            confldup_entries_to_remove = []
             for (key, entry) in iteritems(bibdata.entries):
                 m = rx_conflictkey.match(key)
                 if not m: # not a conflictkey entry
                     continue
+
                 origkey = m.group('origkey')
 
                 logger.longdebug("Looking at conflictkey entry %s", key)
@@ -749,7 +751,12 @@ class DuplicatesFilter(BibFilter):
 
                 # entries are proper duplicates as expected, remove the conflictkey entry
                 logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s", key, origkey)
-                del bibdata.entries[key]
+
+                # don't delete the entry here, because it will mess up the for loop iteration!
+                #del bibdata.entries[key]
+                confldup_entries_to_remove.append(key)
+            for k in confldup_entries_to_remove:
+                del bibdata.entries[k]
                     
         if self.merge_duplicates or self.warn:
 
@@ -765,7 +772,7 @@ class DuplicatesFilter(BibFilter):
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
                     if same:
-                        logger.debug("Entry %s is duplcate of existing entry %s: %s", key, nkey, reason)
+                        logger.debug("Entry %s is duplicate of existing entry %s: %s", key, nkey, reason)
                         is_duplicate_of = nkey
                         break
                 for (nkey, nentry) in iteritems(unused.entries):
@@ -775,7 +782,7 @@ class DuplicatesFilter(BibFilter):
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
                     if same:
-                        logger.debug("Entry %s is duplcate of existing entry %s: %s", key, nkey, reason)
+                        logger.debug("Entry %s is duplicate of entry %s: %s", key, nkey, reason)
                         is_duplicate_of = nkey
                         duplicate_original_is_unused = True
                         break

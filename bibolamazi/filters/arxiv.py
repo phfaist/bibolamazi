@@ -176,7 +176,7 @@ The following presets may be also used as fields:
     'notefmt_href'    => default format, produced with a hyperlink using
                          the \\href command
 
-    'notefmt_primcl_default', 'notefmt_primcl_href
+    'notefmt_primcl_default', 'notefmt_primcl_href'
                       => same as default formats, but with the primary class
                          added for new-style IDs, e.g.
                          '{arXiv:XXXX.XXXX [quant-ph]}'

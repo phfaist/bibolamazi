@@ -170,6 +170,8 @@ def resolve_type(typename, in_module=None):
     raise ValueError("Unknown type name: %s"%(typename))
 
 
+_rx_quotearg_oknames = re.compile(r'^[-\w./:~%#]+$')
+
 def quotearg(x):
     """
     If `x` contains only non-special characters, it is returned as is.  The
@@ -188,7 +190,9 @@ def quotearg(x):
     >>> print(quotearg(r'''really\\dirty\"name::with/tons&#$of special chars!!!'''))
     \"really\\\\dirty\\\"name::with/tons&#$of special chars!!!\"
     """
-    if (re.match(r'^[-\w./:~%#]+$', x)):
+    if not x:
+        return ""
+    if (_rx_quotearg_oknames.match(x)):
         # only very sympathetic chars
         return x
     return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';

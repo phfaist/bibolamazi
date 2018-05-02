@@ -126,6 +126,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._fopts = None
         self._optionstring = None
         self._optionstring_error = None
+        self._optionstring_softerror = None
         
         self.setFilterName(filtername)
 
@@ -133,6 +134,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     optionStringChanged = pyqtSignal(str)
 
     optionStringSetError = pyqtSignal(str)
+    optionStringSetSoftError = pyqtSignal(str)
     optionStringClearError = pyqtSignal()
 
 
@@ -141,6 +143,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     def errorString(self):
         return self._optionstring_error
+
+    def softErrorString(self):
+        return self._optionstring_softerror
 
     @pyqtSlot(str)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
@@ -156,17 +161,20 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         
         self._filtername = filtername
 
+        self.beginResetModel()
         self._fopts = None
         try:
             # remember: FilterInfo() may also raise NoSuchFilter
             self._finfo = filters_factory.FilterInfo(filtername)
             self._fopts = self._finfo.defaultFilterOptions()
-        except (NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
+        except Exception as e: #(NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
             stre = str(e)
             logger.warning("Error:: %s", stre)
             self._optionstring_error = stre
             self.optionStringSetError.emit(stre)
             return
+        finally:
+            self.endResetModel()
 
         # self.optionStringClearError will be emitted, if appropriate after
         # successful parsing of option string
@@ -207,37 +215,45 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             if not errstr:
                 errstr = "Unknown error"
             self._optionstring_error = errstr
+            # emit regardless of noemit; noemit refers to content changes...
             self.optionStringSetError.emit(errstr)
             return
 
         if self._optionstring_error is not None:
+            # reset any earlier error
             self._optionstring_error = None
+            self.optionStringClearError.emit()
+
+        # if the arguments are syntactically valid, but semantically invalid,
+        # then display an error string but let the user edit the options anyway
+        filter_opts_valid = True
+        try:
+            (xpargs, xkwargs) = self._finfo.parseOptionStringArgs(optionstring)
+            self._finfo.validateOptionStringArgs(xpargs, xkwargs)
+        except Exception as e:
+            logger.debug("option string is invalid for filter, displaying error")
+            errstr = str(e)
+            if not errstr:
+                errstr = "Invalid option string (unknown error)"
+            self._optionstring_softerror = errstr
+            # emit regardless of noemit; noemit refers to content changes...
+            self.optionStringSetSoftError.emit(errstr)
+            # ... but proceed here ...
+            filter_opts_valid = False
+
+        if filter_opts_valid and self._optionstring_softerror is not None:
+            # reset any earlier soft error
+            self._optionstring_softerror = None
             self.optionStringClearError.emit()
 
         self._optionstring = optionstring
 
+        # optspec from above. Use user-input, not deduced ones with filter's
+        # default values, as parseOptionStringArgs() etc. returns!!
         pargs = optspec['_args']
+        kwargs = optspec['kwargs']
         if pargs is None:
             pargs = []
-        kwargs = optspec['kwargs']
-
-        # NEW IN BIBOLAMAZI v3 : NO. pargs are ONLY given to the *args of the filter, and
-        # never distributed to declared arguments as for a python function call. (That was
-        # unnatural and confusing behavior.)
-        #
-        # # treat pargs as arguments to the function. These are usually declared arguments, simply
-        # # provided without the key.
-        # i = 0
-        # argoptlist = self._fopts.filterDeclOptions()
-        # while (len(pargs) and i < len(argoptlist)):
-        #     # this parg corresponds to a kwarg.
-        #     arg = argoptlist[i]
-        #     if (arg.argname in kwargs):
-        #         logger.warning("argument `%s' already given.", arg.argname)
-        #         # don't pass this argument; stop argument parsing.
-        #         break
-        #     kwargs[arg.argname] = pargs.pop(0) # pop out first value into kwargs
-        #     i = i + 1 # next declared argument in argoptlist
 
         self._pargs = pargs
         self._kwargs = kwargs
@@ -591,7 +607,6 @@ class FilterInstanceEditor(QWidget):
         self.ui.lstOptions.selectionModel().currentChanged.connect(self.option_selected)
 
         self._filteroptionsmodel.optionStringChanged.connect(self.filterOptionsChanged)
-        ##self._filteroptionsmodel.dataChanged.connect(self._filteroptionsdelegate.update_buttons)
 
         self._filterargbtn = overlistbuttonwidget.OverListButtonWidget(self.ui.lstOptions)
         self._filterargbtn.removeClicked.connect(self._filteroptionsmodel.removeArgument)
@@ -600,6 +615,7 @@ class FilterInstanceEditor(QWidget):
 
         self._filteroptionsmodel.optionStringChanged.connect(self._filterargbtn.updateDisplay)
         self._filteroptionsmodel.optionStringSetError.connect(self.show_optionstring_error)
+        self._filteroptionsmodel.optionStringSetSoftError.connect(self.show_optionstring_softerror)
         self._filteroptionsmodel.optionStringClearError.connect(self.clear_optionstring_error)
 
         self._is_updating = False
@@ -625,6 +641,9 @@ class FilterInstanceEditor(QWidget):
     def errorString(self):
         return self._filteroptionsmodel.errorString()
 
+    def softErrorString(self):
+        return self._filteroptionsmodel.softErrorString()
+
     @pyqtSlot(str, bool)
     @pyqtSlot(str)
     def setFilterName(self, filtername, noemit=False, force=False, reset_optionstring=True):
@@ -647,16 +666,18 @@ class FilterInstanceEditor(QWidget):
 
     @pyqtSlot(str)
     def setOptionString(self, optionstring, noemit=False, force=False):
-        logger.debug("setOptionString(%s)", optionstring)
+        logger.debug("setOptionString(%r)", optionstring)
         self._filteroptionsmodel.setOptionString(optionstring, force=force, noemit=noemit)
         self.option_selected(self.ui.lstOptions.selectionModel().currentIndex())
         #self.ui.lstOptions.resizeColumnToContents(0)
         #self.ui.lstOptions.setColumnWidth(0, self.ui.lstOptions.width()/3)
         #self.ui.lstOptions.setColumnWidth(1, 100)
         ##self._filteroptionsdelegate.update_buttons()
+        logger.debug("setOptionString() done")
 
     def setFilterInstanceDefinition(self, filtername, optionstring, noemit=False):
-        logger.debug("setFilterInstanceDefinition()")
+        logger.debug("setFilterInstanceDefinition(filtername=%r, optionstring=%r, noemit=%r)",
+                     filtername, optionstring, noemit)
         self.setFilterName(filtername, noemit=noemit, force=True, reset_optionstring=True)
         self.setOptionString(optionstring, noemit=noemit)
 
@@ -666,6 +687,11 @@ class FilterInstanceEditor(QWidget):
         self.ui.lblErrorMsg.setText("Error: " + errstr)
         self.ui.lblErrorMsg.setVisible(True)
         self.ui.lstOptions.setEnabled(False)
+
+    @pyqtSlot(str)
+    def show_optionstring_softerror(self, errstr):
+        self.ui.lblErrorMsg.setText("Invalid options: " + errstr)
+        self.ui.lblErrorMsg.setVisible(True)
 
     @pyqtSlot()
     def clear_optionstring_error(self):

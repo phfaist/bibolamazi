@@ -1230,6 +1230,11 @@ class DefaultFilterOptions(object):
         either with the ``--keyword=value`` syntax or with the syntax ``-sKey=Value``. The
         corresponding value is converted to the type the filter expects, in each case
         whenever possible (i.e. documented by the filter).
+
+        NOTE: This function doesn't actually validate all options to check
+        whether the filter will accept them (e.g., options like '-sKey=Value'
+        will be blindly appended to the kwargs). See
+        :py:meth:`FilterInfo.validateOptionStringArgs()` for that.
         """
 
         logger.debug("parse_optionstring: "+self._filtername+"; fclass="+repr(self._fclass)
@@ -1381,7 +1386,7 @@ class DefaultFilterOptions(object):
                 fdeclpargs.append(defaultval)
         # ensure that all filter-declared arguments have values, then add all remaining args for *args.
         pargs = fdeclpargs + pargs
-                    
+        
         return (pargs, kwargs)
 
 
