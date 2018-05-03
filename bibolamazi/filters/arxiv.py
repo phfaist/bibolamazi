@@ -274,7 +274,7 @@ class ArxivNormalizeFilter(BibFilter):
                  no_archive_prefix=False,
                  default_archive_prefix="arXiv",
                  no_primary_class_for_old_ids=False,
-                 no_primary_class=False,
+                 no_primary_class=True,
                  theses_count_as_published=False,
                  warn_journal_ref=True):
         """
@@ -300,6 +300,7 @@ class ArxivNormalizeFilter(BibFilter):
                    is set if the entry has an "old" arXiv ID identifier already containing the
                    primary-class, e.g. "quant-ph/YYYYZZZ".
           - no_primary_class(bool): if True, then the `primaryclass' field is always stripped.
+                   (True by default)
           - theses_count_as_published(bool): if True, then entries of type @phdthesis and
                    @mastersthesis count as published entries, otherwise not (the default).
           - warn_journal_ref(bool): if True, then for all articles that look unpublished in our

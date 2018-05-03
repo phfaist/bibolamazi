@@ -275,6 +275,12 @@ def parse_filterpackage_argstr(argstr):
         fpname = fpparts[0].strip()
         fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
 
+    if not fpdir:
+        fpdir = '.' # allow to search filter packages from '.' directory.  Note
+                    # that when parsing package: directives in a bibolamazifile,
+                    # then BibolamaziFile automatically converts this '.' into a
+                    # bibolamazifile-relative dir.
+
 
     if not fpname or re.search(r'[^a-zA-Z0-9_\.]', fpname):
         raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
