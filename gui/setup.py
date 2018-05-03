@@ -43,7 +43,11 @@ setup(
 
     packages = ['bibolamazi_gui', 'bibolamazi_gui.qtauto'],
     zip_safe = True,
-    scripts = ['bin/bibolamazi_gui'],
+    #scripts = ['bin/bibolamazi_gui'],
+    entry_points = {
+        'console_scripts': ['bibolamazi_gui=bibolamazi_gui.bibolamazi_gui:main'],
+    },
+
 
     # make sure we have the same bibolamazi version. Since the GUI uses (some internals?)
     # of the bibolamazi library, make sure we have the same version.

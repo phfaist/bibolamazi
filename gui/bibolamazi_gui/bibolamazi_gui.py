@@ -48,7 +48,7 @@ import bibolamazi.init
 from bibolamazi.core import blogger
 
 from bibolamazi.core import bibolamazifile
-from bibolamazi.core import main
+#from bibolamazi.core import main as bibolamazi_main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
@@ -80,7 +80,7 @@ def setup_qt5_plugins_path():
 
 
 
-def run_main():
+def main():
 
     blogger.setup_simple_console_logging(level=logging.DEBUG)
 
@@ -99,7 +99,7 @@ def run_main():
     else:
         logging.getLogger().setLevel(log_level)
 
-    logger.debug("run_main: log level set to %r", log_level)
+    logger.debug("main: log level set to %r", log_level)
 
 
     # setup Qt paths!
@@ -125,4 +125,4 @@ def run_main():
 
 if __name__ == '__main__':
 
-    run_main()
+    main()

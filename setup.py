@@ -40,7 +40,8 @@ install_requires = _parse_requires('pip_requirements.txt'),
 sys.stderr.write("(Requirements: %s)\n\n\n" % (install_requires))
 
 
-packages = find_packages(include=['bibolamazi.*'], exclude=['bibolamazi_gui', 'bibolamazi_gui.*'])
+packages = find_packages(include=['bibolamazi', 'bibolamazi.*'],
+                         exclude=['bibolamazi_gui', 'bibolamazi_gui.*'])
 #print("packages = %r"%packages)
 
 setup(
@@ -69,7 +70,11 @@ setup(
 
     packages = packages,
     zip_safe = True,
-    scripts = ['bin/bibolamazi'],
+
+    #scripts = ['bin/bibolamazi'],
+    entry_points = {
+        'console_scripts': ['bibolamazi=bibolamazi.core.main:main'],
+    },
 
     install_requires = install_requires,
 
