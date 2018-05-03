@@ -44,5 +44,5 @@ from bibolamazi_gui import bibolamazi_gui
 
 # run main program
 
-bibolamazi_gui.run_main()
+bibolamazi_gui.main()
 
