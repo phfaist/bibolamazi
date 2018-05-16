@@ -180,7 +180,7 @@ else:
               a.zipfiles,
               a.datas,
               name=exename,
-              debug=True,#False,
+              debug=False,
               strip=None,
               upx=False,#True,
               console=False,
