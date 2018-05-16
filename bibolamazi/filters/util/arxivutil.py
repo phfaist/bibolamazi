@@ -441,12 +441,12 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                     For more information, see https://arxiv.org/help/robots.
                     """))
             logger.warning("HTTP connection error %d: %s.", error.code, error.reason)
-            logger.warning("ArXiv API information will not be retreived, and your bibliography "
+            logger.warning("ArXiv API information will not be retrieved, and your bibliography "
                            "might be incomplete.")
             return False
         except URLError as error:
             logger.warning("Error fetching info from arXiv.org: %s.", error.reason)
-            logger.warning("ArXiv API information will not be retreived, and your bibliography "
+            logger.warning("ArXiv API information will not be retrieved, and your bibliography "
                            "might be incomplete.")
             return False
 
@@ -605,14 +605,14 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 # compare overlap only, so that 'cond-mat' and 'cond-mat.stat-mech' don't generate the warning
                 entrydic[k]['primaryclass'][:len(primaryclass)] != primaryclass[:len(entrydic[k]['primaryclass'])]):
                 logger.warning("Conflicting primaryclass values for entry %s (%s): "
-                               "%s (given in bibtex) != %s (retreived from the arxiv)",
+                               "%s (given in bibtex) != %s (retrieved from the arxiv)",
                                k, aid, entrydic[k]['primaryclass'], primaryclass)
             else:
                 entrydic[k]['primaryclass'] = primaryclass
 
             if (doi and entrydic[k]['doi'] and entrydic[k]['doi'] != doi):
                 logger.warning("Conflicting doi values for entry %s (%s): "
-                               "%s (given in bibtex) != %s (retreived from the arxiv)",
+                               "%s (given in bibtex) != %s (retrieved from the arxiv)",
                                k, aid, entrydic[k]['doi'], doi)
             else:
                 entrydic[k]['doi'] = doi
