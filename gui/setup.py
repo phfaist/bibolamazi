@@ -10,11 +10,18 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirnam
 from bibolamazi_gui import version as bibolamaziversion
 
 sys.stderr.write("""
-NOTE: You'll have to make sure that `PyQt4` is installed in order to use
-`bibolamazi_gui`. We unfortunately can't enforce this requirement when you run
-`pip install`, because PyQt4 isn't packaged with distutils/setuptools.
+NOTE: You'll have to make sure that `PyQt5` is installed in order to use
+`bibolamazi_gui`. We unfortunately can't install this requirement automatically
+when you run `pip install` because of technical issues.
 
-""")
+""") # "technical issues" == https://stackoverflow.com/a/4628806/1694896
+
+
+try:
+    import PyQt5
+except ImportError:
+    sys.stderr.write("Please install PyQt5, for instance by running:\n\n    pip install pyqt5\n\n")
+    raise RuntimeError("PyQt5 required")
 
 
 setup(
@@ -52,7 +59,7 @@ setup(
     # make sure we have the same bibolamazi version. Since the GUI uses (some internals?)
     # of the bibolamazi library, make sure we have the same version.
     #
-    # we should NOT list PyQt4 here, because of http://stackoverflow.com/a/4628806/1694896 .
+    # we should NOT list PyQt5 here, because of https://stackoverflow.com/a/4628806/1694896 .
     install_requires = [
         'bibolamazi=='+bibolamaziversion.version_str,
         'markdown2',
