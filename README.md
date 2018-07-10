@@ -19,8 +19,8 @@ Download the binary for your system, place it wherever you want, and run
 them. On Mac OS X, place the application bundle `Bibolamazi.app` into your
 `/Applications/` folder.
 
-If you prefer to use the command-line interface, you should clone this
-repository; check out [the docs][thedocsdownloadandinstall].
+If you prefer to use the command-line interface, you can install bibolamazi
+using `pip`; check out [the docs][thedocsdownloadandinstall].
 
 [thedocsdownloadandinstall]: http://bibolamazi.readthedocs.org/en/latest/download-and-install/
 
