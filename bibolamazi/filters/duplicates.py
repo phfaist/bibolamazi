@@ -515,9 +515,9 @@ class DuplicatesFilter(BibFilter):
 
     def getRunningMessage(self):
         if (self.dupfile):
-            return (u"processing duplicate entries. Don't forget to insert `\\input{%s}' in "
+            return ("Processing duplicate entries. Don't forget to insert `\\input{%s}' in "
                     "your LaTeX file!" %(self.dupfile) )
-        return u"processing duplicate entries"
+        return "Processing duplicate entries"
     
 
     def action(self):

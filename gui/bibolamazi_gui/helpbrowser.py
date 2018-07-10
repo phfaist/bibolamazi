@@ -56,6 +56,20 @@ logger = logging.getLogger(__name__)
 
 
 
+def getCssHelpStyle(fontsize='medium', fontsize_big='large', fontsize_code='medium', fontsize_small='small'):
+    return _HTML_CSS % {'fontsize': fontsize,
+                        'fontsize_big': fontsize_big,
+                        'fontsize_code': fontsize_code,
+                        'fontsize_small': fontsize_small}
+
+def wrapInHtmlContentContainer(htmlcontent, width=None):
+    if width is None:
+        width = TABLE_WIDTH
+    return ("<table width=\""+str(width)+"\" style=\"margin-left:50px\">" +
+            "<tr><td class=\"content\">" +
+            htmlcontent +
+            "</td></tr></table>")
+
 _HTML_CSS = '''
 html, body {
   background-color: #ffffff;
@@ -88,6 +102,9 @@ code {
 .shadow {
   color: #a0a0a0;
 }
+.small {
+  font-size: %(fontsize_small)s;
+}
 pre { margin-left: 25px; }
 pre.txtcontent { margin-left: 0px; }
 a { color: #0000a0; text-decoration: none }
@@ -102,6 +119,7 @@ li {
 }
 dt {
   font-weight: bold;
+  margin-left: 50px;
 }
 dd {
   margin-left: 100px;
@@ -128,7 +146,7 @@ td p.inner {
 }
 '''
 
-TABLE_WIDTH = "600"
+TABLE_WIDTH = 600
 
 
 
@@ -166,26 +184,25 @@ class HelpTopicPage(object):
 
     def contentAsHtml(self):
         html_top = ("<html><head><style type=\"text/css\">" +
-                    _HTML_CSS % {'fontsize': "medium",
-                                 'fontsize_big': "large",
-                                 'fontsize_code': "medium" } +
+                    getCssHelpStyle() +
                     "</style></head>" +
-                    "<body><table width=\""+TABLE_WIDTH+"\" style=\"margin-left:50px\">" +
-                    "<tr><td class=\"content\">")
-        html_bottom = "</td></tr></table></body></html>"
+                    "<body>")
+        html_bottom = "</body></html>"
         if self._content_type == 'txt':
             return (html_top
-                    + "<pre class=\"txtcontent\">" + htmlescape(self._content) + "</pre>"
+                    + wrapInHtmlContentContainer("<pre class=\"txtcontent\">" + htmlescape(self._content) + "</pre>")
                     + html_bottom)
         elif self._content_type == 'markdown':
             return (html_top
-                    + markdown2.markdown(self._content,
-                                         extras=["footnotes", "fenced-code-blocks", "smarty-pants", "tables"])
+                    + wrapInHtmlContentContainer(
+                        markdown2.markdown(self._content,
+                                           extras=["footnotes", "fenced-code-blocks", "smarty-pants", "tables"])
+                    )
                     + html_bottom)
         elif self._content_type == 'html':
             return self._content
         elif self._content_type == 'htmlfragment':
-            return html_top + self._content + html_bottom
+            return html_top + wrapInHtmlContentContainer(self._content) + html_bottom
         else:
             raise ValueError("Can't convert %s to markdown"%(self._content_type))
 
@@ -416,7 +433,7 @@ def _mk_filter_list_page():
         html += "<table>"
         for f in fplist:
             html += ("<tr><th><a href=\"/filters/{filtname}\">{filtname}</a></th></tr>"+
-                     "<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">{filtdesc}</td></tr>").format(
+                     "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
                          filtname=f,
                          filtdesc=filters_factory.get_filter_class(f, filterpackage=fp).getHelpDescription()
                      )
@@ -446,11 +463,11 @@ def _mk_filter_help_page(filtname):
 
         html += "<h2>Filter Options:</h2>\n\n"
 
-        html += "<table width=\""+TABLE_WIDTH+"\">"
+        html += "<table width=\""+str(TABLE_WIDTH)+"\">"
 
         for arg in fopt.filterOptions():
             html += "<tr><th>" + htmlescape(fopt.getSOptNameFromArg(arg.argname)) + "</th></tr>"
-            html += "<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">"
+            html += "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">"
             html += "<p class=\"inner\">" + htmlescape(arg.doc) + "</p>"
 
             if arg.argtypename:
@@ -471,11 +488,11 @@ def _mk_filter_help_page(filtname):
 
         if fopt.filterAcceptsVarArgs():
             html += "<tr><th>(...)</th></tr>"
-            html += ("<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">This filter accepts "
+            html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
                      "additional positional arguments (see doc below)</td></tr>")
         if fopt.filterAcceptsVarKwargs():
             html += "<tr><th>(...=...)</th></tr>"
-            html += ("<tr><td class=\"indent\" width=\""+TABLE_WIDTH+"\">This filter accepts "
+            html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
                      "additional named/keyword arguments (see doc below)</td></tr>")
 
         html += "</table>"

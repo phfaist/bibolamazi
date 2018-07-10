@@ -60,6 +60,7 @@ from .favorites import FavoriteCmd, FavoritesModel, FavoritesItemDelegate, Favor
 from . import filterinstanceeditor
 from . import filterpackagepatheditor
 from . import settingswidget
+from . import helpbrowser
 
 from .qtauto.ui_openbibfile import Ui_OpenBibFile
 
@@ -508,6 +509,16 @@ class OpenBibFile(QWidget):
             s = self.bibolamaziFile.resolveSourcePath(s)
             return 'file:///'+s
 
+        fileinfo = "<p>Location: <code>" + htmlescape(self.bibolamaziFile.fname()) + "</code></p>"
+
+        rawheader = self.bibolamaziFile.rawHeader()
+        if rawheader.strip():
+            fileinfo += ("<h2>Raw Header</h2>\n"
+                         "<p class=\"shadow\">These instructions are present in the "
+                         "header of the bibolamazi file and cannot be edited here.  Open "
+                         "the bibolamazi file with your favorite text editor to edit.</p>"
+                         "<pre class=\"small\">" + htmlescape(rawheader) + "</pre>")
+
         sources = []
         for srcline in self.bibolamaziFile.sourceLists():
             if (isinstance(srcline, list)):
@@ -529,43 +540,41 @@ class OpenBibFile(QWidget):
                 
         filters = []
         for fil in self.bibolamaziFile.filters():
-            filters.append('''<div class="filter"><div class="filtertitle">Filter: <a href="helptopic:/filters/%(filtername)s">%(filtername)s</a></div><div class="filterdescription">%(filterdescription)s</div></div>''' % { 'filtername': fil.name(),
+            filters.append('''<dt>Filter: <a href="helptopic:/filters/%(filtername)s">%(filtername)s</a></dt><dd><p>%(filterdescription)s</p></dd>''' % { 'filtername': fil.name(),
                      'filterdescription': fil.getHelpDescription(),
                     })
 
+        htmlcontent = textwrap.dedent("""\
+        <h1>File information</h1>
+        %(fileinfohtml)s
+        <h1>Sources</h1>
+        %(sourceshtml)s
+        <h1>Filters</h1>
+        %(filtershtml)s
+        """) % {
+            'fileinfohtml': fileinfo,
+            'sourceshtml': "".join(sources),
+            'filtershtml': "".join(filters),
+        }
+
         thehtml = textwrap.dedent('''\
-        <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-        <html><head>
-            <meta name="qrichtext" content="1" />
+        <!DOCTYPE HTML>
+        <html>
+          <head>
             <style type="text/css">
-              body {
-                white-space: normal;
-                margin: 0px;
-                padding: 0px;
-              }
-              .container {
-                margin: 0px;
-                padding-top: 20px;
-              }
-              h1 {
-                font-weight: bold;
-                font-size: 1.2em;
-                color: rgb(0,127,127);
-                margin: 0.5em 0px 0px;
-                padding: 0px;
-              }
-              ul, li { margin: 0px; }
-              p, li { white-space: normal }
-              a { text-decoration: none; }
+              %(basecss)s
               .source { margin: 0.5em 0px 0px 0px; }
               .filter { margin: 0.3em 0px 0px 0px; }
               .filterdescription { font-style: italic; margin-left: 2.5em; }
             </style>
-          </head><body><div class="container"><h1>Sources</h1>%(sourceshtml)s<h1>Filters</h1>%(filtershtml)s</div></body></html>''') % {
-            'sourceshtml': "".join(sources),
-            'filtershtml': "".join(filters)
-            }
-
+          </head>
+          <body>
+            %(content)s
+          </body>
+        </html>''') % {
+            'basecss': helpbrowser.getCssHelpStyle(),
+            'content': helpbrowser.wrapInHtmlContentContainer(htmlcontent, width=800)
+        }
         self.ui.txtInfo.setHtml(thehtml)
         
 

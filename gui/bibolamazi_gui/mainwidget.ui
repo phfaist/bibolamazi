@@ -62,21 +62,29 @@
      <property name="title">
       <string>Open bibolamazi file or create new bibolamazi file</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>20</number>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="horizontalSpacing">
+       <number>5</number>
       </property>
-      <item>
+      <item row="0" column="0">
        <widget class="QPushButton" name="btnOpenFile">
         <property name="text">
          <string>Open Bibolamazi File ...</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0" colspan="2">
        <widget class="QPushButton" name="btnNewFile">
         <property name="text">
          <string>Create New Bibolamazi File ...</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QToolButton" name="btnOpenRecent">
+        <property name="icon">
+         <iconset resource="bibolamazi_res.qrc">
+          <normaloff>:/pic/lstbtnedit.png</normaloff>:/pic/lstbtnedit.png</iconset>
         </property>
        </widget>
       </item>

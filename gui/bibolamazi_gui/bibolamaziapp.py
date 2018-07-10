@@ -104,6 +104,71 @@ class BibolamaziApplication(QApplication):
 
 
 
+class RecentFile(object):
+    def __init__(self, fname, date):
+        self.fname = fname
+        self.date = date
+
+
+MAX_RECENT_FILES = 10
+
+class RecentFilesList(QObject):
+    def __init__(self, parent):
+        super(RecentFilesList,self).__init__(parent)
+        self.files = []
+
+    filesChanged = pyqtSignal()
+
+    def loadFromSettings(self, settings):
+        settings.beginGroup("RecentFiles")
+
+        self.files[:] = []
+        
+        siz = settings.beginReadArray("filelist")
+        for i in range(siz):
+            settings.setArrayIndex(i)
+            fname = settings.value("fname")
+            if fname is None: fname = ''
+            fname = str(fname)
+            date = settings.value("date")
+            if date is None: date = QDate.currentDate()
+            date = QDate(date).toPyDate()
+            self.files.append(RecentFile(fname=fname, date=date))
+        settings.endArray()
+
+        settings.endGroup()
+
+        self.filesChanged.emit()
+
+    def saveToSettings(self, settings):
+        settings.beginGroup("RecentFiles")
+
+        settings.beginWriteArray("filelist", len(self.files))
+        for i,f in enumerate(self.files):
+            settings.setArrayIndex(i)
+            settings.setValue("fname", str(f.fname))
+            settings.setValue("date", QDate(f.date))
+        settings.endArray()
+
+        settings.endGroup()
+
+    def addRecentFile(self, fname):
+        fp = os.path.realpath(os.path.abspath(fname))
+        existing = False
+        for i, rf in enumerate(self.files):
+            if rf.fname == fp:
+                self.files[i].date = datetime.date.today()
+                existing = True
+        if not existing:
+            self.files.insert(0, RecentFile(fp, datetime.date.today()))
+        self.files.sort(key=lambda x: x.date, reverse=True) # most recent first
+        # drop old files
+        if len(self.files) > MAX_RECENT_FILES:
+            self.files[:] = self.files[:MAX_RECENT_FILES]
+        self.filesChanged.emit()
+    
+
+
 
 class MainWidget(QWidget):
     def __init__(self):
@@ -138,6 +203,15 @@ class MainWidget(QWidget):
 
         self.favoriteCmdsList = FavoriteCmdsList(parent=self)
         self.favoriteCmdsList.loadFromSettings(QSettings())
+
+        self.recentFilesList = RecentFilesList(parent=self)
+        self.recentFilesList.loadFromSettings(QSettings())
+        self.recentFilesMenu = QMenu(parent=self)
+        self.recentFilesActions = {}
+        self._update_recent_files_menu()
+        self.ui.btnOpenRecent.setMenu(self.recentFilesMenu)
+        self.ui.btnOpenRecent.clicked.connect(self.ui.btnOpenRecent.showMenu)
+        self.recentFilesList.filesChanged.connect(self._update_recent_files_menu)
 
         self.menubar = None
         self.shortcuts = []
@@ -222,6 +296,7 @@ class MainWidget(QWidget):
                 #print 'adding action with key %s' %(key)
                 a.setShortcutContext(Qt.ApplicationShortcut)
 
+
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
 
@@ -257,11 +332,46 @@ class MainWidget(QWidget):
 
         w.requestHelpTopic.connect(self.openHelpTopic)
 
+        self.recentFilesList.addRecentFile(fname)
+
 
     @pyqtSlot('QString')
     def openHelpTopic(self, path):
         self.on_btnHelp_clicked()
         self.helpbrowser.openHelpTopic(path)
+
+
+    def _update_recent_files_menu(self):
+
+        files = self.recentFilesList.files
+
+        self.recentFilesMenu.clear()
+
+        if not files:
+            self.ui.btnOpenRecent.setEnabled(False)
+            return
+        self.ui.btnOpenRecent.setEnabled(True)
+
+        # file name title to show in menu -- add some path information in case
+        # file names are the same
+        def fpathitems(fpath, num=3):
+            p, f = os.path.split(fpath)
+            if not f: return []
+            if num <= 1:
+                return [f]
+            return fpathitems(p, num-1) + [f]
+        def ftitle(fname):
+            fpath, fn = os.path.split(fname)
+            return fn + " (" + os.sep.join(fpathitems(fpath)) + ")"
+
+        for rf in files:
+            if rf.fname not in self.recentFilesActions:
+                a = QAction(ftitle(rf.fname), self)
+                a.triggered.connect(self._openRecentFileSlot)
+                a.setProperty("recentFileName", rf.fname)
+                self.recentFilesActions[rf.fname] = a
+
+            self.recentFilesMenu.addAction(self.recentFilesActions[rf.fname])
 
 
     @pyqtSlot()
@@ -292,6 +402,13 @@ class MainWidget(QWidget):
 
         
     @pyqtSlot()
+    def _openRecentFileSlot(self):
+        action = self.sender()
+        fname = action.property("recentFileName")
+        self.openFile(fname)
+
+
+    @pyqtSlot()
     def on_btnNewFile_clicked(self):
 
         dlg = NewBibolamazifileDialog(self)
@@ -299,7 +416,7 @@ class MainWidget(QWidget):
         dlg.bibolamaziFileCreated.connect(self.openFile)
 
         dlg.show()
-            
+        
 
     @pyqtSlot()
     def on_btnHelp_clicked(self):
@@ -350,6 +467,7 @@ class MainWidget(QWidget):
             self.helpbrowser.close()
 
         self.favoriteCmdsList.saveToSettings(QSettings())
+        self.recentFilesList.saveToSettings(QSettings())
 
         super(MainWidget, self).closeEvent(event)
 
