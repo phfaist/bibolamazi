@@ -94,19 +94,11 @@ BIBALIAS_LATEX_DEFINITIONS = r"""
 }
 
 
-%
-% Note: The `\cite` command provided here does not accept spaces in/between its
-% arguments. This might be tricky, since revTeX does accept those spaces. You
-% can work around by using LaTeX comments which automatically remove the
-% following space after newline, in the following way:
-%
-%    \cite{key1,%
-%          key2,%
-%          key3%
-%    }
-%
-% Make sure you don't add space between the comma and the percent sign.
-%
+% Code taken from from etextools.sty, apparently originally borrowed from environ.sty
+\newcommand\biba@deblank[1]{\romannumeral\biba@deblank@#1/ /} % dark magic. stay away
+\long\def\biba@deblank@#1 /{\biba@deblank@i#1/}
+\long\def\biba@deblank@i#1/#2{\z@#1}
+
 
 \newtoks\biba@toks
 \let\bibalias@oldcite\cite
@@ -124,8 +116,11 @@ BIBALIAS_LATEX_DEFINITIONS = r"""
   \biba@toks{\bibalias@oldcite#1}%
   \def\biba@comma{}%
   \def\biba@all{}%
+  \def\biba@argkeys{}%
   \@for\biba@one@:=#2\do{%
     \edef\biba@one{\expandafter\@firstofone\biba@one@\@empty}%
+    \edef\biba@one{\expandafter\biba@deblank\expandafter{\biba@one}}% remove whitespace
+    \edef\biba@argkeys{\biba@argkeys\biba@comma\biba@one}%
     \@ifundefined{bibali@\biba@one}{%
       \edef\biba@all{\biba@all\biba@comma\biba@one}%
     }{%
@@ -138,10 +133,9 @@ BIBALIAS_LATEX_DEFINITIONS = r"""
   }%
   %
   % However, still write in the .aux file a dummy \citation{...} command, so that
-  % filters.util.auxfile will still catch those used citations....
+  % filters.util.auxfile will still catch those used citations
   %
-  %\immediate\write\@auxout{\noexpand{\bgroup\renewcommand\citation[1]{}\citation{#2}\egroup}}
-  \immediate\write\@auxout{\noexpand\bgroup\noexpand\renewcommand\noexpand\citation[1]{}\noexpand\citation{#2}\noexpand\egroup}%
+  \immediate\write\@auxout{\noexpand\bgroup\noexpand\renewcommand\noexpand\citation[1]{}\noexpand\citation{\biba@argkeys}\noexpand\egroup}%
   %
   % Now, produce the \cite command with the original keys instead of the aliases
   %

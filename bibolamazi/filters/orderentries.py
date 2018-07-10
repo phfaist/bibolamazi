@@ -133,22 +133,27 @@ class OrderEntriesFilter(BibFilter):
             arxivaccessor = arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
 
             def getpubdate(key):
+                def mkdkey(date, articleid):
+                    return (date, articleid,)
+
                 entry = entries.get(key)
                 if entry is None:
-                    return datetime.today()
+                    return mkdkey(datetime.today(), 0)
                 fields = entry.fields
 
                 arxivinfo = arxivaccessor.getArXivInfo(key);
                 if arxivinfo is not None and not arxivinfo['published']:
                     # use arxiv ID information only if entry is not published--otherwise,
                     # try to get actual publication date.
-                    m = re.match(r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(\d{3}|\.\d{4,})$',
+                    m = re.match(r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(?P<articleid>\d{3}|\.\d{4,})$',
                                  arxivinfo['arxivid'])
                     if m is not None:
                         try:
-                            year =  ( int(m.group('year')) - 1990 ) % 100  +  1990;
-                            month = int(m.group('month'));
-                            return datetime.date(year, month, 1);
+                            year =  ( int(m.group('year')) - 1990 ) % 100  +  1990
+                            month = int(m.group('month'))
+                            articleid = m.group('articleid')
+                            articleid = articleid[1:] if articleid[0] == '.' else articleid
+                            return mkdkey(datetime.date(year, month, 1), int(articleid))
                         except ValueError:
                             pass
                 
@@ -180,15 +185,15 @@ class OrderEntriesFilter(BibFilter):
                     day = calendar.monthrange(year, month)[1];
 
                 try:
-                    return datetime.date(year, month, day)
+                    return mkdkey(datetime.date(year, month, day), 0)
                 except ValueError as e:
                     logger.warning("Can't parse date for entry %s: %s", key, e)
-                    return datetime.date.today()
+                    return mkdkey(datetime.date.today(), 0)
 
             def getentrysortkey(key):
-                # use tuple with key to always keep consistent sorting order between
-                # entries with same detected publication date (happens often if only
-                # month/year detected)
+                # use tuple with key to always keep consistent sorting order
+                # between entries with same detected publication date (happens
+                # often if only month/year detected)
                 return (getpubdate(key), key)
 
             # see above. Note the "not reverse" because the date key will sort

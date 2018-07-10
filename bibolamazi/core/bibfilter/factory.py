@@ -694,7 +694,7 @@ def get_filter_class(name, filterpackage=None, filterpath=filterpath, fmodule=No
         argspec = inspect_getargspec(simple_filter_fn)
         nargs = argspec[0]
         # one value for EACH argument (first values set to None)
-        argdefvals = argspec[3]
+        argdefvals = argspec[3] if argspec[3] is not None else []
         argdefvals = [None]*(len(nargs)-len(argdefvals)) + list(argdefvals)
         init_signature_list = []
         init_kwargs_set_dict_list = []
