@@ -242,6 +242,11 @@ def fmtjournal(x):
     return x2
 
 
+def sanitize_doi(doi):
+    if doi is None:
+        return None
+    return re.sub(r'^DOI\s*:?\s*', '', doi.strip(), flags=re.IGNORECASE)
+
 # -------------
 
 # utility for comparing months:
@@ -541,6 +546,11 @@ class DuplicatesFilter(BibFilter):
         apers = cache_a['pers']
         bpers = cache_b['pers']
 
+        pending_pos_match_warning = []
+        def pos_match():
+            for w in pending_pos_match_warning:
+                logger.warning(w)
+
         if (len(apers) != len(bpers)):
             return False, "Author list lengths %d and %d differ"%(len(apers), len(bpers))
 
@@ -549,8 +559,15 @@ class DuplicatesFilter(BibFilter):
             (lastb, inb) = bpers[k]
             # use Levenshtein distance to detect possible typos or alternative spellings
             # (e.g. Koenig vs Konig). Allow approx. one such typo per 8 characters.
-            if (levenshtein(lasta, lastb) > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
+            lev_dist = levenshtein(lasta, lastb)
+            if (lev_dist > (1+int(len(lasta)/8)) or (ina and inb and ina != inb)):
                 return False, "Authors %r and %r differ"%((lasta, ina), (lastb, inb))
+            if lev_dist > 0:
+                pending_pos_match_warning.append(
+                    "Duplicate entries {} and {} have possible typo in author name: \"{}\" vs \"{}\""
+                    .format(a.key, b.key, str(a.persons.get('author',[])[k]), str(b.persons.get('author',[])[k]))
+                )
+
 
         logger.longdebug("Author list matches! %r and %r ",apers,bpers)
 
@@ -576,11 +593,12 @@ class DuplicatesFilter(BibFilter):
         if (compare_neq_fld(a.fields, b.fields, 'month', filt=normalize_month)):
             return False, "Months %r and %r differ"%(a.fields.get('month', None), b.fields.get('month', None))
 
-        doi_a = a.fields.get('doi')
-        doi_b = b.fields.get('doi')
+        doi_a = sanitize_doi(a.fields.get('doi'))
+        doi_b = sanitize_doi(b.fields.get('doi'))
         if (doi_a and doi_b and doi_a != doi_b):
             return False, "DOI's %r and %r differ"%(doi_a, doi_b)
         if (doi_a and doi_a == doi_b):
+            pos_match()
             return True, "DOI's %r and %r are the same"%(doi_a, doi_b)
 
         arxiv_a = cache_a['arxivinfo']
@@ -595,6 +613,7 @@ class DuplicatesFilter(BibFilter):
         if (arxiv_a and arxiv_b and
             'arxivid' in arxiv_a and 'arxivid' in arxiv_b and
             arxiv_a['arxivid'] == arxiv_b['arxivid']):
+            pos_match()
             return True, "arXiv IDS %r and %r same"%(arxiv_a['arxivid'], arxiv_b['arxivid'])
 
 
@@ -637,6 +656,7 @@ class DuplicatesFilter(BibFilter):
         #logger.longdebug("Entries %s and %s match.", a.key, b.key)
 
         # well at this point the publications are pretty much duplicates
+        pos_match()
         return True, "Entries do not differ on the relevant fields"
         
 
