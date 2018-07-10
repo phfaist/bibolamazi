@@ -12,17 +12,17 @@ of this manual carefully.
 
 - To compile a bibolamazi bibtex file, you should run ``bibolamazi`` in general as::
 
-     > bibolamazi bibolamazibibtexfile.bibolamazi.bib
+     > bibolamazi myfile.bibolamazi.bib
 
 - To quickly get started with a new bibolamazi file, the following command will create the
   given file and produce a usable template which you can edit::
 
      > bibolamazi --new newfile.bibolamazi.bib
 
-- For an example to study, look at the test files ``test/testX.bibolamazi.bib`` in the
-  source code.  To compile them, run::
+- For an example to study, look at the various test files provided in the source
+  code.  To compile them, run::
 
-     > bibolamazi test/test0.bibolamazi.bib
+     > bibolamazi test0.bibolamazi.bib
      
 - For a help message with a list of possible options, run::
 

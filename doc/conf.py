@@ -202,14 +202,31 @@ html_theme_options = {
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    'papersize': 'a4paper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+
+    'fontpkg': r"""
+\usepackage[default,regular]{sourceserifpro}
+\usepackage[sf,light]{merriweather}
+\usepackage{inconsolata}
+""",
+
+    # Additional stuff for the LaTeX preamble.
+    'preamble': r'''
+\usepackage[titles]{tocloft}
+\cftsetpnumwidth {1.25cm}\cftsetrmarg{1.5cm}
+\setlength{\cftchapnumwidth}{0.75cm}
+\setlength{\cftsecindent}{\cftchapnumwidth}
+\setlength{\cftsecnumwidth}{1.25cm}
+''',
+
+    'fncychap': r'\usepackage[Bjornstrup]{fncychap}',
+
+    'printindex': r'\begingroup\small\raggedright\let\period.\catcode`\.=\active\relax\def.{\period\discretionary{}{}{}}\printindex\endgroup',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
