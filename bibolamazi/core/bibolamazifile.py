@@ -913,7 +913,11 @@ class BibolamaziFile(object):
 
         for cmd in cmds:
             if (cmd.cmd == "src"):
-                thesrc_list = shlex.split(cmd.text)
+                try:
+                    thesrc_list = shlex.split(cmd.text)
+                except ValueError as e:
+                    self._raise_parse_error("Syntax error in source list: %s"%(unicodestr(e)),
+                                            lineno=cmd.linenoend)
                 self._source_lists.append(thesrc_list)
                 self._sources.append('') # this will be set later to which source in the
                 #                          list was actually accessed.

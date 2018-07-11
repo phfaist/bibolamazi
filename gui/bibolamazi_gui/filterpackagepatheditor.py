@@ -43,6 +43,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from .qtauto.ui_filterpackagepatheditor import Ui_FilterPackagePathEditor
+from .sourcelisteditor import sanitize_bib_rel_path
 
 logger = logging.getLogger(__name__)
 
@@ -59,19 +60,28 @@ class FilterPackagePathEditor(QWidget):
         self.ui = Ui_FilterPackagePathEditor()
         self.ui.setupUi(self)
 
+        self.ref_dir = None
+
     filterPackagePathChanged = pyqtSignal(str)
+
+    def setRefDir(self, ref_dir):
+        self.ref_dir = ref_dir
 
     @pyqtSlot(str, str)
     def setFilterPackageInfo(self, filterpkg, filterdir):
         self.ui.lblInfo.setText("<b>{}:</b> {}".format(htmlescape(str(filterpkg)),
                                                        htmlescape(str(filterdir))))
 
+    @pyqtSlot(str)
+    def setFilterPackageError(self, errmsg):
+        self.ui.lblInfo.setText("<span style=\"color: #800000\">{}</span>".format(htmlescape(errmsg)))
+
+
     @pyqtSlot()
     def on_btnChange_clicked(self):
         fpath = str(QFileDialog.getExistingDirectory(self, "Locate Filter Package", str()))
-        HOME = os.path.expanduser("~/")
-        fpath = re.sub(r'^'+re.escape(HOME), "~/", fpath)
         logger.debug("User selected fpath = %r", fpath)
+        fpath = sanitize_bib_rel_path(fpath, ref_dir=self.ref_dir)
         self.filterPackagePathChanged.emit(fpath)
 
         

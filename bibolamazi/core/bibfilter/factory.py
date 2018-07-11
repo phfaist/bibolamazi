@@ -283,9 +283,10 @@ def parse_filterpackage_argstr(argstr):
 
 
     if not fpname or re.search(r'[^a-zA-Z0-9_\.]', fpname):
-        raise BibolamaziError("Invalid filter package: `%s': not a valid python identifier. "
+        raise BibolamaziError("Invalid filter package: '%s': not a valid python identifier. "
                               "Did you get the filterpackage syntax wrong? "
-                              "Syntax: '<packagename>[=<path>]'." %(fpname))
+                              "Syntax: '<packagename>[=<path>]' or 'path/to/packagename'."
+                              %(fpname))
 
     return (fpname, fpdir)
 

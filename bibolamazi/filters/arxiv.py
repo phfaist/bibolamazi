@@ -291,7 +291,8 @@ class ArxivNormalizeFilter(BibFilter):
           - note_string_fmt: the string to insert in the `note' field for modes 'unpublished-note',
                    'note' and 'unpublished-note-notitle'. This field uses Python's new advanced
                    formatting mini-language (see `string.Formatter`). The available fields and
-                   formats are documented below in the filter documentation.
+                   formats are documented below in the filter documentation. Default value is
+                   "{notefmt_default}", which is a shorthand for "{{arXiv:{arxiv.arxivid}}}".
           - no_archive_prefix(bool): If set, then removes the 'archiveprefix' key entirely.
           - default_archive_prefix: In `eprint' mode, entries which don't have an archive prefix are
                    given this one. Additionally, other entries whose archive prefix match this one

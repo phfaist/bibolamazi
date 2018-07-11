@@ -31,6 +31,8 @@ from builtins import str as unicodestr
 
 import sys
 import logging
+
+ # don't change this, we use 'from .htmlbrowser import htmlescape'
 from html import escape as htmlescape
 
 import markdown2

@@ -511,12 +511,16 @@ class OpenBibFile(QWidget):
 
         fileinfo = "<p>Location: <code>" + htmlescape(self.bibolamaziFile.fname()) + "</code></p>"
 
-        rawheader = self.bibolamaziFile.rawHeader()
-        if rawheader.strip():
+        rawheader = self.bibolamaziFile.rawHeader().strip()
+        if rawheader:
             fileinfo += ("<h2>Raw Header</h2>\n"
-                         "<p class=\"shadow\">These instructions are present in the "
-                         "header of the bibolamazi file and cannot be edited here.  Open "
-                         "the bibolamazi file with your favorite text editor to edit.</p>"
+                         "<p class=\"shadow\">The top section of the bibolamazi file "
+                         "is ignored by bibolamazi.  Whatever bibtex entries listed here "
+                         "will not be affected by bibolamazi filters and will be retained "
+                         "as is at the top of the file.  These bibtex entries are seen by "
+                         "latex as regular entries that have not been filtered by bibolamazi.  "
+                         "This portion of the file cannot be edited here; use your favorite "
+                         "text editor to edit.</p>"
                          "<pre class=\"small\">" + htmlescape(rawheader) + "</pre>")
 
         sources = []
@@ -774,7 +778,7 @@ class OpenBibFile(QWidget):
 
         self._insert_new_cmd('src: ""')
         # directly set the focus on the file name field
-        self.ui.sourceListEditor.selectSourceAltLoc(0)
+        self.ui.sourceListEditor.changeSource()
         
 
     def _insert_new_cmd(self, cmdtext):
@@ -884,7 +888,12 @@ class OpenBibFile(QWidget):
         cmd = cmdlist[0]
         
         if (cmd.cmd == "src"):
-            thesrcs = shlex.split(cmd.text)
+            try:
+                thesrcs = shlex.split(cmd.text)
+            except ValueError as e:
+                logger.debug("Invalid source list specification, syntax error: %s", str(e))
+                self.ui.sourceListEditor.dispSourceListError(str(e))
+                return
             self.ui.sourceListEditor.setSourceList(thesrcs, noemit=True)
             self.ui.sourceListEditor.setRefDir(self.bibolamaziFile.fdir())
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
@@ -893,11 +902,10 @@ class OpenBibFile(QWidget):
         if (cmd.cmd == "package"):
             try:
                 fp, fdir = filterfactory.parse_filterpackage_argstr(cmd.text.strip())
-                fdir = htmlescape(fdir)
+                self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
+                self.ui.filterPackagePathEditor.setRefDir(self.bibolamaziFile.fdir())
             except BibolamaziError as e:
-                fp = "&lt;error>"
-                fdir = "<span style=\"color: #800000\">{}</span>".format(htmlescape(str(e)))
-            self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
+                self.ui.filterPackagePathEditor.setFilterPackageError(str(e))
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspagePackage)
             return
 

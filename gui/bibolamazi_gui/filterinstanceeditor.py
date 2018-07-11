@@ -50,6 +50,7 @@ from PyQt5.QtWidgets import *
 from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 from . import overlistbuttonwidget
+from .helpbrowser import htmlescape
 
 logger = logging.getLogger(__name__)
 
@@ -722,11 +723,26 @@ class FilterInstanceEditor(QWidget):
     @pyqtSlot('QModelIndex', 'QModelIndex')
     def option_selected(self, currentindex, previousindex=None):
         doc = self._filteroptionsmodel.argdocForIndex(currentindex)
-        self.ui.lblOptionHelp.setText(doc if doc else "")
+        if doc:
+            doc = ("<p>" + htmlescape(doc) +
+                   " <a style=\"text-decoration:none\" href=\"action:/help\">more...</a></p>")
+            self.ui.lblOptionHelp.setText(doc)
+            self.ui.lblOptionHelp.setVisible(True)
+        else:
+            self.ui.lblOptionHelp.setVisible(False)
 
+
+    def on_lblOptionHelp_linkActivated(self, link):
+        if link == 'action:/help':
+            self.request_filter_help()
+        else:
+            logger.warning("Invalid link action in filter instance: %r", link)
 
     @pyqtSlot()
     def on_btnFilterHelp_clicked(self):
+        self.request_filter_help()
+
+    def request_filter_help(self):
         self.filterHelpRequested.emit('filters/%s' %(str(self.filterName())))
 
         

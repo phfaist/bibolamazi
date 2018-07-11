@@ -46,6 +46,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from .qtauto.ui_newbibolamazifiledialog import Ui_NewBibolamazifileDialog
+from .sourcelisteditor import sanitize_bib_rel_path
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +189,7 @@ class NewBibolamazifileDialog(QDialog):
         #    )
         #    return self.on_btnSaveFinish_clicked()
 
-        content = self.generateBibolamazifileConfig()
+        content = self.generateBibolamazifileConfig(ref_dir=os.path.dirname(newfilename))
 
         fullcontent = (bibolamazifile.TEMPLATE_HEADER + "\n" +
                        bibolamazifile.CONFIG_BEGIN_TAG + "\n"
@@ -209,7 +210,7 @@ class NewBibolamazifileDialog(QDialog):
         self.accept()
 
     
-    def generateBibolamazifileConfig(self):
+    def generateBibolamazifileConfig(self, ref_dir=None):
 
         srcmulti = self.ui.rdbtnMergeMultiple.isChecked()
 
@@ -232,7 +233,8 @@ class NewBibolamazifileDialog(QDialog):
 """
 
         if len(self.data.src):
-            bibolamazi_config += "\n".join( [ 'src: '+x for x in self.data.src ] )
+            bibolamazi_config += "\n".join( [ 'src: '+sanitize_bib_rel_path(x, ref_dir=ref_dir)
+                                              for x in self.data.src ] )
         else:
             bibolamazi_config += "src: <INSERT-SOURCE-PATH-HERE>"
 

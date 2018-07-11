@@ -39,6 +39,6 @@ class Ui_FilterPackagePathEditor(object):
         _translate = QtCore.QCoreApplication.translate
         FilterPackagePathEditor.setWindowTitle(_translate("FilterPackagePathEditor", "Form"))
         self.label.setText(_translate("FilterPackagePathEditor", "Imported filter package"))
-        self.lblInfo.setText(_translate("FilterPackagePathEditor", "<path>"))
+        self.lblInfo.setText(_translate("FilterPackagePathEditor", "path"))
         self.btnChange.setText(_translate("FilterPackagePathEditor", "change ..."))
 

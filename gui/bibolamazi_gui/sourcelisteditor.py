@@ -29,6 +29,7 @@ from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
 
+import re
 import os
 import os.path
 import logging
@@ -40,7 +41,30 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import bibolamazi.init
+
 from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
+
+from . import helpbrowser
+from .helpbrowser import htmlescape
+
+
+def sanitize_bib_rel_path(fname, ref_dir=None):
+    # decide on whether to refer to file in absolute or relative fashion
+    if (ref_dir):
+        relpath = os.path.relpath(os.path.realpath(fname), os.path.realpath(ref_dir))
+        if '..' in relpath.split(os.sep) or '..' in relpath.split(os.altsep):
+            # out of scope, so use absolute.
+            pass
+        else:
+            # can easily be referred to by relative path (in same or sub directory), use relative.
+            fname = relpath
+
+    homeprefix = os.path.expanduser("~") + os.sep
+    if fname.startswith(homeprefix):
+        fname = "~/"+fname[len(homeprefix):]
+
+    return fname
+
 
 
 class SourceListEditor(QWidget):
@@ -50,11 +74,14 @@ class SourceListEditor(QWidget):
         self.ui = Ui_SourceListEditor()
         self.ui.setupUi(self)
         
+        self.ui.lblLinkInfo.setVisible(False)
+
         self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
 
-        self.ui.lstSources.model().layoutChanged.connect(self.update_stuff_moved)
+        self.sourcelist = []
 
-        self._is_updating = False
+        #self.ui.lstSources.model().layoutChanged.connect(self.update_stuff_moved)
+        #self._is_updating = False
 
         self._ref_dir = None
 
@@ -66,7 +93,10 @@ class SourceListEditor(QWidget):
     
 
     def sourceList(self):
-        return [str(self.ui.lstSources.item(i).text())  for i in range(self.ui.lstSources.count())]
+        if self._erorr_state:
+            logger.warning("SourceListEditor's error state is on! don't call sourceList()!")
+        return self.sourcelist
+        #return [str(self.ui.lstSources.item(i).text())  for i in range(self.ui.lstSources.count())]
 
 
     def setRefDir(self, refdir):
@@ -74,133 +104,283 @@ class SourceListEditor(QWidget):
         file being edited resides. This is used to decide on whether to refer to a file with
         an absolute or a relative path.
         """
-        self._ref_dir = refdir;
+        self._ref_dir = refdir
         
+
+    @pyqtSlot('QStringList')
+    def dispSourceListError(self, errormsg):
+        self._error_state = True
+
+        self.ui.lbl.setText("<p style=\"color: #800000;\">" +
+                            "<b>Parse error:</b> " + htmlescape(errormsg) + "</p>")
 
     @pyqtSlot('QStringList', bool)
     @pyqtSlot('QStringList')
-    def setSourceList(self, sourcelist, noemit=False):
-        sourcelist = [str(x) for x in list(sourcelist)];
+    def setSourceList(self, newsourcelist, noemit=False):
+        self._error_state = False
+
+        newsourcelist = [str(x) for x in list(newsourcelist)]
         
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
-        if (sourcelist == self.sourceList()):
+        if (newsourcelist == self.sourcelist):
             return
-        
-        self._is_updating = True
-        self.ui.lstSources.clear()
-        for src in sourcelist:
-            self.ui.lstSources.addItem(src)
 
-        # refresh current row
-        if len(sourcelist):
-            self.ui.lstSources.setCurrentRow(0)
-        else:
-            self.on_lstSources_currentRowChanged(self.ui.lstSources.currentRow())
+        self.sourcelist = newsourcelist
+        self._updated_source_list(noemit=noemit)
 
-        self._is_updating = False
-        if (not noemit):
+    def _updated_source_list(self, noemit=False):
+        if self._error_state:
+            logger.warning("SourceListEditor's error state is on, don't call _updated_source_list()!")
+
+        def htmlforsrc(i, x):
+            code = htmlescape(str(x))
+            code += " <a href=\"srcaction:/change/"+str(i)+"\">[\N{HORIZONTAL ELLIPSIS}]</a>"
+            if len(self.sourcelist) > 1:
+                code += " <a href=\"srcaction:/remove/"+str(i)+"\">[\N{MINUS SIGN}]</a>"
+            if i > 0:
+                code += " <a href=\"srcaction:/up/"+str(i)+"\">[\N{BLACK UP-POINTING TRIANGLE}]</a>"
+            if i < len(self.sourcelist)-1:
+                code += " <a href=\"srcaction:/down/"+str(i)+"\">[\N{BLACK DOWN-POINTING TRIANGLE}]</a>"
+            return "<p>\N{BLACK RIGHT-POINTING SMALL TRIANGLE} " + code + "</p>"
+
+        if not self.sourcelist:
+            self.sourcelist = ['<not set>']
+
+        fileitems = [ htmlforsrc(i,x) for i,x in enumerate(self.sourcelist) ]
+        items = fileitems[0]
+        if len(fileitems) > 1:
+            items += "<p class=\"heading\">Alternatives:</p>" + "".join(fileitems[1:])
+        items += ("<p><a href=\"srcaction:/add_alternative/-1\">add alternative source "
+                  "location \N{HORIZONTAL ELLIPSIS}</a></p>")
+        items += "<p>&nbsp;</p>"
+
+        lbltext = """\
+<!DOCTYPE HTML>
+<html><head><style type="text/css">
+%(basecss)s
+.heading { font-style: italic; }
+</style></head>
+<body>
+<p class=\"heading\">Source:</p>
+%(sourceitems)s</body></html>
+""" % {
+    'basecss': helpbrowser.getCssHelpStyle(),
+    'sourceitems': items
+    }
+        #lbltext = ("<ul>" + items + "</ul>")
+
+        self.ui.lbl.setText(lbltext)
+
+        if not noemit:
             self.emitSourceListChanged()
 
-    @pyqtSlot(int)
-    def selectSourceAltLoc(self, index):
-        """
-        Select and focus input field for the alt loc identified by `index` in the list. Starts
-        with zero.
-        """
-        self.ui.lstSources.setCurrentRow(index)
-        self.ui.txtFile.setFocus()
+    @pyqtSlot(str)
+    def on_lbl_linkHovered(self, link):
+        if self._error_state:
+            logger.debug("SourceListEditor: Ignoring link interaction while error state is on")
+            return
 
+        if not link:
+            # link un-hovered
+            self.ui.lblLinkInfo.setText("")
+            self.ui.lblLinkInfo.setVisible(False)
+            return
+            
+        self.ui.lblLinkInfo.setVisible(True)
+
+        m = re.match(r'^srcaction:/(?P<action>[a-zA-Z0-9_-]+)/(?P<num>[-0-9]+)$', link)
+        if m is None:
+            logger.warning("Invalid action link: %r", link)
+            return
+        action = m.group('action')
+        i = int(m.group('num'))
+        if action == 'change':
+            self.ui.lblLinkInfo.setText("Select a new file to replace the current one.")
+        elif action == 'remove':
+            self.ui.lblLinkInfo.setText("Remove this source location")
+        elif action == 'up':
+            self.ui.lblLinkInfo.setText("Promote this alternative source location to higher priority")
+        elif action == 'down':
+            self.ui.lblLinkInfo.setText("Demote this alternative source location to lower priority")
+        elif action == 'add_alternative':
+            self.ui.lblLinkInfo.setText(
+                "Specify an additional bibtex file location where this source can be found.  "
+                "This might be useful, for instance, if between different computers or "
+                "different collaborators the source bibtex files are stored at different locations."
+            )
+        else:
+            logger.warning("Invalid action link: %r (bad action %r)", link, action)
+
+
+    @pyqtSlot(str)
+    def on_lbl_linkActivated(self, link):
+
+        if self._error_state:
+            logger.debug("SourceListEditor: Ignoring link interaction while error state is on")
+            return
+
+        m = re.match(r'^srcaction:/(?P<action>[a-zA-Z0-9_-]+)/(?P<num>[-0-9]+)$', link)
+        if m is None:
+            logger.warning("Invalid action link: %r", link)
+            return
+
+        action = m.group('action')
+        i = int(m.group('num'))
+        if action == 'change':
+            self.changeSource(i)
+        elif action == 'remove':
+            if len(self.sourcelist) > 1:
+                del self.sourcelist[i]
+                self._updated_source_list()
+        elif action == 'up':
+            if i > 0:
+                self.sourcelist[i], self.sourcelist[i-1] = self.sourcelist[i-1], self.sourcelist[i]
+                self._updated_source_list()
+        elif action == 'down':
+            if i < len(self.sourcelist)-1:
+                self.sourcelist[i], self.sourcelist[i+1] = self.sourcelist[i+1], self.sourcelist[i]
+                self._updated_source_list()
+        elif action == 'add_alternative':
+            self.addSourceAlt()
+        else:
+            logger.warning("Invalid action link: %r (bad action %r)", link, action)
+
+    @pyqtSlot(int, bool)
+    @pyqtSlot(int)
+    @pyqtSlot()
+    def changeSource(self, i=0, noemit=False):
+        """
+        Prompt user with a file dialog and change the source at index `i`
+        """
+
+        if self._error_state:
+            logger.warning("SourceListEditor's error state is on, don't call changeSource()!")
+
+        fname = self._get_source_fname()
+        if not fname:
+            return
+        
+        self.sourcelist[i] = fname
+        self._updated_source_list(noemit=noemit)
+        
+    @pyqtSlot(bool)
+    @pyqtSlot()
+    def addSourceAlt(self, noemit=False):
+
+        if self._error_state:
+            logger.warning("SourceListEditor's error state is on, don't call addSourceAlt()!")
+
+        fname = self._get_source_fname()
+        if not fname:
+            return
+        
+        self.sourcelist.append(fname)
+        self._updated_source_list(noemit=noemit)
+
+    def _get_source_fname(self):
+        fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
+                                                     'BibTeX Files (*.bib);;All Files (*)')
+        logger.debug("fname=%r.", fname)
+        if (not fname):
+            return None
+
+        fname = sanitize_bib_rel_path(fname, ref_dir=self._ref_dir)
+
+        return fname
+
+    
     @pyqtSlot()
     def emitSourceListChanged(self):
-        if (self._is_updating):
-            return
+        #if (self._is_updating):
+        #    return
         logger.debug("emitting sourceListChanged()!")
-        self.sourceListChanged.emit(list(self.sourceList()))
+        self.sourceListChanged.emit(self.sourcelist)
 
-
-    @pyqtSlot()
-    def on_btnAddSourceAltLoc_clicked(self):
-        self.ui.lstSources.addItem("")
-        self.ui.lstSources.setCurrentRow(self.ui.lstSources.count()-1)
-        self.ui.txtFile.setFocus()
-        self.emitSourceListChanged()
-
-    @pyqtSlot()
-    def on_btnRemoveSourceAltLoc_clicked(self):
-        row = self.ui.lstSources.currentRow()
-        if (row < 0):
-            logger.debug("No row selected")
-            return
-
-        logger.debug('removing row %d', row)
-        item = self.ui.lstSources.takeItem(row)
-        # ###TODO: FIXME: delete item?!?
-
-        self.emitSourceListChanged()
 
     @pyqtSlot()
     def on_btnAddSource_clicked(self):
         self.requestAddSourceList.emit()
 
-    @pyqtSlot()
-    def update_stuff_moved(self):
-        # user moved stuff around
-        logger.debug("Stuff moved around!")
+    
+    # @pyqtSlot()
+    # def on_btnAddSourceAltLoc_clicked(self):
+    #     self.ui.lstSources.addItem("")
+    #     self.ui.lstSources.setCurrentRow(self.ui.lstSources.count()-1)
+    #     self.ui.txtFile.setFocus()
+    #     self.emitSourceListChanged()
 
-        self.emitSourceListChanged()
+    # @pyqtSlot()
+    # def on_btnRemoveSourceAltLoc_clicked(self):
+    #     row = self.ui.lstSources.currentRow()
+    #     if (row < 0):
+    #         logger.debug("No row selected")
+    #         return
+
+    #     logger.debug('removing row %d', row)
+    #     item = self.ui.lstSources.takeItem(row)
+    #     # ###TODO: FIXME: delete item?!?
+
+    #     self.emitSourceListChanged()
+
+    # @pyqtSlot()
+    # def update_stuff_moved(self):
+    #     # user moved stuff around
+    #     logger.debug("Stuff moved around!")
+
+    #     self.emitSourceListChanged()
         
-    @pyqtSlot('QListWidgetItem*')
-    def on_lstSources_itemDoubleClicked(self, item):
-        logger.debug('double-clicked!!')
-        self.ui.txtFile.setFocus()
+    # @pyqtSlot('QListWidgetItem*')
+    # def on_lstSources_itemDoubleClicked(self, item):
+    #     logger.debug('double-clicked!!')
+    #     self.ui.txtFile.setFocus()
 
-    @pyqtSlot(int)
-    def on_lstSources_currentRowChanged(self, row):
-        logger.debug("current row changed.. row=%d", row)
-        if (self.ui.lstSources.count() == 0  or  row < 0):
-            self.ui.txtFile.setText("")
-            self.ui.btnRemoveSourceAltLoc.setEnabled(False)
-            self.ui.gbxEditSource.setEnabled(False)
-        else:
-            self.ui.btnRemoveSourceAltLoc.setEnabled(True)
-            self.ui.gbxEditSource.setEnabled(True)
-            self.ui.txtFile.setText(self.ui.lstSources.item(row).text())
+    # @pyqtSlot(int)
+    # def on_lstSources_currentRowChanged(self, row):
+    #     logger.debug("current row changed.. row=%d", row)
+    #     if (self.ui.lstSources.count() == 0  or  row < 0):
+    #         self.ui.txtFile.setText("")
+    #         self.ui.btnRemoveSourceAltLoc.setEnabled(False)
+    #         self.ui.gbxEditSource.setEnabled(False)
+    #     else:
+    #         self.ui.btnRemoveSourceAltLoc.setEnabled(True)
+    #         self.ui.gbxEditSource.setEnabled(True)
+    #         self.ui.txtFile.setText(self.ui.lstSources.item(row).text())
 
 
-    @pyqtSlot('QString')
-    def on_txtFile_textChanged(self, text):
-        row = self.ui.lstSources.currentRow()
-        if (row < 0):
-            logger.debug("No row selected")
-            return
+    # @pyqtSlot('QString')
+    # def on_txtFile_textChanged(self, text):
+    #     row = self.ui.lstSources.currentRow()
+    #     if (row < 0):
+    #         logger.debug("No row selected")
+    #         return
 
-        item = self.ui.lstSources.item(row);
-        if (item.text() != text):
-            item.setText(text)
-            self.emitSourceListChanged()
+    #     item = self.ui.lstSources.item(row);
+    #     if (item.text() != text):
+    #         item.setText(text)
+    #         self.emitSourceListChanged()
 
-    @pyqtSlot()
-    def on_btnBrowse_clicked(self):
-        row = self.ui.lstSources.currentRow()
-        if (row < 0):
-            logger.debug("No row selected")
-            return
+    # @pyqtSlot()
+    # def on_btnBrowse_clicked(self):
+    #     row = self.ui.lstSources.currentRow()
+    #     if (row < 0):
+    #         logger.debug("No row selected")
+    #         return
         
-        fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
-                                                     'BibTeX Files (*.bib);;All Files (*)')
-        logger.debug("fname=%r.", fname)
-        if (not fname):
-            return
+    #     fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
+    #                                                  'BibTeX Files (*.bib);;All Files (*)')
+    #     logger.debug("fname=%r.", fname)
+    #     if (not fname):
+    #         return
 
-        # decide on whether to refer to file in absolute or relative fashion
-        if (self._ref_dir):
-            relpath = os.path.relpath(os.path.realpath(fname), os.path.realpath(self._ref_dir))
-            if '..' in relpath.split(os.sep) or '..' in relpath.split(os.altsep):
-                # out of scope, so use absolute.
-                pass
-            else:
-                # can easily be referred to by relative path (in same or sub directory), use relative.
-                fname = relpath
+    #     # decide on whether to refer to file in absolute or relative fashion
+    #     if (self._ref_dir):
+    #         relpath = os.path.relpath(os.path.realpath(fname), os.path.realpath(self._ref_dir))
+    #         if '..' in relpath.split(os.sep) or '..' in relpath.split(os.altsep):
+    #             # out of scope, so use absolute.
+    #             pass
+    #         else:
+    #             # can easily be referred to by relative path (in same or sub directory), use relative.
+    #             fname = relpath
 
-        self.ui.txtFile.setText(fname)
+    #     self.ui.txtFile.setText(fname)
         

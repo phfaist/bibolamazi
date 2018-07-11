@@ -46,7 +46,7 @@
       <string notr="true">background-color: rgba(0, 0, 120, 25);</string>
      </property>
      <property name="text">
-      <string>&lt;path&gt;</string>
+      <string>path</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
