@@ -71,6 +71,7 @@ class NewBibolamazifileDialog(QDialog):
         self.ui.btnSrcClear.setVisible(False)
         self.ui.chkDuplicatesFilter.setVisible(False)
 
+        self.ui.btnBack.setVisible(False)
         self.ui.btnSaveFinish.setVisible(False)
 
         self.ui.stk.setCurrentIndex(0)
@@ -90,6 +91,7 @@ class NewBibolamazifileDialog(QDialog):
 
     @pyqtSlot(int)
     def on_stk_currentChanged(self, pageno):
+        self.ui.btnBack.setVisible(pageno > 0)
         if pageno == self.ui.stk.count()-1:
             self.ui.btnNext.setVisible(False)
             self.ui.btnSaveFinish.setVisible(True)
@@ -100,6 +102,10 @@ class NewBibolamazifileDialog(QDialog):
     @pyqtSlot()
     def on_btnNext_clicked(self):
         self.ui.stk.setCurrentIndex(self.ui.stk.currentIndex() + 1)
+
+    @pyqtSlot()
+    def on_btnBack_clicked(self):
+        self.ui.stk.setCurrentIndex(self.ui.stk.currentIndex() - 1)
 
     @pyqtSlot()
     def on_btnSrcSet_clicked(self):

@@ -63,7 +63,7 @@
        <item>
         <widget class="QGroupBox" name="srcmulti">
          <property name="title">
-          <string>Would you like to collect bibliography entries from several bibtex files?</string>
+          <string>Would you like to collect entries from several bibtex files?</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
           <item row="1" column="0" colspan="2">
@@ -111,7 +111,7 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic; color:#808080;&quot;&gt;Please add source   →&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic; color:#808080;&quot;&gt;Please add source  →&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -166,7 +166,7 @@ p, li { white-space: pre-wrap; }
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
 &lt;p&gt;Citing the same article using different keys, such as &lt;code&gt;\cite{Einstein1937}&lt;/code&gt; and &lt;code&gt;\cite{EPRpaper}&lt;/code&gt; will refer to the same bibliography entry.&lt;/p&gt;
-&lt;p style=&quot;font-style:italic&quot;&gt;In order for this to work, you need to add the following line in the preamble of your document:&lt;/p&gt;&lt;pre&gt;\input{bibolamazi_dup_aliases.tex}&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot;font-style:italic&quot;&gt;In order for this to work, you need to add the following line to the preamble of your document:&lt;/p&gt;&lt;pre&gt;\input{bibolamazi_dup_aliases.tex}&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -442,6 +442,13 @@ p, li { white-space: pre-wrap; }
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnBack">
+       <property name="text">
+        <string>◀︎ back</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="btnNext">

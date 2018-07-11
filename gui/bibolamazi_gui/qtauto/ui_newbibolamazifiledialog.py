@@ -203,6 +203,9 @@ class Ui_NewBibolamazifileDialog(object):
         self.horizontalLayout_3.addWidget(self.btnCancel)
         spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem3)
+        self.btnBack = QtWidgets.QPushButton(NewBibolamazifileDialog)
+        self.btnBack.setObjectName("btnBack")
+        self.horizontalLayout_3.addWidget(self.btnBack)
         self.btnNext = QtWidgets.QPushButton(NewBibolamazifileDialog)
         self.btnNext.setObjectName("btnNext")
         self.horizontalLayout_3.addWidget(self.btnNext)
@@ -227,7 +230,7 @@ class Ui_NewBibolamazifileDialog(object):
         _translate = QtCore.QCoreApplication.translate
         NewBibolamazifileDialog.setWindowTitle(_translate("NewBibolamazifileDialog", "Create new bibolamazi file"))
         self.label.setText(_translate("NewBibolamazifileDialog", "So you\'d like to organize your bibtex entries..."))
-        self.srcmulti.setTitle(_translate("NewBibolamazifileDialog", "Would you like to collect bibliography entries from several bibtex files?"))
+        self.srcmulti.setTitle(_translate("NewBibolamazifileDialog", "Would you like to collect entries from several bibtex files?"))
         self.rdbtnMergeMultiple.setText(_translate("NewBibolamazifileDialog", "I would like to merge bibliography entries from different files"))
         self.rdbtnSingleSource.setText(_translate("NewBibolamazifileDialog", "My bibliography entries are currently all in one bibtex file"))
         self.groupBox_2.setTitle(_translate("NewBibolamazifileDialog", "Specify sources where to collect bibtex entries from"))
@@ -235,14 +238,14 @@ class Ui_NewBibolamazifileDialog(object):
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic; color:#808080;\">Please add source   →</span></p></body></html>"))
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic; color:#808080;\">Please add source  →</span></p></body></html>"))
         self.btnSrcSet.setText(_translate("NewBibolamazifileDialog", "set"))
         self.btnSrcAdd.setText(_translate("NewBibolamazifileDialog", "add"))
         self.btnSrcClear.setText(_translate("NewBibolamazifileDialog", "clear"))
         self.chkDuplicatesFilter.setTitle(_translate("NewBibolamazifileDialog", "Merge duplicate entries with different key names && create aliases"))
         self.label_5.setText(_translate("NewBibolamazifileDialog", "<html><head/><body>\n"
 "<p>Citing the same article using different keys, such as <code>\\cite{Einstein1937}</code> and <code>\\cite{EPRpaper}</code> will refer to the same bibliography entry.</p>\n"
-"<p style=\"font-style:italic\">In order for this to work, you need to add the following line in the preamble of your document:</p><pre>\\input{bibolamazi_dup_aliases.tex}</pre></body></html>"))
+"<p style=\"font-style:italic\">In order for this to work, you need to add the following line to the preamble of your document:</p><pre>\\input{bibolamazi_dup_aliases.tex}</pre></body></html>"))
         self.chkArxivUnpublished.setTitle(_translate("NewBibolamazifileDialog", "Normalize arxiv fields in entries, for *unpublished* entries"))
         self.rdbtnArxivUnpub_unpubnote.setText(_translate("NewBibolamazifileDialog", "Set entry type to @unpublished and add \"note = {arXiv:XXXX.ZZZZZ}\""))
         self.rdbtnArxivUnpub_eprint.setText(_translate("NewBibolamazifileDialog", "Use \"eprint\" field, like \"eprint = {XXXX.ZZZZZ}\""))
@@ -263,6 +266,7 @@ class Ui_NewBibolamazifileDialog(object):
         self.chkKeepOnlyUsed.setTitle(_translate("NewBibolamazifileDialog", "Keep only entries that I actually use in my LaTeX document"))
         self.label_4.setText(_translate("NewBibolamazifileDialog", "<html><body><p style=\"font-style:italic\">Make sure when you save the bibolamazi file to give it the same base name as your LaTeX document. For instance, if your document is named <code>example.tex</code>, save the bibolamazifile as <code>example.bibolamazi.bib</code>.</p></body></html>"))
         self.btnCancel.setText(_translate("NewBibolamazifileDialog", "cancel"))
+        self.btnBack.setText(_translate("NewBibolamazifileDialog", "◀︎ back"))
         self.btnNext.setText(_translate("NewBibolamazifileDialog", "next ▶"))
         self.btnSaveFinish.setText(_translate("NewBibolamazifileDialog", "save file ▶"))
 
