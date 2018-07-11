@@ -63,6 +63,20 @@ class NewBibolamazifileDialog(QDialog):
         self.ui = Ui_NewBibolamazifileDialog()
         self.ui.setupUi(self)
 
+        self.ui.txtSources.setHtml("""\
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style type="text/css">
+p, li { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <p style="font-style:italic; color:#808080;">Please add source&nbsp;&nbsp;\N{RIGHTWARDS ARROW}</p>
+  </body>
+</html>
+""")
+
         palette = self.ui.txtSources.palette()
         palette.setColor(QPalette.Base, palette.color(QPalette.Window))
         self.ui.txtSources.setPalette(palette)
