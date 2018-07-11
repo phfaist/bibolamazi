@@ -88,6 +88,7 @@ _rxarxiv = _rxarxiv_in_url + (# not tuple, just a multiline expression
         )
     + _mk_braced_pair_rx(
         r'(?:arXiv[-.:/\s]+)?((?:(?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r')/)?' + _RX_ARXIVID_NUM + r')'
+        + r'(?:\s*\[(?P<primaryclass2>' + _RX_PRIMARY_CLASS_PAT + r')\])?'
         )
     )
 
@@ -216,6 +217,8 @@ def detectEntryArXivInfo(entry):
                 if (not d['arxivid']):
                     try:
                         primaryclass = None
+                        try: primaryclass = m.group('primaryclass2')
+                        except IndexError: pass
                         try: primaryclass = m.group('primaryclass')
                         except IndexError: pass
 
@@ -226,12 +229,18 @@ def detectEntryArXivInfo(entry):
                         logger.longdebug("indexerror while getting arxivid in note=%r, m=%r: %s", notefield, m, e)
                         pass
                 if (not d['primaryclass']):
+                    primaryclass = None
                     try:
                         primaryclass = m.group('primaryclass')
-                        if primaryclass not in ['abs', 'pdf', 'abs/', 'pdf/']:
-                            d['primaryclass'] = primaryclass
                     except IndexError:
                         pass
+                    try:
+                        primaryclass = m.group('primaryclass2')
+                    except IndexError:
+                        pass
+                    if primaryclass and primaryclass not in ['abs', 'pdf', 'abs/', 'pdf/']:
+                        d['primaryclass'] = primaryclass
+
             if d['arxivid'] and d['primaryclass']:
                 return
 

@@ -62,8 +62,8 @@ class UrlNormalizeFilter(BibFilter):
                          [default: False]
           - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI identifier or
                          an ArXiv ID is present. [default: False]
-          - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, i.e. of the form
-                         `http(s)://dx.doi.org/<DOI>`  [default: True]
+          - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, e.g. of the form
+                         `https://dx.doi.org/<DOI>`  [default: True]
           - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
                          form `http(s)://arxiv.org/abs/<ID>`  [default: True]
           - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL that is a DOI
@@ -138,14 +138,14 @@ class UrlNormalizeFilter(BibFilter):
 
         if (self.stripdoiurl):
             for url in urls:
-                if re.match(r'^https?://dx.doi.org/', url):
+                if re.match(r'^https?://(dx\.)?doi\.org/', url):
                     urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
         if (self.striparxivurl):
             for url in urls:
-                if re.match(r'^https?://arxiv.org/abs/', url):
+                if re.match(r'^https?://arxiv\.org/abs/', url):
                     urls.remove(url)
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)

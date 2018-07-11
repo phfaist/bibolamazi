@@ -193,8 +193,10 @@ html_theme_options = {
     #'github_button': True,
     'github_user': 'phfaist',
     'github_repo': 'bibolamazi',
-    'font_family': '"Lato", sans-serif',
-    'head_font_family': '"Lato", sans-serif',
+    'font_family': '"IBM Plex Sans", sans-serif',
+    'head_font_family': '"IBM Plex Sans", sans-serif',
+    'code_font_family': '"IBM Plex Mono", monospace',
+    'code_font_size': '0.85em',
     'font_size': '12pt',
 }
 
