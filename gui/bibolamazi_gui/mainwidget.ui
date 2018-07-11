@@ -66,9 +66,6 @@
       <property name="horizontalSpacing">
        <number>5</number>
       </property>
-      <property name="verticalSpacing">
-       <number>10</number>
-      </property>
       <item row="0" column="0">
        <widget class="QPushButton" name="btnOpenFile">
         <property name="text">
@@ -105,18 +102,15 @@
      <property name="title">
       <string>Settings &amp;&amp; Help</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <property name="spacing">
-       <number>15</number>
-      </property>
-      <item>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
        <widget class="QPushButton" name="btnSettings">
         <property name="text">
          <string>Settings</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="QPushButton" name="btnHelp">
         <property name="text">
          <string>Help &amp;&amp; Reference Browser</string>
