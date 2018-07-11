@@ -66,6 +66,9 @@
       <property name="horizontalSpacing">
        <number>5</number>
       </property>
+      <property name="verticalSpacing">
+       <number>10</number>
+      </property>
       <item row="0" column="0">
        <widget class="QPushButton" name="btnOpenFile">
         <property name="text">
@@ -81,7 +84,13 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QToolButton" name="btnOpenRecent">
+       <widget class="QPushButton" name="btnOpenRecent">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="icon">
          <iconset resource="bibolamazi_res.qrc">
           <normaloff>:/pic/lstbtnedit.png</normaloff>:/pic/lstbtnedit.png</iconset>
@@ -98,7 +107,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="spacing">
-       <number>20</number>
+       <number>15</number>
       </property>
       <item>
        <widget class="QPushButton" name="btnSettings">
