@@ -35,11 +35,10 @@ import bibolamazi.init
 
 
 # for meta-typing. This is particularly used by the graphical interface.
-
-
 class EnumArgType:
     def __init__(self, listofvalues):
         self.listofvalues = listofvalues
+
 
 
 def enum_class(class_name, values, default_value=0, value_attr_name='value'):
@@ -126,7 +125,7 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
     thecls = ThisEnumArgClass
     thecls.__name__ = str(class_name)
     # add docstring
-    mapped_vals_list = [ "`%s'"%(x) for x in thecls._values_list ]
+    mapped_vals_list = [ "`%s`"%(x) for x in thecls._values_list ]
     if len(mapped_vals_list) > 1:
         show_vals_list = ", ".join(mapped_vals_list[:-1]) + ", or "+mapped_vals_list[-1]
     elif len(mapped_vals_list) == 1:
@@ -157,9 +156,9 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
 
 
 
-class CommaStrListArgType:
-    def __init__(self):
-        pass
+#class CommaStrListArgType:
+#    def __init__(self):
+#        pass
 
 _rx_escape_lst = re.compile(r'(\\|,)');
 def _escape_lst(x):
@@ -206,9 +205,9 @@ class CommaStrList(list):
 # ------------------------------------------------------------------------------
 
 
-class ColonCommaStrDictArgType:
-    def __init__(self):
-        pass
+#class ColonCommaStrDictArgType:
+#    def __init__(self):
+#        pass
 
 _rx_escape_dic = re.compile(r'(\\|,|:)');
 def _escape_dic(x):
