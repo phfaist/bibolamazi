@@ -69,7 +69,7 @@
       <item row="0" column="0">
        <widget class="QPushButton" name="btnOpenFile">
         <property name="text">
-         <string>Open Bibolamazi File ...</string>
+         <string>Open Bibolamazi File</string>
         </property>
        </widget>
       </item>
@@ -88,9 +88,8 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="icon">
-         <iconset resource="bibolamazi_res.qrc">
-          <normaloff>:/pic/lstbtnedit.png</normaloff>:/pic/lstbtnedit.png</iconset>
+        <property name="text">
+         <string>...</string>
         </property>
        </widget>
       </item>

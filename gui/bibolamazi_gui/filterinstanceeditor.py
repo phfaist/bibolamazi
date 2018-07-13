@@ -28,13 +28,16 @@ from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
-
+from future.standard_library import install_aliases
+install_aliases()
 
 import os
 import os.path
 import re
 import logging
 import textwrap
+from collections import OrderedDict
+from urllib.parse import urlencode
 
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
@@ -65,16 +68,17 @@ def is_class_and_is_sub_class(x, kl):
 
 
 
-def get_filter_list():
+def get_filter_list(filterpath=filters_factory.filterpath):
     logger.debug("filterinstanceeditor.get_filter_list()")
-    filter_pkg_list = filters_factory.detect_filter_package_listings()
+    filter_pkg_list = filters_factory.detect_filter_package_listings(filterpath=filterpath)
+    logger.debug("filterinstanceeditor.get_filter_list(): filter_pkg_list=%r", filter_pkg_list)
     filter_list = []
     for (fpkg, flist) in filter_pkg_list.items():
         if fpkg == 'bibolamazi.filters':
             # built-in, ignore the filter package prefix.
-            filter_list += flist
+            filter_list += [ finfo.filtername for finfo in flist]
         else:
-            filter_list += [ fpkg+':'+f for f in flist ]
+            filter_list += [ fpkg+':'+finfo.filtername for finfo in flist ]
     logger.debug("filterinstanceeditor.get_filter_list(): filter_list=%r", filter_list)
     return filter_list
 
@@ -120,16 +124,15 @@ class RegisteredArgInputType:
 
 
 class DefaultFilterOptionsModel(QAbstractTableModel):
-    def __init__(self, filtername=None, optionstring=None, parent=None):
+    def __init__(self, filterpathobj, parent=None):
         super(DefaultFilterOptionsModel, self).__init__(parent)
+        self._filterpathobj = filterpathobj
         self._filtername = None
         self._finfo = None
         self._fopts = None
         self._optionstring = None
         self._optionstring_error = None
         self._optionstring_softerror = None
-        
-        self.setFilterName(filtername)
 
 
     optionStringChanged = pyqtSignal(str)
@@ -148,8 +151,16 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def softErrorString(self):
         return self._optionstring_softerror
 
+
+    def filterInfo(self):
+        return self._finfo
+
+
     @pyqtSlot(str)
     def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
+
+        logger.debug("[Model]/setFilterName(%r)", filtername)
+        logger.debug("path in filterpathobj is %r", self._filterpathobj)
 
         if filtername is None:
             # not initialized yet.
@@ -163,14 +174,17 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         self._filtername = filtername
 
         self.beginResetModel()
+        self._finfo = None
         self._fopts = None
         try:
             # remember: FilterInfo() may also raise NoSuchFilter
-            self._finfo = filters_factory.FilterInfo(filtername)
+            self._finfo = filters_factory.FilterInfo(filtername, filterpath=self._filterpathobj)
             self._fopts = self._finfo.defaultFilterOptions()
         except Exception as e: #(NoSuchFilter,NoSuchFilterPackage,FilterError) as e:
             stre = str(e)
-            logger.warning("Error:: %s", stre)
+            logger.warning("Cannot inspect filter: %s", stre)
+            import traceback
+            logger.debug("%s", traceback.format_exc())
             self._optionstring_error = stre
             self.optionStringSetError.emit(stre)
             return
@@ -294,13 +308,6 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         return 2
     
 
-    #def _make_empty_type(self, arg):
-    #    if (arg.argtypename is not None):
-    #        fmodule = filters_factory.get_module(self._filtername, False)
-    #        typ = butils.resolve_type(arg.argtypename, fmodule)
-    #        return typ()
-    #    return str('')
-
 
     def argdocForIndex(self, index):
         if not self._fopts:
@@ -365,8 +372,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
             # request editing value of argument
             if (role == Qt.EditRole):
                 if (arg.argtypename is not None):
-                    fmodule = filters_factory.get_module(self._filtername, False)
-                    typ = butils.resolve_type(arg.argtypename, fmodule)
+                    typ = butils.resolve_type(arg.argtypename, self._finfo.fmodule)
                 else:
                     typ = str
                 if (hasattr(typ, 'type_arg_input')):
@@ -453,7 +459,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # validate type
         typ = None
         if (arg.argtypename is not None):
-            typ = butils.resolve_type(arg.argtypename, filters_factory.get_module(self._filtername, False))
+            typ = butils.resolve_type(arg.argtypename, self._finfo.fmodule)
         if (typ == None):
             typ = str
             
@@ -590,15 +596,15 @@ class FilterInstanceEditor(QWidget):
         self.ui = Ui_FilterInstanceEditor()
         self.ui.setupUi(self)
 
-        for filtername in get_filter_list():
-            self.ui.cbxFilter.addItem(filtername)
+        self.filterpath = OrderedDict(filters_factory.filterpath)
 
         self.ui.btnAddFavorite.clicked.connect(self.requestAddToFavorites)
 
         self.filterNameChanged.connect(self.filterInstanceDefinitionChanged)
         self.filterOptionsChanged.connect(self.filterInstanceDefinitionChanged)
 
-        self._filteroptionsmodel = DefaultFilterOptionsModel(filtername=None, parent=self)
+        self._filteroptionsmodel = DefaultFilterOptionsModel(filterpathobj=self.filterpath,
+                                                             parent=self)
 
         self._filteroptionsdelegate = DefaultFilterOptionsDelegate(parentView=self.ui.lstOptions)
         
@@ -634,7 +640,7 @@ class FilterInstanceEditor(QWidget):
     
 
     def filterName(self):
-        return self.ui.cbxFilter.currentText()
+        return self.ui.lblFilterName.text()
 
     def optionString(self):
         return self._filteroptionsmodel.optionstring()
@@ -648,12 +654,14 @@ class FilterInstanceEditor(QWidget):
     @pyqtSlot(str, bool)
     @pyqtSlot(str)
     def setFilterName(self, filtername, noemit=False, force=False, reset_optionstring=True):
+
         logger.debug("setFilterName(%r)", filtername)
-        if (not force and self.ui.cbxFilter.currentText() == filtername):
+        
+        if (not force and self.ui.lblFilterName.text() == filtername):
             return
         
         self._is_updating = True
-        self.ui.cbxFilter.setEditText(filtername)
+        self.ui.lblFilterName.setText(filtername) #cbxFilter.setEditText(filtername)
         self._is_updating = False
 
         self._filteroptionsmodel.setFilterName(filtername, noemit=True,
@@ -663,6 +671,8 @@ class FilterInstanceEditor(QWidget):
         
         if (not noemit):
             self.emitFilterNameChanged()
+
+        logger.debug("setFilterName(%r) done.", filtername)
 
 
     @pyqtSlot(str)
@@ -675,6 +685,12 @@ class FilterInstanceEditor(QWidget):
         #self.ui.lstOptions.setColumnWidth(1, 100)
         ##self._filteroptionsdelegate.update_buttons()
         logger.debug("setOptionString() done")
+
+    def setFilterPath(self, filterpath):
+        # do not allocate new object for self.filterpath, it is referenced by
+        # other objects that depend on it
+        self.filterpath.clear()
+        self.filterpath.update(filterpath)
 
     def setFilterInstanceDefinition(self, filtername, optionstring, noemit=False):
         logger.debug("setFilterInstanceDefinition(filtername=%r, optionstring=%r, noemit=%r)",
@@ -713,13 +729,7 @@ class FilterInstanceEditor(QWidget):
 
         return super(FilterInstanceEditor, self).showEvent(event)
 
-    @pyqtSlot(str)
-    def on_cbxFilter_editTextChanged(self, s):
-        if (self._is_updating):
-            return
-        self.setFilterName(s, force=True, reset_optionstring=False)
-
-
+    
     @pyqtSlot('QModelIndex', 'QModelIndex')
     def option_selected(self, currentindex, previousindex=None):
         doc = self._filteroptionsmodel.argdocForIndex(currentindex)
@@ -743,6 +753,16 @@ class FilterInstanceEditor(QWidget):
         self.request_filter_help()
 
     def request_filter_help(self):
-        self.filterHelpRequested.emit('filters/%s' %(str(self.filterName())))
+        finfo = self._filteroptionsmodel.filterInfo()
+
+        if finfo is None:
+            logger.warning("request_filter_help: No filter information available.")
+            return
+        
+        url = 'help:/filters/%s' % ( str(finfo.filtername) )
+        qs = dict(filterpackage=finfo.filterpackagename+'='+finfo.filterpackagedir)
+        url += '?'+urlencode(qs)
+        logger.debug("Filter help: requesting topic URL %s", url)
+        self.filterHelpRequested.emit(url)
 
         

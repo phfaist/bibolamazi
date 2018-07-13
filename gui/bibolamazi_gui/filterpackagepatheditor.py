@@ -79,8 +79,14 @@ class FilterPackagePathEditor(QWidget):
 
     @pyqtSlot()
     def on_btnChange_clicked(self):
+
         fpath = str(QFileDialog.getExistingDirectory(self, "Locate Filter Package", str()))
+
         logger.debug("User selected fpath = %r", fpath)
+
+        if not fpath:
+            return
+
         fpath = sanitize_bib_rel_path(fpath, ref_dir=self.ref_dir)
         self.filterPackagePathChanged.emit(fpath)
 

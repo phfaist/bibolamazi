@@ -74,7 +74,8 @@ if sys.hexversion < 0x03060000:
 
 class NoSuchFilter(Exception):
     """
-    Signifies that the requested filter was not found. See also `get_module()`.
+    Signifies that the requested filter was not found.  See also
+    :py:class:`FilterInfo`.
     """
     def __init__(self, fname, errorstr=None):
         super(NoSuchFilter, self).__init__("No such filter or import error: "+fname+
@@ -83,13 +84,15 @@ class NoSuchFilter(Exception):
 class ModuleNotAValidFilter(NoSuchFilter):
     """
     Signifies that a given module does not expose a valid bibolamazi filter.
+    See also :py:class:`FilterInfo`.
     """
     def __init__(self, fname, errorstr=None):
         super(ModuleNotAValidFilter, self).__init__(fname, errorstr)
 
 class NoSuchFilterPackage(Exception):
     """
-    Signifies that the requested filter package was not found. See also `get_module()`.
+    Signifies that the requested filter package was not found.  See also
+    :py:class:`FilterInfo`.
     """
     def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
         super(NoSuchFilterPackage, self).__init__("No such filter package or import error: `"+ fpname + "'"
@@ -145,11 +148,12 @@ class FilterOptionsParseErrorHintSInstead(FilterOptionsParseError):
 
 class FilterCreateError(FilterError):
     """
-    There was an error instantiating the filter. This could be due because the filter
-    constructor raised an exception.
+    There was an error instantiating the filter. This could be due to the filter
+    constructor itself raising an exception.
     """
     def fmt(self, name):
         return "Can't create filter %s: %s" %(name, self.errorstr)
+
 
 class FilterCreateArgumentError(FilterError):
     """
@@ -224,8 +228,14 @@ filterpath = PrependOrderedDict([
 # information about filters and modules etc.
 
 
+# _filter_package_listings is an OrderedDict() when initialized
+# _filter_package_listings[(fpkgname,fpkgdir)] = [finfo1, finfo2, ...]  list of FilterInfo objects
 _filter_package_listings = None
+
+# _filter_modules[(fpkgname,fpkgdir)][filtername] = fmodule
 _filter_modules = {}
+
+
 
 # For pyinstaller: precompiled filter list
 
@@ -317,40 +327,41 @@ def validate_filter_package(fpname, fpdir, raise_exception=True):
     return False
 
 
-# store additional information about the modules.
+def _setup_imported_filter_module(mod, fpn, fpd):
+    setattr(mod, '_filterpackageinfo', (fpn, fpd,))
 
-def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=filterpath):
+
+def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
+
+    #
+    # NOTE: Module gets an additional attribute '_filterpackageinfo' with a
+    # tuple (fpname, fpdir) corresponding to the filterpath element where the
+    # filter module was found.
+    #
 
     name = str(name)
 
-    logger.longdebug("get_module: name=%r, raise_nosuchfilter=%r, filterpackage=%r",
-                     name, raise_nosuchfilter, filterpackage)
-
-    # shortcut: a filter name may be 'filterpackage:the.module.name' to force search in a
-    # specific filter package.
-    if ':' in name and filterpackage is None:
-        fpparts = name.split(':',1)
-        return get_module(name=fpparts[1], raise_nosuchfilter=raise_nosuchfilter,
-                          filterpackage=fpparts[0])
+    logger.longdebug("get_filter_module(name=%r, fpkgname=%r, filter_path=%r)",
+                     name, fpkgname, filterpath)
 
     if not re.match(r'^[.\w]+$', name):
         raise ValueError("Filter name may only contain alphanum chars and dots (got %r)"%(name))
 
-
     import_errors = []
 
-    def get_module_in_filterpackage(filterpackname, filterdir):
+
+    def get_module_in_filterpackage(fpn, fpd):
 
         global _filter_precompiled_cache
         
-        logger.longdebug("Attempting to load filter %s from package %s", name, filterpackname)
+        logger.longdebug("Attempting to load filter %s from package %s", name, fpn)
 
         mod = None
 
-        def dirstradd(filterdir):
-            return " (dir `%s')"%(filterdir) if filterdir else ""
+        def dirstradd(fpd):
+            return " (dir `%s')"%(fpd) if fpd else ""
         
-        def deal_with_import_error(import_errors, name, filterpackname, filterdir, exctypestr, e,
+        def deal_with_import_error(import_errors, name, fpn, fpd, exctypestr, e,
                                    fmt_exc='', is_caused_by_module=True):
             if fmt_exc:
                 fmt_exc = '\n > ' + fmt_exc.replace('\n', '\n > ')
@@ -358,33 +369,34 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
                 # if the module itself caused the error, we'll report it as a
                 # warning. This is really useful for filter developers.
                 logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
-                               name, filterpackname, dirstradd(filterdir), e.__class__.__name__,
+                               name, fpn, dirstradd(fpd), e.__class__.__name__,
                                unicodestr(e), fmt_exc)
             # and log the error for if, at the end, filter loading failed everywhere:
             # useful as additional information for debugging.
             import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
-                                 %(name, filterpackname, dirstradd(filterdir), exctypestr,
+                                 %(name, fpn, dirstradd(fpd), exctypestr,
                                    unicodestr(e)))
             
         # first, search the actual module.
         oldsyspath = sys.path
-        if filterdir:
-            sys.path = [filterdir] + sys.path
+        if fpd:
+            sys.path = [fpd] + sys.path
         try:
-            logger.longdebug("Attempting to import filter package `%s`"%(filterpackname))
-            fpmod = importlib.import_module(filterpackname)
-            logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, filterpackname))
-            mod = importlib.import_module('.'+name, package=filterpackname)
+            logger.longdebug("Attempting to import filter package `%s`"%(fpn))
+            fpmod = importlib.import_module(fpn)
+            logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, fpn))
+            mod = importlib.import_module('.'+name, package=fpn)
+            _setup_imported_filter_module(mod, fpn, fpd)
         except ModuleNotFoundError:
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__),
+                         name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
                          unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
             
-            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
-                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+            deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
+                                   fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
                                    fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
                                    is_caused_by_module=False)
             mod = None
@@ -392,7 +404,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, filterpackname, dirstradd(filterdir), unicodestr(exc_type.__name__),
+                         name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
                          unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
@@ -411,15 +423,15 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
 
             # and so, now deal with the exception. Maybe log a warning for the user in
             # case the module has an erroneous import statement.
-            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
-                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+            deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
+                                   fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
                                    fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
                                    is_caused_by_module=caused_by_module)
             mod = None
         except Exception as e:
             exc_type, exc_value, tb_root = sys.exc_info()
-            deal_with_import_error(import_errors=import_errors, name=name, filterpackname=filterpackname,
-                                   filterdir=filterdir, exctypestr=exc_type.__name__, e=exc_value,
+            deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
+                                   fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
                                    fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
                                    is_caused_by_module=True)
             mod = None
@@ -427,37 +439,49 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
             sys.path = oldsyspath
 
         # then, check if we have a precompiled filter list for this filter package.
-        if mod is None and filterpackname in _filter_precompiled_cache:
-            if name in _filter_precompiled_cache[filterpackname]:
+        if mod is None and fpn in _filter_precompiled_cache:
+            if name in _filter_precompiled_cache[fpn]:
                 # found the module in the precompiled cache.
-                mod = _filter_precompiled_cache[filterpackname]
+                mod = _filter_precompiled_cache[fpn]
 
         return mod
 
     # ---
 
-    if (filterpackage is not None):
+    if (fpkgname is not None):
         # try to open module from a specific filter package
-        if (isinstance(filterpackage, types.ModuleType)):
-            filterpackage = filterpackage.__name__
-        if filterpackage not in filterpath:
-            raise NoSuchFilterPackage(filterpackage, fpdir=None)
 
-        mod = get_module_in_filterpackage(filterpackage, filterpath[filterpackage])
+        if fpkgname not in filterpath:
+            raise NoSuchFilterPackage(fpkgname, fpdir=None)
 
-        if mod is None and raise_nosuchfilter:
+        # already open? Note: only look in those packages in our filterpath
+        for fpkgd in (fd for fn,fd in iteritems(filterpath) if fn == fpkgname):
+            if (fpkgname,fpkgd) in _filter_modules and name in _filter_modules[(fpkgname,fpkgd)]:
+                return _filter_modules[(fpkgname,fpkgd)][name]
+
+        mod = get_module_in_filterpackage(fpkgname, filterpath[fpkgname])
+
+        if mod is None:
             extrainfo = ""
             if import_errors:
                 extrainfo = "\n\n" + "\n".join(import_errors) + "\n"
             raise NoSuchFilter(name, "Can't find module defining the filter" + extrainfo)
 
+        # cache the module
+        _junk, fpkgdir = getattr(mod, '_filterpackageinfo')
+
+        if (fpkgname,fpkgdir) not in _filter_modules:
+            _filter_modules[(fpkgname,fpkgdir)] = {}
+        _filter_modules[(fpkgname,fpkgdir)][name] = mod
+
         return mod
     
     # load the filter from any filter package, or from cache.
 
-    # already open?
-    if (name in _filter_modules):
-        return _filter_modules[name]
+    # already open? Note: only look in those packages in our filterpath
+    for fpkgn,fpkgd in iteritems(filterpath):
+        if (fpkgn,fpkgd) in _filter_modules and name in _filter_modules[(fpkgn,fpkgd)]:
+            return _filter_modules[(fpkgn,fpkgd)][name]
 
     mod = None
 
@@ -469,7 +493,7 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
         if mod is not None:
             break
 
-    if mod is None and raise_nosuchfilter:
+    if mod is None:
         extrainfo = ""
         if import_errors:
             extrainfo = "\n\n" + "\n".join(import_errors) + "\n"
@@ -477,7 +501,11 @@ def get_module(name, raise_nosuchfilter=True, filterpackage=None, filterpath=fil
 
     if mod is not None:
         # cache the module
-        _filter_modules[name] = mod
+        fpkgname, fpkgdir = getattr(mod, '_filterpackageinfo')
+
+        if (fpkgname,fpkgdir) not in _filter_modules:
+            _filter_modules[(fpkgname,fpkgdir)] = {}
+        _filter_modules[(fpkgname,fpkgdir)][name] = mod
 
     # and return it
     return mod
@@ -492,62 +520,61 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
     global _filter_package_listings
     global _filter_precompiled_cache
 
-
-    def detect_filters_in_package(filterpackage, filterpackname):
+    def detect_filters_in_package(fpkgmod, fpkgname, fpkgdir):
         """
-        Explores the package `filterpackage` (to which one refers by the name `filterpackname`)
-        for available filters.
+        Explores the given filter package and collects filter listings
         """
 
         global _filter_package_listings
 
-        logger.debug('looking for filters in package %r (%s) in %s',
-                     filterpackage, filterpackname, filterpackage.__path__)
+        logger.debug('looking for filters in package %r (%s) in %s', fpkgmod, fpkgname, fpkgdir)
 
-        if not filterpackname in _filter_package_listings:
-            _filter_package_listings[filterpackname] = []
+        if (fpkgname,fpkgdir) not in _filter_package_listings:
+            _filter_package_listings[(fpkgname,fpkgdir)] = []
 
         def ignore(x):
             logger.debug("Ignoring import error of %s", x)
             pass
 
-        filterpackprefix = filterpackname+'.'
+        filterpackprefix = fpkgname+'.'
 
-        for importer, modname, ispkg in pkgutil.walk_packages(path=filterpackage.__path__,
-                                                              prefix=filterpackprefix,
-                                                              onerror=ignore):
+        for loader, modname, ispkg in pkgutil.walk_packages(path=fpkgmod.__path__,
+                                                            prefix=filterpackprefix,
+                                                            onerror=ignore):
             logger.longdebug("Recursively exploring package %s: Found submodule %s (is a package: %s)",
-                             filterpackname, modname, ispkg)
+                             fpkgname, modname, ispkg)
 
             if not modname.startswith(filterpackprefix):
                 logger.debug("found module '%s' which doesn't begin with '%s' -- seems to happen e.g. for packages...",
-                               modname, filterpackprefix)
+                             modname, filterpackprefix)
+                filtername = None
             else:
                 # just the module name, relative to the filter package
-                modname = modname[len(filterpackprefix):]
+                filtername = modname[len(filterpackprefix):]
 
-            ## seems the module needs to be imported for recursive walk to work...
-            #try:
-            #    mjunk = importer.find_module(module_name).load_module(module_name)
-            #except Exception as e:
-            #    # ignore exception -- e.g. syntax error in py -- let get_module() re-capture it
-            #    pass
+            try:
+                module_obj = loader.find_module(modname).load_module(modname)
+            except Exception:
+                logger.debug("Failed to load module %s", modname)
+                continue
+
+            _setup_imported_filter_module(module_obj, fpkgname, fpkgdir)
 
             # is a filter module? -- re-load with get_module() for proper handling of import errors
-            m = get_module(modname, raise_nosuchfilter=False, filterpackage=filterpackage)
-            if m is None:
-                logger.longdebug("Module %s: failed to load", modname)
-                continue
             try:
-                fcl = get_filter_class(modname, fmodule=m)
+                finfo = FilterInfo.initFromModuleObject(filtername, module_obj, fpkgname=fpkgname, fpkgdir=fpkgdir)
+            except NoSuchFilter:
+                logger.debug("Module %s: failed to load", modname)
+                continue
+            except NoSuchFilterPackage:
+                logger.debug("Module %s: invalid filter package %s (!?!?)", modname, fpkgname)
+                continue
             except ModuleNotAValidFilter:
                 logger.debug("Module %s does not define a valid bibolamazi filter", modname)
                 continue
 
-
             # yes, _is_ a filter module.
-            if modname not in _filter_package_listings[filterpackname]:
-                _filter_package_listings[filterpackname].append(modname)
+            _filter_package_listings[(fpkgname,fpkgdir)].append(finfo)
 
     # ----
     
@@ -556,47 +583,74 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
     if not _filter_package_listings or force_redetect:
         _filter_package_listings = OrderedDict()
 
-    for (filterpack, filterdir) in iteritems(filterpath):
+    for (fpkgname, fpkgdir) in iteritems(filterpath):
 
-        if filterpack in _filter_package_listings:
+        if (fpkgname,fpkgdir) in _filter_package_listings:
             # don't need to re-detect. (If force_redetect was set, then we have
             # already cleared the corresponding entry)
             continue
 
         oldsyspath = sys.path
         try:
-            if filterdir:
-                sys.path = [filterdir] + sys.path
+            if fpkgdir:
+                sys.path = [fpkgdir] + sys.path
+            fpkgmod = None
             try:
-                filterpackage = importlib.import_module(filterpack)
+                fpkgmod = importlib.import_module(fpkgname)
             except ImportError as e:
-                logger.warning("Can't import package %s for detecting filters: %s", filterpack, unicodestr(e))
+                logger.warning("Can't import package %s for detecting filters: %s", fpkgname, unicodestr(e))
                 continue
-            #thisdir = os.path.realpath(os.path.dirname(filterpackage.__file__))
-            detect_filters_in_package(filterpackage, filterpack)
 
-            if filterpack in _filter_precompiled_cache:
-                logger.longdebug("Loading precompiled filters from package %s...", filterpack)
-                for (fname,fmod) in iteritems(_filter_precompiled_cache[filterpack]):
-                    logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
-                    if fname not in _filter_package_listings[filterpack]:
-                        _filter_package_listings[filterpack].append(fname)
+            if fpkgmod is not None:
+                detect_filters_in_package(fpkgmod, fpkgname, fpkgdir)
 
         finally:
             sys.path = oldsyspath
 
+        if fpkgname in _filter_precompiled_cache:
+            if (fpkgname,None) not in _filter_package_listings:
+                _filter_package_listings[(fpkgname,None)] = []
+
+            logger.longdebug("Loading precompiled filters from package %s...", fpkgname)
+            for (fname,fmod) in iteritems(_filter_precompiled_cache[fpkgname]):
+                logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
+                if fname not in _filter_package_listings[(fpkgname,None)]:
+                    _filter_package_listings[(fpkgname,None)].append(fname)
+
+
     logger.debug("detect_filter_package_listings(): Filters detected")
 
-    return _filter_package_listings
+    # now, return a nicer OrderedDict with filter names instead of full fpkgspec
+    # keys, keeping only those packages that are accessible in filterpath.
+    listing = OrderedDict()
+    for (fpkgname, fpkgdir) in iteritems(filterpath):
+        if (fpkgname, fpkgdir) not in _filter_package_listings:
+            continue
+        if fpkgname not in listing:
+            listing[fpkgname] = []
+
+        for filtername in _filter_package_listings[(fpkgname, fpkgdir)]:
+            if filtername not in listing[fpkgname]:
+                listing[fpkgname].append(filtername)
+
+    return listing
 
 def detect_filters(force_redetect=False, filterpath=filterpath):
 
+    logger.debug("detect_filters(force_redetect=%r, filterpath=%r)"%(force_redetect, filterpath))
+
     detect_filter_package_listings(force_redetect=force_redetect, filterpath=filterpath)
+
+    # flatten _filter_package_listings list
 
     # now collect filter names
     filter_list = []
-    for (filterpack, filterdir) in iteritems(filterpath):
-        for fname in _filter_package_listings[filterpack]:
+    for (fpkgname, fpkgdir) in iteritems(filterpath):
+
+        if (fpkgname, fpkgdir) not in _filter_package_listings:
+            continue
+
+        for fname in _filter_package_listings[(fpkgname,fpkgdir)]:
             if fname not in filter_list:
                 filter_list.append(fname)
 
@@ -619,8 +673,8 @@ logger = logging.getLogger("filter." + "{filtername}")
 
 class simplefilter_{filtername}(BibFilter):
 
-    helpauthor = "<Author Unknown>"
-    helpdescription = "<No Description>"
+    helpauthor = {filter_help_author}
+    helpdescription = {filter_help_description}
     helptext = {filter_fn_doc_str}
 
     def __init__(self, {init_signature}):
@@ -652,20 +706,10 @@ class simplefilter_{filtername}(BibFilter):
 
 """
 
-def get_filter_class(name, filterpackage=None, filterpath=filterpath, fmodule=None):
+def _get_filter_class(name, fmodule=None):
     """
-    Call::
-
-      get_filter_class(name, filterpackage=None, filterpath=filterpath)
-
-    or::
-
-      get_filter_class(name, fmodule=already_imported_fmodule)
-
+    Use :py:class:`FilterInfo`.
     """
-
-    if not fmodule:
-        fmodule = get_module(name, filterpackage=filterpackage, filterpath=filterpath)
 
     if hasattr(fmodule, 'bibolamazi_filter_class'):
         return fmodule.bibolamazi_filter_class()
@@ -728,16 +772,41 @@ def get_filter_class(name, filterpackage=None, filterpath=filterpath, fmodule=No
 
         fn_argdocs = dict([(x.argname, x) for x in fn_argdoclist])
         init_fields_doc_dict.update(fn_argdocs)
-            
+
+        logger.debug("init_fields_doc_dict=%r", init_fields_doc_dict)
+
+        fn_help_description = "<No description available>"
+        fn_help_author = "<Author unknown>"
+
+        m = re.search(r'^\s*Author\s*:\s*(?P<author>(.|(\n(?!\s*\n)))*)(\n\s*\n|\Z)', fn_docstring_docpart,
+                      flags=re.MULTILINE|re.IGNORECASE)
+        if m is not None:
+            fn_help_author = textwrap.dedent(m.group('author').strip())
+            fn_docstring_docpart = fn_docstring_docpart[:m.start()] + fn_docstring_docpart[m.end():]
+        
+        m = re.search(r'^\s*Description\s*:\s*(?P<description>(.|(\n(?!\s*\n)))*)(\n\s*\n|\Z)',
+                      fn_docstring_docpart, flags=re.MULTILINE|re.IGNORECASE)
+        if m is not None:
+            fn_help_description = textwrap.dedent(m.group('description').strip())
+            fn_docstring_docpart = fn_docstring_docpart[:m.start()] + fn_docstring_docpart[m.end():]
+        
+        # extract filter name from "pkg:filter"
+        if ':' in name:
+            filtername = name.split(':')[-1]
+        else:
+            filtername = name
+
         # now, format class definition source
         cls_source = _simple_filter_class_template.format(
-            filtername=name,
+            filtername=filtername,
             fmodulename=fmodule.__name__,
-            filter_fn_doc_str=repr(fn_docstring_docpart),
+            filter_help_author=repr(fn_help_author),
+            filter_help_description=repr(fn_help_description),
+            filter_fn_doc_str=repr(fn_docstring_docpart.strip()),
             bib_filter_action_type=simple_filter_action_type,
             init_signature=", ".join(init_signature_list),
             init_kwargs_set_dict=", ".join(init_kwargs_set_dict_list),
-            init_fields_doc_str=repr("Arguments:"  +  "\n".join([
+            init_fields_doc_str=repr("Arguments:\n"  +  "\n".join([
                 '  * ' + x.argname + ('('+x.argtypename+')' if x.argtypename else '') + ':'
                 + x.doc
                 for x in init_fields_doc_dict.values()
@@ -751,32 +820,146 @@ def get_filter_class(name, filterpackage=None, filterpath=filterpath, fmodule=No
         # tracing utilities by setting a value for frame.f_globals['__name__']
         namespace = dict(__name__='bibolamazisimplefilter_%s' % name)
         exec(cls_source, namespace)
-        result = namespace['simplefilter_%s' % name]
+        result = namespace['simplefilter_%s' % filtername]
         result._source = cls_source
 
         return result
-
 
     raise ModuleNotAValidFilter(name, "Module is not a valid filter definition")
 
 
 
+@python_2_unicode_compatible
 class FilterInfo(object):
     """
     Information about a given filter.
 
-    NEED DOC
+    Arguments:
 
-    NOTE: Constructor may raise 'NoSuchFilter'.
+      - `name`: the name of the filter to get information about.  It may be of
+        the form 'filtername' or 'pkgname:filtername'.
+
+      - `filterpath`: an :py:class:`collections.OrderedDict` of paths where to
+        look for filters.  Keys are package names and values are the filesystem
+        directory that needs to be added to `sys.path` to be able to import the
+        given filter package as a Python package.
+
+    .. note: The constructor of this class may raise :py:exc:`NoSuchFilter`,
+             :py:exc:`NoSuchFilterPackage`, or :py:exc:`ModuleNotAValidFilter`,
+             if a corresponding error occurs while inspecting the filter.
+
+
+    .. py:attribute:: filtername
+
+       The filter name (without any filter package information).
+
+    .. py:attribute:: fmodule
+
+       The module object that contains the filter.
+
+    .. py:attribute:: fclass
+
+       The class object that implements the filter.
+
+       Note that simple-syntax filters are internally translated into a class
+       object that fulfils the full-syntax filters API. So all filters have a
+       valid class object that behaves as one would expect.
+
+    .. py:attribute:: filterpackagename
+
+       The name of the filter package in which this filter is located.  This
+       value is always valid.  The built-in filters are in the filter package
+       ``bibolamazi.filters``.
+
+    .. py:attribute:: filterpackagedir
+
+       The filesystem path that needs to be added to :py:attr:`sys.path` in
+       order to be able to import the filter package `filterpackagename` as a
+       Python package.  Note: bibolamazi assumes that `sys.path` is not being
+       mischieviously manipulated by other parts of the Python code.  If the
+       filter package can be loaded from Python's default path, this directory
+       may not be accurate.
+
+    .. py:attribute:: filterpackagespec
+
+       A string of the form 'pkgname=file/system/path' that combines the
+       information of `filterpackagename` and `filterpackagedir` in a single
+       string.  This is a valid argument to the function
+       :py:func:`parse_filterpackage_argstr()`.
+
+
+    This object also exposes the following attributes, which reflect what
+    arguments were given to the constructor.
+
+    .. py:attribute:: name
+
+       The filter name, as specified to the constructor.
+
+    .. py:attribute:: filterpath
+
+       The filter path specified to the constructor (or the default one), that
+       was used to resolve the information to the present filter.
+    
+    The following methods are available for more specific filter information.
     """
     def __init__(self, name, filterpath=filterpath):
+
+        if name is None:
+            # called by some other initXXX static method -- let them continue
+            return
+
         self.name = name
-        self.filterpath = filterpath
-        self.fmodule = get_module(name, filterpath=filterpath)
-        self.fclass = get_filter_class(name, fmodule=self.fmodule)
+        self.filterpath = OrderedDict(filterpath)
+
+        # shortcut: a filter name may be 'filterpackage:the.module.name' to force search in a
+        # specific filter package.
+        if ':' in name:
+            fpkgref, self.filtername = name.split(':',1)
+        else:
+            self.filtername = self.name
+            fpkgref = None
+
+        self.fmodule = _get_filter_module(self.filtername, fpkgname=fpkgref, filterpath=self.filterpath)
+        self.fclass = _get_filter_class(self.filtername, fmodule=self.fmodule)
+
+        self.filterpackagename, self.filterpackagedir = getattr(self.fmodule, '_filterpackageinfo')
+        self.filterpackagespec = self.filterpackagename + '=' + self.filterpackagedir
 
         self.uses_default_argparse = not hasattr(self.fmodule, 'parse_args')
 
+    @staticmethod
+    def initFromModuleObject(filtername, module_obj, fpkgname, fpkgdir):
+        """
+        Initializes a `FilterInfo` object from an already-imported module object
+        `module_obj` in a given filter package with name `fpkgname` residing in
+        dir `fpkgdir`.  The module name without the package information must be
+        given in `filtername`.
+        """
+
+        finfo = FilterInfo(None)
+
+        finfo.filtername = filtername
+        finfo.fmodule = module_obj
+        finfo.fclass = _get_filter_class(filtername, fmodule=finfo.fmodule)
+
+        finfo.filterpackagename = fpkgname
+        finfo.filterpackagedir = fpkgdir
+        finfo.filterpackagespec = fpkgname + '=' + fpkgdir
+
+        finfo.uses_default_argparse = not hasattr(finfo.fmodule, 'parse_args')
+
+        finfo.name = filtername
+        finfo.filterpath = None
+
+        return finfo
+
+    def __str__(self):
+        return "FilterInfo(filtername=%r, fpkgname=%r, fpkgdir=%r)"%(
+            self.filtername, self.filterpackagename, self.filterpackagedir
+        )
+    def __repr__(self):
+        return str(self)
+        
     def parseOptionStringArgs(self, optionstring):
 
         pargs = []
@@ -800,8 +983,8 @@ class FilterInfo(object):
         Validate the arguments as OK to pass to constructor, i.e. that all argument
         names are correct.
 
-        We use inspect.getcallargs() to inspect the filter class constructor's
-        signature.
+        We use :py:func:`inspect.getcallargs()` to inspect the filter class
+        constructor's signature.
 
         Raises :py:exc:`FilterCreateArgumentError` if the validation fails.
         """
@@ -816,16 +999,40 @@ class FilterInfo(object):
 
     def defaultFilterOptions(self):
         """
+        Return a :py:class:`DefaultFilterOptions` object that is capable of standard
+        filter argument parsing for this filter.
 
-        Return `None` if the filter doesn't use the default arg parsing mechanism.
+        This method returns `None` if the filter doesn't use the default
+        argument parsing mechanism.
         """
         if not self.uses_default_argparse:
             return None
-        return DefaultFilterOptions(self.name, fclass=self.fclass)
+        
+        return DefaultFilterOptions(finfo=self)
+
+
+    def formatFilterHelp(self):
+        """
+        Get the filter's help text.
+
+        This is either the filter's own custom help text, or the help text
+        retrieved from the filter's argument parser.
+        """
+        if hasattr(self.fmodule, 'format_help'):
+            return self.fmodule.format_help()
+        fopt = self.defaultFilterOptions()
+        if fopt is not None:
+            return fopt.format_filter_help()
+        return "<no help available>"
 
     def makeFilter(self, optionstring):
         """
         Instantiate the filter with the given option string.
+
+        Returns the new filter instance.
+
+        Raises py:exc:`FilterCreateError` if any exception was raised during the
+        filter instantiation.
         """
 
         (pargs, kwargs) = self.parseOptionStringArgs(optionstring)
@@ -970,22 +1177,32 @@ Have a lot of fun!
 """
 
 class DefaultFilterOptions(object):
-    def __init__(self, filtername, fclass=None):
-        self._filtername = filtername
+    def __init__(self, filtername=None, filterpath=filterpath, finfo=None):
+        """
+        Instantiate this class as::
 
-        self._fmodule = get_module(filtername)
+            defopt = DefaultFilterOptions(filtername [, filterpath=...])    OR
+            defopt = DefaultFilterOptions(finfo=...)
+        """
 
-        if fclass is None:
-            fclass = get_filter_class(filtername)
+        if finfo is not None:
+            self.finfo = finfo
+            if filtername is not None:
+                raise ValueError("use signature DefaultFilterOptions(filtername, [filterpath=]) "
+                                 "or  DefaultFilterOptions(finfo=)")
+        else:
+            self.finfo = FilterInfo(filtername, filterpath=filterpath)
 
-        self._fclass = fclass
+        self._filtername = self.finfo.name
+        self._fmodule = self.finfo.fmodule
+        self._fclass = self.finfo.fclass
 
         # find out what the arguments to the filter constructor are
-        self.fclass_arg_defs = inspect_getargspec(fclass.__init__)
+        self.fclass_arg_defs = inspect_getargspec(self._fclass.__init__)
         (fargs, varargs, keywords, defaults) = self.fclass_arg_defs
 
         # get some doc about the parameters
-        docstr = fclass.__init__.__doc__
+        docstr = self._fclass.__init__.__doc__
         argdoclist, fndocpart = parseArgdoc(docstr)
         argdocs = dict([(x.argname, x) for x in argdoclist])
 
@@ -1002,7 +1219,7 @@ class DefaultFilterOptions(object):
             if (k-off >= 0):
                 s += "="+repr(defaults[k-off])
             return s
-        fclasssyntaxdesc = fclass.__name__+("(" + " ".join([xpart for xpart in [
+        fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
             (", ".join([fmtarg(k, fargs, defaults)
                         for k in range(len(fargs))
                         if fargs[k] != "self"])),
@@ -1012,7 +1229,7 @@ class DefaultFilterOptions(object):
 
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,
-                                 description=fclass.getHelpDescription(),
+                                 description=self._fclass.getHelpDescription(),
                                  epilog=_add_epilog,
                                  add_help=False,
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1157,7 +1374,7 @@ class DefaultFilterOptions(object):
 
         p.add_argument_group(u'Note on Filter Options Syntax', filter_options_syntax_help)
 
-        p.add_argument_group(u'FILTER DESCRIPTION', "\n" + fclass.getHelpText())
+        p.add_argument_group(u'FILTER DESCRIPTION', "\n" + self._fclass.getHelpText())
 
 
         self._parser = p
@@ -1405,21 +1622,10 @@ class DefaultFilterOptions(object):
         return prolog + self._parser.format_help()
 
 
-def format_filter_help(filtname):
-    #
-    # Get the parser via the filter, and use its format_help()
-    #
+def format_filter_help(filtname=None, filterpath=filterpath):
+    """
+    Format help text for the given filter.  This is a shortcut to the
+    corresponding method in :py:class:`FilterInfo`.
+    """
 
-    fmodule = get_module(filtname)
-
-    if (hasattr(fmodule, 'format_help')):
-        return fmodule.format_help()
-
-    # otherwise, use the help formatter of the default option parser
-    fopt = DefaultFilterOptions(filtname)
-
-    if fopt is not None:
-        return fopt.format_filter_help()
-
-    return "<NO HELP AVAILBLE>" 
-    
+    return FilterInfo(filtname, filterpath=filterpath).formatFilterHelp()

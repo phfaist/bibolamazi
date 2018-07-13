@@ -761,7 +761,11 @@ class OpenBibFile(QWidget):
     def on_btnAddFilter_clicked(self):
         logger.debug('add filter: clicked')
 
-        filter_list = filterinstanceeditor.get_filter_list()
+        filterpath = filterfactory.filterpath
+        if self.bibolamaziFile.getLoadState() == bibolamazifile.BIBOLAMAZIFILE_PARSED:
+            filterpath = self.bibolamaziFile.fullFilterPath()
+
+        filter_list = filterinstanceeditor.get_filter_list(filterpath)
 
         (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
                                               filter_list)
@@ -796,7 +800,7 @@ class OpenBibFile(QWidget):
 
         cmdtext = str(cmdtext)
 
-        insertcur.insertText(cmdtext+'\n')
+        insertcur.insertText('\n' + cmdtext+'\n\n')
         # select inserted text without the newline
         #insertcur.movePosition(QTextCursor.Left)
         insertcur.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, len(cmdtext)+1)
@@ -914,8 +918,8 @@ class OpenBibFile(QWidget):
             text = cmd.text
             if (text and text[-1] == '\n'):
                 text = text[:-1]
-            self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, text,
-                                                                     noemit=True)
+            self.ui.filterInstanceEditor.setFilterPath(self.bibolamaziFile.fullFilterPath())
+            self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, text, noemit=True)
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageFilter)
             return
 

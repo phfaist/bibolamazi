@@ -28,12 +28,17 @@ from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
 from builtins import range
 from builtins import str as unicodestr
+from future.standard_library import install_aliases
+install_aliases()
 
 import sys
 import logging
+import os.path
+from collections import OrderedDict
 
  # don't change this, we use 'from .htmlbrowser import htmlescape'
 from html import escape as htmlescape
+from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
 
 import markdown2
 
@@ -215,6 +220,11 @@ class HelpTopicPage(object):
         return self._tooltip
 
 
+class TabAlreadyOpen(Exception):
+    def __init__(self, widget):
+        super(TabAlreadyOpen, self).__init__()
+        self.widget = widget
+
 
 class HelpBrowser(QWidget):
     def __init__(self):
@@ -270,29 +280,46 @@ class HelpBrowser(QWidget):
 
     @pyqtSlot('QUrl')
     def openHelpTopicUrl(self, url):
-        if url.scheme() in ['http', 'https',]:
-            QDesktopServices.openUrl(url)
-            return
-
         self.openHelpTopic(url.toString())
 
 
     @pyqtSlot(str)
-    def openHelpTopic(self, path):
+    def openHelpTopic(self, url):
+
+        logger.debug("Help: open topic at URL %s", url)
+
+        urlparts = urlparse(url)
+
+        if urlparts.scheme in ['http', 'https']:
+            QDesktopServices.openUrl(QUrl(url))
+            return
+        
+        if urlparts.scheme and urlparts.scheme != 'help':
+            raise ValueError("Invalid URL scheme: %s [url=%s]"%(urlparts.scheme, url))
+
+        path = os.path.normpath(urlparts.path)
+        qs = parse_qs(urlparts.query) # any options etc.
+
+        logger.debug("got options qs = %r", qs)
+
+        opt = {}
+
+        if 'filterpackage' in qs:
+            fpkgspec = qs.pop('filterpackage')[0]
+            fpname, fpdir = filters_factory.parse_filterpackage_argstr(fpkgspec)
+            opt['filterpackage'] = (fpname, fpdir)
+        # add other url options here ...
+        if qs:
+            raise ValueError("Unknown help topic url options: %r"%(qs))
 
         pathitems = [x for x in path.split('/') if x]
 
-        # check to see if the tab is already open
-        for tab in self.openTabs:
-            if (str(tab.property('helppath')) == "/".join(pathitems)):
-                # just raise this tab.
-                self.ui.tabs.setCurrentWidget(tab)
-                return
-
-        widget = self.makeHelpTopicWidget(pathitems, parent=self.ui.tabs)
-        if (widget is None):
+        widget = None
+        try:
+            widget = self._gethelptopicwidget(pathitems, opt=opt, parent=self.ui.tabs)
+        except TabAlreadyOpen as t:
+            self.ui.tabs.setCurrentWidget(t.widget)
             return
-        widget.setProperty('helppath', "/".join(pathitems))
 
         tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle'))
         self.ui.tabs.setTabToolTip(tabindex, widget.property('HelpTabToolTip'))
@@ -301,18 +328,15 @@ class HelpBrowser(QWidget):
         self.openTabs.append(widget)
 
 
-    def makeHelpTopicWidget(self, pathitems, parent=None):
+    def _findopenhelptopicwidget(self, urlcanon):
 
-        helptopicpage = self.getHelpTopicPage(pathitems)
-        if not helptopicpage:
-            return None
+        # check to see if the tab is already open
+        for tab in self.openTabs:
+            if (str(tab.property('helpurl')) == urlcanon):
+                # just raise this tab.
+                raise TabAlreadyOpen(tab)
 
-        #if sys.platform.startswith('darwin'):
-        #    fontsize_pt = QFontInfo(self.font()).pointSize() + 1
-        #    fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize() + 1
-        #else:
-        #    fontsize_pt = QFontInfo(self.font()).pointSize() + 1
-        #    fontsize_code_pt = QFontInfo(QFontDatabase.systemFont(QFontDatabase.FixedFont)).pointSize()
+    def _mkhelptopicwidget(self, helptopicpage, urlcanon, parent=None):
 
         html = helptopicpage.contentAsHtml()#fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
 
@@ -334,10 +358,69 @@ class HelpBrowser(QWidget):
         if helptopicpage.tooltip:
             tb.setProperty("HelpTabToolTip", helptopicpage.tooltip())
 
-        return tb
-        
+        tb.setProperty("helpurl", urlcanon)
 
-    def getHelpTopicPage(self, pathitems):
+        return tb
+
+    
+    def _gethelptopicwidget(self, pathitems, opt, parent=None):
+
+        if len(pathitems) == 0:
+            # home page
+
+            urlcanon = 'help:/'
+            self._findopenhelptopicwidget(urlcanon)
+            return self._mkhelptopicwidget(self._gethelptopic_home(), urlcanon, parent=self)
+
+        if (pathitems[0] == 'general'):
+            if (len(pathitems) < 2):
+                logger.warning("getHelpTopicPage(): No help topic general page specified!!")
+                return None
+
+            urlcanon = 'help:/' + '/'.join(pathitems)
+            self._findopenhelptopicwidget(urlcanon)
+            return self._mkhelptopicwidget(self._gethelptopic_general('/'.join(pathitems[1:])),
+                                           urlcanon, parent=self)
+
+
+        if pathitems[0] == 'filters' or pathitems[0] == 'rawfilterdoc':
+
+            if (len(pathitems) < 2):
+                logger.warning("getHelpTopicPage(): No filter specified!!")
+                return None
+
+            filtname = pathitems[1]
+
+            if 'filterpackage' in opt:
+                filterpath = OrderedDict([opt['filterpackage']])
+            else:
+                filterpath = filters_factory.filterpath
+
+            finfo = filters_factory.FilterInfo(filtname, filterpath=filterpath)
+
+            fpn, fpd = finfo.filterpackagename, finfo.filterpackagedir
+
+            urlcanon = ('help:/' + pathitems[0] + '/' + finfo.filtername + '?'
+                        + urlencode([('filterpackage', fpn+'='+fpd)]))
+
+            self._findopenhelptopicwidget(urlcanon)
+
+            page = None
+            if pathitems[0] == 'filters':
+                page = self._gethelptopic_filters(finfo)
+            elif pathitems[0] == 'rawfilterdoc':
+                page = self._gethelptopic_rawfilterdoc(finfo)
+            else:
+                raise RuntimeError("pathitems[0]=%r ??"%(pathitems[0]))
+
+            return self._mkhelptopicwidget(page, urlcanon, parent=self)
+        
+        logger.warning("getHelpTopicPage(): Unknown help topic: %r", "/".join(pathitems))
+        return None
+
+            
+
+    def _gethelptopic_home(self):
         """
         Return a `HelpTopicPage` object or `None`.
         """
@@ -347,159 +430,90 @@ class HelpBrowser(QWidget):
                 txt=txt, link=link
                 )
 
-        if len(pathitems) == 0:
-            # home page
+        home_src = "<h1>Help &amp; Reference Browser</h1>\n\n"
 
-            home_src = "<h1>Help &amp; Reference Browser</h1>\n\n"
+        home_src += ("<p>" + big_html_link("Welcome to bibolamazi", "help:/general/welcome")
+                     + " \N{EM DASH} " +
+                     big_html_link("Annotated filter list", "help:/general/filter-list")
+                     + " \N{EM DASH} " +
+                     big_html_link("Bibolamazi version information", "help:/general/version")
+                     + " \N{EM DASH} " +
+                     big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
+                     + " \N{EM DASH} " +
+                     big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
+                     + "</p>\n\n")
 
-            home_src += ("<p>" + big_html_link("Welcome to bibolamazi", "/general/welcome")
-                         + " \N{EM DASH} " +
-                         big_html_link("Annotated filter list", "/general/filter-list")
-                         + " \N{EM DASH} " +
-                         big_html_link("Bibolamazi version information", "/general/version")
-                         + " \N{EM DASH} " +
-                         big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
-                         + " \N{EM DASH} " +
-                         big_html_link("Bibolamazi command-line help", "/general/cmdline")
-                         + "</p>\n\n")
+        home_src += "<h2>Filters</h2>\n\n"
 
-            home_src += "<h2>Filters</h2>\n\n"
+        home_src += "<ul>\n"
+        for filt in filterinstanceeditor.get_filter_list():
+            home_src += (
+                "<li>&nbsp;<a href=\"help:/filters/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
+                )
+        home_src += "</ul>\n"
 
-            home_src += "<ul>\n"
-            for filt in filterinstanceeditor.get_filter_list():
-                home_src += (
-                    "<li>&nbsp;<a href=\"filters/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
-                    )
-            home_src += "</ul>\n"
+        return HelpTopicPage.makeHtmlFragmentPage(home_src, "Home")
 
-            return HelpTopicPage.makeHtmlFragmentPage(home_src, "Home")
+    def _gethelptopic_filters(self, filtinfo):
 
-        if (pathitems[0] == 'filters'):
-            
-            if (len(pathitems) < 2):
-                logger.warning("getHelpTopicPage(): No filter specified!!")
-                return
+        filtname = filtinfo.filtername
 
-            filtname = pathitems[1]
-
-            return _mk_filter_help_page(filtname)
-
-
-        if (pathitems[0] == 'rawfilterdoc'):
-
-            if (len(pathitems) < 2):
-                logger.warning("getHelpTopicPage(): No filter specified!!")
-                return
-
-            filtname = pathitems[1]
-
-            filtertxt = filters_factory.format_filter_help(filtname)
-            title = '%s filter (raw doc)'%(filtname)
-            desc = filters_factory.get_filter_class(filtname).getHelpDescription()
-            return HelpTopicPage.makeTxtPage(filtertxt, title, desc)
-
-
-        if (pathitems[0] == 'general'):
-            if (len(pathitems) < 2):
-                logger.warning("getHelpTopicPage(): No help topic general page specified!!")
-                return
-
-            if pathitems[1] == 'welcome':
-                return HelpTopicPage.makeMarkdownPage(HELP_WELCOME, "Welcome")
-            elif pathitems[1] == 'version':
-                return HelpTopicPage.makeTxtPage(argparseactions.helptext_prolog(), "Version")
-            elif pathitems[1] == 'cmdline':
-                return HelpTopicPage.makeTxtPage(
-                    argparseactions.helptext_prolog() +
-                    bibolamazimain.get_args_parser().format_help(),
-                    "Command-Line Help")
-            elif pathitems[1] == 'filter-list':
-                return _mk_filter_list_page()
-
-            return None
-                
-        logger.warning("getHelpTopicPage(): Unknown help topic: %r", "/".join(pathitems))
-        return None
-
-
-
-
-def _mk_filter_list_page():
-    
-    html = "<h1>List of filters</h1>\n\n"
-
-    for (fp,fplist) in iteritems(filters_factory.detect_filter_package_listings()):
-
-        html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
-
-        html += "<table>"
-        for f in fplist:
-            html += ("<tr><th><a href=\"/filters/{filtname}\">{filtname}</a></th></tr>"+
-                     "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
-                         filtname=f,
-                         filtdesc=filters_factory.get_filter_class(f, filterpackage=fp).getHelpDescription()
-                     )
-        html += "</table>"
-
-    html += ("<p style=\"margin-top: 2em\"><em>Filter packages are listed in the order " +
-             "they are searched.</em></p>")
-
-    return HelpTopicPage.makeHtmlFragmentPage(html, "Filter List")
-
-
-def _mk_filter_help_page(filtname):
-    
-    filtinfo = filters_factory.FilterInfo(filtname)
-
-    title = filtname + ' filter'
-
-    fopt = filtinfo.defaultFilterOptions()
-
-    if fopt:
-        # we're in business
+        title = filtname + ' filter'
 
         html = "<h1>Filter: {}</h1>\n\n".format(filtname)
 
-        html += "<p>" + htmlescape(filtinfo.fclass.getHelpAuthor()) + "</p>\n\n"
-        html += "<p>" + htmlescape(filtinfo.fclass.getHelpDescription()) + "</p>\n\n"
+        fpn, fpd = filtinfo.filterpackagename, filtinfo.filterpackagedir
+        html += "<p class=\"shadow\">In filter package <b>" + htmlescape(fpn) + "</b></p>\n\n"
 
-        html += "<h2>Filter Options:</h2>\n\n"
+        author = filtinfo.fclass.getHelpAuthor().strip()
+        if author:
+            html += "<p>" + htmlescape(author) + "</p>\n\n"
 
-        html += "<table width=\""+str(TABLE_WIDTH)+"\">"
+        desc = filtinfo.fclass.getHelpDescription().strip()
+        if desc:
+            html += "<p>" + htmlescape(desc) + "</p>\n\n"
 
-        for arg in fopt.filterOptions():
-            html += "<tr><th>" + htmlescape(fopt.getSOptNameFromArg(arg.argname)) + "</th></tr>"
-            html += "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">"
-            html += "<p class=\"inner\">" + htmlescape(arg.doc) + "</p>"
+        fopt = filtinfo.defaultFilterOptions()
+        if fopt:
+            # we're in business -- filter options
 
-            if arg.argtypename:
-                typ = butils.resolve_type(arg.argtypename, filtinfo.fmodule)
-                if typ is bool:
-                    html += ("<p class=\"inner shadow\">Expects a boolean argument type" +
-                             " (True/1/Yes/On or False/0/No/Off)</p>")
-                elif typ is int:
-                    html += ("<p class=\"inner shadow\">Expects an integer as argument</p>")
-                elif hasattr(typ, '__doc__') and typ.__doc__: # e.g., is not None
-                    docstr = typ.__doc__.strip()
-                    if len(docstr):
-                        html += ("<p class=\"inner shadow\">Expects argument type " +
-                                 "<code>" + htmlescape(arg.argtypename) + "</code>: "
-                                 + docstr + "</p>")
+            html += "<h2>Filter Options:</h2>\n\n"
 
-            html += "</td></tr>\n"
+            html += "<table width=\""+str(TABLE_WIDTH)+"\">"
 
-        if fopt.filterAcceptsVarArgs():
-            html += "<tr><th>(...)</th></tr>"
-            html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
-                     "additional positional arguments (see doc below)</td></tr>")
-        if fopt.filterAcceptsVarKwargs():
-            html += "<tr><th>(...=...)</th></tr>"
-            html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
-                     "additional named/keyword arguments (see doc below)</td></tr>")
+            for arg in fopt.filterOptions():
+                html += "<tr><th>" + htmlescape(fopt.getSOptNameFromArg(arg.argname)) + "</th></tr>"
+                html += "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">"
+                html += "<p class=\"inner\">" + htmlescape(arg.doc if arg.doc else '') + "</p>"
 
-        html += "</table>"
+                if arg.argtypename:
+                    typ = butils.resolve_type(arg.argtypename, filtinfo.fmodule)
+                    if typ is bool:
+                        html += ("<p class=\"inner shadow\">Expects a boolean argument type" +
+                                 " (True/1/Yes/On or False/0/No/Off)</p>")
+                    elif typ is int:
+                        html += ("<p class=\"inner shadow\">Expects an integer as argument</p>")
+                    elif hasattr(typ, '__doc__') and typ.__doc__: # e.g., is not None
+                        docstr = typ.__doc__.strip()
+                        if len(docstr):
+                            html += ("<p class=\"inner shadow\">Expects argument type " +
+                                     "<code>" + htmlescape(arg.argtypename) + "</code>: "
+                                     + docstr + "</p>")
 
-        html += """
+                html += "</td></tr>\n"
+
+            if fopt.filterAcceptsVarArgs():
+                html += "<tr><th>(...)</th></tr>"
+                html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
+                         "additional positional arguments (see doc below)</td></tr>")
+            if fopt.filterAcceptsVarKwargs():
+                html += "<tr><th>(...=...)</th></tr>"
+                html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
+                         "additional named/keyword arguments (see doc below)</td></tr>")
+
+            html += "</table>"
+
+            html += """
 
 <p>Pass options with the syntax <code>-s</code><span
 class="code-meta">OptionName</span><code>="</code><span class="code-meta">option
@@ -512,28 +526,90 @@ specifying boolean ON/OFF switches.</p>
 
 """
 
-        html += "<h2>Filter Documentation:</h2>\n\n"
+            html += "<h2>Filter Documentation:</h2>\n\n"
 
-        html += "<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText()) + "</div>\n\n"
+            html += "<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText()) + "</div>\n\n"
 
-        html += ("<p style=\"margin-top: 2em\"><a href=\"/rawfilterdoc/"+filtname+"\">" +
-                 "View this filter's raw documentation</a></p>\n\n")
-        
-        return HelpTopicPage.makeHtmlFragmentPage(html, title)
+            urlrawdoc = ('help:/rawfilterdoc/' + filtinfo.filtername + '?' +
+                         urlencode([('filterpackage', fpn+'='+fpd)]))
 
-    if hasattr(filtinfo.fmodule, 'format_help'):
-        return HelpTopicPage.makeTxtPage(
-            "FILTER " + filtname + "\n\n" +
-            filtinfo.fclass.getHelpDescription() +
-            filtinfo.fmodule.format_help(),
+            html += ("<p style=\"margin-top: 2em\"><a href=\""+htmlescape(urlrawdoc)+"\">" +
+                     "View this filter's raw documentation</a></p>\n\n")
+
+            return HelpTopicPage.makeHtmlFragmentPage(html, title)
+
+        if hasattr(filtinfo.fmodule, 'format_help'):
+            html += "<div style=\"white-space: pre-wrap\">" + filtinfo.fmodule.format_help() + "</div>"
+            return HelpTopicPage.makeHtmlFragmentPage(html, title)
+
+
+        return HelpTopicPage.makeMarkdownPage(
+            "*No documentation available for filter {}*".format(filtname),
             title
         )
-
-    return HelpTopicPage.makeMarkdownPage(
-        "*No documentation available for filter {}*".format(filtname),
-        title
-    )
     
+
+    def _gethelptopic_rawfilterdoc(self, finfo):
+
+        filtertxt = finfo.formatFilterHelp()
+        title = '%s filter (raw doc)'%(finfo.filtername)
+        desc = finfo.fclass.getHelpDescription()
+
+        return HelpTopicPage.makeTxtPage(filtertxt, title, desc)
+
+
+    def _gethelptopic_general(self, page):
+
+        if page == 'welcome':
+            return HelpTopicPage.makeMarkdownPage(HELP_WELCOME, "Welcome")
+
+        elif page == 'version':
+            return HelpTopicPage.makeTxtPage(argparseactions.helptext_prolog(), "Version")
+
+        elif page == 'cmdline':
+            return HelpTopicPage.makeTxtPage(
+                argparseactions.helptext_prolog() +
+                bibolamazimain.get_args_parser().format_help(),
+                "Command-Line Help")
+
+        elif page == 'filter-list':
+            html = "<h1>List of filters</h1>\n\n"
+
+            filterpath = filters_factory.filterpath
+
+            for (fp,fplist) in iteritems(filters_factory.detect_filter_package_listings(filterpath=filterpath)):
+
+                html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
+
+                html += "<table>"
+                for f in fplist:
+
+                    try:
+                        finfo = filters_factory.FilterInfo(f, filterpath=OrderedDict([(fp,filterpath[fp])]))
+                    except Exception as e:
+                        logger.warning("Can't inspect filter %s in package %s", f, fp)
+                        continue
+
+                    html += ("<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
+                             "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
+                                 filtname=finfo.filtername,
+                                 filtdesc=finfo.fclass.getHelpDescription()
+                             )
+                html += "</table>"
+
+            html += ("<p style=\"margin-top: 2em\"><em>Filter packages are listed in the order " +
+                     "they are searched.</em></p>")
+
+            return HelpTopicPage.makeHtmlFragmentPage(html, "Filter List")
+
+        logger.warning("Unknown general help page: %s", page)
+
+        return None
+
+
+
+
+
 
 
 

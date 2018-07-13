@@ -97,7 +97,7 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
             fmtname = self.fmt_filtername
             try:
                 # try to load the filter module to see if it exists
-                filtmodule = filters_factory.get_module(m.group('filtername'))
+                filtmodule = filters_factory.FilterInfo(m.group('filtername'))
             except Exception:
                 fmtname = self.fmt_filtername_nonex
 
