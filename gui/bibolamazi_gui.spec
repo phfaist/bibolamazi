@@ -65,7 +65,7 @@ from bibolamazi.core.bibfilter import factory as filterfactory
 tmp_genfiles_dirname = '_tmp_genfiles'
 tmp_genfiles_dir = os.path.join(bibolamazigui_dir, tmp_genfiles_dirname)
 #import filters
-filternames = filterfactory.detect_filters()
+filternames = [finfo.filtername for finfo in filterfactory.detect_filters()]
 if not os.path.isdir(tmp_genfiles_dir):
     os.mkdir(tmp_genfiles_dir)
 with open(os.path.join(tmp_genfiles_dir,'bibolamazi_compiled_filter_list.py'), 'w') as f:

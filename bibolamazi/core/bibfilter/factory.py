@@ -286,10 +286,10 @@ def parse_filterpackage_argstr(argstr):
         fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
 
     if not fpdir:
-        fpdir = '.' # allow to search filter packages from '.' directory.  Note
-                    # that when parsing package: directives in a bibolamazifile,
-                    # then BibolamaziFile automatically converts this '.' into a
-                    # bibolamazifile-relative dir.
+        # e.g., built-in filters must have None as fpdir because they don't
+        # reside at a specific location.  Note that when loading filters, we
+        # will also check the '.' directory
+        fpdir = None
 
 
     if not fpname or re.search(r'[^a-zA-Z0-9_\.]', fpname):
@@ -301,6 +301,10 @@ def parse_filterpackage_argstr(argstr):
     return (fpname, fpdir)
 
 
+def _syspath_for_fpkgdir(fpkgdir, oldpath):
+    return ([fpkgdir] if fpkgdir else []) + oldpath + ['.']
+
+
 def validate_filter_package(fpname, fpdir, raise_exception=True):
     """
     Make sure given filter package at given directory is valid.
@@ -310,8 +314,7 @@ def validate_filter_package(fpname, fpdir, raise_exception=True):
 
     oldsyspath = sys.path
     mod = None
-    if fpdir:
-        sys.path = [fpdir] + sys.path
+    sys.path = _syspath_for_fpkgdir(fpdir, sys.path)
     try:
         mod = importlib.import_module(fpname)
     except (ImportError,TypeError):  # raises TypeError if fpname is '.modulename'
@@ -379,8 +382,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             
         # first, search the actual module.
         oldsyspath = sys.path
-        if fpd:
-            sys.path = [fpd] + sys.path
+        sys.path = _syspath_for_fpkgdir(fpd, sys.path)
         try:
             logger.longdebug("Attempting to import filter package `%s`"%(fpn))
             fpmod = importlib.import_module(fpn)
@@ -439,7 +441,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             sys.path = oldsyspath
 
         # then, check if we have a precompiled filter list for this filter package.
-        if mod is None and fpn in _filter_precompiled_cache:
+        if mod is None and fpn in _filter_precompiled_cache and not fpd:
             if name in _filter_precompiled_cache[fpn]:
                 # found the module in the precompiled cache.
                 mod = _filter_precompiled_cache[fpn]
@@ -591,9 +593,8 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
             continue
 
         oldsyspath = sys.path
+        sys.path = _syspath_for_fpkgdir(fpkgdir, sys.path)
         try:
-            if fpkgdir:
-                sys.path = [fpkgdir] + sys.path
             fpkgmod = None
             try:
                 fpkgmod = importlib.import_module(fpkgname)
@@ -614,11 +615,16 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
             logger.longdebug("Loading precompiled filters from package %s...", fpkgname)
             for (fname,fmod) in iteritems(_filter_precompiled_cache[fpkgname]):
                 logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
-                if fname not in _filter_package_listings[(fpkgname,None)]:
-                    _filter_package_listings[(fpkgname,None)].append(fname)
+                try:
+                    finfo = FilterInfo.initFromModuleObject(fname, fmod, fpkgname=fpkgname, fpkgdir=None)
+                except Exception:
+                    logger.debug("Precompiled module %s failed to load!", modname)
+                    continue
+                _filter_package_listings[(fpkgname,None)].append(finfo)
 
 
-    logger.debug("detect_filter_package_listings(): Filters detected")
+    logger.debug("detect_filter_package_listings(): Filters detected.  _filter_package_listings=%r",
+                 _filter_package_listings)
 
     # now, return a nicer OrderedDict with filter names instead of full fpkgspec
     # keys, keeping only those packages that are accessible in filterpath.
@@ -629,9 +635,8 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
         if fpkgname not in listing:
             listing[fpkgname] = []
 
-        for filtername in _filter_package_listings[(fpkgname, fpkgdir)]:
-            if filtername not in listing[fpkgname]:
-                listing[fpkgname].append(filtername)
+        for filterinfo in _filter_package_listings[(fpkgname, fpkgdir)]:
+            listing[fpkgname].append(filterinfo)
 
     return listing
 
@@ -650,9 +655,8 @@ def detect_filters(force_redetect=False, filterpath=filterpath):
         if (fpkgname, fpkgdir) not in _filter_package_listings:
             continue
 
-        for fname in _filter_package_listings[(fpkgname,fpkgdir)]:
-            if fname not in filter_list:
-                filter_list.append(fname)
+        for finfo in _filter_package_listings[(fpkgname,fpkgdir)]:
+            filter_list.append(finfo)
 
     logger.longdebug("filter_list=%r, _filter_package_listings=%r", filter_list, _filter_package_listings)
 
@@ -923,7 +927,8 @@ class FilterInfo(object):
         self.fclass = _get_filter_class(self.filtername, fmodule=self.fmodule)
 
         self.filterpackagename, self.filterpackagedir = getattr(self.fmodule, '_filterpackageinfo')
-        self.filterpackagespec = self.filterpackagename + '=' + self.filterpackagedir
+        self.filterpackagespec = (self.filterpackagename + '=' +
+                                  (self.filterpackagedir if self.filterpackagedir else ''))
 
         self.uses_default_argparse = not hasattr(self.fmodule, 'parse_args')
 
@@ -944,7 +949,7 @@ class FilterInfo(object):
 
         finfo.filterpackagename = fpkgname
         finfo.filterpackagedir = fpkgdir
-        finfo.filterpackagespec = fpkgname + '=' + fpkgdir
+        finfo.filterpackagespec = fpkgname + '=' + (fpkgdir if fpkgdir else '')
 
         finfo.uses_default_argparse = not hasattr(finfo.fmodule, 'parse_args')
 

@@ -279,7 +279,7 @@ class SettingsWidget(QDialog):
 
         if thekey and thedir:
             filters_factory.filterpath[thekey] = str(thedir)
-            self.ui.lstFilterPackages.reset();
+            self.ui.lstFilterPackages.reset()
             self.save_settings()
 
     @pyqtSlot()
@@ -359,7 +359,7 @@ class SettingsWidget(QDialog):
         s.beginGroup("BibolamaziCore")
 
         s.setValue("filterpath",
-                   os.pathsep.join(( "%s=%s"%(k,v if v else "")
+                   os.pathsep.join(( "%s=%s"%(k, v if v else "")
                                      for k,v in filters_factory.filterpath.items() ))
                    )
         # reset the filter cache.

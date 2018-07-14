@@ -760,7 +760,7 @@ class FilterInstanceEditor(QWidget):
             return
         
         url = 'help:/filters/%s' % ( str(finfo.filtername) )
-        qs = dict(filterpackage=finfo.filterpackagename+'='+finfo.filterpackagedir)
+        qs = dict(filterpackage=finfo.filterpackagespec)
         url += '?'+urlencode(qs)
         logger.debug("Filter help: requesting topic URL %s", url)
         self.filterHelpRequested.emit(url)

@@ -336,12 +336,11 @@ def help_list_filters():
     import textwrap
     from bibolamazi.core.bibfilter import factory
 
-    def fmt_filter_helpline(f, fp):
+    def fmt_filter_helpline(finfo, fp):
 
         nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
-        return ( "  %-13s " %(f) +
-                 nlindentstr.join(textwrap.wrap(factory.get_filter_class(f, filterpackage=fp)
-                                                .getHelpDescription(),
+        return ( "  %-13s " %(finfo.filtername) +
+                 nlindentstr.join(textwrap.wrap(finfo.fclass.getHelpDescription(),
                                                 (80-16) # 80 line width, -16 indent chars
                                                 ))
                  )

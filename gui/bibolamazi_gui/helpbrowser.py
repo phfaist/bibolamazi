@@ -398,10 +398,8 @@ class HelpBrowser(QWidget):
 
             finfo = filters_factory.FilterInfo(filtname, filterpath=filterpath)
 
-            fpn, fpd = finfo.filterpackagename, finfo.filterpackagedir
-
             urlcanon = ('help:/' + pathitems[0] + '/' + finfo.filtername + '?'
-                        + urlencode([('filterpackage', fpn+'='+fpd)]))
+                        + urlencode([('filterpackage', finfo.filterpackagespec)]))
 
             self._findopenhelptopicwidget(urlcanon)
 
@@ -462,7 +460,7 @@ class HelpBrowser(QWidget):
 
         html = "<h1>Filter: {}</h1>\n\n".format(filtname)
 
-        fpn, fpd = filtinfo.filterpackagename, filtinfo.filterpackagedir
+        fpn = filtinfo.filterpackagename
         html += "<p class=\"shadow\">In filter package <b>" + htmlescape(fpn) + "</b></p>\n\n"
 
         author = filtinfo.fclass.getHelpAuthor().strip()
@@ -531,7 +529,7 @@ specifying boolean ON/OFF switches.</p>
             html += "<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText()) + "</div>\n\n"
 
             urlrawdoc = ('help:/rawfilterdoc/' + filtinfo.filtername + '?' +
-                         urlencode([('filterpackage', fpn+'='+fpd)]))
+                         urlencode([('filterpackage', filtinfo.filterpackagespec)]))
 
             html += ("<p style=\"margin-top: 2em\"><a href=\""+htmlescape(urlrawdoc)+"\">" +
                      "View this filter's raw documentation</a></p>\n\n")
@@ -582,13 +580,7 @@ specifying boolean ON/OFF switches.</p>
                 html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
 
                 html += "<table>"
-                for f in fplist:
-
-                    try:
-                        finfo = filters_factory.FilterInfo(f, filterpath=OrderedDict([(fp,filterpath[fp])]))
-                    except Exception as e:
-                        logger.warning("Can't inspect filter %s in package %s", f, fp)
-                        continue
+                for finfo in fplist:
 
                     html += ("<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
                              "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
