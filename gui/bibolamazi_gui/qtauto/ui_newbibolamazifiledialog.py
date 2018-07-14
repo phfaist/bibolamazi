@@ -229,7 +229,7 @@ class Ui_NewBibolamazifileDialog(object):
     def retranslateUi(self, NewBibolamazifileDialog):
         _translate = QtCore.QCoreApplication.translate
         NewBibolamazifileDialog.setWindowTitle(_translate("NewBibolamazifileDialog", "Create new bibolamazi file"))
-        self.label.setText(_translate("NewBibolamazifileDialog", "So you\'d like to organize your bibtex entries..."))
+        self.label.setText(_translate("NewBibolamazifileDialog", "So you\'d like to organize some bibtex entries..."))
         self.srcmulti.setTitle(_translate("NewBibolamazifileDialog", "Would you like to collect entries from several bibtex files?"))
         self.rdbtnMergeMultiple.setText(_translate("NewBibolamazifileDialog", "I would like to merge bibliography entries from different files"))
         self.rdbtnSingleSource.setText(_translate("NewBibolamazifileDialog", "My bibliography entries are currently all in one bibtex file"))
