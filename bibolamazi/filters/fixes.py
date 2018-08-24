@@ -39,8 +39,10 @@ from pylatexenc import latexwalker
 from pylatexenc import latex2text
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
-from bibolamazi.core.bibfilter.argtypes import CommaStrList, ColonCommaStrDict
+from bibolamazi.core.bibfilter.argtypes import CommaStrList, ColonCommaStrDict, multi_type_class
 from bibolamazi.core import butils
+
+
 
 
 HELP_AUTHOR = u"""\
@@ -64,10 +66,12 @@ For now, the implemented fixes are:
   -dEncodeUtf8ToLatex
     Encodes known non-ascii special characters, e.g. accented characters, into
     LaTeX equivalents. This affects ALL fields of the bibliographic entry.
+    (Cannot be used in conjunction with -dEncodeLatexToUtf8.)
 
   -dEncodeLatexToUtf8
     Encodes all LaTeX content, including accents and escape sequences, to unicode
     text saved as UTF-8. This affects ALL fields of the bibliographic entry.
+    (Cannot be used in conjunction with -dEncodeUtf8ToLatex.)
 
   -dRemoveTypeFromPhd
     Removes any `type=' field from @phdthesis{..} bibtex entries if it contains
@@ -80,8 +84,8 @@ For now, the implemented fixes are:
         title = {{Irreversibility and Heat Generation in the Computing Process}},
         ...
       }
-    will cause the title to be typeset with the given casing. This option will
-    cause the field to be output as
+    will cause the title to be typeset with the given casing. The present option
+    causes the field to be output as
       @article{...
         title = {Irreversibility and Heat Generation in the Computing Process},
         ...
@@ -187,6 +191,13 @@ compatibility:
 """
 
 
+
+
+BoolOrFieldList = multi_type_class('BoolOrFieldList',
+                                   [(bool, 'on/off'), (CommaStrList, 'list of fields')], )
+
+
+
 class FixesFilter(BibFilter):
     
     helpauthor = HELP_AUTHOR
@@ -225,11 +236,11 @@ class FixesFilter(BibFilter):
           - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
           - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
           - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
-          - remove_full_braces: removes overprotective global braces in field values.
+          - remove_full_braces(BoolOrFieldList): removes overprotective global braces in field values.
           - remove_full_braces_not_lang(CommaStrList): (in conjunction with --remove-full-braces) removes the
             overprotective global braces only if the language of the entry (as per language={..} bibtex field)
             is not in the given list (case insensitive).
-          - protect_names: list of names to protect from bibtex style casing.
+          - protect_names(CommaStrList): list of names to protect from bibtex style casing.
           - remove_file_field(bool): removes file={...} fields from all entries.
           - remove_fields(CommaStrList): removes given fields from all entries.
           - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
@@ -238,19 +249,21 @@ class FixesFilter(BibFilter):
                 list of fields to act on
           - rename_language(ColonCommaStrDict): replace e.g. `de' by `Deutsch'. Use
                 format `alias1:language1,alias2:language2...'.
-          - fix_mendeley_bug_urls: fix the `url' field for Mendeley's
+          - fix_mendeley_bug_urls(BoolOrFieldList): fix the `url' field for Mendeley's
                 buggy output. Pass on a list of fields (comma-separated) to specify
                 which fields to act on; by default if enabled only 'url'.
-          - protect_capital_letter_after_dot: place first (capital) letter after a full
+          - protect_capital_letter_after_dot(BoolOrFieldList): place first (capital) letter after a full
                 stop or colon in protective braces (for the the given bibtex fields). Pass
-                true or false here, or a list of fields on which to act (by default 'title')
-          - protect_capital_letter_at_begin: place first (capital) letter of a field in
+                true or false here, or a list of fields on which to act (by default only 'title')
+          - protect_capital_letter_at_begin(BoolOrFieldList): place first (capital) letter of a field in
                 protective braces (for the the given bibtex fields). Pass
-                true or false here, or a list of fields on which to act (by default 'title')
-          - convert_dbl_quotes: detect & convert double-quoted expressions to invoke a LaTeX macro. Pass
+                true or false here, or a list of fields on which to act (by default only 'title')
+          - convert_dbl_quotes(BoolOrFieldList): detect & convert double-quoted expressions to
+                invoke a LaTeX macro. Pass
                 true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
           - dbl_quote_macro: the macro to use for double-quotes when convert_dbl_quotes is set
-          - convert_sgl_quotes: detect & convert single-quoted expressions to invoke a LaTeX macro. Pass
+          - convert_sgl_quotes(BoolOrFieldList): detect & convert single-quoted expressions to
+                invoke a LaTeX macro. Pass
                 true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
           - sgl_quote_macro: the macro to use for single-quotes when convert_sgl_quotes is set
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
@@ -279,13 +292,13 @@ class FixesFilter(BibFilter):
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
 
-        try:
-            self.remove_full_braces = butils.getbool(remove_full_braces)
-            self.remove_full_braces_fieldlist = None; # all fields
-        except ValueError:
-            # not boolean, we have provided a field list.
-            self.remove_full_braces = True
-            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ]
+        remove_full_braces = BoolOrFieldList(remove_full_braces)
+        if remove_full_braces.valuetype is bool:
+            self.remove_full_braces = remove_full_braces.value
+            self.remove_full_braces_fieldlist = None
+        else:
+            self.remove_full_braces = bool(len(remove_full_braces.value))
+            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.value ]
 
         if self.remove_full_braces:
             if not remove_full_braces_not_lang:
@@ -348,56 +361,40 @@ class FixesFilter(BibFilter):
                 flags=re.IGNORECASE
                 )
 
-        if fix_mendeley_bug_urls:
-            # see if "True/False" was given
-            try:
-                val = butils.getbool(fix_mendeley_bug_urls)
-                if val:
-                    self.fix_mendeley_bug_urls = ['url']
-                else:
-                    self.fix_mendeley_bug_urls = []
-            except ValueError:
-                # comma-str-list given
-                self.fix_mendeley_bug_urls = CommaStrList(fix_mendeley_bug_urls)
+        fix_mendeley_bug_urls = BoolOrFieldList(fix_mendeley_bug_urls)
+        if fix_mendeley_bug_urls.valuetype is bool:
+            self.fix_mendeley_bug_urls = ['url'] if fix_mendeley_bug_urls.value else []
         else:
-            self.fix_mendeley_bug_urls = []
+            self.fix_mendeley_bug_urls = fix_mendeley_bug_urls.value
 
-        if protect_capital_letter_after_dot:
-            try:
-                self.protect_capital_letter_after_dot = CommaStrList(protect_capital_letter_after_dot)
-            except TypeError:
-                # just passed a bool, e.g. 'True'
-                self.protect_capital_letter_after_dot = ['title']
+        protect_capital_letter_after_dot = BoolOrFieldList(protect_capital_letter_after_dot)
+        if protect_capital_letter_after_dot.valuetype is bool:
+            self.protect_capital_letter_after_dot = ['title'] if protect_capital_letter_after_dot.value else []
         else:
-            self.protect_capital_letter_after_dot = []
+            self.protect_capital_letter_after_dot = protect_capital_letter_after_dot.value
 
-        if protect_capital_letter_at_begin:
-            try:
-                self.protect_capital_letter_at_begin = CommaStrList(protect_capital_letter_at_begin)
-            except TypeError:
-                # just passed a bool, e.g. 'True'
-                self.protect_capital_letter_at_begin = ['title']
+        protect_capital_letter_at_begin = BoolOrFieldList(protect_capital_letter_at_begin)
+        if protect_capital_letter_at_begin.valuetype is bool:
+            self.protect_capital_letter_at_begin = ['title'] if protect_capital_letter_at_begin.value else []
         else:
-            self.protect_capital_letter_at_begin = []
+            self.protect_capital_letter_at_begin = protect_capital_letter_at_begin.value
 
         self.dbl_quote_macro = dbl_quote_macro
         self.sgl_quote_macro = sgl_quote_macro
-        if convert_dbl_quotes:
-            try:
-                self.convert_dbl_quotes = CommaStrList(convert_dbl_quotes)
-            except TypeError:
-                # just passed a bool, e.g. 'True'
-                self.convert_dbl_quotes = ['title','abstract','booktitle','series']
+
+        convert_dbl_quotes = BoolOrFieldList(convert_dbl_quotes)
+        if convert_dbl_quotes.valuetype is CommaStrList:
+            self.convert_dbl_quotes = convert_dbl_quotes.value
         else:
-            self.convert_dbl_quotes = []
-        if convert_sgl_quotes:
-            try:
-                self.convert_sgl_quotes = CommaStrList(convert_sgl_quotes)
-            except TypeError:
-                # just passed a bool, e.g. 'True'
-                self.convert_sgl_quotes = ['title','abstract','booktitle','series']
+            # just passed a bool, e.g. 'True'
+            self.convert_dbl_quotes = ['title','abstract','booktitle','series'] if convert_dbl_quotes.value else []
+            
+        convert_sgl_quotes = BoolOrFieldList(convert_sgl_quotes)
+        if convert_sgl_quotes.valuetype is CommaStrList:
+            self.convert_sgl_quotes = convert_sgl_quotes.value
         else:
-            self.convert_sgl_quotes = []
+            # just passed a bool, e.g. 'True'
+            self.convert_sgl_quotes = ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
         
 
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '

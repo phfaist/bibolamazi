@@ -43,7 +43,8 @@ import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
 from bibolamazi.core import butils
-from bibolamazi.core.bibfilter.argtypes import EnumArgType, CommaStrList, ColonCommaStrDict
+from bibolamazi.core.bibfilter.argtypes import EnumArgType, MultiTypeArgType, \
+    CommaStrList, ColonCommaStrDict, StrEditableArgType
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -54,6 +55,7 @@ from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 from . import overlistbuttonwidget
 from .helpbrowser import htmlescape
+from .multitypeseditor import MultiTypesEditorWidget
 
 logger = logging.getLogger(__name__)
 
@@ -87,36 +89,62 @@ def get_filter_list(filterpath=filters_factory.filterpath):
 
 class RegisteredArgInputType:
     def __init__(self, typ, val):
+        self.typ = typ
         self.type_arg_input = typ.type_arg_input
         self.value = val
 
-    def createWidget(self, parent, option):
-        if (isinstance(self.type_arg_input, EnumArgType)):
+    def createWidget(self, parent, option=None):
+        if isinstance(self.type_arg_input, EnumArgType):
             cbx = QComboBox(parent)
             for val in self.type_arg_input.listofvalues:
                 cbx.addItem(val)
-
             return cbx
+
+        if isinstance(self.type_arg_input, MultiTypeArgType):
+            return MultiTypesEditorWidget(self.type_arg_input, parent)
+
+        if isinstance(self.type_arg_input, StrEditableArgType):
+            f = QItemEditorFactory()
+            return f.createEditor(QVariant.String, parent)
 
         logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
 
     def setEditorData(self, editor):
-        if (isinstance(self.type_arg_input, EnumArgType)):
+        if isinstance(self.type_arg_input, EnumArgType):
             for i in range(editor.count()):
                 if (str(editor.itemText(i)) == self.value):
                     editor.setCurrentIndex(i)
                     return
             return
 
+        if isinstance(self.type_arg_input, MultiTypeArgType):
+            # self.value is the given value being edited (bool -dXXX or string -sXXX=...)
+            if isinstance(self.value, self.typ): # a multi_type_class instance directly
+                editor.setTypeValue(self.value.valuetype, self.value.value)
+            else:
+                editor.setValue(self.value)
+            return
+
+        if isinstance(self.type_arg_input, StrEditableArgType):
+            editor.setText(str(self.value))
+
         logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
 
     def valueOf(self, editor):
-        if (isinstance(self.type_arg_input, EnumArgType)):
+        if isinstance(self.type_arg_input, EnumArgType):
             val = str(editor.itemText(editor.currentIndex()))
             logger.debug("GOT VALUE: %r", val)
             return val
+
+        if isinstance(self.type_arg_input, MultiTypeArgType):
+            t, v = editor.getTypeValue()
+            logger.debug("GOT VALUE: %r, %r", t, v)
+            return self.typ(t, v)
+
+        if isinstance(self.type_arg_input, StrEditableArgType):
+            return self.typ(editor.text())
 
         logger.debug("Unknown type: type_arg_input=%r", self.type_arg_input)
         return None
@@ -371,18 +399,14 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
             # request editing value of argument
             if (role == Qt.EditRole):
-                if (arg.argtypename is not None):
+                if arg.argtypename is not None:
                     typ = butils.resolve_type(arg.argtypename, self._finfo.fmodule)
                 else:
                     typ = str
-                if (hasattr(typ, 'type_arg_input')):
+                if hasattr(typ, 'type_arg_input'):
                     editval = RegisteredArgInputType(typ, val)
-                elif (is_class_and_is_sub_class(typ, str) and val is None):
+                elif is_class_and_is_sub_class(typ, str) and val is None:
                     editval = typ('')
-                elif (is_class_and_is_sub_class(typ, CommaStrList)):
-                    editval = str(val)
-                elif (is_class_and_is_sub_class(typ, ColonCommaStrDict)):
-                    editval = str(val)
                 elif typ in [bool, int, float, str]:
                     try:
                         editval = typ(val) # resort to Qt's editor for these types.
@@ -502,10 +526,16 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         # iterate fopts arguments to preserve that ordering
         done_args = []
         for arg in self._fopts.filterOptions():
-            v = self._kwargs.get(arg.argname,None)
-            if (v is not None):
+            v0 = self._kwargs.get(arg.argname,None)
+
+            v = v0
+            if hasattr(v0, 'type_arg_input') and hasattr(v0.type_arg_input, 'option_val_repr'):
+                v = v0.type_arg_input.option_val_repr(v0)
+
+            logger.debug("formatting options, %r -> %r (-> %r)", arg.argname, v0, v)
+            if v is not None:
                 soptarg = self._fopts.getSOptNameFromArg(arg.argname)
-                if (arg.argtypename == 'bool'):
+                if (arg.argtypename == 'bool' or isinstance(v, bool)):
                     slist.append('-d'+soptarg+('' if v else '=False'))
                 else:
                     slist.append('-s'+soptarg+'='+butils.quotearg(str(v)))
@@ -569,7 +599,6 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
         if rr is None:
             return super(DefaultFilterOptionsDelegate, self).setEditorData(editor, index)
         
-        rr = rr
         rr.setEditorData(editor) # the value is already contained in the rr object
 
     def setModelData(self, editor, model, index):
@@ -577,8 +606,11 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
         if rr is None:
             return super(DefaultFilterOptionsDelegate, self).setModelData(editor, model, index)
         
-        rr = rr
-        model.setData(index, rr.valueOf(editor))
+        val = rr.valueOf(editor)
+
+        logger.debug("setModelData(): value is = %r", val)
+
+        model.setData(index, val)
 
 
 
