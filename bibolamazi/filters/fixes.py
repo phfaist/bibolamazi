@@ -329,7 +329,7 @@ class FixesFilter(BibFilter):
 
                 return (x, re.compile(pattern, re.IGNORECASE),)
                     
-            self.protect_names = [ t for t in [ mkpatternrx(x) for x in protect_names.split(u',') ]
+            self.protect_names = [ t for t in [ mkpatternrx(x) for x in protect_names ]
                                    if len(t) ]
         else:
             self.protect_names = None
