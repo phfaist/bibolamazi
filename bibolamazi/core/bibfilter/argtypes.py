@@ -180,7 +180,7 @@ multi_type_class_default_convert_functions = [
 
 def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_attr_name='valuetype',
                      convert_functions=multi_type_class_default_convert_functions,
-                     parse_value_fn=None):
+                     parse_value_fn=None, doc=None):
     """
     `class_name` is the class name.
     
@@ -302,19 +302,20 @@ def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_at
     thecls = ThisMultiTypeArgClass
     thecls.__name__ = str(class_name)
     # add docstring
-    mapped_vals_list = [ "`%s` (%s)"%(t.__name__, s) for t,s in thecls._typelist ]
-    if len(mapped_vals_list) > 1:
-        show_vals_list = ", ".join(mapped_vals_list[:-1]) + ", or "+mapped_vals_list[-1]
-    elif len(mapped_vals_list) == 1:
-        show_vals_list = mapped_vals_list[0]
-    else:
-        show_vals_list = '<no types>'
-    doc = "An multi-type type which may store a value of one of the following types: %s."%(
-        show_vals_list,
-        )
-    for t, s in thecls._typelist:
-        if hasattr(t, '__doc__'):
-            doc += "\n\n" + str(t.__name__) + ": " + t.__doc__
+    if doc is None:
+        mapped_vals_list = [ "`%s` (%s)"%(t.__name__, s) for t,s in thecls._typelist ]
+        if len(mapped_vals_list) > 1:
+            show_vals_list = ", ".join(mapped_vals_list[:-1]) + ", or "+mapped_vals_list[-1]
+        elif len(mapped_vals_list) == 1:
+            show_vals_list = mapped_vals_list[0]
+        else:
+            show_vals_list = '<no types>'
+        doc = "An multi-type type which may store a value of one of the following types: %s."%(
+            show_vals_list,
+            )
+        for t, s in thecls._typelist:
+            if hasattr(t, '__doc__'):
+                doc += "\n\n" + str(t.__name__) + ": " + t.__doc__
     thecls.__doc__ = doc
     # for the gui
     thecls.type_arg_input = MultiTypeArgType(thecls._typelist, parse_value_impl)
@@ -344,11 +345,11 @@ class StrEditableArgType(object):
 
 
 
-_rx_escape_lst = re.compile(r'(\\|,)');
-def _escape_lst(x):
-    return _rx_escape_lst.sub(lambda m: '\\'+m.group(1), x);
+#_rx_escape_lst = re.compile(r'(\\|,)')
+#def _escape_lst(x):
+#    return _rx_escape_lst.sub(lambda m: '\\'+m.group(1), x)
 
-_rx_unescape_lst = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*');
+#_rx_unescape_lst = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*')
 
 @python_2_unicode_compatible
 class CommaStrList(list):
@@ -356,47 +357,51 @@ class CommaStrList(list):
     A list of values, specified as a comma-separated string.
     """
     def __init__(self, iterable=[]):
-        if (isinstance(iterable, basestring)):
-            fullstr = iterable
-            lastpos = 0
-            strlist = []
-            laststr = ""
-            for m in _rx_unescape_lst.finditer(iterable):
-                laststr += fullstr[lastpos:m.start()];
-                if (m.group('sep') == ','):
-                    strlist.append(laststr)
-                    laststr = ""
-                elif (m.group() and m.group()[0] == '\\'):
-                    # escaped char
-                    laststr += m.group('char');
-                else:
-                    raise RuntimeError("Unexpected match!?: %r", m)
-                lastpos = m.end()
-            # include the last bit of string
-            laststr += fullstr[lastpos:];
-            strlist.append(laststr);
+        # if (isinstance(iterable, basestring)):
+        #     fullstr = iterable
+        #     lastpos = 0
+        #     strlist = []
+        #     laststr = ""
+        #     for m in _rx_unescape_lst.finditer(iterable):
+        #         laststr += fullstr[lastpos:m.start()]
+        #         if (m.group('sep') == ','):
+        #             strlist.append(laststr)
+        #             laststr = ""
+        #         # ### DON'T ALLOW ESCAPES, THIS MESSES BADLY WITH LATEX STUFF
+        #         #elif (m.group() and m.group()[0] == '\\'):
+        #         #    # escaped char
+        #         #    laststr += m.group('char')
+        #         else:
+        #             raise RuntimeError("Unexpected match!?: %r", m)
+        #         lastpos = m.end()
+        #     # include the last bit of string
+        #     laststr += fullstr[lastpos:]
+        #     strlist.append(laststr)
 
-            # now we've got our decoded string list.
-            iterable = strlist
+        #     # now we've got our decoded string list.
+        #     iterable = strlist
+        if isinstance(iterable, basestring):
+            iterable = iterable.split(',')
             
         super(CommaStrList, self).__init__(iterable)
 
     type_arg_input = StrEditableArgType()
 
     def __str__(self):
-        return u",".join([_escape_lst(unicodestr(x)) for x in self])
+        return u",".join([unicodestr(x) for x in self])
 
 
 
 # ------------------------------------------------------------------------------
 
 
-_rx_escape_dic = re.compile(r'(\\|,|:)');
-def _escape_dic(x):
-    return _rx_escape_dic.sub(lambda m: '\\'+m.group(1), x);
-
-_rx_unescape_val = re.compile(r'\\(?P<char>.)');
-_rx_unescape_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*');
+# _rx_escape_dic = re.compile(r'(\\|,|:)')
+# def _escape_dic(x):
+#     return _rx_escape_dic.sub(lambda m: '\\'+m.group(1), x)
+#
+# _rx_unescape_val = re.compile(r'\\(?P<char>.)')
+# _rx_unescape_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*')
+_rx_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*')
 
 @python_2_unicode_compatible
 class ColonCommaStrDict(dict):
@@ -413,21 +418,22 @@ class ColonCommaStrDict(dict):
         else:
             raise ValueError('ColonCommaStrDict accepts at most one *arg, an iterable')
         
-        if (isinstance(iterable, basestring)):
+        if isinstance(iterable, basestring):
             pairlist = CommaStrList(iterable)
             d = {}
             # now, read each key/value pair
             for pairstr in pairlist:
-                m = _rx_unescape_keyvalsep.search(pairstr)
+                #m = _rx_unescape_keyvalsep.search(pairstr)
+                m = _rx_keyvalsep.search(pairstr)
                 if m:
                     key = pairstr[:m.start()]
                     val = pairstr[m.end():]
                 else:
                     key = pairstr
                     val = None
-                key = _rx_unescape_val.sub(lambda m: m.group('char'), key)
-                if val:
-                    val = _rx_unescape_val.sub(lambda m: m.group('char'), val)
+                # key = _rx_unescape_val.sub(lambda m: m.group('char'), key)
+                # if val:
+                #    val = _rx_unescape_val.sub(lambda m: m.group('char'), val)
 
                 if key in d:
                     raise ValueError("Repeated key in input: %s"%(key,))
@@ -443,8 +449,8 @@ class ColonCommaStrDict(dict):
     type_arg_input = StrEditableArgType()
 
     def __str__(self):
-        return u",".join([_escape_dic(unicodestr(k))+(':'+_escape_dic(unicodestr(v)) if v is not None else '')
-                          for k,v in iteritems(self)]);
+        return u",".join([unicodestr(k)+(':'+unicodestr(v) if v is not None else '')
+                          for k,v in iteritems(self)])
 
 
 

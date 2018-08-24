@@ -193,8 +193,12 @@ compatibility:
 
 
 
+_BoolOrFieldList_doc = """\
+A boolean (True/1/Yes/On or False/0/No/Off) or a comma-separated list of bibtex field names.
+CommaStrList: A list of values, specified as a comma-separated string."""
 BoolOrFieldList = multi_type_class('BoolOrFieldList',
-                                   [(bool, 'on/off'), (CommaStrList, 'list of fields')], )
+                                   [(bool, 'on/off'), (CommaStrList, 'list of fields')],
+                                   doc=_BoolOrFieldList_doc)
 
 
 

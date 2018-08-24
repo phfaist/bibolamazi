@@ -111,6 +111,8 @@ class RegisteredArgInputType:
         return None
 
     def setEditorData(self, editor):
+        logger.debug("setEditorData(), self.value=%r", self.value)
+
         if isinstance(self.type_arg_input, EnumArgType):
             for i in range(editor.count()):
                 if (str(editor.itemText(i)) == self.value):
