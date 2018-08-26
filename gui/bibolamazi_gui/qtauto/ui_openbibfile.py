@@ -33,7 +33,15 @@ class Ui_OpenBibFile(object):
         self.splitEditConfig = QtWidgets.QSplitter(self.pageConfig)
         self.splitEditConfig.setOrientation(QtCore.Qt.Horizontal)
         self.splitEditConfig.setObjectName("splitEditConfig")
-        self.txtConfig = QtWidgets.QTextEdit(self.splitEditConfig)
+        self.pageConfigEditWidget = QtWidgets.QWidget(self.splitEditConfig)
+        self.pageConfigEditWidget.setObjectName("pageConfigEditWidget")
+        self.pageConfigEdit = QtWidgets.QVBoxLayout(self.pageConfigEditWidget)
+        self.pageConfigEdit.setContentsMargins(0, 0, 0, 0)
+        self.pageConfigEdit.setObjectName("pageConfigEdit")
+        self.searchConfigWidget = SearchWidget(self.pageConfigEditWidget)
+        self.searchConfigWidget.setObjectName("searchConfigWidget")
+        self.pageConfigEdit.addWidget(self.searchConfigWidget)
+        self.txtConfig = QtWidgets.QTextEdit(self.pageConfigEditWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -41,6 +49,7 @@ class Ui_OpenBibFile(object):
         self.txtConfig.setSizePolicy(sizePolicy)
         self.txtConfig.setAcceptRichText(False)
         self.txtConfig.setObjectName("txtConfig")
+        self.pageConfigEdit.addWidget(self.txtConfig)
         self.stackEditTools = QtWidgets.QStackedWidget(self.splitEditConfig)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -142,6 +151,7 @@ class Ui_OpenBibFile(object):
         self.pageBibEntries.setObjectName("pageBibEntries")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.pageBibEntries)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
+        self.gridLayout_2.setVerticalSpacing(3)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.txtBibEntries = QtWidgets.QTextBrowser(self.pageBibEntries)
         font = QtGui.QFont()
@@ -150,7 +160,10 @@ class Ui_OpenBibFile(object):
         self.txtBibEntries.setTabChangesFocus(True)
         self.txtBibEntries.setOpenLinks(False)
         self.txtBibEntries.setObjectName("txtBibEntries")
-        self.gridLayout_2.addWidget(self.txtBibEntries, 0, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.txtBibEntries, 1, 0, 1, 1)
+        self.searchPrevBibEntries = SearchWidget(self.pageBibEntries)
+        self.searchPrevBibEntries.setObjectName("searchPrevBibEntries")
+        self.gridLayout_2.addWidget(self.searchPrevBibEntries, 0, 0, 1, 1)
         self.tabs.addTab(self.pageBibEntries, "")
         self.pageLog = QtWidgets.QWidget()
         self.pageLog.setObjectName("pageLog")
@@ -252,5 +265,6 @@ class Ui_OpenBibFile(object):
 
 from ..filterinstanceeditor import FilterInstanceEditor
 from ..filterpackagepatheditor import FilterPackagePathEditor
+from ..searchwidget import SearchWidget
 from ..sourcelisteditor import SourceListEditor
 from . import bibolamazi_res_rc

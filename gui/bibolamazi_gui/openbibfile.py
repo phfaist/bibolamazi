@@ -61,6 +61,7 @@ from . import filterinstanceeditor
 from . import filterpackagepatheditor
 from . import settingswidget
 from . import helpbrowser
+from . import searchwidget
 
 from .qtauto.ui_openbibfile import Ui_OpenBibFile
 
@@ -269,6 +270,16 @@ class OpenBibFile(QWidget):
         self.ui.txtConfig.setFont(font)
         self.ui.txtLog.setFont(font)
         self.ui.txtBibEntries.setFont(font)
+
+        self.searchConfigManager = searchwidget.SearchTextEditManager(
+            self.ui.searchConfigWidget,
+            self.ui.txtConfig
+        )
+
+        self.searchPrevBibEntriesManager = searchwidget.SearchTextEditManager(
+            self.ui.searchPrevBibEntries,
+            self.ui.txtBibEntries
+        )
 
         self.syntHighlighter = BibolamaziConfigSyntaxHighlighter(self.ui.txtConfig)
 

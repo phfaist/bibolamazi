@@ -283,7 +283,7 @@ class ArxivNormalizeFilter(BibFilter):
         Arguments:
           - mode(Mode):  the behavior to adopt for published articles which also have an arxiv ID
           - unpublished_mode(Mode): the behavior to adopt for unpublished articles who have an arxiv
-                   ID (if None, use the same mode as `mode').
+                   ID (if not specified, use the same mode as `mode').
           - strip_unpublished_fields(CommaStrList): (all modes): a list of bibtex fields to remove
                    from all unpublished entries.
           - arxiv_journal_name: (in eprint mode): the string to set the journal={} entry to for
@@ -316,9 +316,9 @@ class ArxivNormalizeFilter(BibFilter):
                    -sNoteString and -sNoteStringFmt.
         """
         
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.mode = Mode(mode);
+        self.mode = Mode(mode)
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
                                  else self.mode);
         self.strip_unpublished_fields = CommaStrList(strip_unpublished_fields)

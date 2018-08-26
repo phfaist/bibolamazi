@@ -14,7 +14,8 @@ TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
 	 $(QTAUTODIR)/ui_filterpackagepatheditor.py \
 	 $(QTAUTODIR)/ui_overlistbuttonwidget.py \
 	 $(QTAUTODIR)/ui_settingswidget.py \
-	 $(QTAUTODIR)/ui_favoritesoverbtns.py
+	 $(QTAUTODIR)/ui_favoritesoverbtns.py \
+	 $(QTAUTODIR)/ui_searchwidget.py
 
 
 all: $(TARGETS)

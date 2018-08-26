@@ -61,16 +61,25 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QTextEdit" name="txtConfig">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="acceptRichText">
-           <bool>false</bool>
-          </property>
+         <widget class="QWidget" name="pageConfigEditWidget">
+          <layout class="QVBoxLayout" name="pageConfigEdit">
+           <item>
+            <widget class="SearchWidget" name="searchConfigWidget" native="true"/>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="txtConfig">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="acceptRichText">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
          <widget class="QStackedWidget" name="stackEditTools">
           <property name="sizePolicy">
@@ -308,7 +317,10 @@ p, li { white-space: pre-wrap; }
        <property name="bottomMargin">
         <number>8</number>
        </property>
-       <item row="0" column="0">
+       <property name="verticalSpacing">
+        <number>3</number>
+       </property>
+       <item row="1" column="0">
         <widget class="QTextBrowser" name="txtBibEntries">
          <property name="font">
           <font>
@@ -322,6 +334,9 @@ p, li { white-space: pre-wrap; }
           <bool>false</bool>
          </property>
         </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="SearchWidget" name="searchPrevBibEntries" native="true"/>
        </item>
       </layout>
      </widget>
@@ -502,6 +517,12 @@ p, li { white-space: pre-wrap; }
    <class>FilterPackagePathEditor</class>
    <extends>QWidget</extends>
    <header>..filterpackagepatheditor.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SearchWidget</class>
+   <extends>QWidget</extends>
+   <header>..searchwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

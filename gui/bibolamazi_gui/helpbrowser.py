@@ -56,6 +56,7 @@ from PyQt5.QtWidgets import *
 
 from . import filterinstanceeditor
 from . import settingswidget
+from . import searchwidget
 
 from .qtauto.ui_helpbrowser import Ui_HelpBrowser
 
@@ -220,6 +221,46 @@ class HelpTopicPage(object):
         return self._tooltip
 
 
+
+class HelpTopicPageWidget(QWidget):
+    def __init__(self, helptopicpage, urlcanon, helpbrowser, parent):
+        super(HelpTopicPageWidget, self).__init__(parent)
+
+        self.lyt = QVBoxLayout(self)
+        self.lyt.setContentsMargins(0,0,0,0)
+        self.lyt.setSpacing(5)
+
+        self.searchwidget = searchwidget.SearchWidget(self)
+        self.lyt.addWidget(self.searchwidget)
+
+        self.tb = QTextBrowser(self)
+        self.lyt.addWidget(self.tb)
+
+        self.setLayout(self.lyt)
+
+        self.searchmgr = searchwidget.SearchTextEditManager(self.searchwidget, self.tb)
+
+        font = self.tb.font()
+        font.setPointSize(QFontInfo(font).pointSize()+1)
+        self.tb.setFont(font)
+
+        self.tb.setOpenLinks(False)
+        self.tb.anchorClicked.connect(helpbrowser.openHelpTopicUrl)
+
+        html = helptopicpage.contentAsHtml()#fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
+        logger.longdebug("Help page text = \n%s", html)
+        self.tb.setHtml(html)
+        
+        self.setProperty("HelpTabTitle", helptopicpage.title())
+        if helptopicpage.tooltip:
+            self.setProperty("HelpTabToolTip", helptopicpage.tooltip())
+
+        self.setProperty("helpurl", urlcanon)
+
+
+
+
+
 class TabAlreadyOpen(Exception):
     def __init__(self, widget):
         super(TabAlreadyOpen, self).__init__()
@@ -336,41 +377,19 @@ class HelpBrowser(QWidget):
                 # just raise this tab.
                 raise TabAlreadyOpen(tab)
 
-    def _mkhelptopicwidget(self, helptopicpage, urlcanon, parent=None):
+    def _mkhelptopicwidget(self, helptopicpage, urlcanon, parent):
 
-        html = helptopicpage.contentAsHtml()#fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
-
-        logger.longdebug("Help page text = \n%s", html)
-
-        tb = QTextBrowser(parent)
-
-        font = tb.font()
-        font.setPointSize(QFontInfo(font).pointSize()+1)
-        tb.setFont(font)
-
-        tb.setOpenLinks(False)
-        tb.anchorClicked.connect(self.openHelpTopicUrl)
-
-        #tb.setViewportMargins(50,20,50,40)
-
-        tb.setHtml(html)
-        tb.setProperty("HelpTabTitle", helptopicpage.title())
-        if helptopicpage.tooltip:
-            tb.setProperty("HelpTabToolTip", helptopicpage.tooltip())
-
-        tb.setProperty("helpurl", urlcanon)
-
-        return tb
+        return HelpTopicPageWidget(helptopicpage, urlcanon, self, parent)
 
     
-    def _gethelptopicwidget(self, pathitems, opt, parent=None):
+    def _gethelptopicwidget(self, pathitems, opt, parent):
 
         if len(pathitems) == 0:
             # home page
 
             urlcanon = 'help:/'
             self._findopenhelptopicwidget(urlcanon)
-            return self._mkhelptopicwidget(self._gethelptopic_home(), urlcanon, parent=self)
+            return self._mkhelptopicwidget(self._gethelptopic_home(), urlcanon, parent=parent)
 
         if (pathitems[0] == 'general'):
             if (len(pathitems) < 2):
@@ -380,7 +399,7 @@ class HelpBrowser(QWidget):
             urlcanon = 'help:/' + '/'.join(pathitems)
             self._findopenhelptopicwidget(urlcanon)
             return self._mkhelptopicwidget(self._gethelptopic_general('/'.join(pathitems[1:])),
-                                           urlcanon, parent=self)
+                                           urlcanon, parent=parent)
 
 
         if pathitems[0] == 'filters' or pathitems[0] == 'rawfilterdoc':
@@ -411,7 +430,7 @@ class HelpBrowser(QWidget):
             else:
                 raise RuntimeError("pathitems[0]=%r ??"%(pathitems[0]))
 
-            return self._mkhelptopicwidget(page, urlcanon, parent=self)
+            return self._mkhelptopicwidget(page, urlcanon, parent=parent)
         
         logger.warning("getHelpTopicPage(): Unknown help topic: %r", "/".join(pathitems))
         return None
