@@ -1205,7 +1205,7 @@ class BibolamaziFile(object):
             filtername = filter_instance.name()
             action = filter_instance.action()
 
-            logger.info("Filter: %s", filter_instance.getRunningMessage())
+            logger.info("=== Filter: %s", filter_instance.getRunningMessage())
 
             filter_instance.prerun(self)
 

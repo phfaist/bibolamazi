@@ -89,6 +89,14 @@ class BibolamaziApplication(QApplication):
         self.main_widget.show()
         self.main_widget.raise_()
 
+        self.bibolamazi_thread = openbibfile.global_run_bibolamazi_thread_instance()
+
+        self.appQuitRequested.connect(self.bibolamazi_thread.doQuit)
+        self.appQuitRequested.connect(self.main_widget.quit)
+
+
+    appQuitRequested = pyqtSignal()
+
     def event(self, event):
         if event.type() == QEvent.FileOpen:
             logger.info("Opening file %s", event.file())
@@ -102,7 +110,7 @@ class BibolamaziApplication(QApplication):
         return super(BibolamaziApplication, self).event(event)
 
     def quit_app(self):
-        self.main_widget.quit()
+        self.appQuitRequested.emit()
 
 
 

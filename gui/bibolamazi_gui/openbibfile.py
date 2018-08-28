@@ -70,15 +70,13 @@ logger = logging.getLogger(__name__)
 
 
 
-def bibolamazi_error_html(errortxt, bibolamaziFile, wrap_pre=True):
+def bibolamazi_error_html(errortxt, wrap_pre=True):
 
     def a_link(m):
-        if bibolamaziFile is not None:
-            return "<a href=\"action:/goto-config-line/%d\">%s</a>" %(
-                bibolamaziFile.configLineNo(int(m.group('lineno'))),
-                m.group()
-                )
-        return m.group()
+        return "<a href=\"action:/goto-bibolamazi-file-line/%d\">%s</a>" %(
+            int(m.group('lineno')),
+            m.group()
+            )
 
     errortxt = str(htmlescape(errortxt, quote=True))
     errortxt = re.sub(r'@:.*line\s+(?P<lineno>\d+)', a_link, errortxt)
@@ -106,12 +104,22 @@ class PreformattedHtml(object):
     def __unicode__(self):
         return self.html
 
-class LogToTextBrowserHandler(logging.Handler):
-    def __init__(self, textEdit):
-        logging.Handler.__init__(self)
-        self.textEdit = textEdit
 
-    def addtolog(self, txt, levelno=logging.INFO):
+class LogToHtmlQtSignal(QObject, logging.Handler):
+
+    def __init__(self, parent, threadparent=None):
+        super(LogToHtmlQtSignal, self).__init__(parent)
+        logging.Handler.__init__(self)
+
+        self.threadparent = threadparent
+
+    clearLog = pyqtSignal()
+    logHtml = pyqtSignal(str)
+
+    def doclear(self):
+        self.clearLog.emit()
+
+    def dolog(self, txt, levelno=logging.INFO):
 
         try:
             html = txt.getHtml() # in case of a PreformattedHtml instance
@@ -133,22 +141,23 @@ class LogToTextBrowserHandler(logging.Handler):
 
         sty += "white-space: pre;"
 
-        cur = QTextCursor(self.textEdit.document())
-        cur.movePosition(QTextCursor.End)
-        cur.insertHtml("<span style=\"%s\">%s\n</span>"%(sty, html))
-        self.textEdit.update()
-        QApplication.instance().processEvents()
+        self.logHtml.emit("<span style=\"%s\">%s\n</span>"%(sty, html))
+
+        if hasattr(self.threadparent, 'my_process_events'):
+            self.threadparent.my_process_events()
 
     def emit(self, record):
-        self.addtolog(self.format(record), record.levelno)
+        self.dolog(self.format(record), record.levelno)
 
 
-class LogToTextBrowser:
-    def __init__(self, textedit, bibolamaziFile, thelogger=logging.getLogger()):
-        self.ch = LogToTextBrowserHandler(textedit)
-        self.ch.setLevel(logging.NOTSET); # propagate all messages
 
-        self.bibolamaziFile = bibolamaziFile
+
+class LogToGuiContextManager(object):
+    def __init__(self, logqtsig, bibolamazi_fname, thelogger=logging.getLogger()):
+        self.ch = logqtsig
+        self.ch.setLevel(logging.NOTSET) # propagate all messages
+
+        self.bibolamazi_fname = bibolamazi_fname
 
         # create formatter and add it to the handlers
         self.formatter = blogger.ConditionalFormatter('%(message)s',
@@ -161,21 +170,18 @@ class LogToTextBrowser:
 
         self.logger = thelogger
 
-
-    def _fmt_error(self, x):
+    def _fmt_error(self, d):
         html = bibolamazi_error_html(
-            '%(message)s' % x, bibolamaziFile=self.bibolamaziFile,
-            wrap_pre=('<span style="white-space: pre">', '</span>'))
+            '%(message)s' % d, # d is the dictionary with the record information
+            wrap_pre=('<span style="white-space: pre">', '</span>')
+        )
         html = "<br />".join(['ERROR: %s'%(line) for line in html.split('\n')])
         return PreformattedHtml(html=html)
-
-    def addtolog(self, txt):
-        self.ch.addtolog(txt)
 
     def __enter__(self):
         # add the handlers to the logger
         self.logger.addHandler(self.ch)
-        self.ch.textEdit.clear()
+        self.ch.doclear()
         return self
         
 
@@ -225,19 +231,124 @@ class ContextAttributeSetter:
             setm(self.initvals[N-i-1])
 
 
+class RunBibolamaziThread(QThread):
+    def __init__(self, parent):
+        super(RunBibolamaziThread, self).__init__(parent)
+        self.setObjectName("run-bibolamazi-thread")
+
+        self._orig_except_hook = sys.excepthook
+        sys.excepthook = self._py_except_hook
+
+        self.keyboardinterrupt_requested = False
+
+        self.busy = False # accessed directly by RunBibolamazi objects
+
+    def getOwnRunBibolamazi(self):
+        r = RunBibolamazi(self)
+        r.moveToThread(self)
+        return r
+
+    @pyqtSlot()
+    def doQuit(self):
+        self.quit()
+        self.wait()
+        sys.excepthook = self._orig_except_hook
+
+    def _py_except_hook(self, etype, evalue, tb):
+        if etype is KeyboardInterrupt:
+            self.keyboardinterrupt_requested = True
+            return
+        self._orig_except_hook(etype, evalue, tb)
+
+    def my_process_events(self):
+        if self.keyboardinterrupt_requested:
+            self.keyboardinterrupt_requested = False
+            raise KeyboardInterrupt
+
+        QCoreApplication.processEvents()
+
+
+global_run_bibolamazi_thread = None
+def global_run_bibolamazi_thread_instance():
+    global global_run_bibolamazi_thread
+    if global_run_bibolamazi_thread is None:
+        global_run_bibolamazi_thread = RunBibolamaziThread(QApplication.instance())
+        global_run_bibolamazi_thread.start()
+    return global_run_bibolamazi_thread
+
+
+class RunBibolamazi(QObject):
+    def __init__(self, threadparent):
+        super(RunBibolamazi, self).__init__(None) # important: no parent (for moveToThread())
+
+        self.threadparent = threadparent
+
+        self.logqtsig = LogToHtmlQtSignal(self, threadparent)
+        self.logqtsig.clearLog.connect(self.clearLog)
+        self.logqtsig.logHtml.connect(self.logHtml)
+
+
+    busy = pyqtSignal(bool)
+    bibolamaziDone = pyqtSignal()
+    bibolamaziDoneError = pyqtSignal(str)
+
+    clearLog = pyqtSignal()
+    logHtml = pyqtSignal(str)
+
+    
+    @pyqtSlot(str, int)
+    def runBibolamazi(self, bibolamazifilename, verbosity_level):
+        if self.threadparent.busy:
+            logger.warning("Can't run bibolamazi twice simultaneously")
+            return
+
+        logger.debug("RunBibolamazi.runBibolamazi(): bibolamazifilename=%r, verbosity_level=%r. thread id=%r",
+                     bibolamazifilename, verbosity_level, QThread.currentThread().objectName())
+
+        self.threadparent.busy = True
+        self.busy.emit(True)
+
+        try:
+
+            rootlogger = logging.getLogger()
+            loggerleveltoset = bibolamazimain.verbosity_logger_level(verbosity_level)
+            with ContextAttributeSetter(
+                    (lambda : rootlogger.level, rootlogger.setLevel, loggerleveltoset), ):
+                with LogToGuiContextManager(logqtsig=self.logqtsig,
+                                            bibolamazi_fname=bibolamazifilename) as log2sig:
+                    try:
+                        bibolamazimain.run_bibolamazi(bibolamazifile=bibolamazifilename)
+                        self.logqtsig.dolog(" --> Finished successfully. <--")
+                        self.bibolamaziDone.emit()
+                    except butils.BibolamaziError as e:
+                        logger.error(str(e))
+                        self.logqtsig.dolog(" --> Finished with errors. <--")
+                        self.bibolamaziDoneError.emit(str(e))
+                    except KeyboardInterrupt as e:
+                        logger.error("*** interrupted ***")
+                        self.logqtsig.dolog(" --> Stop: Interrupted. <--")
+                        self.bibolamaziDoneError.emit("Bibolamazi interrupted")
+                    except Exception as e:
+                        stre = str(e)
+                        logger.error(stre)
+                        import traceback
+                        logger.error(traceback.format_exc())
+                        self.logqtsig.dolog(" --> INTERNAL ERROR <--")
+                        self.bibolamaziDoneError.emit(stre)
+
+        finally:
+            self.busy.emit(False)
+            self.threadparent.busy = False
+
+
+    #@pyqtSlot()
+    #def _process_some_events(self):
+    #    # this processes events for current thread (from Qt docs)
+    #    QCoreApplication.processEvents()
 
 
 
-# class RunBibolamaziThread(QThread):
-#     def __init__(self, openbibfilewidget):
-#         super(RunBibolamaziThread, self).__init__(openbibfilewidget)
-
-#         self.openbibfilewidget = openbibfilewidget
-
-#     def run_bibolamazi(self, bibolamazifile):
-#         ...
-
-
+                        
 
 class OpenBibFile(QWidget):
 
@@ -251,6 +362,17 @@ class OpenBibFile(QWidget):
 
         self.ui = Ui_OpenBibFile()
         self.ui.setupUi(self)
+
+        self.bibolamazi_thread = global_run_bibolamazi_thread_instance()
+
+        self.run_bibolamazi = self.bibolamazi_thread.getOwnRunBibolamazi()
+        self.run_bibolamazi.busy.connect(self._run_busy)
+        self.run_bibolamazi.bibolamaziDone.connect(self._run_bibolamaziDone)
+        self.run_bibolamazi.bibolamaziDoneError.connect(self._run_bibolamaziDoneError)
+        self.run_bibolamazi.clearLog.connect(self._run_clearLog)
+        self.run_bibolamazi.logHtml.connect(self._run_logHtml)
+
+        self.requestRunBibolamazi.connect(self.run_bibolamazi.runBibolamazi)
 
         self.resize(QSize(1200,800))
         self.ui.splitEditConfig.setSizes([700,500])
@@ -602,8 +724,51 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnInterrupt_clicked(self):
+        self.ui.btnInterrupt.setEnabled(False) # not twice in a row
         import signal
         os.kill(os.getpid(), signal.SIGINT)
+
+
+    requestRunBibolamazi = pyqtSignal(str, int)
+    
+    @pyqtSlot(bool)
+    def _run_busy(self, busy):
+
+        # block notifications for file contents updates that we generate ourselves...
+        self.fwatcher.blockSignals(busy)
+
+        self.ui.btnInterrupt.setVisible(busy)
+        self.ui.btnInterrupt.setEnabled(busy)
+        self.ui.btnGo.setVisible(not busy)
+
+        if busy:
+            self._busy_before_curtab = self.ui.tabs.currentWidget()
+            self.ui.tabs.setCurrentWidget(self.ui.pageLog)
+
+
+    @pyqtSlot()
+    def _run_bibolamaziDone(self):
+        # if we're done with success, go back to previous tab
+        if self._busy_before_curtab is not None:
+            self.ui.tabs.setCurrentWidget(self._busy_before_curtab)
+            self._busy_before_curtab = None
+        self.delayedUpdateFileContents()
+
+    @pyqtSlot(str)
+    def _run_bibolamaziDoneError(self, errstr):
+        QMessageBox.warning(self, "Bibolamazi error", errstr)
+        self.delayedUpdateFileContents()
+        self._busy_before_curtab = None
+
+    @pyqtSlot()
+    def _run_clearLog(self):
+        self.ui.txtLog.clear()
+
+    @pyqtSlot(str)
+    def _run_logHtml(self, html):
+        cur = QTextCursor(self.ui.txtLog.document())
+        cur.movePosition(QTextCursor.End)
+        cur.insertHtml(html)
 
 
     @pyqtSlot()
@@ -617,53 +782,13 @@ class OpenBibFile(QWidget):
             # save our config
             self.saveToFile()
             
-        #self.ui.btnGo.setVisible(False)
-        #self.ui.btnInterrupt.setVisible(True)
+        if not self.bibolamaziFileName:
+            QMessageBox.critical(self, "No open file", "No file selected!")
+            return
 
-        with ContextAttributeSetter( (self.ui.btnGo.isVisible, self.ui.btnGo.setVisible, False),
-                                     (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False),
-                                     (self.ui.btnInterrupt.isVisible, self.ui.btnGo.setVisible, True) ):
+        verbosity_level = self.ui.cbxVerbosity.currentIndex()
 
-            while True:
-                QApplication.instance().processEvents()
-
-            if not self.bibolamaziFileName:
-                QMessageBox.critical(self, "No open file", "No file selected!")
-                return
-
-            logs = None
-            rootlogger = logging.getLogger()
-            setloggerlevel = bibolamazimain.verbosity_logger_level(self.ui.cbxVerbosity.currentIndex())
-            with ContextAttributeSetter( (lambda : rootlogger.level, rootlogger.setLevel,
-                                          setloggerlevel),
-                                         (self.ui.tabs.currentWidget, self.ui.tabs.setCurrentWidget,
-                                          self.ui.pageLog) ):
-                with LogToTextBrowser(textedit=self.ui.txtLog,
-                                      bibolamaziFile=self.bibolamaziFile) as log2txtLog:
-                    try:
-                        # block notifications for file contents updates that we generate ourselves...
-                        self.fwatcher.blockSignals(True)
-                        bibolamazimain.run_bibolamazi(bibolamazifile=self.bibolamaziFileName)
-                        log2txtLog.addtolog(" --> Finished successfully. <--")
-                    except butils.BibolamaziError as e:
-                        logger.error(str(e))
-                        log2txtLog.addtolog(" --> Finished with errors. <--")
-                        QMessageBox.warning(self, "Bibolamazi error", str(e))
-                    except KeyboardInterrupt as e:
-                        logger.error("*** interrupted ***")
-                        log2txtLog.addtolog(" --> Stop: Interrupted. <--")
-                        QMessageBox.warning(self, "Bibolamazi error", "Bibolamazi interrupted")
-                    except:
-                        e = sys.exc_info()[1]
-                        stre = str(e)
-                        logger.error(stre)
-                        import traceback
-                        logger.error(traceback.format_exc())
-                        log2txtLog.addtolog(" --> INTERNAL ERROR <--")
-                        QMessageBox.warning(self, "[ERROR]", stre)
-
-        self.delayedUpdateFileContents()
-                    
+        self.requestRunBibolamazi.emit(self.bibolamaziFileName, verbosity_level)
 
 
     @pyqtSlot()

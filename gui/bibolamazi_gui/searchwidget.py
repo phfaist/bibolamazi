@@ -67,7 +67,7 @@ class SearchWidget(QWidget):
 
     def eventFilter(self, object, event):
         if object is self.u.txt:
-            if event.type() == QEvent.KeyPress:
+            if event.type() == QEvent.KeyPress and hasattr(event, 'matches'):
                 if event.key() == Qt.Key_Escape:
                     self.searchDone.emit()
                     self.setVisible(False)
@@ -154,7 +154,7 @@ class SearchTextEditManager(QObject):
 
     def eventFilter(self, object, event):
         if object is self.textedit:
-            if event.type() == QEvent.KeyPress:
+            if event.type() == QEvent.KeyPress and hasattr(event, 'matches'):
                 if event.matches(QKeySequence.Find):
                     self.showSearch()
                     return True
