@@ -91,8 +91,7 @@ class BibolamaziApplication(QApplication):
 
         self.bibolamazi_thread = openbibfile.global_run_bibolamazi_thread_instance()
 
-        self.appQuitRequested.connect(self.bibolamazi_thread.doQuit)
-        self.appQuitRequested.connect(self.main_widget.quit)
+        self.main_widget.requestAppQuit.connect(self.quit_app)
 
 
     appQuitRequested = pyqtSignal()
@@ -109,8 +108,16 @@ class BibolamaziApplication(QApplication):
             
         return super(BibolamaziApplication, self).event(event)
 
+    @pyqtSlot()
     def quit_app(self):
+        logger.info("App quit")
+
+        while self.bibolamazi_thread.busy:
+            QThread.currentThread().usleep(100000) # 0.1 seconds
+
         self.appQuitRequested.emit()
+        self.bibolamazi_thread.doQuit()
+        self.main_widget.close()
 
 
 
@@ -223,6 +230,8 @@ class MainWidget(QWidget):
         self.ui.btnOpenRecent.clicked.connect(self.ui.btnOpenRecent.showMenu)
         self.recentFilesList.filesChanged.connect(self._update_recent_files_menu)
 
+        self.ui.btnQuit.clicked.connect(self.requestAppQuit)
+
         self.menubar = None
         self.shortcuts = []
 
@@ -253,7 +262,7 @@ class MainWidget(QWidget):
         self.myactions['help'].triggered.connect(self.on_btnHelp_clicked)
         self.myactions['help'].setShortcut(QKeySequence("Ctrl+R"))
         self.myactions['quit'] = QAction("Quit", self)
-        self.myactions['quit'].triggered.connect(self.quit)
+        self.myactions['quit'].triggered.connect(self.requestAppQuit)
         self.myactions['quit'].setShortcut(QKeySequence("Ctrl+Q"))
         self.myactions['settings'] = QAction("Settings", self)
         self.myactions['settings'].triggered.connect(self.on_btnSettings_clicked)
@@ -309,6 +318,8 @@ class MainWidget(QWidget):
 
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
+
+    requestAppQuit = pyqtSignal()
 
     def doCheckForUpdates(self):
         if swu_interface is not None:
@@ -446,15 +457,6 @@ class MainWidget(QWidget):
             self.helpbrowser = helpbrowser.HelpBrowser()
         self.helpbrowser.show()
         self.helpbrowser.raise_()
-
-    @pyqtSlot()
-    def on_btnQuit_clicked(self):
-        self.quit()
-
-    @pyqtSlot()
-    def quit(self):
-        logger.info("App quit")
-        self.close()
 
 
     @pyqtSlot()

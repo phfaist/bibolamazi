@@ -136,7 +136,7 @@ class LogToHtmlQtSignal(QObject, logging.Handler):
         if levelno == logging.ERROR or levelno == logging.CRITICAL:
             sty = "color: #ff0000; font-weight: bold;"
         elif levelno == logging.WARNING:
-            sty = "color: rgb(204,102,0); font-weight: bold;"
+            sty = "color: rgb(150,80,0); font-weight: bold;"
         elif levelno == logging.INFO:
             sty = "color: #000000; font-weight: normal;"
         elif levelno == logging.DEBUG or levelno == blogger.LONGDEBUG:
@@ -744,7 +744,16 @@ class OpenBibFile(QWidget):
     def on_btnInterrupt_clicked(self):
         self.ui.btnInterrupt.setEnabled(False) # not twice in a row
         import signal
-        os.kill(os.getpid(), signal.SIGINT)
+
+        sig = signal.SIGINT
+        if sys.platform.startswith('win'):
+            logger.warning("Interrupt does not work on Windows (not implemented).")
+            return
+            # doesn't work????!?
+            #logger.debug("Sending Ctrl+C ...")
+            #sig = signal.CTRL_C_EVENT
+            
+        os.kill(os.getpid(), sig)
 
 
     requestRunBibolamazi = pyqtSignal(str, int)
@@ -755,9 +764,13 @@ class OpenBibFile(QWidget):
         # block notifications for file contents updates that we generate ourselves...
         self.fwatcher.blockSignals(busy)
 
-        self.ui.btnInterrupt.setVisible(busy)
-        self.ui.btnInterrupt.setEnabled(busy)
-        self.ui.btnGo.setVisible(not busy)
+        if sys.platform.startswith('win'):
+            self.ui.btnGo.setEnabled(not busy)
+            self.ui.btnInterrupt.setVisible(False)
+        else:
+            self.ui.btnInterrupt.setVisible(busy)
+            self.ui.btnInterrupt.setEnabled(busy)
+            self.ui.btnGo.setVisible(not busy)
 
         if busy:
             self._busy_before_curtab = self.ui.tabs.currentWidget()

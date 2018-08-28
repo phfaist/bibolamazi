@@ -181,9 +181,9 @@ else:
               a.datas,
               name=exename,
               debug=False,
-              strip=None,
-              upx=False,#True,
               console=False,
+              strip=None,
+              upx=False,
               **kwargs
               )
     

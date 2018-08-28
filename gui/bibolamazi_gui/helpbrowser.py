@@ -54,7 +54,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from . import filterinstanceeditor
 from . import settingswidget
 from . import searchwidget
 
@@ -338,7 +337,8 @@ class HelpBrowser(QWidget):
         if urlparts.scheme and urlparts.scheme != 'help':
             raise ValueError("Invalid URL scheme: %s [url=%s]"%(urlparts.scheme, url))
 
-        path = os.path.normpath(urlparts.path)
+        import posixpath
+        path = posixpath.normpath(urlparts.path)
         qs = parse_qs(urlparts.query) # any options etc.
 
         logger.debug("got options qs = %r", qs)
@@ -360,6 +360,10 @@ class HelpBrowser(QWidget):
             widget = self._gethelptopicwidget(pathitems, opt=opt, parent=self.ui.tabs)
         except TabAlreadyOpen as t:
             self.ui.tabs.setCurrentWidget(t.widget)
+            return
+
+        if widget is None:
+            logger.debug("Couldn't open help topic widget for %r", url)
             return
 
         tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle'))
@@ -384,6 +388,8 @@ class HelpBrowser(QWidget):
     
     def _gethelptopicwidget(self, pathitems, opt, parent):
 
+        logger.debug("_gethelptopicwidget(): pathitems=%r, opt=%r", pathitems, opt)
+
         if len(pathitems) == 0:
             # home page
 
@@ -393,7 +399,7 @@ class HelpBrowser(QWidget):
 
         if (pathitems[0] == 'general'):
             if (len(pathitems) < 2):
-                logger.warning("getHelpTopicPage(): No help topic general page specified!!")
+                logger.warning("_gethelptopicwidget(): No help topic general page specified!!")
                 return None
 
             urlcanon = 'help:/' + '/'.join(pathitems)
@@ -405,7 +411,7 @@ class HelpBrowser(QWidget):
         if pathitems[0] == 'filters' or pathitems[0] == 'rawfilterdoc':
 
             if (len(pathitems) < 2):
-                logger.warning("getHelpTopicPage(): No filter specified!!")
+                logger.warning("_gethelptopicwidget(): No filter specified!!")
                 return None
 
             filtname = pathitems[1]
@@ -432,7 +438,7 @@ class HelpBrowser(QWidget):
 
             return self._mkhelptopicwidget(page, urlcanon, parent=parent)
         
-        logger.warning("getHelpTopicPage(): Unknown help topic: %r", "/".join(pathitems))
+        logger.warning("_gethelptopicwidget(): Unknown help topic: %r", "/".join(pathitems))
         return None
 
             
@@ -461,6 +467,8 @@ class HelpBrowser(QWidget):
                      + "</p>\n\n")
 
         home_src += "<h2>Filters</h2>\n\n"
+
+        from . import filterinstanceeditor # cyclic import if done @ top of module
 
         home_src += "<ul>\n"
         for filt in filterinstanceeditor.get_filter_list():
