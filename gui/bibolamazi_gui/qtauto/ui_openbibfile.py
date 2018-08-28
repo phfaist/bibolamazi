@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_OpenBibFile(object):
     def setupUi(self, OpenBibFile):
         OpenBibFile.setObjectName("OpenBibFile")
-        OpenBibFile.resize(787, 501)
+        OpenBibFile.resize(793, 523)
         self.lyt = QtWidgets.QGridLayout(OpenBibFile)
         self.lyt.setObjectName("lyt")
         self.btnGo = QtWidgets.QPushButton(OpenBibFile)
@@ -192,7 +192,7 @@ class Ui_OpenBibFile(object):
         self.cbxVerbosity.addItem("")
         self.gridLayout.addWidget(self.cbxVerbosity, 1, 1, 1, 1)
         self.tabs.addTab(self.pageLog, "")
-        self.lyt.addWidget(self.tabs, 2, 0, 1, 1)
+        self.lyt.addWidget(self.tabs, 3, 0, 1, 1)
         self.wHead = QtWidgets.QWidget(OpenBibFile)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -232,6 +232,13 @@ class Ui_OpenBibFile(object):
         self.btnSave.setObjectName("btnSave")
         self.horizontalLayout.addWidget(self.btnSave)
         self.lyt.addWidget(self.wHead, 0, 0, 1, 1)
+        self.btnInterrupt = QtWidgets.QPushButton(OpenBibFile)
+        self.btnInterrupt.setMinimumSize(QtCore.QSize(0, 40))
+        icon4 = QtGui.QIcon()
+        icon4.addPixmap(QtGui.QPixmap(":/pic/closehide.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btnInterrupt.setIcon(icon4)
+        self.btnInterrupt.setObjectName("btnInterrupt")
+        self.lyt.addWidget(self.btnInterrupt, 2, 0, 1, 1)
 
         self.retranslateUi(OpenBibFile)
         self.tabs.setCurrentIndex(0)
@@ -262,6 +269,7 @@ class Ui_OpenBibFile(object):
         self.cbxVerbosity.setItemText(3, _translate("OpenBibFile", "Very Verbose (for debugging)"))
         self.tabs.setTabText(self.tabs.indexOf(self.pageLog), _translate("OpenBibFile", "Messages"))
         self.lblFileName.setText(_translate("OpenBibFile", "some text here"))
+        self.btnInterrupt.setText(_translate("OpenBibFile", "Stop"))
 
 from ..filterinstanceeditor import FilterInstanceEditor
 from ..filterpackagepatheditor import FilterPackagePathEditor

@@ -90,10 +90,10 @@ class BibolamaziApplication(QApplication):
         self.main_widget.raise_()
 
     def event(self, event):
-        if (event.type() == QEvent.FileOpen):
+        if event.type() == QEvent.FileOpen:
             logger.info("Opening file %s", event.file())
             # request to open file
-            if (self.main_widget is None):
+            if self.main_widget is None:
                 logger.error("ERROR: CAN'T OPEN FILE: MAIN WIDGET IS NONE!")
             else:
                 self.main_widget.openFile(event.file())
@@ -101,6 +101,8 @@ class BibolamaziApplication(QApplication):
             
         return super(BibolamaziApplication, self).event(event)
 
+    def quit_app(self):
+        self.main_widget.quit()
 
 
 
@@ -218,7 +220,7 @@ class MainWidget(QWidget):
 
         self.upd_checkenabled_action = None
         self.upd_checknow_action = None
-        if (swu_interface is not None):
+        if swu_interface is not None:
             self.upd_checkenabled_action = QAction("Regularly Check for Updates", self)
             self.upd_checkenabled_action.setCheckable(True)
             self.upd_checkenabled_action.setChecked(swu_interface.checkForUpdatesEnabled())
@@ -243,24 +245,24 @@ class MainWidget(QWidget):
         self.myactions['help'].triggered.connect(self.on_btnHelp_clicked)
         self.myactions['help'].setShortcut(QKeySequence("Ctrl+R"))
         self.myactions['quit'] = QAction("Quit", self)
-        self.myactions['quit'].triggered.connect(self.on_btnQuit_clicked)
+        self.myactions['quit'].triggered.connect(self.quit)
         self.myactions['quit'].setShortcut(QKeySequence("Ctrl+Q"))
         self.myactions['settings'] = QAction("Settings", self)
         self.myactions['settings'].triggered.connect(self.on_btnSettings_clicked)
         for a in self.myactions.values():
             self.addAction(a)
 
-        if (sys.platform.startswith('darwin')):
+        if sys.platform.startswith('darwin'):
             # Mac OS X
             self.menubar = QMenuBar(None)
             filemenu = self.menubar.addMenu("File")
             filemenu.addAction(self.myactions['new'])
             filemenu.addAction(self.myactions['open'])
             filemenu.addAction(self.myactions['settings'])
-            if (self.upd_checkenabled_action):
+            if self.upd_checkenabled_action:
                 filemenu.addSeparator()
                 filemenu.addAction(self.upd_checkenabled_action)
-            if (self.upd_checknow_action):
+            if self.upd_checknow_action:
                 filemenu.addAction(self.upd_checknow_action)
             helpmenu = self.menubar.addMenu("Help")
             helpmenu.addAction(self.myactions['help'])
@@ -283,11 +285,11 @@ class MainWidget(QWidget):
             #    #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
             #    #          Qt.ApplicationShortcut),
             #    ]
-            #if (self.upd_checkenabled_action):
+            #if self.upd_checkenabled_action:
             #    self.shortcuts += [
             #        #(self.upd_checkenabled_action, "Ctrl+U", None)
             #        ]
-            #if (self.upd_checknow_action):
+            #if self.upd_checknow_action:
             #    self.shortcuts += [
             #        (self.upd_checknow_action, "Ctrl+U", None)
             #        ]
@@ -321,12 +323,24 @@ class MainWidget(QWidget):
         
     def openFile(self, fname):
         logger.info("Opening file %r", fname)
+
+        fnamecanon = os.path.realpath(fname)
+
+        logger.debug("canonical file name = %r", fnamecanon)
+
+        for wopen in self.openbibfiles:
+            if fnamecanon == wopen.fileName():
+                wopen.raise_()
+                logger.debug("File %r already open, raising window.", fnamecanon)
+                return
+
         w = openbibfile.OpenBibFile()
         w.setFavoriteCmdsList(self.favoriteCmdsList)
         w.setOpenFile(fname)
         w.show()
         w.raise_()
         w.fileClosed.connect(self.bibFileClosed)
+
         self.openbibfiles.append(w)
         logger.debug("openbibfile object = %r, self.openbibfiles = %r", w, self.openbibfiles)
 
@@ -397,7 +411,7 @@ class MainWidget(QWidget):
         assert len(selectedfiles) == 1
 
         fname = selectedfiles[0]
-        if (fname):
+        if fname:
             self.openFile(fname)
 
         
@@ -420,13 +434,17 @@ class MainWidget(QWidget):
 
     @pyqtSlot()
     def on_btnHelp_clicked(self):
-        if (self.helpbrowser is None):
+        if self.helpbrowser is None:
             self.helpbrowser = helpbrowser.HelpBrowser()
         self.helpbrowser.show()
         self.helpbrowser.raise_()
 
     @pyqtSlot()
     def on_btnQuit_clicked(self):
+        self.quit()
+
+    @pyqtSlot()
+    def quit(self):
         logger.info("App quit")
         self.close()
 
@@ -443,7 +461,7 @@ class MainWidget(QWidget):
     @pyqtSlot()
     def bibFileClosed(self):
         sender = self.sender()
-        if (not sender in self.openbibfiles):
+        if not sender in self.openbibfiles:
             logger.warning("Widget sender %r of fileClosed() not in our openbibfiles list %r!!",
                            sender, self.openbibfiles)
             return
@@ -463,7 +481,7 @@ class MainWidget(QWidget):
                 event.ignore()
                 return
 
-        if (self.helpbrowser):
+        if self.helpbrowser:
             self.helpbrowser.close()
 
         self.favoriteCmdsList.saveToSettings(QSettings())
@@ -508,7 +526,7 @@ swu_sourcefilter_devel = None
 def setup_software_updater():
     pass
 
-    # if (not hasattr(sys, '_MEIPASS')):
+    # if not hasattr(sys, '_MEIPASS'):
     #     # not pyinstaller-packaged
     #     return
 
@@ -568,7 +586,7 @@ def run_app(argv):
     _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE)
     for k in range(1,len(args)): # skip program name == argv[0]
         fn = str(args[k])
-        if (_rxscript.search(fn)):
+        if _rxscript.search(fn):
             # our own script, bug on windows?
             logger.debug("skipping own arg: %s", fn)
             continue

@@ -80,6 +80,33 @@ def setup_qt5_plugins_path():
 
 
 
+def exception_handler(etype, evalue, tb):
+    if etype is KeyboardInterrupt:
+        print("*** interrupt (ignoring)")
+        return
+        # try:
+        #     from PyQt5.QtWidgets import QApplication
+        #     app = QApplication.instance()
+        #     print("app = ", app)
+        #     app.quit_app()
+        #     print("application exit")
+        #     return
+        # except Exception:
+        #     print("can't quit QApplication, terminating")
+        #     sys.exit(0)
+        #     return
+        #     pass
+
+    import traceback
+    logger.warning("Internal Error: Uncaught Python Exception. Ignoring and hoping for the best.\n%s",
+                   "".join(traceback.format_exception(etype, evalue, tb)))
+
+# override Python's exception handler, 
+sys.excepthook = exception_handler
+
+
+
+
 def main():
 
     blogger.setup_simple_console_logging(level=logging.DEBUG)

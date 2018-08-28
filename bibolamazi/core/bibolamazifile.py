@@ -696,7 +696,7 @@ class BibolamaziFile(object):
         # expand ~/foo/bar, $HOME/foo/bar as well as ${MYBIBDIR}/foo/bar.bib
         path = os.path.expanduser(path)
         path = os.path.expandvars(path)
-        # if the path is relative, make it absolute. I'ts relative to the bibolamazi file.
+        # if the path is relative, make it absolute. It's relative to the bibolamazi file.
         # (note: `os.path.join(a, b)` will ignore `a` if `b` is absolute)
         return os.path.join(self._dir, path)
 
@@ -1238,11 +1238,17 @@ class BibolamaziFile(object):
         except BibFilterError as e:
             # filter error -- just propagate this, all the info is there already
             raise
-        except:
+        except Exception as e:
             # filter caused an exception which is not a BibFilterError -- this
             # shouldn't happen normally, so it's an internal filter error.  Turn
             # this into a BibolamaziError so that "runFilter()" only raises
             # BibolamaziError's.
+            #
+            # NOTE: Don't use "except:" because we still want to propagate
+            # system exceptions, for instance, KeyboardInterrupt.
+            
+            logger.debug("bibolamazifile.runFilter(): Caught filter exception (not a "
+                         "BibFilterError), raising BibFilterInternalError.")
             import traceback
             raise BibFilterInternalError(fname=self._fname, filtername=filtername,
                                          filter_exc=sys.exc_info()[1],

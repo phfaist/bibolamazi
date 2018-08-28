@@ -36,6 +36,7 @@ def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 els
 from html import escape as htmlescape
 import sys
 import logging
+import os
 import os.path
 import re
 import textwrap
@@ -111,23 +112,6 @@ class LogToTextBrowserHandler(logging.Handler):
         self.textEdit = textEdit
 
     def addtolog(self, txt, levelno=logging.INFO):
-        #chfmt = QTextCharFormat()
-        #if levelno == logging.ERROR or levelno == logging.CRITICAL:
-        #    chfmt.setForeground(QColor(255,0,0))
-        #    chfmt.setFontWeight(QFont.Bold)
-        #elif levelno == logging.WARNING:
-        #    chfmt.setForeground(QColor(204, 102, 0))
-        #    chfmt.setFontWeight(QFont.Bold)
-        #elif levelno == logging.INFO:
-        #    chfmt.setForeground(QColor(0,0,0))
-        #    chfmt.setFontWeight(QFont.Normal)
-        #elif levelno == logging.DEBUG or levelno == logging.LONGDEBUG:
-        #    chfmt.setForeground(QColor(127,127,127))
-        #    chfmt.setFontWeight(QFont.Normal)
-        #else:
-        #    # unknown level
-        #    chfmt.setForeground(QColor(127,127,127))
-        #    chfmt.setFontWeight(QFont.Normal)
 
         try:
             html = txt.getHtml() # in case of a PreformattedHtml instance
@@ -151,11 +135,7 @@ class LogToTextBrowserHandler(logging.Handler):
 
         cur = QTextCursor(self.textEdit.document())
         cur.movePosition(QTextCursor.End)
-        #cur.setCharFormat(chfmt)
-        #try:
         cur.insertHtml("<span style=\"%s\">%s\n</span>"%(sty, html))
-        #except AttributeError: # txt is a normal string, not a PreformattedHtml instance
-        #    cur.insertText(txt)
         self.textEdit.update()
         QApplication.instance().processEvents()
 
@@ -238,11 +218,24 @@ class ContextAttributeSetter:
         return self
 
     def __exit__(self, type, value, traceback):
-        # clean-up
-        for i in range(len(self.attribpairs)):
-            (getm, setm, v) = self.attribpairs[i]
-            setm(self.initvals[i])
+        # clean-up, go in reverse order
+        N = len(self.attribpairs)
+        for i in range(N):
+            (getm, setm, v) = self.attribpairs[N-i-1]
+            setm(self.initvals[N-i-1])
 
+
+
+
+
+# class RunBibolamaziThread(QThread):
+#     def __init__(self, openbibfilewidget):
+#         super(RunBibolamaziThread, self).__init__(openbibfilewidget)
+
+#         self.openbibfilewidget = openbibfilewidget
+
+#     def run_bibolamazi(self, bibolamazifile):
+#         ...
 
 
 
@@ -329,7 +322,7 @@ class OpenBibFile(QWidget):
         
 
     def setOpenFile(self, filename):
-        if (self.bibolamaziFileName):
+        if self.bibolamaziFileName:
             self.fwatcher.removePath(self.bibolamaziFileName)
             
         self.bibolamaziFileName = filename
@@ -337,7 +330,7 @@ class OpenBibFile(QWidget):
 
         self.reloadFile()
 
-        if (self.bibolamaziFileName):
+        if self.bibolamaziFileName:
             self.fwatcher.addPath(self.bibolamaziFileName)
 
 
@@ -353,25 +346,27 @@ class OpenBibFile(QWidget):
             return super(OpenBibFile, self).closeEvent(closeEvent)
 
         self._closedcalled = True
+
+        logger.debug("closeEvent(): cleaning up.")
         
-        if (self._modified):
+        if self._modified:
             ans = QMessageBox.question(self, 'Save Changes',
-                                       "Save changes to file `%s'?" %(self.bibolamaziFileName),
+                                       "Save changes to file `%s'?" %(self.bibolamaziFileName,),
                                        QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,
                                        QMessageBox.Save)
-            if (ans == QMessageBox.Save):
+            if ans == QMessageBox.Save:
                 # save first (no need for updating), then proceed with close
                 self.saveToFile(noupdate=True)
                 
-            if (ans == QMessageBox.Cancel):
+            if ans == QMessageBox.Cancel:
                 # ignore the event
                 closeEvent.ignore()
                 return
         
-        if (self.bibolamaziFileName):
+        if self.bibolamaziFileName:
             self.fwatcher.removePath(self.bibolamaziFileName)
             self.bibolamaziFileName = None
-        if (self.bibolamaziFile):
+        if self.bibolamaziFile:
             self.bibolamaziFile = None
 
         self.fileClosed.emit()
@@ -381,7 +376,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def saveToFile(self, noupdate=False):
-        if (not self.bibolamaziFile):
+        if not self.bibolamaziFile:
             QMessageBox.critical(self, "No File!", "No file to save to!")
             return
 
@@ -397,7 +392,7 @@ class OpenBibFile(QWidget):
         self._set_modified(False)
 
         # reload file.
-        if (not noupdate):
+        if not noupdate:
             self.delayedUpdateFileContents()
 
     @pyqtSlot()
@@ -408,7 +403,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def delayedUpdateFileContents(self):
-        if (self.updateTimer.isActive()):
+        if self.updateTimer.isActive():
             self.updateTimer.stop()
         self.updateTimer.start()
 
@@ -424,6 +419,7 @@ class OpenBibFile(QWidget):
 
         self.ui.btnSave.setEnabled(file_is_loaded)
         self.ui.btnGo.setEnabled(file_is_loaded)
+        self.ui.btnInterrupt.setVisible(False)
         
 
         if not file_is_loaded:
@@ -466,16 +462,16 @@ class OpenBibFile(QWidget):
         self._set_modified(False)
 
         # we may be sensitive again to external changes again
-        if (self.fwatcher.signalsBlocked()):
+        if self.fwatcher.signalsBlocked():
             self.fwatcher.blockSignals(False)
 
-        if (not self.bibolamaziFileName):
+        if not self.bibolamaziFileName:
             with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
                 self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">no file loaded.</h3>")
                 self.ui.txtConfig.setPlainText("")
             return
 
-        if (not self.bibolamaziFile):
+        if not self.bibolamaziFile:
             self.bibolamaziFile = bibolamazifile.BibolamaziFile()
 
         try:
@@ -514,7 +510,7 @@ class OpenBibFile(QWidget):
     def _display_info(self):
 
         def srcurl(s):
-            if (re.match(r'^\w+:/', s)):
+            if re.match(r'^\w+:/', s):
                 # already URL
                 return s
             s = self.bibolamaziFile.resolveSourcePath(s)
@@ -536,7 +532,7 @@ class OpenBibFile(QWidget):
 
         sources = []
         for srcline in self.bibolamaziFile.sourceLists():
-            if (isinstance(srcline, list)):
+            if isinstance(srcline, list):
                 srclist = srcline
             else:
                 srclist = [ srcline ]
@@ -595,8 +591,8 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot(int)
     def on_tabs_currentChanged(self, index):
-        if (self.ui.tabs.widget(index) == self.ui.pageBibEntries):
-            if (self._needs_update_txtbibentries):
+        if self.ui.tabs.widget(index) == self.ui.pageBibEntries:
+            if self._needs_update_txtbibentries:
                 self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
 
 
@@ -605,18 +601,33 @@ class OpenBibFile(QWidget):
         self.runBibolamazi()
 
     @pyqtSlot()
+    def on_btnInterrupt_clicked(self):
+        import signal
+        os.kill(os.getpid(), signal.SIGINT)
+
+
+    @pyqtSlot()
     def runBibolamazi(self):
-        if (self._modified):
+        if self._modified:
             yn = QMessageBox.question(self, "Save Changes?", "Save changes to your config?",
                                       QMessageBox.Save|QMessageBox.Cancel, QMessageBox.Save)
-            if (yn == QMessageBox.Cancel):
+            if yn == QMessageBox.Cancel:
                 return
 
             # save our config
             self.saveToFile()
             
-        with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
-            if (not self.bibolamaziFileName):
+        #self.ui.btnGo.setVisible(False)
+        #self.ui.btnInterrupt.setVisible(True)
+
+        with ContextAttributeSetter( (self.ui.btnGo.isVisible, self.ui.btnGo.setVisible, False),
+                                     (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False),
+                                     (self.ui.btnInterrupt.isVisible, self.ui.btnGo.setVisible, True) ):
+
+            while True:
+                QApplication.instance().processEvents()
+
+            if not self.bibolamaziFileName:
                 QMessageBox.critical(self, "No open file", "No file selected!")
                 return
 
@@ -638,6 +649,10 @@ class OpenBibFile(QWidget):
                         logger.error(str(e))
                         log2txtLog.addtolog(" --> Finished with errors. <--")
                         QMessageBox.warning(self, "Bibolamazi error", str(e))
+                    except KeyboardInterrupt as e:
+                        logger.error("*** interrupted ***")
+                        log2txtLog.addtolog(" --> Stop: Interrupted. <--")
+                        QMessageBox.warning(self, "Bibolamazi error", "Bibolamazi interrupted")
                     except:
                         e = sys.exc_info()[1]
                         stre = str(e)
@@ -657,14 +672,14 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot()
     def on_btnRefresh_clicked(self):
-        if (self._modified):
+        if self._modified:
             yn = QMessageBox.question(self, "Really revert?",
                                       self.tr("You are about to revert the file, but you "
                                               "have unsaved changes. Do you really want "
                                               "to abandon your changes and revert the "
                                               "file to disk?"),
                                       QMessageBox.Ok|QMessageBox.Cancel, QMessageBox.Cancel)
-            if (yn != QMessageBox.Ok):
+            if yn != QMessageBox.Ok:
                 return
 
         self.reloadFile()
@@ -679,11 +694,11 @@ class OpenBibFile(QWidget):
         self._open_anchor(url)
 
     def _open_anchor(self, url):
-        if (url.scheme() == "helptopic"):
+        if url.scheme() == "helptopic":
             self.requestHelpTopic.emit(url.path())
             return
 
-        if (url.scheme() == "action"):
+        if url.scheme() == "action":
             m = re.match(r'/goto-config-line/(?P<lineno>\d+)', url.path())
             if m:
                 self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
@@ -712,7 +727,7 @@ class OpenBibFile(QWidget):
             
             revertbtn = None
             box = None
-            if (not self._modified):
+            if not self._modified:
                 # file was modified externally, but we have no local changes.
                 box = QMessageBox(QMessageBox.Warning, "File Modified Externally",
                                   "The File was modified externally. Revert and reload it?")
@@ -731,7 +746,7 @@ class OpenBibFile(QWidget):
 
             box.exec_()
             clickedbtn = box.clickedButton()
-            if (clickedbtn == revertbtn):
+            if clickedbtn == revertbtn:
                 logger.debug("Reverting!!")
                 # reload the file
                 self.reloadFile()
@@ -780,7 +795,7 @@ class OpenBibFile(QWidget):
 
         (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
                                               filter_list)
-        if (not ok):
+        if not ok:
             # cancelled
             return
 
@@ -803,7 +818,7 @@ class OpenBibFile(QWidget):
         insertcur = None
         
         cmd = self._get_current_bibolamazi_cmd()
-        if (cmd is None):
+        if cmd is None:
             insertcur = QTextCursor(doc.findBlockByNumber(self.ui.txtConfig.textCursor().block().blockNumber()))
         else:
             # insert _after_ current cmd (-> +1 for next line, -1 to correct for offset starting at 1)
@@ -821,12 +836,12 @@ class OpenBibFile(QWidget):
 
     def _get_current_bibolamazi_cmd(self):
 
-        if (not self.bibolamaziFile):
+        if not self.bibolamaziFile:
             logger.warning("No bibolamazi file open")
             return
 
         cmds = self.bibolamaziFile.configCmds()
-        if (cmds is None):
+        if cmds is None:
             # file is not yet parsed
             return None
 
@@ -848,12 +863,12 @@ class OpenBibFile(QWidget):
 
     def _get_current_bibolamazi_cmdlist(self):
 
-        if (not self.bibolamaziFile):
+        if not self.bibolamaziFile:
             logger.warning("No bibolamazi file open")
             return
 
         cmds = self.bibolamaziFile.configCmds()
-        if (cmds is None):
+        if cmds is None:
             # file is not yet parsed
             return None
 
@@ -890,7 +905,7 @@ class OpenBibFile(QWidget):
             return
 
         cmdlist = self._get_current_bibolamazi_cmdlist()
-        if (not cmdlist): # None, or empty list
+        if not cmdlist: # None, or empty list
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageBase)
             return
 
@@ -902,7 +917,7 @@ class OpenBibFile(QWidget):
         # single command selected
         cmd = cmdlist[0]
         
-        if (cmd.cmd == "src"):
+        if cmd.cmd == "src":
             try:
                 thesrcs = shlex.split(cmd.text)
             except ValueError as e:
@@ -914,7 +929,7 @@ class OpenBibFile(QWidget):
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspageSource)
             return
 
-        if (cmd.cmd == "package"):
+        if cmd.cmd == "package":
             try:
                 fp, fdir = filterfactory.parse_filterpackage_argstr(cmd.text.strip())
                 self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
@@ -924,10 +939,10 @@ class OpenBibFile(QWidget):
             self.ui.stackEditTools.setCurrentWidget(self.ui.toolspagePackage)
             return
 
-        if (cmd.cmd == "filter"):
+        if cmd.cmd == "filter":
             filtername = cmd.info['filtername']
             text = cmd.text
-            if (text and text[-1] == '\n'):
+            if text and text[-1] == '\n':
                 text = text[:-1]
             self.ui.filterInstanceEditor.setFilterPath(self.bibolamaziFile.fullFilterPath())
             self.ui.filterInstanceEditor.setFilterInstanceDefinition(filtername, text, noemit=True)
@@ -943,7 +958,7 @@ class OpenBibFile(QWidget):
         
         cmd = self._get_current_bibolamazi_cmd()
 
-        if (cmd is None or cmd.cmd != forcecheckcmd):
+        if cmd is None or cmd.cmd != forcecheckcmd:
             logger.debug("Expected to currently be in cmd %s!!", forcecheckcmd)
             return
 
@@ -956,7 +971,7 @@ class OpenBibFile(QWidget):
         doc = self.ui.txtConfig.document()
         cursor = QTextCursor(doc.findBlockByNumber(configlineno-1))
         endblock = (configlinenoend+1)-1
-        if (endblock >= doc.blockCount()):
+        if endblock >= doc.blockCount():
             cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
         else:
             cursorend = QTextCursor(doc.findBlockByNumber(endblock))
@@ -1014,7 +1029,7 @@ class OpenBibFile(QWidget):
     def add_favorite_cmd(self):
         cmd = self._get_current_bibolamazi_cmd()
 
-        if (cmd is None):
+        if cmd is None:
             logger.warning("No command to add to favorites!")
             return
 
