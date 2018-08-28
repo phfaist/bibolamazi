@@ -87,7 +87,7 @@ def bibolamazi_error_html(errortxt, wrap_pre=True):
         pass
     if wrap_pre:
         # if wrap_pre = True
-        return ("<pre>"+errortxt+"</pre>")
+        return ("<pre style=\"white-space: pre-wrap\">"+errortxt+"</pre>")
     return errortxt
 
 
@@ -106,6 +106,12 @@ class PreformattedHtml(object):
 
 
 class LogToHtmlQtSignal(QObject, logging.Handler):
+    #
+    # Handler to generate Qt signals from log messages.
+    #
+    # IMPORTANT: Additionally, this class interacts with RunBibolamaziThread to
+    # do some internal event processing by hacking into the logging mechanism.
+    #
 
     def __init__(self, parent, threadparent=None):
         super(LogToHtmlQtSignal, self).__init__(parent)
@@ -143,11 +149,11 @@ class LogToHtmlQtSignal(QObject, logging.Handler):
 
         self.logHtml.emit("<span style=\"%s\">%s\n</span>"%(sty, html))
 
-        if hasattr(self.threadparent, 'my_process_events'):
-            self.threadparent.my_process_events()
-
     def emit(self, record):
         self.dolog(self.format(record), record.levelno)
+
+        if hasattr(self.threadparent, 'my_process_events'):
+            self.threadparent.my_process_events()
 
 
 
@@ -287,6 +293,8 @@ class RunBibolamazi(QObject):
         self.logqtsig.clearLog.connect(self.clearLog)
         self.logqtsig.logHtml.connect(self.logHtml)
 
+        self._busy = False
+
 
     busy = pyqtSignal(bool)
     bibolamaziDone = pyqtSignal()
@@ -295,6 +303,8 @@ class RunBibolamazi(QObject):
     clearLog = pyqtSignal()
     logHtml = pyqtSignal(str)
 
+    def isBusy(self):
+        return self._busy
     
     @pyqtSlot(str, int)
     def runBibolamazi(self, bibolamazifilename, verbosity_level):
@@ -305,6 +315,7 @@ class RunBibolamazi(QObject):
         logger.debug("RunBibolamazi.runBibolamazi(): bibolamazifilename=%r, verbosity_level=%r. thread id=%r",
                      bibolamazifilename, verbosity_level, QThread.currentThread().objectName())
 
+        self._busy = True
         self.threadparent.busy = True
         self.busy.emit(True)
 
@@ -338,6 +349,7 @@ class RunBibolamazi(QObject):
 
         finally:
             self.busy.emit(False)
+            self._busy = False
             self.threadparent.busy = False
 
 
@@ -467,6 +479,11 @@ class OpenBibFile(QWidget):
         if hasattr(self, '_closedcalled'): # don't call below code twice...
             return super(OpenBibFile, self).closeEvent(closeEvent)
 
+        # refuse to close if the bibolamazi thread is busy for us
+        if self.run_bibolamazi.isBusy():
+            closeEvent.ignore()
+            return
+
         self._closedcalled = True
 
         logger.debug("closeEvent(): cleaning up.")
@@ -482,6 +499,7 @@ class OpenBibFile(QWidget):
                 
             if ans == QMessageBox.Cancel:
                 # ignore the event
+                self._closecalled = False
                 closeEvent.ignore()
                 return
         
@@ -605,7 +623,7 @@ class OpenBibFile(QWidget):
             QMessageBox.critical(self, "Load Error", u"Error loading file: %s" %(str(e)))
             self._set_win_state(False,
                                 "<h3 style=\"color: rgb(127,0,0)\">Error reading file.</h3>\n"
-                                + bibolamazi_error_html(str(e), bibolamaziFile=self.bibolamaziFile))
+                                + bibolamazi_error_html(str(e)))
             return
 
         self._set_win_state(True)
@@ -791,6 +809,13 @@ class OpenBibFile(QWidget):
         self.requestRunBibolamazi.emit(self.bibolamaziFileName, verbosity_level)
 
 
+    @pyqtSlot(int)
+    def gotoConfigLineNo(self, configlineno):
+        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+        cur = QTextCursor(self.ui.txtConfig.document().findBlockByNumber(configlineno-1))
+        self.ui.txtConfig.setTextCursor(cur)
+
+
     @pyqtSlot()
     def on_btnSave_clicked(self):
         self.saveToFile()
@@ -826,9 +851,17 @@ class OpenBibFile(QWidget):
         if url.scheme() == "action":
             m = re.match(r'/goto-config-line/(?P<lineno>\d+)', url.path())
             if m:
-                self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
-                cur = QTextCursor(self.ui.txtConfig.document().findBlockByNumber(int(m.group('lineno'))-1))
-                self.ui.txtConfig.setTextCursor(cur)
+                self.gotoConfigLineNo(int(m.group('lineno')))
+                return
+
+            m = re.match(r'/goto-bibolamazi-file-line/(?P<lineno>\d+)', url.path())
+            if m:
+                if (self.bibolamaziFile is None or
+                    self.bibolamaziFile.getLoadState() < bibolamazifile.BIBOLAMAZIFILE_READ):
+                    logger.warning("No bibolamazifile open!")
+                    return
+                configlineno = self.bibolamaziFile.configLineNo(int(m.group('lineno')))
+                self.gotoConfigLineNo(configlineno)
                 return
 
             logger.warning("Unknown action: %s", str(url.toString()))
@@ -898,7 +931,7 @@ class OpenBibFile(QWidget):
         except BibolamaziError as e:
             # see if we can parse the error
             self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
-                                    bibolamazi_error_html(str(e), bibolamaziFile=self.bibolamaziFile))
+                                    bibolamazi_error_html(str(e)))
             return
 
     @pyqtSlot()
