@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
 
 
+# BibTeX uses "\citation{}", BibLatex uses "\abx@aux@cite{}" in aux file... support both
+rx_citation_aux_macro_pat = r'(?:\\citation|\\abx@aux@cite)'
 
 def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=None,
                               callback=None, return_set=True):
@@ -75,7 +77,7 @@ def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=N
     # parse allaux for \citation{...}
     #
     
-    for citation in re.finditer(r'\\citation\s*\{(?P<citekey>[^\}]+)\}', allaux):
+    for citation in re.finditer(rx_citation_aux_macro_pat + r'\s*\{(?P<citekey>[^\}]+)\}', allaux):
         citekeys = (x.strip() for x in citation.group('citekey').split(','))
         if (return_set):
             for citekey in citekeys:
