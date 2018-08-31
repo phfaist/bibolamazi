@@ -31,6 +31,7 @@ from builtins import str as unicodestr
 import sys
 def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
 def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
+from imp import reload
 
 
 from html import escape as htmlescape
@@ -42,6 +43,7 @@ import re
 import textwrap
 import shlex
 import logging
+import importlib
 
 import bibolamazi.init
 from bibolamazi.core import main as bibolamazimain
@@ -816,6 +818,25 @@ class OpenBibFile(QWidget):
         if not self.bibolamaziFileName:
             QMessageBox.critical(self, "No open file", "No file selected!")
             return
+
+        if self.bibolamaziFile is not None:
+            # reload all relevant local filter packages, in case the filter packages
+            # have changed.
+            allmodules = sorted(sys.modules.keys(), reverse=True) # so that "pkg.submodule" appears before "pkg"
+            for pkgname, pkgpath in self.bibolamaziFile.filterPath().items():
+                logger.debug("Inspecting user filter package `%s` to reload modules ...", pkgname)
+                for modname in allmodules:
+                    if modname.startswith(pkgname):
+                        mod = sys.modules[modname]
+                        logger.debug("Reloading module `%s` (%r) in user filter package `%s`", modname, mod, pkgname)
+                        origpath = sys.path
+                        try:
+                            sys.path = [pkgpath] + origpath
+                            reload(mod)
+                        finally:
+                            sys.path = origpath
+                
+        
 
         verbosity_level = self.ui.cbxVerbosity.currentIndex()
 
