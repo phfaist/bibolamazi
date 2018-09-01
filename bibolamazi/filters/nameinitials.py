@@ -75,14 +75,21 @@ class NameInitialsFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, only_single_letter_firsts=False, names_to_utf8=True, *roles):
+    def __init__(self, only_single_letter_firsts=False, names_to_utf8=True,
+                 only_one_initial=False, *roles):
         """
         Arguments:
+
           - only_single_letter_firsts(bool): Make proper initials (e.g. C. H. Bennett)
             only if the entry itself only has initials. This is useful if your entries
             don't contain the proper punctuation (e.g. C H Bennett). (default: False)
+
           - names_to_utf8(bool): Convert LaTeX escapes to UTF-8 characters in names in
             bib file. (default: True)
+
+          - only_one_initial(bool): Keep only the first initial, removing any
+            middle names.  For instance, "P. A. M. Dirac" ->
+            "P. Dirac". (default: False)
         """
         BibFilter.__init__(self)
 
@@ -92,6 +99,7 @@ class NameInitialsFilter(BibFilter):
 
         self._names_to_utf8 = getbool(names_to_utf8)
         self._only_single_letter_firsts = getbool(only_single_letter_firsts)
+        self._only_one_initial = getbool(only_one_initial)
 
         logger.debug('NameInitialsFilter constructor')
         
@@ -125,9 +133,15 @@ class NameInitialsFilter(BibFilter):
                 else:
                     do_abbrev = abbreviate
 
+                first_names = p.first_names
+                middle_names = p.middle_names
+                if self._only_one_initial:
+                    first_names = first_names[0:1]
+                    middle_names = []
+
                 pnew = Person(string='',
-                              first=" ".join([do_abbrev(x)  for x in p.first_names]),
-                              middle=" ".join([do_abbrev(x)  for x in p.middle_names]),
+                              first=" ".join([do_abbrev(x)  for x in first_names]),
+                              middle=" ".join([do_abbrev(x)  for x in middle_names]),
                               prelast=" ".join(p.prelast_names),
                               last=" ".join(p.last_names),
                               lineage=" ".join(p.lineage_names))
