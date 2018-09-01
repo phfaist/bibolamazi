@@ -433,6 +433,7 @@ class DuplicatesFilter(BibFilter):
                  warn=False, custom_bibalias=False,
                  keep_only_used=None, jobname=None,
                  keep_only_used_in_jobname=None, jobname_search_dirs=None,
+                 ignore_fields_warning=None,
                  *args):
         r"""DuplicatesFilter constructor.
 
@@ -457,6 +458,10 @@ class DuplicatesFilter(BibFilter):
                file is searched for and analyzed. If --jobname is not specified, then the
                LaTeX file name is guessed from the bibolamazi file name, as for the only_used
                filter.
+        *ignore_fields_warning(CommaStrList): Normally, warnings are issued if some fields
+               differ between entries that are detected as duplicates.  List some fields here
+               for which you don't care. (By default, this is a reasonable collection of
+               fields which normally don't matter, e.g., 'file'.)
         *keep_only_used_in_jobname: OBSOLTE
         *jobname_search_dirs(CommaStrList): (use with -sJobname) search for the
                AUX file in the given directories, as for the only_used filter.
@@ -503,6 +508,20 @@ class DuplicatesFilter(BibFilter):
         if jobname_search_dirs is not None:
             jobname_search_dirs = CommaStrList(jobname_search_dirs)
         self.jobname_search_dirs = jobname_search_dirs
+
+        if ignore_fields_warning:
+            self.ignore_fields_warning = [ x.lower() for x in CommaStrList(ignore_fields_warning)]
+        else:
+            self.ignore_fields_warning = [
+                # NOTE: must be all lowercase!
+                
+                # seriously, no latex document cares.
+                'file', 'keywords', 'mendeley-tags',
+
+                # these are already taken into account when detecting
+                # duplicates
+                'eprint', 'arxivid', 'archiveprefix',
+            ]
 
         self.cache_entries_validator = None
 
@@ -667,10 +686,45 @@ class DuplicatesFilter(BibFilter):
         merge is performed. Simply entries which are not already present in the original
         are updated.
         """
-        for (fk, fval) in iteritems(duplentry.fields):
-            if (fk not in origentry.fields or not origentry.fields[fk].strip()):
-                origentry.fields[fk] = fval
 
+        _mergefields = ['keywords','note','annote']
+        _splitrx = re.compile(r'[;,]\s*') # no capture please!! because we use rx.split(...)
+
+        for (fk, fval) in iteritems(duplentry.fields):
+            # field not in original -- add it
+            if fk not in origentry.fields or not origentry.fields[fk].strip():
+                origentry.fields[fk] = fval
+                continue
+
+            origval = origentry.fields[fk]
+
+            if fval.strip().lower() == origval.strip().lower():
+                # fields agree on value -- no action needed
+                continue
+
+            # field is a list of keywords field -- simply merge all entries
+            if fk in _mergefields:
+                m = _splitrx.search(origval)
+                if m:
+                    splitchars = m.group()
+                else:
+                    splitchars = ','
+
+                thelist = _splitrx.split(origval)
+                thelistlower = [x.lower() for x in thelist]
+                for newval in _splitrx.split(fval):
+                    if newval and newval.lower() not in thelistlower:
+                        thelist.append(newval)
+                        thelistlower.append(newval.lower())
+                origentry.fields[fk] = splitchars.join(thelist)
+                continue
+
+            # fields differ, but we don't know how to merge them. Warn the user
+            # if it's a field that is not listed as an unimportant field
+            if fk.lower() not in self.ignore_fields_warning:
+                logger.warning("Duplicate entries %s and %s differ on field %s. (\"%s\" vs \"%s\")",
+                               origkey, duplkey, fk, origentry.fields[fk], fval)
+            
 
 
     def filter_bibolamazifile(self, bibolamazifile):
@@ -756,7 +810,9 @@ class DuplicatesFilter(BibFilter):
                     logger.warning("Entry with conflict key %s has no corresponding entry %s", key, origkey)
                     continue
 
-                same, reason = self.compare_entries(entry, bibdata.entries[origkey],
+                origentry = bibdata.entries[origkey]
+
+                same, reason = self.compare_entries(entry, origentry,
                                                     dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                                     dupl_entryinfo_cache_accessor.get_entry_cache(origkey))
                 if not same:
@@ -765,6 +821,10 @@ class DuplicatesFilter(BibFilter):
 
                 # entries are proper duplicates as expected, remove the conflictkey entry
                 logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s", key, origkey)
+
+                # do merge the entries, in case they are not exact copies and
+                # one has more information than the other
+                self.update_entry_with_duplicate(origkey, origentry, key, entry)
 
                 # don't delete the entry here, because it will mess up the for loop iteration!
                 #del bibdata.entries[key]
@@ -790,8 +850,6 @@ class DuplicatesFilter(BibFilter):
                         is_duplicate_of = nkey
                         break
                 for (nkey, nentry) in iteritems(unused.entries):
-                    #if nkey in unused_respawned:
-                    #    continue
                     same, reason = self.compare_entries(entry, nentry,
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(key),
                                                         dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
