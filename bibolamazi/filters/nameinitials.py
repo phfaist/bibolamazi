@@ -76,7 +76,7 @@ class NameInitialsFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, only_single_letter_firsts=False, names_to_utf8=True,
-                 only_one_initial=False, *roles):
+                 only_one_initial=False, strip_first_names=False, *roles):
         """
         Arguments:
 
@@ -90,6 +90,9 @@ class NameInitialsFilter(BibFilter):
           - only_one_initial(bool): Keep only the first initial, removing any
             middle names.  For instance, "P. A. M. Dirac" ->
             "P. Dirac". (default: False)
+
+          - strip_first_names(bool): Only keep last names and strip first/middle
+            names entirely.
         """
         BibFilter.__init__(self)
 
@@ -100,6 +103,7 @@ class NameInitialsFilter(BibFilter):
         self._names_to_utf8 = getbool(names_to_utf8)
         self._only_single_letter_firsts = getbool(only_single_letter_firsts)
         self._only_one_initial = getbool(only_one_initial)
+        self._strip_first_names = getbool(strip_first_names)
 
         logger.debug('NameInitialsFilter constructor')
         
@@ -137,6 +141,9 @@ class NameInitialsFilter(BibFilter):
                 middle_names = p.middle_names
                 if self._only_one_initial:
                     first_names = first_names[0:1]
+                    middle_names = []
+                if self._strip_first_names:
+                    first_names = []
                     middle_names = []
 
                 pnew = Person(string='',
