@@ -1137,11 +1137,6 @@ class BibolamaziFile(object):
 
                 self._bibliographydata.add_entry(key, entry)
 
-            #if numconflictingkeys > 0:
-            #    logger.info('Bibtex source file %s has %d conflicting bibtex key(s) from another file. '
-            #                'Use the \'duplicate\' filter\'s -dEnsureConflictKeysAreDuplicates option to '
-            #                'make sure these entries are duplicates', src, numconflictingkeys)
-
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the
             # BibTeX data itself: the file itself was properly found. So raise an error.
@@ -1407,6 +1402,6 @@ TEMPLATE_CONFIG = u"""\
 
 CONFLICT_KEY_INFO = """\
 There were multiple uses of the same entry key(s) in the bibtex source files.
-If not doing so already, use the 'duplicate' filter with the
+If not doing so already, use the 'duplicates' filter with the
 -dEnsureConflictKeysAreDuplicates option enabled to check that these entries are
 indeed duplicates."""
