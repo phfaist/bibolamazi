@@ -45,7 +45,7 @@ from .util import entryfmt
 
 class TolerantReplacer:
     def __init__(self, dic):
-        self._dic = dic;
+        self._dic = dic
         logger.longdebug("TolerantReplacer: dic is %r", dic)
 
     def __getitem__(self, key):
@@ -193,12 +193,12 @@ For instance:
 
 
 # possible modes in which to operate
-MODE_NONE = 0;
-MODE_UNPUBLISHED_NOTE = 1;
-MODE_UNPUBLISHED_NOTE_NOTITLE = 2;
-MODE_NOTE = 3;
-MODE_EPRINT = 4;
-MODE_STRIP = 5;
+MODE_NONE = 0
+MODE_UNPUBLISHED_NOTE = 1
+MODE_UNPUBLISHED_NOTE_NOTITLE = 2
+MODE_NOTE = 3
+MODE_EPRINT = 4
+MODE_STRIP = 5
 
 
 # All these defs are useful for the GUI
@@ -210,7 +210,7 @@ _modes = [
     ('note', MODE_NOTE),
     ('eprint', MODE_EPRINT),
     ('strip', MODE_STRIP),
-    ];
+    ]
 #_modes_dict = dict(_modes)
 
 Mode = enum_class('Mode', _modes, default_value=MODE_NONE, value_attr_name='mode')
@@ -254,6 +254,8 @@ def _add_dflt_notestrfmt_keywords(efmt):
         ]))
 
 
+_default_arxiv_journal_name = "ArXiv e-prints"
+
 # --- the filter object itself ---
 
 
@@ -267,8 +269,8 @@ class ArxivNormalizeFilter(BibFilter):
     def __init__(self,
                  mode="eprint",
                  unpublished_mode=None,
-                 arxiv_journal_name="ArXiv e-prints",
-                 strip_unpublished_fields=[],
+                 arxiv_journal_name=_default_arxiv_journal_name,
+                 strip_unpublished_fields="",
                  note_string="",
                  note_string_fmt="",
                  no_archive_prefix=False,
@@ -320,25 +322,30 @@ class ArxivNormalizeFilter(BibFilter):
 
         self.mode = Mode(mode)
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
-                                 else self.mode);
+                                 else self.mode)
         self.strip_unpublished_fields = CommaStrList(strip_unpublished_fields)
-        self.arxiv_journal_name = arxiv_journal_name;
-        self.note_string = note_string;
-        self.note_string_fmt = note_string_fmt;
+        self.arxiv_journal_name = arxiv_journal_name
+        self.note_string = note_string
+        self.note_string_fmt = note_string_fmt
         if (self.note_string and self.note_string_fmt):
             raise BibFilterError('arXiv', "Can't give both -sNoteString and -sNoteStringFmt !")
         if not self.note_string and not self.note_string_fmt:
             # nothing given, set default format
             self.note_string_fmt = "{notefmt_default}"
-        self.no_archive_prefix = no_archive_prefix;
-        self.default_archive_prefix = default_archive_prefix;
-        self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids);
-        self.no_primary_class = butils.getbool(no_primary_class);
-        self.theses_count_as_published = butils.getbool(theses_count_as_published);
+        self.no_archive_prefix = no_archive_prefix
+        self.default_archive_prefix = default_archive_prefix
+        self.no_primary_class_for_old_ids = butils.getbool(no_primary_class_for_old_ids)
+        self.no_primary_class = butils.getbool(no_primary_class)
+        self.theses_count_as_published = butils.getbool(theses_count_as_published)
 
-        self.warn_journal_ref = butils.getbool(warn_journal_ref);
+        self.warn_journal_ref = butils.getbool(warn_journal_ref)
 
-        logger.debug('arxiv filter constructor: mode=%s; unpublished_mode=%s' % (self.mode, self.unpublished_mode));
+        if self.unpublished_mode == MODE_EPRINT and 'journal' in self.strip_unpublished_fields:
+            if self.arxiv_journal_name and self.arxiv_journal_name != _default_arxiv_journal_name:
+                raise ValueError("Cannot specify both -sStripUnpublishedFields=\"...,journal,...\" and -sArxivJournalName=...")
+            self.arxiv_journal_name = "" # unset journal name
+
+        logger.debug("arxiv filter constructor: mode=%s; unpublished_mode=%s", self.mode, self.unpublished_mode)
 
 
     def action(self):
@@ -380,13 +387,13 @@ class ArxivNormalizeFilter(BibFilter):
             # no arxiv info--don't do anything
             return entry
 
-        logger.longdebug('Got entry arxiv info: %s (%s): %r', entry.key, entry.type, arxivinfo);
+        logger.longdebug('Got entry arxiv info: %s (%s): %r', entry.key, entry.type, arxivinfo)
 
         we_are_published = None
         if (entry.type == 'phdthesis' or entry.type == 'mastersthesis'):
             we_are_published = self.theses_count_as_published
         elif (not arxivinfo['published']):
-            #logger.longdebug('entry not published : %r' % entry);
+            #logger.longdebug('entry not published : %r' % entry)
             we_are_published = False
         else:
             we_are_published = True
@@ -409,27 +416,27 @@ class ArxivNormalizeFilter(BibFilter):
             return
 
         # start by stripping all arxiv info.
-        entry.fields.pop('archiveprefix', None);
-        entry.fields.pop('arxivid', None);
-        entry.fields.pop('eprint', None);
-        entry.fields.pop('primaryclass', None);
+        entry.fields.pop('archiveprefix', None)
+        entry.fields.pop('arxivid', None)
+        entry.fields.pop('eprint', None)
+        entry.fields.pop('primaryclass', None)
         # possibly remove it from the note={} entry
         if ('note' in entry.fields):
-            entry.fields['note'] = arxivutil.stripArXivInfoInNote(entry.fields['note']);
+            entry.fields['note'] = arxivutil.stripArXivInfoInNote(entry.fields['note'])
             if (not len(entry.fields['note'])):
-                del entry.fields['note'];
+                del entry.fields['note']
         if ('annote' in entry.fields):
-            entry.fields['annote'] = arxivutil.stripArXivInfoInNote(entry.fields['annote']);
+            entry.fields['annote'] = arxivutil.stripArXivInfoInNote(entry.fields['annote'])
             if (not len(entry.fields['annote'])):
-                del entry.fields['annote'];
+                del entry.fields['annote']
         # keep arxiv URL. This should be stripped off in the url filter, if needed.
         #if ('url' in entry.fields):
-        #    #entry.fields['url'] = arxivutil.stripArXivInfoInNote(entry.fields['url']);
+        #    #entry.fields['url'] = arxivutil.stripArXivInfoInNote(entry.fields['url'])
         #    #if (not len(entry.fields['url'])):
-        #    #    del entry.fields['url'];
+        #    #    del entry.fields['url']
 
         if entry.type in (u'unpublished', u'misc',):
-            entry.type = u'article';
+            entry.type = u'article'
             
         if (mode == MODE_STRIP):
             # directly leave entry stripped.
@@ -454,7 +461,7 @@ class ArxivNormalizeFilter(BibFilter):
             if (self.note_string):
                 d = CaseInsensitiveDict(iteritems(origentryfields))
                 d.update(arxivinfo)
-                note = self.note_string % TolerantReplacer(d);
+                note = self.note_string % TolerantReplacer(d)
             elif (self.note_string_fmt):
                 try:
                     efmt = entryfmt.EntryFormatter(self.bibolamaziFile(), entry,
@@ -468,9 +475,9 @@ class ArxivNormalizeFilter(BibFilter):
 
             if ('note' in entry.fields and entry.fields['note'].strip()):
                 # some other note already there
-                entry.fields['note'] += ', '+note;
+                entry.fields['note'] += ', '+note
             else:
-                entry.fields['note'] = note;
+                entry.fields['note'] = note
 
         if not arxivinfo['published'] and self.strip_unpublished_fields:
             for field in self.strip_unpublished_fields:
@@ -521,12 +528,12 @@ class ArxivNormalizeFilter(BibFilter):
 
             return
         
-        raise BibFilterError('arxiv', "Unknown mode: %s" % mode );
+        raise BibFilterError('arxiv', "Unknown mode: %s" % mode )
 
 
 
 def bibolamazi_filter_class():
-    return ArxivNormalizeFilter;
+    return ArxivNormalizeFilter
 
 
 
