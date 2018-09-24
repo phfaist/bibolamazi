@@ -1355,8 +1355,7 @@ TEMPLATE_HEADER = """\
 
 """
 
-TEMPLATE_CONFIG = u"""\
-%%%-BIB-OLA-MAZI-BEGIN-%%%
+TEMPLATE_CONFIG = r"""%%%-BIB-OLA-MAZI-BEGIN-%%%
 %
 % %% This bibliography database uses BIBOLAMAZI:
 % %%
