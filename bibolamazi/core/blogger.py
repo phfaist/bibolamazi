@@ -360,11 +360,12 @@ def setup_simple_console_logging(logger=logging.getLogger(), stream=sys.stderr,
     else:
         s_ttycolors = os.environ.get("BIBOLAMAZI_TTY_COLORS", None)
         if s_ttycolors is not None:
-            if s_ttycolors.strip().lower() == 'yes':
+            sval = s_ttycolors.strip().lower()
+            if sval in ['yes', '1']:
                 ttycolors = True
-            elif s_ttycolors.strip().lower() == 'no':
+            elif sval in ['no', '0']:
                 ttycolors = False
-            elif s_ttycolors.strip().lower() == 'auto':
+            elif sval in [ 'auto' ]:
                 ttycolors = None
             else:
                 sys.stderr.write("Warning: Can't parse value of env['BIBOLAMAZI_TTY_COLORS']. "

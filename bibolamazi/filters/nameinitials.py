@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 from pybtex.database import Person
 from pybtex.textutils import abbreviate
 
+from pylatexenc import latexwalker
 from pylatexenc import latex2text
 
 from bibolamazi.core.butils import getbool
@@ -93,6 +94,7 @@ class NameInitialsFilter(BibFilter):
 
           - strip_first_names(bool): Only keep last names and strip first/middle
             names entirely.
+
         """
         BibFilter.__init__(self)
 
@@ -123,14 +125,38 @@ class NameInitialsFilter(BibFilter):
             for k in range(len(entry.persons[role])):
 
                 p = entry.persons[role][k]
-                # de-latex the person first
-                pstr = unicodestr(p)
-                # BUG: FIXME: remove space after any macros
-                pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr) # replace "blah\macro blah" by "blah\macro{}blah"
-                if (self._names_to_utf8):
-                    pstr = latex2text.latex2text(pstr)
 
-                p = Person(pstr)
+                ### NO: this kills any protection, e.g., with braces, etc.
+                #
+                # # de-latex the person first
+                # pstr = unicodestr(p)
+                # # BUG: FIXME: remove space after any macros
+                # pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr) # replace "blah\macro blah" by "blah\macro{}blah"
+                #if (self._names_to_utf8):
+                #    pstr = latex2text.latex2text(pstr)
+                #
+                #p = Person(pstr)
+
+                if self._names_to_utf8:
+                    # honor names protected by braces
+                    def protected_detex(x):
+                        y = x.strip()
+                        if y.startswith('{'):
+                            (nd, pos, len_) = latexwalker.LatexWalker(y).get_latex_braced_group(0)
+                            if pos+len_ >= len(y):
+                                # the whole string is one braced group, preserve it
+                                return x
+                        # not a complete braced group, detex it.
+                        return latex2text.latex2text(x)
+
+                    do_detex = lambda lst: [ protected_detex(x) for x in lst ]
+
+                    p.first_names = do_detex(p.first_names)
+                    p.middle_names = do_detex(p.middle_names)
+                    p.prelast_names = do_detex(p.prelast_names)
+                    p.last_names = do_detex(p.last_names)
+                    p.lineage = do_detex(p.lineage_names)
+
 
                 if self._only_single_letter_firsts:
                     do_abbrev = lambda x: abbreviate(x) if len(x) == 1 else x
