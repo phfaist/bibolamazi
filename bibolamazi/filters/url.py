@@ -55,30 +55,35 @@ class UrlNormalizeFilter(BibFilter):
     def __init__(self, Strip=False, StripAllIfDoiOrArxiv=False, StripDoiUrl=True, StripArxivUrl=True,
                  UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False, StripForTypes=None,
                  AddAsHowPublished=False, HowPublishedText='available at {urlstr}'):
-        r"""UrlNormalizeFilter constructor.
+        r"""
+        UrlNormalizeFilter constructor.
 
         Arguments:
-          - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the other options.
-                         [default: False]
-          - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI identifier or
-                         an ArXiv ID is present. [default: False]
+
+          - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the
+                         other options. [default: False]
+          - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI
+                         identifier or an ArXiv ID is present. [default: False]
           - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, e.g. of the form
                          `https://dx.doi.org/<DOI>`  [default: True]
           - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
                          form `http(s)://arxiv.org/abs/<ID>`  [default: True]
-          - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL that is a DOI
-                         lookup, i.e. `https://dx.doi.org/<DOI>`  [default: False]
-          - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL that links
-                         to the arXiv page, i.e. `https://arxiv.org/abs/<ARXIV-ID>`  [default: False]
-          - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all the other
-                         stripping rules, keep only the first remaining URL, if any.  [default: False]
-          - StripForTypes: strip all URLs specified for entries among the given list of types. Common
-                         types to strip would be e.g. 'book' or 'phdthesis'.
+          - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL
+                         that is a DOI lookup, i.e. `https://dx.doi.org/<DOI>`  [default: False]
+          - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL
+                         that links to the arXiv page, i.e. `https://arxiv.org/abs/<ARXIV-ID>`
+                         [default: False]
+          - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all
+                         the other stripping rules, keep only the first remaining URL, if any.
+                         [default: False]
+          - StripForTypes: strip all URLs specified for entries among the given list of types.
+                         Common types to strip would be e.g. 'book' or 'phdthesis'.
           - AddAsHowPublished(bool): Add a howpublished={available at \url{...}} entry to the bibtex.
           - HowPublishedText: replace the 'available at ' text for -dAddAsHowPublished.  Use Python
-                         string formatting. Available keys are '{urlstr}' to insert list of URLs
-                         concatenated with a comma, '{url}' to insert the first url and the key 'urls'
-                         is passed the raw Python list as argument.
+                         string formatting. Available keys are '{urlstr}' to insert
+                         list of URLs concatenated with a comma, '{url}' to insert the
+                         first url and the key 'urls' is passed the raw Python list as
+                         argument.
         """
         BibFilter.__init__(self)
 
@@ -103,6 +108,12 @@ class UrlNormalizeFilter(BibFilter):
 
     def prerun(self, bibolamazifile):
         arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
+
+    def requested_cache_accessors(self):
+        return [
+            arxivutil.ArxivInfoCacheAccessor,
+            arxivutil.ArxivFetchedAPIInfoCacheAccessor
+            ]
 
     def filter_bibentry(self, entry):
         #
