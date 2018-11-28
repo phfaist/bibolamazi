@@ -36,7 +36,7 @@ Shorten-authors-etal filter by Philippe Faist, (C) 2018, GPL 3+
 """
 
 HELP_DESC = u"""\
-Shorten author list and add "et al.", for standard BibTeX styles
+Shorten author list to a custom length and add "et al.", for standard BibTeX styles
 """
 
 HELP_TEXT = """
@@ -45,8 +45,8 @@ This filter shortens long author lists (you can specify max length with
 
 While normally this should be handled by the bibtex style, standard bibtex
 styles understand the author name "others" to be replaced by "et al.".  This
-filter replaces long author lists by "First Author and others", which is then
-formatted as "First Author et al.".
+filter replaces long author lists (as determined by MaxNumAuthors) by "First
+Author and others", which is then formatted as "First Author et al.".
 """
 
 
@@ -67,7 +67,7 @@ class ShortenAuthorsEtalFilter(BibFilter):
           - num_keep_authors(int): If an author list is "etal-ized",
             then we keep this many authors before "et al.".  For example,
             if num_keep_authors=2, then the result for long author lists is
-            "First Author, Second Author, et al."  (Note max_num_authors
+            "First Author, Second Author, et al."  (Note MaxNumAuthors
             still controls when the "etal-ization" occurs.)
 
           - apply_to_roles(CommaStrList): either "author", "editor" or

@@ -512,8 +512,11 @@ class ArxivNormalizeFilter(BibFilter):
             if (arxivinfo['published'] == False):
                 # if the entry is unpublished, set the journal name to
                 # "arXiv e-prints" (or whatever was specified by filter option)
-                if self.arxiv_journal_name and entry.type in (u'article', u'unpublished',):
-                    entry.fields['journal'] = self.arxiv_journal_name
+                if entry.type in (u'article', u'unpublished',):
+                    if self.arxiv_journal_name:
+                        entry.fields['journal'] = self.arxiv_journal_name
+                    else:
+                        entry.fields.pop('journal', '')
                 entry.fields.pop('pages','')
 
             if not self.no_archive_prefix:
