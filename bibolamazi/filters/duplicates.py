@@ -215,9 +215,11 @@ def normstr(x, lower=True):
 
 def getlast(pers, lower=True):
     # join last names
-    last = normstr(unicodestr(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]), lower=lower)
+    last = normstr(unicodestr(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]),
+                   lower=lower)
     initial = re.sub('[^a-z]', '',
-                     normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first()]), lower=lower),
+                     normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first()]),
+                             lower=lower),
                      flags=re.IGNORECASE)[0:1] # only first initial [a-z]
     return (last, initial)
 
