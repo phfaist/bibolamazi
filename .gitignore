@@ -9,3 +9,4 @@ gui/_tmp_genfiles
 gui/build
 gui/dist
 *.bibolamazicache
+bibolamazi.egg-info
