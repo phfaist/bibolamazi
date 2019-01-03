@@ -125,8 +125,10 @@ class StartupWidget(QWidget):
         self.raise_()
 
     def closeEvent(self, event):
-        # If there are no files open any more, then initiate an application quit
-        if not self.bibapp.hasOpenFiles():
+        # Initiate an application quit if either:
+        # - there are no files open any more OR 
+        # - if we're not on a mac (and hence there is no app menu bar)
+        if not self.bibapp.hasOpenFiles() or not sys.platform.startswith('darwin'):
             event.ignore()
             # get out of event loop first, though -> QTimer
             QTimer.singleShot(100, self.bibapp.quit_app)
