@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_StartupWidget(object):
     def setupUi(self, StartupWidget):
         StartupWidget.setObjectName("StartupWidget")
-        StartupWidget.resize(491, 545)
+        StartupWidget.resize(442, 480)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(StartupWidget)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
