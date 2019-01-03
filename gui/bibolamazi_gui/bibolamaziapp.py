@@ -269,7 +269,7 @@ class BibolamaziApplication(QApplication):
         
     @pyqtSlot()
     def selectOpenFile(self):
-        openFileDialog = QFileDialog(self, "Open Bibolamazi File", str(),
+        openFileDialog = QFileDialog(self.startup_widget, "Open Bibolamazi File", str(),
                                      "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)")
 
         if sys.platform.startswith('darwin'):
