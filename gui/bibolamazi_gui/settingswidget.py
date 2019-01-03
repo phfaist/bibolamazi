@@ -207,18 +207,17 @@ def setup_filterpackages_from_settings(s):
 
 
 class SettingsWidget(QDialog):
-    def __init__(self, swu_interface, swu_sourcefilter_devel, mainwin=None):
-        super(SettingsWidget, self).__init__(parent=mainwin)
+    def __init__(self, bibapp=None):
+        super(SettingsWidget, self).__init__()
 
-        logger.debug("swu_interface=%r, swu_sourcefilter_devel=%r", swu_interface, swu_sourcefilter_devel)
-
-        self.swu_interface = swu_interface
-        self.swu_sourcefilter_devel = swu_sourcefilter_devel
-
-        self.mainwin = mainwin
+        self.bibapp = bibapp
 
         self.ui = Ui_SettingsWidget()
         self.ui.setupUi(self)
+
+        # general
+
+        self.ui.spnMaxRecentFiles.setValue(bibapp.recentFilesList.max_recent_files)
 
         # filter packages
 
@@ -230,17 +229,6 @@ class SettingsWidget(QDialog):
             )
         self.slot_lstFilterPackages_selectionChanged()
         self.fpmodel.dicChanged.connect(self.save_settings)
-
-        # software updates
-
-        if (self.swu_interface is None or self.swu_sourcefilter_devel is None):
-            self.ui.tabUpdates.setEnabled(False)
-            self.ui.tabs.removeTab(self.ui.tabs.indexOf(self.ui.tabUpdates))
-        else:
-            self.ui.tabUpdates.setEnabled(True)
-            self.ui.chkUpdates.setChecked(self.swu_interface.checkForUpdatesEnabled())
-            self.ui.chkDevelUpdates.setChecked(self.swu_sourcefilter_devel.includeDevelReleases())
-            self.swu_interface.checkForUpdatesEnabledChanged.connect(self.ui.chkUpdates.setChecked)
 
 
     def filterpackages_selected_rows(self):
@@ -314,7 +302,8 @@ class SettingsWidget(QDialog):
 
         fpitems = list(filters_factory.filterpath.items())
         filters_factory.filterpath.clear()
-        filters_factory.filterpath.update(reversed( fpitems[:row-1] + [fpitems[row], fpitems[row-1]] + fpitems[row+1:] ))
+        filters_factory.filterpath.update(reversed( fpitems[:row-1] + [fpitems[row], fpitems[row-1]]
+                                                    + fpitems[row+1:] ))
         self.ui.lstFilterPackages.reset()
         self.save_settings()
         
@@ -330,31 +319,22 @@ class SettingsWidget(QDialog):
 
         fpitems = list(filters_factory.filterpath.items())
         filters_factory.filterpath.clear()
-        filters_factory.filterpath.update(reversed( fpitems[:row] + [fpitems[row+1], fpitems[row]] + fpitems[row+2:] ))
+        filters_factory.filterpath.update(reversed( fpitems[:row] + [fpitems[row+1], fpitems[row]]
+                                                    + fpitems[row+2:] ))
         self.ui.lstFilterPackages.reset()
         self.save_settings()
 
 
-    @pyqtSlot(bool)
-    def on_chkUpdates_toggled(self, val):
-        if self.swu_interface:
-            self.swu_interface.setCheckForUpdatesEnabled(val)
-
-    @pyqtSlot(bool)
-    def on_chkDevelUpdates_toggled(self, val):
-        if self.swu_sourcefilter_devel:
-            self.swu_sourcefilter_devel.setIncludeDevelReleases(val)
-
-    @pyqtSlot()
-    def on_btnCheckNow_clicked(self):
-        self.mainwin.doCheckForUpdates()
-
-
+    @pyqtSlot(int)
+    def on_spnMaxRecentFiles_valueChanged(self, num):
+        self.bibapp.recentFilesList.max_recent_files = int(num)
 
     @pyqtSlot()
     def save_settings(self):
 
         s = QSettings()
+
+        # max_recent_files is saved along with the recent files themselves
 
         s.beginGroup("BibolamaziCore")
 

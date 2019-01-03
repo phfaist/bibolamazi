@@ -5,7 +5,7 @@ QTAUTODIR = qtauto
 
 
 TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
-	 $(QTAUTODIR)/ui_mainwidget.py \
+	 $(QTAUTODIR)/ui_startupwidget.py \
 	 $(QTAUTODIR)/ui_openbibfile.py \
 	 $(QTAUTODIR)/ui_newbibolamazifiledialog.py \
 	 $(QTAUTODIR)/ui_helpbrowser.py \

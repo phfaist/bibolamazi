@@ -61,63 +61,10 @@ from PyQt5.QtWidgets import *
 from . import openbibfile
 from . import helpbrowser
 from . import settingswidget
+from . import startupwidget
 
 from .favorites import FavoriteCmdsList
 from .newbibolamazifiledialog import NewBibolamazifileDialog
-
-from .qtauto.ui_mainwidget import Ui_MainWidget
-
-class BibolamaziApplication(QApplication):
-    def __init__(self, argv, enable_software_updates=True):
-        self.main_widget = None
-        
-        super(BibolamaziApplication, self).__init__(argv)
-        
-        self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
-        self.setApplicationName('Bibolamazi')
-        self.setApplicationVersion(bibolamaziversion.version_str)
-        self.setOrganizationDomain('org.bibolamazi')
-        self.setOrganizationName('Bibolamazi Project')
-
-        # before main widget, so that main widget can create & connect relevant menu items
-        if enable_software_updates:
-            setup_software_updater()
-
-        # create & setup main widget
-        self.main_widget = MainWidget()
-
-        self.main_widget.show()
-        self.main_widget.raise_()
-
-        self.bibolamazi_thread = openbibfile.global_run_bibolamazi_thread_instance()
-
-        self.main_widget.requestAppQuit.connect(self.quit_app)
-
-
-    appQuitRequested = pyqtSignal()
-
-    def event(self, event):
-        if event.type() == QEvent.FileOpen:
-            logger.info("Opening file %s", event.file())
-            # request to open file
-            if self.main_widget is None:
-                logger.error("ERROR: CAN'T OPEN FILE: MAIN WIDGET IS NONE!")
-            else:
-                self.main_widget.openFile(event.file())
-            return True
-            
-        return super(BibolamaziApplication, self).event(event)
-
-    @pyqtSlot()
-    def quit_app(self):
-        logger.info("App quit")
-
-        while self.bibolamazi_thread.busy:
-            QThread.currentThread().usleep(100000) # 0.1 seconds
-
-        self.appQuitRequested.emit()
-        self.bibolamazi_thread.doQuit()
-        self.main_widget.close()
 
 
 
@@ -127,11 +74,13 @@ class RecentFile(object):
         self.date = date
 
 
-MAX_RECENT_FILES = 10
+DEFAULT_MAX_RECENT_FILES = 10
+
 
 class RecentFilesList(QObject):
     def __init__(self, parent):
         super(RecentFilesList,self).__init__(parent)
+        self.max_recent_files = DEFAULT_MAX_RECENT_FILES
         self.files = []
 
     filesChanged = pyqtSignal()
@@ -140,6 +89,8 @@ class RecentFilesList(QObject):
         settings.beginGroup("RecentFiles")
 
         self.files[:] = []
+
+        self.max_recent_files = settings.value("max_recent_files", DEFAULT_MAX_RECENT_FILES)
         
         siz = settings.beginReadArray("filelist")
         for i in range(siz):
@@ -159,6 +110,8 @@ class RecentFilesList(QObject):
 
     def saveToSettings(self, settings):
         settings.beginGroup("RecentFiles")
+
+        settings.setValue("max_recent_files", self.max_recent_files)
 
         settings.beginWriteArray("filelist", len(self.files))
         for i,f in enumerate(self.files):
@@ -180,166 +133,99 @@ class RecentFilesList(QObject):
             self.files.insert(0, RecentFile(fp, datetime.date.today()))
         self.files.sort(key=lambda x: x.date, reverse=True) # most recent first
         # drop old files
-        if len(self.files) > MAX_RECENT_FILES:
-            self.files[:] = self.files[:MAX_RECENT_FILES]
+        if len(self.files) > self.max_recent_files:
+            self.files[:] = self.files[:self.max_recent_files]
         self.filesChanged.emit()
-    
 
 
 
-class MainWidget(QWidget):
-    def __init__(self):
-        super(MainWidget, self).__init__()
 
-        self.ui = Ui_MainWidget()
-        self.ui.setupUi(self)
 
-        # set up nice vector graphics on retina displays
+
+class BibolamaziApplication(QApplication):
+    def __init__(self, argv):
+        super(BibolamaziApplication, self).__init__(argv)
+        
+        self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
+        self.setApplicationName('Bibolamazi')
+        self.setApplicationVersion(bibolamaziversion.version_str)
+        self.setOrganizationDomain('org.bibolamazi')
+        self.setOrganizationName('Bibolamazi Project')
+
         if sys.platform.startswith("darwin"):
-            # use high-res SVG for retina displays
-            retinaresolution = find_retina_resolution()
-            if retinaresolution is not None:
-                mydesktop = QApplication.desktop()
-                # seems that myratio is not reliable (I get 1.77777..), so just use 2x
-                #myratio = float(retinaresolution[0]) / mydesktop.width()
-                myratio = 2
-                logger.debug('myratio=%r', myratio)
-                #if myratio > 1.01:
-                self.mypict = QPicture()
-                mypaint = QPainter(self.mypict)
-                self.myicon = QIcon(":/pic/bibolamazi.svg")
-                mysize = QSize(375, 150)
-                mypaint.drawPixmap(QRect(QPoint(0,0),mysize), self.myicon.pixmap(myratio*mysize))
-                self.ui.lblMain.setPicture(self.mypict)
+            self.setQuitOnLastWindowClosed(False)
 
+        # a list of widgets for each open bibolamazi file
         self.openbibfiles = []
 
+        # the help browser
         self.helpbrowser = None
 
+        # the settings widget
         self.settingswidget = None
 
+        # favorite commands
         self.favoriteCmdsList = FavoriteCmdsList(parent=self)
         self.favoriteCmdsList.loadFromSettings(QSettings())
 
+        # recent files
         self.recentFilesList = RecentFilesList(parent=self)
         self.recentFilesList.loadFromSettings(QSettings())
-        self.recentFilesMenu = QMenu(parent=self)
+        self.recentFilesMenus = []
         self.recentFilesActions = {}
-        self._update_recent_files_menu()
-        self.ui.btnOpenRecent.setMenu(self.recentFilesMenu)
-        self.ui.btnOpenRecent.clicked.connect(self.ui.btnOpenRecent.showMenu)
-        self.recentFilesList.filesChanged.connect(self._update_recent_files_menu)
+        self.recentFilesList.filesChanged.connect(self.updateRecentFilesMenus)
 
-        self.ui.btnQuit.clicked.connect(self.requestAppQuit)
+        # thread in which bibolamazi is run
+        self.bibolamazi_thread = openbibfile.global_run_bibolamazi_thread_instance()
 
-        self.menubar = None
-        self.shortcuts = []
+        # flag to avoid recursive calls to quit_app()
+        self.is_quitting_app = False
 
-        self.upd_checkenabled_action = None
-        self.upd_checknow_action = None
-        if swu_interface is not None:
-            self.upd_checkenabled_action = QAction("Regularly Check for Updates", self)
-            self.upd_checkenabled_action.setCheckable(True)
-            self.upd_checkenabled_action.setChecked(swu_interface.checkForUpdatesEnabled())
-            self.upd_checkenabled_action.toggled.connect(swu_interface.setCheckForUpdatesEnabled)
-            swu_interface.checkForUpdatesEnabledChanged.connect(self.upd_checkenabled_action.setChecked)
-            #self.upd_checkenabled_action.toggled.connect(
-            #    lambda value:
-            #    QMessageBox.information(self, 'Software Updates',
-            #                            'Software update checks have been turned %s.' %('on' if value else 'off'))
-            #    )
-            self.upd_checknow_action = QAction("Check for Updates Now", self)
-            self.upd_checknow_action.triggered.connect(self.doCheckForUpdates)
-
+        # application actions
         self.myactions = {}
-        self.myactions['new'] = QAction("New", self)
-        self.myactions['new'].triggered.connect(self.on_btnNewFile_clicked)
+        self.myactions['new'] = QAction("New Bibolamazi File", self)
+        self.myactions['new'].triggered.connect(self.createNewFile)
         self.myactions['new'].setShortcut(QKeySequence("Ctrl+N"))
-        self.myactions['open'] = QAction("Open", self)
-        self.myactions['open'].triggered.connect(self.on_btnOpenFile_clicked)
+        self.myactions['open'] = QAction("Open Bibolamazi File", self)
+        self.myactions['open'].triggered.connect(self.selectOpenFile)
         self.myactions['open'].setShortcut(QKeySequence("Ctrl+O"))
         self.myactions['help'] = QAction("Open Help && Reference Browser", self)
-        self.myactions['help'].triggered.connect(self.on_btnHelp_clicked)
+        self.myactions['help'].triggered.connect(self.openHelpBrowser)
         self.myactions['help'].setShortcut(QKeySequence("Ctrl+R"))
         self.myactions['quit'] = QAction("Quit", self)
-        self.myactions['quit'].triggered.connect(self.requestAppQuit)
+        self.myactions['quit'].triggered.connect(self.quit_app)
         self.myactions['quit'].setShortcut(QKeySequence("Ctrl+Q"))
         self.myactions['settings'] = QAction("Settings", self)
-        self.myactions['settings'].triggered.connect(self.on_btnSettings_clicked)
-        for a in self.myactions.values():
-            self.addAction(a)
-
+        self.myactions['settings'].triggered.connect(self.openSettings)
+        self.myactions['startupwindow'] = QAction("Show Start-up Window", self)
+        
+        self.menubar = None
         if sys.platform.startswith('darwin'):
             # Mac OS X
             self.menubar = QMenuBar(None)
             filemenu = self.menubar.addMenu("File")
             filemenu.addAction(self.myactions['new'])
             filemenu.addAction(self.myactions['open'])
+            appmenurecentmenu = filemenu.addMenu("Open Recent")
+            self.setRecentFilesMenu(appmenurecentmenu)
             filemenu.addAction(self.myactions['settings'])
-            if self.upd_checkenabled_action:
-                filemenu.addSeparator()
-                filemenu.addAction(self.upd_checkenabled_action)
-            if self.upd_checknow_action:
-                filemenu.addAction(self.upd_checknow_action)
+            filemenu.addSeparator()
+            filemenu.addAction(self.myactions['startupwindow'])
             helpmenu = self.menubar.addMenu("Help")
             helpmenu.addAction(self.myactions['help'])
-        else:
-            #self.shortcuts += [
-            #    (self.myactions['new'], "Ctrl+N"),
-            #    (QAction("Open", self), "Ctrl+O"),
-            #    (QAction("Help", self), "Ctrl+R"),
-            #    (QAction("Quit", self), "Ctrl+Q"),
-            #    (QAction("Settings", self), "Ctrl+P"),
-            #    #
-            #    # PyQt Bug: these shortcuts cause segfaults!! workaround: use QAction's instead.
-            #    #
-            #    #QShortcut(QKeySequence('Ctrl+N'), self, self.on_btnNewFile_clicked, self.on_btnNewFile_clicked,
-            #    #          Qt.ApplicationShortcut),
-            #    #QShortcut(QKeySequence('Ctrl+O'), self, self.on_btnOpenFile_clicked, self.on_btnOpenFile_clicked,
-            #    #          Qt.ApplicationShortcut),
-            #    #QShortcut(QKeySequence('Ctrl+R'), self, self.on_btnHelp_clicked, self.on_btnHelp_clicked,
-            #    #          Qt.ApplicationShortcut),
-            #    #QShortcut(QKeySequence('Ctrl+Q'), self, self.on_btnQuit_clicked, self.on_btnQuit_clicked,
-            #    #          Qt.ApplicationShortcut),
-            #    ]
-            #if self.upd_checkenabled_action:
-            #    self.shortcuts += [
-            #        #(self.upd_checkenabled_action, "Ctrl+U", None)
-            #        ]
-            #if self.upd_checknow_action:
-            #    self.shortcuts += [
-            #        (self.upd_checknow_action, "Ctrl+U", None)
-            #        ]
-            # now, setup the shortcuts.
-            for a in self.myactions.values():
-                #print 'adding action with key %s' %(key)
-                a.setShortcutContext(Qt.ApplicationShortcut)
+
+        # create & setup startup widget
+        self.startup_widget = startupwidget.StartupWidget(bibapp=self)
+        self.startup_widget.showAndRaise()
+        self.myactions['startupwindow'].triggered.connect(self.startup_widget.showAndRaise)
+
+        # update recent files menus app-wide
+        self.updateRecentFilesMenus()
 
 
-        self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
+    recentFilesAvailable = pyqtSignal(bool)
 
 
-    requestAppQuit = pyqtSignal()
-
-    def doCheckForUpdates(self):
-        if swu_interface is not None:
-            ret = swu_interface.do_check_for_updates()
-            if ret is None:
-                pass # no checking for updates
-            elif ret is False:
-                # no new updates
-                QMessageBox.information(self, "Software Update Check",
-                                        "There are no new updates.")
-            elif isinstance(ret, tuple):
-                if len(ret) == 3:
-                    QMessageBox.critical(self, "Error: Software Update Check",
-                                         ret[2])
-                    return
-                # if ret[0]==True, then update installed but not restarted.
-                # if ret[0]==False, then udpate exists, but not installed.
-                return
-                    
-        
     def openFile(self, fname):
         logger.info("Opening file %r", fname)
 
@@ -352,6 +238,13 @@ class MainWidget(QWidget):
                 wopen.raise_()
                 logger.debug("File %r already open, raising window.", fnamecanon)
                 return
+
+        # on Mac OS X, we show the start-up window, and then we hide it once we
+        # open a file or create a new file (to avoid clutter).  You can always
+        # show again the start-up window in "File->Show Startup Window".
+        if sys.platform.startswith('darwin') and not self.hasOpenFiles():
+            self.startup_widget.hide()
+
 
         w = openbibfile.OpenBibFile()
         w.setFavoriteCmdsList(self.favoriteCmdsList)
@@ -368,53 +261,21 @@ class MainWidget(QWidget):
         self.recentFilesList.addRecentFile(fname)
 
 
-    @pyqtSlot('QString')
-    def openHelpTopic(self, path):
-        self.on_btnHelp_clicked()
-        self.helpbrowser.openHelpTopic(path)
+    def hasOpenFiles(self):
+        if self.openbibfiles:
+            return True
+        return False
 
-
-    def _update_recent_files_menu(self):
-
-        files = self.recentFilesList.files
-
-        self.recentFilesMenu.clear()
-
-        if not files:
-            self.ui.btnOpenRecent.setEnabled(False)
-            return
-        self.ui.btnOpenRecent.setEnabled(True)
-
-        # file name title to show in menu -- add some path information in case
-        # file names are the same
-        def fpathitems(fpath, num=3):
-            p, f = os.path.split(fpath)
-            if not f: return []
-            if num <= 1:
-                return [f]
-            return fpathitems(p, num-1) + [f]
-        def ftitle(fname):
-            fpath, fn = os.path.split(fname)
-            return fn + " (" + os.sep.join(fpathitems(fpath)) + ")"
-
-        for rf in files:
-            if rf.fname not in self.recentFilesActions:
-                a = QAction(ftitle(rf.fname), self)
-                a.triggered.connect(self._openRecentFileSlot)
-                a.setProperty("recentFileName", rf.fname)
-                self.recentFilesActions[rf.fname] = a
-
-            self.recentFilesMenu.addAction(self.recentFilesActions[rf.fname])
-
-
+        
     @pyqtSlot()
-    def on_btnOpenFile_clicked(self):
+    def selectOpenFile(self):
         openFileDialog = QFileDialog(self, "Open Bibolamazi File", str(),
                                      "Bibolamazi Files (*.bibolamazi.bib);;All Files (*)")
 
         if sys.platform.startswith('darwin'):
             # NOTE: BUG: OS X' file selection dialog won't understand the
-            # .bibolamazi.bib extension. So use Qt's file dialog.
+            # .bibolamazi.bib extension (confused by multiple dots). So use Qt's
+            # file dialog.
             openFileDialog.setOptions(QFileDialog.DontUseNativeDialog)
         
         openFileDialog.setDefaultSuffix("bibolamazi.bib")
@@ -435,38 +296,40 @@ class MainWidget(QWidget):
 
         
     @pyqtSlot()
-    def _openRecentFileSlot(self):
-        action = self.sender()
-        fname = action.property("recentFileName")
-        self.openFile(fname)
+    def createNewFile(self):
+        logger.debug("creating new bibolamazi file")
 
+        # parentwidget = None
+        # eventsender = self.sender()
+        # if eventsender is not None and isinstance(eventsender, QWidget):
+        #     parentwidget = eventsender
 
-    @pyqtSlot()
-    def on_btnNewFile_clicked(self):
-
-        dlg = NewBibolamazifileDialog(self)
-
+        dlg = NewBibolamazifileDialog(parent=self.startup_widget)
         dlg.bibolamaziFileCreated.connect(self.openFile)
-
         dlg.show()
-        
+        dlg.raise_()
+
+
 
     @pyqtSlot()
-    def on_btnHelp_clicked(self):
+    def openHelpBrowser(self):
         if self.helpbrowser is None:
             self.helpbrowser = helpbrowser.HelpBrowser()
         self.helpbrowser.show()
         self.helpbrowser.raise_()
 
+    @pyqtSlot('QString')
+    def openHelpTopic(self, path):
+        self.openHelpBrowser()
+        self.helpbrowser.openHelpTopic(path)
 
     @pyqtSlot()
-    def on_btnSettings_clicked(self):
+    def openSettings(self):
         if self.settingswidget is None:
-            self.settingswidget = settingswidget.SettingsWidget(swu_interface=swu_interface,
-                                                                swu_sourcefilter_devel=swu_sourcefilter_devel,
-                                                                mainwin=self)
+            self.settingswidget = settingswidget.SettingsWidget(bibapp=self)
         self.settingswidget.show()
         self.settingswidget.raise_()
+
 
     @pyqtSlot()
     def bibFileClosed(self):
@@ -478,8 +341,25 @@ class MainWidget(QWidget):
         logger.debug("file is closed (sender=%r).", sender)
         self.openbibfiles.remove(sender)
 
-    def closeEvent(self, event):
-        logger.debug("Close!!")
+        # on Mac OS X, if the last window was closed, then show the start-up
+        # window:
+        if sys.platform.startswith("darwin"):
+            if not len(self.openbibfiles):
+                QTimer.singleShot(100, self.startup_widget.showAndRaise)
+
+
+
+
+    @pyqtSlot()
+    def quit_app(self):
+        if self.is_quitting_app: return
+        self.is_quitting_app = True
+
+        logger.info("App quit")
+
+        settings = QSettings()
+        self.favoriteCmdsList.saveToSettings(settings)
+        self.recentFilesList.saveToSettings(settings)
 
         # close open bib files one by one
         while len(self.openbibfiles):
@@ -489,86 +369,90 @@ class MainWidget(QWidget):
             if not ans:
                 # if the widget cancels the close, then abort
                 event.ignore()
-                return
+                return False
+
+        # at this point, quit is confirmed and we shut down everything
+
+        while self.bibolamazi_thread.busy:
+            QThread.currentThread().usleep(100000) # 0.1 seconds
+        self.bibolamazi_thread.doQuit()
 
         if self.helpbrowser:
             self.helpbrowser.close()
 
-        self.favoriteCmdsList.saveToSettings(QSettings())
-        self.recentFilesList.saveToSettings(QSettings())
+        self.quit()
 
-        super(MainWidget, self).closeEvent(event)
+
+
+    def event(self, event):
+        if event.type() == QEvent.FileOpen:
+            logger.info("Opening file %s", event.file())
+            self.openFile(event.file())
+            return True
+
+        if event.type() == QEvent.Close:
+            # Cmd-Q
+            logger.debug("Intercepting Cmd-Q, quitting gracefully...")
+            QTimer.singleShot(0, self.quit_app)
+            event.ignore()
+            return True
+            
+        return super(BibolamaziApplication, self).event(event)
+
+
+
+    def setRecentFilesMenu(self, menu):
+        """
+        Register `menu` as being a "recent-files" menu.  The menu will be populated
+        with recent files and updated whenever the recent files list changes.
+        """
+        self.recentFilesMenus.append(menu)
+
+
+    @pyqtSlot()
+    def updateRecentFilesMenus(self):
+
+        files = self.recentFilesList.files
+
+        for menu in self.recentFilesMenus:
+            menu.clear()
+
+        if not files:
+            self.recentFilesAvailable.emit(False)
+            return
+
+        self.recentFilesAvailable.emit(True)
+
+        # file name title to show in menu -- add some path information in case
+        # file names are the same
+        def fpathitems(fpath, num=3):
+            p, f = os.path.split(fpath)
+            if not f: return []
+            if num <= 1:
+                return [f]
+            return fpathitems(p, num-1) + [f]
+        def ftitle(fname):
+            fpath, fn = os.path.split(fname)
+            return fn + " (" + os.sep.join(fpathitems(fpath)) + ")"
+
+        for rf in files:
+            if rf.fname not in self.recentFilesActions:
+                a = QAction(ftitle(rf.fname), self)
+                a.triggered.connect(self._openRecentFileSlot)
+                a.setProperty("recentFileName", rf.fname)
+                self.recentFilesActions[rf.fname] = a
+
+            for menu in self.recentFilesMenus:
+                menu.addAction(self.recentFilesActions[rf.fname])
+
+    @pyqtSlot()
+    def _openRecentFileSlot(self):
+        action = self.sender()
+        fname = action.property("recentFileName")
+        self.openFile(fname)
+
 
 #
-
-
-def find_retina_resolution():
-    try:
-        output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType']).decode('utf-8')
-    except Exception as e:
-        logger.info("Couldn't check for retina display: %s", e)
-        return
-    logger.debug("Got display information:\n%s", output)
-
-    mres = re.search(r'Resolution:\s*(?P<resX>\d+)\s*x\s*(?P<resY>\d+)\s*(?P<retina>.*Retina)',
-                     output, flags=re.IGNORECASE)
-
-    if not mres.group('retina'):
-        # couldn't confirm it's Retina, try "Retina: Yes/No" field
-        mretina = re.search(r'Retina:\s*(?P<answer>Yes|No)', output, flags=re.IGNORECASE)
-        if not mretina:
-            return None
-
-    # yes, retina
-    logger.debug('got res=(%d,%d)', int(mres.group('resX')), int(mres.group('resY')))
-
-    return (int(mres.group('resX')), int(mres.group('resY')))
-
-
-
-
-swu_updater = None
-swu_interface = None
-swu_source = None
-swu_sourcefilter_devel = None
-
-
-def setup_software_updater():
-    pass
-
-    # if not hasattr(sys, '_MEIPASS'):
-    #     # not pyinstaller-packaged
-    #     return
-
-    # global swu_updater, swu_interface, swu_source, swu_sourcefilter_devel
-
-    # import logging
-    # from updater4pyi import upd_core, upd_source, upd_iface, upd_log
-    # from updater4pyi.upd_source import relpattern, RELTYPE_BUNDLE_ARCHIVE, RELTYPE_EXE
-    # from updater4pyi.upd_iface_pyqt4 import UpdatePyQt4Interface
-
-    # # updater4pyi's logger will use our main logger anyway.
-    # #upd_log.setup_logger(logging.DEBUG)
-
-    # # DEBUG:
-    # #upd_iface.DEFAULT_INIT_CHECK_DELAY = datetime.timedelta(days=0, seconds=3, microseconds=0) # seconds
-    # #upd_iface.DEFAULT_CHECK_INTERVAL = datetime.timedelta(days=0, seconds=10, microseconds=0) # seconds
-
-    # swu_source = upd_source.UpdateGithubReleasesSource('phfaist/bibolamazi')
-
-    # swu_sourcefilter_devel = upd_source.UpdateSourceDevelopmentReleasesFilter(False)
-    # swu_source.add_release_filter(swu_sourcefilter_devel)
-
-    # swu_updater = upd_core.Updater(current_version=bibolamaziversion.version_str, #'0.9', ## DEBUG!!! 
-    #                                update_source=swu_source)
-
-    # swu_interface = UpdatePyQt4Interface(swu_updater, progname='Bibolamazi', ask_before_checking=True,
-    #                                      parent=QApplication.instance())
-    # swu_interface.start()
-
-
-
-
 
 
 

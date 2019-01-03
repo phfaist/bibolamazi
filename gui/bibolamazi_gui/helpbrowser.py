@@ -273,6 +273,9 @@ class HelpBrowser(QWidget):
         self.ui = Ui_HelpBrowser()
         self.ui.setupUi(self)
 
+        if sys.platform.startswith('darwin'):
+            self.setWindowFlags(Qt.Tool)
+
         self.ui.tabs.tabCloseRequested.connect(self.closeTab)
 
         self.openTabs = []
@@ -282,10 +285,14 @@ class HelpBrowser(QWidget):
             ]
 
 
-        # new home page
-        # -------------
+        # home page
+        # ---------
 
         self.openHelpTopic('/') # welcome page.
+
+        # make the home page un-closeable
+        self.ui.tabs.tabBar().setTabButton(0, QTabBar.LeftSide, None)
+        self.ui.tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
 
 
 

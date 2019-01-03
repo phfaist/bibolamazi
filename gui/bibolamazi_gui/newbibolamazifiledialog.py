@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 
 class NewBibolamazifileDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super(NewBibolamazifileDialog, self).__init__(parent)
 
         self.ui = Ui_NewBibolamazifileDialog()

@@ -178,7 +178,8 @@ multi_type_class_default_convert_functions = [
     (bool, butils.getbool),
 ]
 
-def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_attr_name='valuetype',
+def multi_type_class(class_name, typelist,
+                     value_attr_name='value', valuetype_attr_name='valuetype',
                      convert_functions=multi_type_class_default_convert_functions,
                      parse_value_fn=None, doc=None):
     """
@@ -207,7 +208,10 @@ def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_at
     """
 
 
-    def parse_value_impl(value):
+    def parse_value_impl(value,
+                         typelist=typelist,
+                         convert_functions=convert_functions,
+                         parse_value_fn=parse_value_fn):
         if parse_value_fn is not None:
             return parse_value_fn(value)
 
@@ -272,7 +276,8 @@ def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_at
 
             # ### Don't be this strict -- for instance, we should accept int for bool ...
             #if not isinstance(theval, thetyp):
-            #    raise ValueError("Value is not of given type: %r (expected type %s)"%(theval, thetyp.__name__))
+            #    raise ValueError("Value is not of given type: %r (expected type %s)"
+            #                     %(theval, thetyp.__name__))
 
             self.__dict__[valuetype_attr_name] = thetyp
             self.__dict__[value_attr_name] = theval
@@ -310,7 +315,7 @@ def multi_type_class(class_name, typelist, value_attr_name='value', valuetype_at
             show_vals_list = mapped_vals_list[0]
         else:
             show_vals_list = '<no types>'
-        doc = "An multi-type type which may store a value of one of the following types: %s."%(
+        doc = "A class which can store a value of one of the following types: %s."%(
             show_vals_list,
             )
         for t, s in thecls._typelist:
