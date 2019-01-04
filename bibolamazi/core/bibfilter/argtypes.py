@@ -223,7 +223,7 @@ def multi_type_class(class_name, typelist,
         for t,s in typelist:
 
             cfn = t
-            cfnlst = [cfn for t2,cfn in convert_functions if t is t2]
+            cfnlst = [cfn2 for t2,cfn2 in convert_functions if t is t2]
             if len(cfnlst):
                 cfn = cfnlst[0]
 
