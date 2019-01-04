@@ -106,52 +106,65 @@ HELP_DESC = u"""\
 Set the citation key of entries in a standard format
 """
 
-HELP_TEXT = u"""
-This filter replaces the bibtex citation key of all the concerned entries by a key
-generated using a standard scheme.
+HELP_TEXT = u"""\
+This filter replaces the bibtex citation key of all the concerned entries by a
+key generated using a standard scheme.
 
-Use the -sFormat="..." option to specify the standard citation key format. The format of
-the citation key is specified with standard Python formatting placeholders, of the form
-`%(<field name>)s`. Possible field names are:
+Use the -sFormat="..." option to specify the standard citation key format. The
+format of the citation key is specified with standard Python formatting
+placeholders, of the form `%(<field name>)s`. Possible field names are:
+
   - `author`: the last name of the first author
-  - `authors`: the last names of all authors, concatenated, truncated to 25 characters
+
+  - `authors`: the last names of all authors, concatenated, truncated to 25
+    characters
+
   - `year`: four-digit year of publication (`year` field of the bibtex entry)
+
   - `year2`: same as `year`, but two-digit year instead (e.g. 88, 04)
+
   - `journal_abb`: very abbreviated journal name (e.g. PRL, NJP)
+
   - `journal`: somewhat shortened journal name (e.g. "Phys.Rev.Lett.")
+
   - `title_word`:  the first word of the title that is not 'a', 'the', 'and', ...
+
   - `doi`: the DOI digital identifier of the entry
-  - `arxivid`: the arXiv ID of the entry, if available. Excludes the primary class, except
-      for old-style IDs.
+
+  - `arxivid`: the arXiv ID of the entry, if available. Excludes the primary
+    class, except for old-style IDs.
+
   - `primaryclass`: the arXiv primary category, if available.
 
-If a field is given in the key but does not exist in the entry (e.g. `doi`, `arxivid`)
-then the placeholder silently expands to an empty string.
+If a field is given in the key but does not exist in the entry (e.g. `doi`,
+`arxivid`) then the placeholder silently expands to an empty string.
 
-Note that all the field values are strings (including year), so you'll never need the form
-`%(..)d` or `%(..)<anything else>`
+Note that all the field values are strings (including year), so you'll never
+need the form `%(..)d` or `%(..)<anything else>`
 
 If the `-sFormat=...` option is not provided, then the default format
 `%(author)s%(year)s%(journal_abb)s_%(title_word)s` is used.
 
-Additionally, you can restrict which entries will be affected by this filter to a certain
-sub-class of all entries using the `-dIfPublished=1/0` and `-sIfType=...` options.
+Additionally, you can restrict which entries will be affected by this filter to
+a certain sub-class of all entries using the `-dIfPublished=1/0` and
+`-sIfType=...` options.
 
-If the `IfPublished` option is given, then the argument to the option (True or False)
-determines whether only all published entries are affected or all unpublished entries are
-affected. Entries with only arXiv identifiers and no journal information (see the `arXiv`
-filter) are considered unpublished.
+If the `IfPublished` option is given, then the argument to the option (True or
+False) determines whether only all published entries are affected or all
+unpublished entries are affected. Entries with only arXiv identifiers and no
+journal information (see the `arXiv` filter) are considered unpublished.
 
-You can also set the `IfType` option to a comma-separated list of entry types that should
-be affected. This can be any standard bibtex entry type, e.g. `article`, `book`,
-`incollection`, etc.
+You can also set the `IfType` option to a comma-separated list of entry types
+that should be affected. This can be any standard bibtex entry type,
+e.g. `article`, `book`, `incollection`, etc.
 
-The `IfPublished` and `IfType` options may be combined; in this case the entry will have
-to satisfy both conditions in order to be affected.
+The `IfPublished` and `IfType` options may be combined; in this case the entry
+will have to satisfy both conditions in order to be affected.
 
-NOTE: If two entries give the same citation key, then the second one will get a suffix to
-differentiate it from the first. *WHICH ENTRY GETS THE SUFFIX IS UNDEFINED.* In this case,
-it might be that the entries are duplicates. Consider then using the `duplicates` filter.
+NOTE: If two entries give the same citation key, then the second one will get a
+suffix to differentiate it from the first. *WHICH ENTRY GETS THE SUFFIX IS
+UNDEFINED.* In this case, it might be that the entries are duplicates. Consider
+then using the `duplicates` filter.
 """
 
 
@@ -163,7 +176,8 @@ class CiteKeyFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, format="%(author)s%(year)s%(journal_abb)s_%(title_word)s", if_published=None, if_type=None):
+    def __init__(self, format="%(author)s%(year)s%(journal_abb)s_%(title_word)s",
+                 if_published=None, if_type=None):
         """
         CiteKeyFilter Constructor.
 
@@ -180,8 +194,12 @@ class CiteKeyFilter(BibFilter):
         BibFilter.__init__(self);
 
         self.fmt = format;
-        self.if_published = None if (if_published is None or if_published == '') else butils.getbool(if_published);
-        self.if_type = None if (if_type is None or if_type ==  '') else [x.strip() for x in if_type];
+        if if_published is None or if_published == '':
+            self.if_published = None
+        else:
+            self.if_published = butils.getbool(if_published)
+
+        self.if_type = None if (if_type is None or if_type ==  '') else [x.strip() for x in if_type]
 
         logger.debug('citekey: fmt=%r', self.fmt)
 
@@ -191,7 +209,7 @@ class CiteKeyFilter(BibFilter):
     
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
 
     def requested_cache_accessors(self):
@@ -205,14 +223,14 @@ class CiteKeyFilter(BibFilter):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
-        bibdata = bibolamazifile.bibliographyData();
+        bibdata = bibolamazifile.bibliographyData()
 
         arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 
         # first, find required fields and apply possible "filters"
 
         _rx_short_journal_known = re.compile(r'\b(?P<word>' + r'|'.join(KNOWN_ABBREV.keys()) + r')\b',
-                                             re.IGNORECASE);
+                                             re.IGNORECASE)
         def abbreviate(x):
             if x.lower() in NO_ABBREV:
                 return x
@@ -221,17 +239,17 @@ class CiteKeyFilter(BibFilter):
         def short_journal(x):
             if x.strip().lower() in KNOWN_JOURNALS:
                 return KNOWN_JOURNALS[x.strip().lower()]
-            x = _rx_short_journal_known.sub(lambda m: KNOWN_ABBREV[m.group('word').lower()], x);
-            x = re.sub(r'\b(' + r'|'.join(BORING_WORDS) + r')\b(?!\s*($|[-:;\.]))', '', x, flags=re.IGNORECASE);
+            x = _rx_short_journal_known.sub(lambda m: KNOWN_ABBREV[m.group('word').lower()], x)
+            x = re.sub(r'\b(' + r'|'.join(BORING_WORDS) + r')\b(?!\s*($|[-:;\.]))', '', x, flags=re.IGNORECASE)
             x = re.sub(r'\b(?P<word>\w+)\b([^\.]|$)',
-                       lambda m: abbreviate(m.group('word')), x);
+                       lambda m: abbreviate(m.group('word')), x)
             x = re.sub(r'[^\w.]+', '', x)
             if (len(x)>20):
                 x = x[0:18]+'..'
-            return x;
+            return x
 
         def arxivInfo(entry, field):
-            inf = arxivaccess.getArXivInfo(entry.key);
+            inf = arxivaccess.getArXivInfo(entry.key)
             if inf is None:
                 return ''
             return inf[field]
@@ -263,7 +281,7 @@ class CiteKeyFilter(BibFilter):
             'doi': lambda entry: entry.fields.get('doi', ''),
             'arxivid': lambda entry: arxivInfo(entry, 'arxivid'),
             'primaryclass': lambda entry: arxivInfo(entry, 'primaryclass'),
-            };
+            }
         # used fields
         fld = set([m.group('field') for m in re.finditer(r'(^|[^%])(%%)*%\((?P<field>\w+)\)', self.fmt)])
         # check all valid fields
@@ -282,7 +300,7 @@ class CiteKeyFilter(BibFilter):
             keyorig = key
             
             try:
-                ainfo = arxivaccess.getArXivInfo(key);
+                ainfo = arxivaccess.getArXivInfo(key)
                 if (self.if_published is not None):
                     if (not self.if_published and (ainfo is None or ainfo['published'])):
                         logger.longdebug('Skipping published entry %s (filter: unpublished)', key)
@@ -296,10 +314,10 @@ class CiteKeyFilter(BibFilter):
                                          key, entry.type, self.if_type)
                         raise Jump
 
-                repldic = dict(zip(fld, [fld_fn[f](entry) for f in fld]));
+                repldic = dict(zip(fld, [fld_fn[f](entry) for f in fld]))
 
                 try:
-                    key =  self.fmt % repldic;
+                    key =  self.fmt % repldic
                 except ValueError as e:
                     raise BibFilterError('citekey', "Error replacing fields: %s" % (e))
                 
@@ -310,7 +328,7 @@ class CiteKeyFilter(BibFilter):
                 newkey = key
                 count = 0
                 while newkey in newbibdata.entries:
-                    count += 1;
+                    count += 1
                     newkey = key + '.%d'%(count)
                 if count:
                     logger.warning("`%s': Citation key `%s' already used: using `%s' instead.",
@@ -324,7 +342,7 @@ class CiteKeyFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return CiteKeyFilter;
+    return CiteKeyFilter
 
 
 
@@ -333,6 +351,6 @@ def bibolamazi_filter_class():
 def delatex(s):
     if (not isinstance(s, unicodestr)):
         s = unicodestr(s.decode('utf-8'))
-    return latex2text.latex2text(s);
+    return latex2text.latex2text(s)
 
 

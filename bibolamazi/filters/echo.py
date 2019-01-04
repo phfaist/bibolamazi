@@ -42,8 +42,8 @@ Echo a custom message in the bibolamazi log
 """
 
 HELP_TEXT = """
-Echo a custom message in the bibolamazi log. This does not affect the database, but might
-provide someone running Bibolamazi with some important information.
+Echo a custom message in the bibolamazi log. This does not affect the database,
+but might provide someone running Bibolamazi with some important information.
 """
 
 

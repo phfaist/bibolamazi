@@ -164,6 +164,9 @@ class BibolamaziApplication(QApplication):
         # the settings widget
         self.settingswidget = None
 
+        # new bibolamazi file dialog
+        self.newfiledialog = None
+
         # favorite commands
         self.favoriteCmdsList = FavoriteCmdsList(parent=self)
         self.favoriteCmdsList.loadFromSettings(QSettings())
@@ -304,10 +307,15 @@ class BibolamaziApplication(QApplication):
         # if eventsender is not None and isinstance(eventsender, QWidget):
         #     parentwidget = eventsender
 
-        dlg = NewBibolamazifileDialog(parent=self.startup_widget)
-        dlg.bibolamaziFileCreated.connect(self.openFile)
-        dlg.show()
-        dlg.raise_()
+        if self.newfiledialog and self.newfiledialog.isVisible():
+            self.newfiledialog.raise_()
+            return
+
+        self.newfiledialog = NewBibolamazifileDialog(parent=self.startup_widget)
+        self.newfiledialog.bibolamaziFileCreated.connect(self.openFile)
+        self.newfiledialog.show()
+        self.newfiledialog.raise_()
+
 
 
 

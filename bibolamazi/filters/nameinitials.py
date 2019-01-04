@@ -54,12 +54,11 @@ HELP_TEXT = u"""
 In all entries, turn the first and middle names of people into initials.
 
 Warning: this filter only works well with the option -dNamesToUtf8, which is by
-default. If you want LaTeX-formatted names, use the filter `fixes' AFTERWARDS
-with the option -dEncodeUtf8ToLatex.
+default. If you want LaTeX-formatted names, use the filter `fixes' again
+afterwards with the option -dEncodeUtf8ToLatex.
 
 The additional positional arguments which may be provided are interpreted as
-roles to consider (see pybtex API), one or more among ['author', 'editor']
-(WARNING: EXPERIMENTAL), e.g.
+roles to consider, one or more among ['author', 'editor']. E.g.:
 
   %% only process author fields
   nameinitials
