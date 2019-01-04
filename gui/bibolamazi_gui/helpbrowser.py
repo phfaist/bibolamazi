@@ -72,10 +72,12 @@ def getCssHelpStyle(fontsize='medium', fontsize_big='large', fontsize_code='medi
 def wrapInHtmlContentContainer(htmlcontent, width=None):
     if width is None:
         width = TABLE_WIDTH
-    return ("<table width=\""+str(width)+"\" style=\"margin-left:50px\">" +
+    return ("<table width=\""+str(width)+"\" style=\"margin-left:15px\">" +
             "<tr><td class=\"content\">" +
             htmlcontent +
             "</td></tr></table>")
+
+TABLE_WIDTH = 550 # px
 
 _HTML_CSS = '''
 html, body {
@@ -112,7 +114,7 @@ code {
 .small {
   font-size: %(fontsize_small)s;
 }
-pre { margin-left: 25px; }
+pre { margin-left: 12px; }
 pre.txtcontent { margin-left: 0px; }
 a { color: #0000a0; text-decoration: none }
 
@@ -126,10 +128,10 @@ li {
 }
 dt {
   font-weight: bold;
-  margin-left: 50px;
+  margin-left: 25px;
 }
 dd {
-  margin-left: 100px;
+  margin-left: 50px;
 }
 table {
   margin-top: 1em;
@@ -152,8 +154,6 @@ td p.inner {
   margin-bottom: 0.1em;
 }
 '''
-
-TABLE_WIDTH = 600
 
 
 

@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_HelpBrowser(object):
     def setupUi(self, HelpBrowser):
         HelpBrowser.setObjectName("HelpBrowser")
-        HelpBrowser.resize(857, 550)
+        HelpBrowser.resize(600, 600)
         self.lyt = QtWidgets.QGridLayout(HelpBrowser)
         self.lyt.setContentsMargins(0, 0, 0, 0)
         self.lyt.setObjectName("lyt")

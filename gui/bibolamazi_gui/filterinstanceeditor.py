@@ -768,7 +768,8 @@ class FilterInstanceEditor(QWidget):
         doc = self._filteroptionsmodel.argdocForIndex(currentindex)
         if doc:
             doc = ("<p>" + htmlescape(doc) +
-                   " <a style=\"text-decoration:none\" href=\"action:/help\">more...</a></p>")
+                   " <a style=\"text-decoration:none\" href=\"action:/help\">" +
+                   "more\N{HORIZONTAL ELLIPSIS}</a></p>")
             self.ui.lblOptionHelp.setText(doc)
             self.ui.lblOptionHelp.setVisible(True)
         else:
