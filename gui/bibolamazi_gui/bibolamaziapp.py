@@ -90,7 +90,7 @@ class RecentFilesList(QObject):
 
         self.files[:] = []
 
-        self.max_recent_files = settings.value("max_recent_files", DEFAULT_MAX_RECENT_FILES)
+        self.max_recent_files = int(settings.value("max_recent_files", DEFAULT_MAX_RECENT_FILES))
         
         siz = settings.beginReadArray("filelist")
         for i in range(siz):
@@ -111,7 +111,7 @@ class RecentFilesList(QObject):
     def saveToSettings(self, settings):
         settings.beginGroup("RecentFiles")
 
-        settings.setValue("max_recent_files", self.max_recent_files)
+        settings.setValue("max_recent_files", int(self.max_recent_files))
 
         settings.beginWriteArray("filelist", len(self.files))
         for i,f in enumerate(self.files):

@@ -570,7 +570,7 @@ class FixesFilter(BibFilter):
                 return newx
 
             for key, val in iteritems(entry.fields):
-                if key in ('url', 'file'):
+                if key in ('doi', 'url', 'file'):
                     continue
                 newval = val
                 for n,r in self.protect_names:

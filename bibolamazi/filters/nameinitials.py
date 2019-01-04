@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 from pybtex.textutils import abbreviate
+from pybtex.bibtex.utils import split_tex_string
 
 from pylatexenc import latexwalker
 from pylatexenc import latex2text
@@ -138,24 +139,35 @@ class NameInitialsFilter(BibFilter):
                 #p = Person(pstr)
 
                 if self._names_to_utf8:
-                    # honor names protected by braces
-                    def protected_detex(x):
-                        y = x.strip()
-                        if y.startswith('{'):
-                            (nd, pos, len_) = latexwalker.LatexWalker(y).get_latex_braced_group(0)
-                            if pos+len_ >= len(y):
-                                # the whole string is one braced group, preserve it
-                                return x
-                        # not a complete braced group, detex it.
-                        return latex2text.latex2text(x)
+                    # delatex everything to UTF-8, but honor names protected by braces and keep those
+                    rxmacrospace = re.compile(r'(\\[a-zA-Z]+)\s+')
+                    detex_fn = lambda x: latex2text.latex2text(rxmacrospace.sub(r'\1{}', x)).strip()
+                    def protected_detex(x, detex_fn=detex_fn):
+                        rx = re.compile(r'\{')
+                        pos = 0
+                        lw = latexwalker.LatexWalker(x)
+                        res = ''
+                        while True:
+                            m = rx.search(x, pos)
+                            if m is None:
+                                res += detex_fn(x[pos:])
+                                return res
+                            # m is not None:
+                            res += detex_fn(x[pos:m.start()])
+                            (nd, pos2, len_) = lw.get_latex_braced_group(m.start())
+                            newpos = pos2+len_
+                            res += '{' + protected_detex(x[m.start()+1:newpos-1]) + '}'
+                            pos = newpos
 
-                    do_detex = lambda lst: [ protected_detex(x) for x in lst ]
+                    # join name again to correctly treat accents like "Fran\c cois" or "\AA berg"
+                    p = Person(protected_detex(unicodestr(p)))
 
-                    p.first_names = do_detex(p.first_names)
-                    p.middle_names = do_detex(p.middle_names)
-                    p.prelast_names = do_detex(p.prelast_names)
-                    p.last_names = do_detex(p.last_names)
-                    p.lineage = do_detex(p.lineage_names)
+                    # do_detex = lambda lst: [ protected_detex(x) for x in lst ]
+                    # p.first_names = do_detex(p.first_names)
+                    # p.middle_names = do_detex(p.middle_names)
+                    # p.prelast_names = do_detex(p.prelast_names)
+                    # p.last_names = do_detex(p.last_names)
+                    # p.lineage = do_detex(p.lineage_names)
 
 
                 if self._only_single_letter_firsts:

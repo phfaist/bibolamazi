@@ -260,7 +260,7 @@ class BibolamaziFile(object):
                  use_cache=True,
                  default_cache_invalidation_time=None):
         """
-        Create a BibolamaziFile object.
+        The constructor creates a BibolamaziFile object.
 
         If `fname` is provided, the file is fully loaded (unless `create` is also
         provided).
@@ -288,11 +288,11 @@ class BibolamaziFile(object):
         self._dir = None
         self._use_cache = use_cache
 
-        if (create):
+        if create:
             self._init_empty_template()
-            self._fname = fname
-            self._dir = os.path.dirname(os.path.realpath(fname))
-        elif (fname):
+            self._fname = fname if fname else ''
+            self._dir = os.path.dirname(os.path.realpath(self._fname))
+        elif fname:
             # read the file, load settings
             self.load(fname=fname, to_state=min(load_to_state, BIBOLAMAZIFILE_PARSED))
             # set the default cache invalidation time to the given value, before we load
@@ -945,9 +945,7 @@ class BibolamaziFile(object):
                 filname = cmd.info['filtername']
                 filoptions = cmd.text
                 try:
-                    filterinstance = factory.make_filter(filname, filoptions, filterpath=full_filter_path)
-                    filterinstance.setBibolamaziFile(self)
-                    filterinstance.setInvokationName(filname)
+                    filterinstance = self.instantiateFilter(filname, filoptions, filterpath=full_filter_path)
                     self._filters.append(filterinstance)
                 except factory.NoSuchFilter as e:
                     self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
@@ -958,20 +956,7 @@ class BibolamaziFile(object):
                     logger.debug("FilterError:\n" + tounicodeutf8(traceback.format_exc()))
                     self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
 
-                # see if we have to register a new cache accessor
-                for req_cache in list(filterinstance.requested_cache_accessors()):
-                    if req_cache not in self._cache_accessors:
-                        # construct a cache accessor for this cache.
-                        try:
-                            cache_accessor = req_cache(bibolamazifile=self)
-                            self._cache_accessors[req_cache] = cache_accessor
-                        except Exception as e:
-                            ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
-                            raise BibolamaziError(
-                                (u"Error in cache %s: Exception while instantiating the class:\n"
-                                 u"%s: %s")
-                                %( req_cache.__name__, e.__class__.__name__, unicodestr(e) )
-                                )
+                self.registerFilterInstance(filterinstance)
                         
                 logger.debug("Added filter '"+filname+"': `"+filoptions.strip()+"'")
                 continue
@@ -984,6 +969,49 @@ class BibolamaziFile(object):
         logger.longdebug("done with _parse_config()")
         return True
 
+
+    def instantiateFilter(self, filname, filoptionstring, filterpath=None):
+        """
+        Look up filter named `filname` (using `filterpath` if specified, or else use
+        `fullFilterPath()`) and instantiate it with the option string
+        `filoptionstring`.  Return the filter instance.
+
+        The returned filter is not registered in the bibolamazifile's list of
+        filters, which corresponds to those filters specified in the config section.
+        """
+        if filterpath is None:
+            filterpath = self.fullFilterPath()
+        filterinstance = factory.make_filter(filname, filoptionstring, filterpath=filterpath)
+        filterinstance.setInvokationName(filname)
+        return filterinstance
+
+    def registerFilterInstance(self, filterinstance):
+        """
+        Set up caches, etc., so that the filter can run on this bibolamazifile
+        instance.
+        """
+
+        filterinstance.setBibolamaziFile(self)
+
+        # see if we have to register a new cache accessor
+        for req_cache in list(filterinstance.requested_cache_accessors()):
+            if req_cache not in self._cache_accessors:
+                # construct a cache accessor for this cache.
+                try:
+                    cache_accessor = req_cache(bibolamazifile=self)
+                    self._cache_accessors[req_cache] = cache_accessor
+                except Exception as e:
+                    ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
+                    raise BibolamaziError(
+                        (u"Error in cache %s: Exception while instantiating the class:\n"
+                         u"%s: %s")
+                        %( req_cache.__name__, e.__class__.__name__, unicodestr(e) )
+                        )
+
+        # if we are already in a LOADED state, then make sure that any new cache
+        # accessors are initialized
+        if self._load_state == BIBOLAMAZIFILE_LOADED:
+            self._initialize_cache()
 
     def _load_contents(self):
         """
@@ -1034,26 +1062,12 @@ class BibolamaziFile(object):
         # filters always use it. `self._use_cache` only tells us whether to load some
         # initial data.
 
-        for (cacheaccessor, cacheaccessorinstance) in iteritems(self._cache_accessors):
-            #
-            # Ensure the existance of the cache dictionary instance in the cache
-            #
-            self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
-            #
-            # Set the accessor's pointer to the cache object
-            #
-            cacheaccessorinstance.setCacheObj(cache_obj=self._user_cache)
-            #
-            # and initialize the cache accessor
-            #
-            cacheaccessorinstance.initialize(self._user_cache)
-
+        self._initialize_cache()
 
         self._load_state = BIBOLAMAZIFILE_LOADED
 
         logger.longdebug('done with _load_contents!')
         return True
-
 
     def _populate_from_srclist(self, srclist):
         #
@@ -1143,6 +1157,35 @@ class BibolamaziFile(object):
             raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
 
         return (True, numconflictingkeys)
+
+
+    def _initialize_cache(self):
+        """
+        Initialize the caches so that the accessors work properly. This function is
+        called inside `_load_contents()` or when a filter is manually
+        instantiated in a bibolamazi object that is already in a fully-loaded
+        state.
+        """
+
+        for (cacheaccessor, cacheaccessorinstance) in iteritems(self._cache_accessors):
+            if hasattr(cacheaccessorinstance, '_bibolamazifile__initialized'):
+                continue
+            #
+            # Ensure the existance of the cache dictionary instance in the cache
+            #
+            self._user_cache.cacheFor(cacheaccessorinstance.cacheName())
+            #
+            # Set the accessor's pointer to the cache object
+            #
+            cacheaccessorinstance.setCacheObj(cache_obj=self._user_cache)
+            #
+            # and initialize the cache accessor
+            #
+            cacheaccessorinstance.initialize(self._user_cache)
+            #
+            # remember that we already initialized this cache
+            #
+            cacheaccessorinstance._bibolamazifile__initialized = True
 
 
 
@@ -1255,28 +1298,32 @@ class BibolamaziFile(object):
         """
         Save the current bibolamazi file object to disk.
 
-        This method will write the bibliography data to the file specified to by `fname`
-        (or :py:meth:`fname()` if `fname=None`).  Specifically, we will write in order:
+        This method will write the bibliography data to the file specified to by
+        `fname` (or :py:meth:`fname()` if `fname=None`).  Specifically, we will
+        write in order:
 
           - the raw header data (:py:meth:`rawHeader()`) unchanged
 
           - the config section text (:py:meth:`rawConfig()`) unchanged
 
-          - the bibliography data contained in :py:meth:`bibliographyData`, saved in
-            BibTeX format.
+          - the bibliography data contained in :py:meth:`bibliographyData`,
+            saved in BibTeX format.
 
-        A warning message is included after the config section that the remainder of the
-        file was automatically generated.
+        A warning message is included after the config section that the
+        remainder of the file was automatically generated.
 
-        The cache is also saved, unless `cachefname=False`.  If `cachefname=None` (the
-        default) or `cachefname=True`, the cache is saved to the *old* file name with
-        extension '.bibolamazicache', that is, the one given by `self.fname()` and not in
-        `fname`. (The rationale is that we want to be able to use the cache next time we
-        open the file `self.fname()`.) You may also specify `cachefname=<file name>` to
-        save the cache to a specific file name. NOTE: this file is silently overwritten.
+        The cache is also saved, unless `cachefname=False`.  If
+        `cachefname=None` (the default) or `cachefname=True`, the cache is saved
+        to the *old* file name with extension '.bibolamazicache', that is, the
+        one given by `self.fname()` and not in `fname`. (The rationale is that
+        we want to be able to use the cache next time we open the file
+        `self.fname()`.) You may also specify `cachefname=<file name>` to save
+        the cache to a specific file name. WARNING: this file is silently
+        overwritten.
 
-        As the file `fname` is expected to already exist, it is always silently
-        overwritten (so be careful). Same with the cache file.
+        .. warning: As the file `fname` is expected to already exist, it is
+                    always silently overwritten (so be careful). The same
+                    applies to the cache file.
         """
         if fname is None:
             fname = self._fname

@@ -8,10 +8,10 @@ class TestWorks(unittest.TestCase):
     
     def test_works_1(self):
 
-        m = bffactory.get_module('arxiv')
+        fi = bffactory.FilterInfo('arxiv')
         from bibolamazi.filters import arxiv
 
-        self.assertTrue( id(m) == id(arxiv) )
+        self.assertTrue( id(fi.fmodule) == id(arxiv) )
 
 
     def test_parses_options(self):

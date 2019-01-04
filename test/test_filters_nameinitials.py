@@ -36,12 +36,16 @@ class TestWorks(unittest.TestCase):
         entry = Entry('article', fields={'url': 'https://example.com/doi/xfkdnsafldasknf'},
                       persons={'author': [Person("Dupont, Fran\\c cois"),
                                           Person('\\AA sm\\"ussen, Erik'),
-                                          Person("Fr\\'ed\\'eric Dupond")]})
+                                          Person("Fr\\'ed\\'eric Dupond"),
+                                          Person("{\\AA sm\\o ssen}, Erik"),
+                                          Person("{Van \\AA sm\\o ssen}, Erik"),]})
         n = NameInitialsFilter(names_to_utf8=True)
         n.filter_bibentry(entry)
         self.assertEqual(unicodestr(entry.persons['author'][0]), 'Dupont, F.')
         self.assertEqual(unicodestr(entry.persons['author'][1]), u'\N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER U WITH DIAERESIS}ssen, E.')
         self.assertEqual(unicodestr(entry.persons['author'][2]), 'Dupond, F.')
+        self.assertEqual(unicodestr(entry.persons['author'][3]), '{\N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER O WITH STROKE}ssen}, E.')
+        self.assertEqual(unicodestr(entry.persons['author'][4]), '{Van \N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER O WITH STROKE}ssen}, E.')
 
 
 if __name__ == '__main__':

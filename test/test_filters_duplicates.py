@@ -3,18 +3,124 @@
 from __future__ import print_function, unicode_literals
 
 import unittest
+import logging
 
-from helpers import assert_keyentrylists_equal, assert_entries_equal
-from pybtex.database import Entry, Person
-from bibolamazi.filters.duplicates import DuplicatesFilter, normstr, getlast, fmtjournal
+from pybtex.database import Entry, Person, BibliographyData
+
+from bibolamazi.core import blogger
+from helpers import CustomAssertions
+from bibolamazi.filters.util import arxivutil
+from bibolamazi.filters.duplicates import DuplicatesFilter, DuplicatesEntryInfoCacheAccessor, normstr, getlast, fmtjournal
+from bibolamazi.core.bibolamazifile import BibolamaziFile
+
+logger = logging.getLogger(__name__)
 
 
-class TestWorks(unittest.TestCase):
+class TestWorks(unittest.TestCase, CustomAssertions):
 
     def __init__(self, *args, **kwargs):
         super(TestWorks, self).__init__(*args, **kwargs)
 
         self.maxDiff = None
+
+    def test_dupli_basic(self):
+
+        entries = self.get_entries_set()
+        entries_ok = self.get_entries_set_merged()
+
+        bf = BibolamaziFile(create=True)
+        bf.setEntries(entries)
+
+        filt = DuplicatesFilter(merge_duplicates=True)
+        bf.registerFilterInstance(filt)
+
+        filt.filter_bibolamazifile(bf)
+
+        self.assert_keyentrylists_equal(list(bf.bibliographyData().entries.items()), entries_ok, order=False)
+
+
+    def test_compare_entries(self):
+
+        # duplicates, despite different author spellings, journal abbreviation, and incomplete page numbers
+        self._check_entries_are_seen_as_duplicates(
+            ("del2011thermodynamic", Entry("article", persons={"author": [Person("Del Rio, L."),Person("{\\AA}berg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V.")],}, fields={
+                "title": "The thermodynamic meaning of negative entropy",
+                "journal": "Nature",
+                "volume": "474",
+                "number": "7349",
+                "pages": "61--63",
+                "year": "2011",
+                "publisher": "Nature Publishing Group"
+            },),),
+            ("del2011thermodynamic2", Entry("article", persons={"author": [Person("L\\'\\i{}dia del Rio"),Person("Aaberg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V.")],}, fields={
+                "title": "The Thermodynamic Meaning of Negative Entropy",
+                "journal": "Nat.",
+                "volume": "474",
+                "number": "7349",
+                "pages": "61",
+                "year": "2011"
+            },),),
+        )
+
+        # mismatching author lists -- not duplicates
+        self._check_entries_are_NOT_seen_as_duplicates(
+            ("del2011thermodynamic", Entry("article", persons={"author": [Person("Del Rio, L."),Person("{\\AA}berg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V."),Person("Author, Additional")],}, fields={
+                "title": "The thermodynamic meaning of negative entropy",
+                "journal": "Nature",
+                "volume": "474",
+                "number": "7349",
+                "pages": "61--63",
+                "year": "2011",
+                "publisher": "Nature Publishing Group"
+            },),),
+            ("del2011thermodynamic2", Entry("article", persons={"author": [Person("L\\'\\i{}dia del Rio"),Person("Aberg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V.")],}, fields={
+                "title": "The Thermodynamic Meaning of Negative Entropy",
+                "journal": "Nat.",
+                "volume": "474",
+                "number": "7349",
+                "pages": "61",
+                "year": "2011"
+            },),),
+        )
+
+
+
+    def _check_entries_are_NOT_seen_as_duplicates(self, akeyentry, bkeyentry):
+        return self._check_entries_are_seen_as_duplicates(akeyentry, bkeyentry, inverse_check=True)
+
+    def _check_entries_are_seen_as_duplicates(self, akeyentry, bkeyentry, inverse_check=False):
+
+        keya, a = akeyentry
+        keyb, b = bkeyentry
+
+        filt = DuplicatesFilter()
+
+        bf = BibolamaziFile(create=True)
+        bf.setEntries([])
+
+        filt = DuplicatesFilter(merge_duplicates=True)
+        bf.registerFilterInstance(filt)
+
+        arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bf)
+        dupl_entryinfo_cache_accessor = filt.cacheAccessor(DuplicatesEntryInfoCacheAccessor)
+
+        dupl_entryinfo_cache_accessor.prepare_entry_cache(keya, a, arxivaccess)
+        dupl_entryinfo_cache_accessor.prepare_entry_cache(keyb, b, arxivaccess)
+
+        same, reason = filt.compare_entries(a, b,
+                                            dupl_entryinfo_cache_accessor.get_entry_cache(keya),
+                                            dupl_entryinfo_cache_accessor.get_entry_cache(keyb))
+        msg = "Entries {} and {} are {}the same{}".format(keya, keyb, "NOT " if not same else "",
+                                                          " because "+reason if not same else "")
+        logger.debug(msg)
+
+        if not inverse_check:
+            self.assertTrue(same, msg=msg)
+        else:
+            self.assertFalse(same, msg=msg)
+        
+
+    # --------
 
     def get_entries_set(self):
         return [
@@ -164,6 +270,23 @@ class TestWorks(unittest.TestCase):
                 "volume": "474",
                 "year": "2011"
             },),),
+            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\AA}berg, Johan"),],}, fields={
+                "abstract": "The work content of non-equilibrium systems in relation to a heat bath is often analysed in terms of expectation values of an underlying random work variable. However, when optimizing the expectation value of the extracted work, the resulting extraction process is subject to intrinsic fluctuations, uniquely determined by the Hamiltonian and the initial distribution of the system. These fluctuations can be of the same order as the expected work content per se, in which case the extracted energy is unpredictable, thus intuitively more heat-like than work-like. This raises the question of the 'truly' work-like energy that can be extracted. Here we consider an alternative that corresponds to an essentially fluctuation-free extraction. We show that this quantity can be expressed in terms of a one-shot relative entropy measure introduced in information theory. This suggests that the relations between information theory and statistical mechanics, as illustrated by concepts like Maxwell's demon, Szilard engines and Landauer's principle, extends to the single-shot regime.",
+                "archivePrefix": "arXiv",
+                "arxivId": "1110.6121",
+                "doi": "10.1038/ncomms2712",
+                "eprint": "1110.6121",
+                "issn": "2041-1723",
+                "journal": "Nature Communications",
+                "keywords": "single-shot,thermo",
+                "language": "en",
+                "month": "jun",
+                "pages": "1925",
+                "publisher": "Nature Publishing Group",
+                "title": "{Truly work-like work extraction via a single-shot analysis}",
+                "volume": "4",
+                "year": "2013",
+            },),),
             ("Brandao2011arXiv", Entry("article", persons={"author": [Person("Brand\\~{a}o, Fernando G. S. L."),Person("Horodecki, Micha\u0142"),Person("Oppenheim, Jonathan"),Person("Renes, Joseph M."),Person("Spekkens, Robert W.")],}, fields={
                 "abstract": "The ideas of thermodynamics have proved fruitful in the setting of quantum information theory, in particular the notion that when the allowed transformations of a system are restricted, certain states of the system become useful resources with which one can prepare previously inaccessible states. The theory of entanglement is perhaps the best-known and most well-understood resource theory in this sense. Here we return to the basic questions of thermodynamics using the formalism of resource theories developed in quantum information theory and show that the free energy of thermodynamics emerges naturally from the resource theory of energy-preserving transformations. Specifically, the free energy quantifies the amount of useful work which can be extracted from asymptotically-many copies of a quantum system when using only reversible energy-preserving transformations and a thermal bath at fixed temperature. The free energy also quantifies the rate at which resource states can be reversibly interconverted asymptotically, provided that a sublinear amount of coherent superposition over energy levels is available, a situation analogous to the sublinear amount of classical communication required for entanglement dilution.",
                 "archivePrefix": "arXiv",
@@ -297,6 +420,19 @@ class TestWorks(unittest.TestCase):
                 "volume": "58",
                 "year": "1998"
             },),),
+            ("gour_measuring_2009", Entry("article", persons={"author": [Person("Gour, Gilad"),Person("Marvian, Iman"),Person("Spekkens, Robert W.")],}, fields={
+                "title": "Measuring the quality of a quantum reference frame: The relative entropy of frameness",
+                "volume": "80",
+                "shorttitle": "Measuring the quality of a quantum reference frame",
+                "url": "http://link.aps.org/doi/10.1103/PhysRevA.80.012307",
+                "doi": "10.1103/PhysRevA.80.012307",
+                "abstract": "In the absence of a reference frame for transformations associated with group G, any quantum state that is noninvariant under the action of G may serve as a token of the missing reference frame. We here present a measure of the quality of such a token: the relative entropy of frameness. This is defined as the relative entropy distance between the state of interest and the nearest G-invariant state. Unlike the relative entropy of entanglement, this quantity is straightforward to calculate, and we find it to be precisely equal to the G-asymmetry, a measure of frameness introduced by Vaccaro et al. It is shown to provide an upper bound on the mutual information between the group element encoded into the token and the group element that may be extracted from it by measurement. In this sense, it quantifies the extent to which the token successfully simulates a full reference frame. We also show that despite a suggestive analogy from entanglement theory, the regularized relative entropy of frameness is zero and therefore does not quantify the rate of interconversion between the token and some standard form of quantum reference frame. Finally, we show how these investigations yield an approach to bounding the relative entropy of entanglement.",
+                "number": "1",
+                "journal": "Physical Review A",
+                "month": "July",
+                "year": "2009",
+                "pages": "012307"
+            },),),
             # test with typo:
             ("aberg_2013_worklike", Entry("article", persons={"author": [Person("Aaberg, J.")],}, fields={
                 "title": "Truly work-like work extraction via a single-shot analysis.",
@@ -386,19 +522,6 @@ class TestWorks(unittest.TestCase):
                 "pages": "053015",
                 "year": "2011",
                 "publisher": "IOP Publishing"
-            },),),
-            ("gour_measuring_2009", Entry("article", persons={"author": [Person("Gour, Gilad"),Person("Marvian, Iman"),Person("Spekkens, Robert W.")],}, fields={
-                "title": "Measuring the quality of a quantum reference frame: The relative entropy of frameness",
-                "volume": "80",
-                "shorttitle": "Measuring the quality of a quantum reference frame",
-                "url": "http://link.aps.org/doi/10.1103/PhysRevA.80.012307",
-                "doi": "10.1103/PhysRevA.80.012307",
-                "abstract": "In the absence of a reference frame for transformations associated with group G, any quantum state that is noninvariant under the action of G may serve as a token of the missing reference frame. We here present a measure of the quality of such a token: the relative entropy of frameness. This is defined as the relative entropy distance between the state of interest and the nearest G-invariant state. Unlike the relative entropy of entanglement, this quantity is straightforward to calculate, and we find it to be precisely equal to the G-asymmetry, a measure of frameness introduced by Vaccaro et al. It is shown to provide an upper bound on the mutual information between the group element encoded into the token and the group element that may be extracted from it by measurement. In this sense, it quantifies the extent to which the token successfully simulates a full reference frame. We also show that despite a suggestive analogy from entanglement theory, the regularized relative entropy of frameness is zero and therefore does not quantify the rate of interconversion between the token and some standard form of quantum reference frame. Finally, we show how these investigations yield an approach to bounding the relative entropy of entanglement.",
-                "number": "1",
-                "journal": "Physical Review A",
-                "month": "July",
-                "year": "2009",
-                "pages": "012307"
             },),),
             ("horodecki_are_2002", Entry("article", persons={"author": [Person("Horodecki, {Micha\\l}"),Person("Oppenheim, Jonathan"),Person("Horodecki, Ryszard")],}, fields={
                 "title": "Are the Laws of Entanglement Theory Thermodynamical?",
@@ -659,6 +782,23 @@ class TestWorks(unittest.TestCase):
                 "volume": "474",
                 "year": "2011"
             },),),
+            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\AA}berg, Johan"),],}, fields={
+                "abstract": "The work content of non-equilibrium systems in relation to a heat bath is often analysed in terms of expectation values of an underlying random work variable. However, when optimizing the expectation value of the extracted work, the resulting extraction process is subject to intrinsic fluctuations, uniquely determined by the Hamiltonian and the initial distribution of the system. These fluctuations can be of the same order as the expected work content per se, in which case the extracted energy is unpredictable, thus intuitively more heat-like than work-like. This raises the question of the 'truly' work-like energy that can be extracted. Here we consider an alternative that corresponds to an essentially fluctuation-free extraction. We show that this quantity can be expressed in terms of a one-shot relative entropy measure introduced in information theory. This suggests that the relations between information theory and statistical mechanics, as illustrated by concepts like Maxwell's demon, Szilard engines and Landauer's principle, extends to the single-shot regime.",
+                "archivePrefix": "arXiv",
+                "arxivId": "1110.6121",
+                "doi": "10.1038/ncomms2712",
+                "eprint": "1110.6121",
+                "issn": "2041-1723",
+                "journal": "Nature Communications",
+                "keywords": "single-shot,thermo",
+                "language": "en",
+                "month": "jun",
+                "pages": "1925",
+                "publisher": "Nature Publishing Group",
+                "title": "{Truly work-like work extraction via a single-shot analysis}",
+                "volume": "4",
+                "year": "2013",
+            },),),
             ("Brandao2011arXiv", Entry("article", persons={"author": [Person("Brand\\~{a}o, Fernando G. S. L."),Person("Horodecki, Micha\u0142"),Person("Oppenheim, Jonathan"),Person("Renes, Joseph M."),Person("Spekkens, Robert W.")],}, fields={
                 "abstract": "The ideas of thermodynamics have proved fruitful in the setting of quantum information theory, in particular the notion that when the allowed transformations of a system are restricted, certain states of the system become useful resources with which one can prepare previously inaccessible states. The theory of entanglement is perhaps the best-known and most well-understood resource theory in this sense. Here we return to the basic questions of thermodynamics using the formalism of resource theories developed in quantum information theory and show that the free energy of thermodynamics emerges naturally from the resource theory of energy-preserving transformations. Specifically, the free energy quantifies the amount of useful work which can be extracted from asymptotically-many copies of a quantum system when using only reversible energy-preserving transformations and a thermal bath at fixed temperature. The free energy also quantifies the rate at which resource states can be reversibly interconverted asymptotically, provided that a sublinear amount of coherent superposition over energy levels is available, a situation analogous to the sublinear amount of classical communication required for entanglement dilution.",
                 "archivePrefix": "arXiv",
@@ -792,24 +932,20 @@ class TestWorks(unittest.TestCase):
                 "volume": "58",
                 "year": "1998"
             },),),
-            # test with typo:
-            ("aberg_2013_worklike", Entry("article", persons={"author": [Person("Aaberg, J.")],}, fields={
-                "title": "Truly work-like work extraction via a single-shot analysis.",
-                "journal": "Nature communications",
-                "volume": "4",
-                "pages": "1925",
-                "year": "2013"
-            },),),
-            ("gour_measuring_2009_dupl", Entry("article", persons={"author": [Person("Gour, Gilad"),Person("Marvian, Iman"),Person("Spekkens, Robert W.")],}, fields={
+            ("gour_measuring_2009", Entry("article", persons={"author": [Person("Gour, Gilad"),Person("Marvian, Iman"),Person("Spekkens, Robert W.")],}, fields={
                 "title": "Measuring the quality of a quantum reference frame: The relative entropy of frameness",
                 "volume": "80",
                 "shorttitle": "Measuring the quality of a quantum reference frame",
+                "url": "http://link.aps.org/doi/10.1103/PhysRevA.80.012307",
+                "doi": "10.1103/PhysRevA.80.012307",
+                "abstract": "In the absence of a reference frame for transformations associated with group G, any quantum state that is noninvariant under the action of G may serve as a token of the missing reference frame. We here present a measure of the quality of such a token: the relative entropy of frameness. This is defined as the relative entropy distance between the state of interest and the nearest G-invariant state. Unlike the relative entropy of entanglement, this quantity is straightforward to calculate, and we find it to be precisely equal to the G-asymmetry, a measure of frameness introduced by Vaccaro et al. It is shown to provide an upper bound on the mutual information between the group element encoded into the token and the group element that may be extracted from it by measurement. In this sense, it quantifies the extent to which the token successfully simulates a full reference frame. We also show that despite a suggestive analogy from entanglement theory, the regularized relative entropy of frameness is zero and therefore does not quantify the rate of interconversion between the token and some standard form of quantum reference frame. Finally, we show how these investigations yield an approach to bounding the relative entropy of entanglement.",
                 "number": "1",
-                "journal": "PRA",
+                "journal": "Physical Review A",
                 "month": "July",
                 "year": "2009",
                 "pages": "012307"
             },),),
+            #
             ("aberg_2009_cumul", Entry("article", persons={"author": [Person("\\AA{}berg, Johan"),Person("Mitchison, Graeme")],}, fields={
                 "journal": "Journal of Mathematical Physics",
                 "month": "April",
@@ -838,15 +974,6 @@ class TestWorks(unittest.TestCase):
                 "eprint": "quant-ph/9511027",
                 "doi": "10.1103/PhysRevLett.76.722"
             },),),
-            ("BDSW1996", Entry("article", persons={"author": [Person("Bennett, Charles H."),Person("DiVincenzo, David P."),Person("Smolin, John A."),Person("Wootters, William K.")],}, fields={
-                "title": "Mixed-state entanglement and quantum error correction",
-                "journal": "Phys. Rev. A",
-                "year": "1996",
-                "volume": "54",
-                "pages": "3824--3851",
-                "eprint": "quant-ph/9604024",
-                "doi": "10.1103/PhysRevA.54.3824"
-            },),),
             ("VidalC-irre", Entry("article", persons={"author": [Person("Vidal, G."),Person("Cirac, J. I.")],}, fields={
                 "title": "Irreversibility in asymptotic manipulations of entanglement",
                 "journal": "Phys. Rev. Lett.",
@@ -865,15 +992,6 @@ class TestWorks(unittest.TestCase):
                 "year": "2010",
                 "publisher": "APS"
             },),),
-            ("del2011thermodynamic", Entry("article", persons={"author": [Person("Del Rio, L."),Person("{\\AA}berg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V.")],}, fields={
-                "title": "The thermodynamic meaning of negative entropy",
-                "journal": "Nature",
-                "volume": "474",
-                "number": "7349",
-                "pages": "61--63",
-                "year": "2011",
-                "publisher": "Nature Publishing Group"
-            },),),
             ("dahlsten2011inadequacy", Entry("article", persons={"author": [Person("Dahlsten, O.C.O."),Person("Renner, R."),Person("Rieper, E."),Person("Vedral, V.")],}, fields={
                 "title": "Inadequacy of von Neumann entropy for characterizing extractable work",
                 "journal": "New Journal of Physics",
@@ -881,19 +999,6 @@ class TestWorks(unittest.TestCase):
                 "pages": "053015",
                 "year": "2011",
                 "publisher": "IOP Publishing"
-            },),),
-            ("gour_measuring_2009", Entry("article", persons={"author": [Person("Gour, Gilad"),Person("Marvian, Iman"),Person("Spekkens, Robert W.")],}, fields={
-                "title": "Measuring the quality of a quantum reference frame: The relative entropy of frameness",
-                "volume": "80",
-                "shorttitle": "Measuring the quality of a quantum reference frame",
-                "url": "http://link.aps.org/doi/10.1103/PhysRevA.80.012307",
-                "doi": "10.1103/PhysRevA.80.012307",
-                "abstract": "In the absence of a reference frame for transformations associated with group G, any quantum state that is noninvariant under the action of G may serve as a token of the missing reference frame. We here present a measure of the quality of such a token: the relative entropy of frameness. This is defined as the relative entropy distance between the state of interest and the nearest G-invariant state. Unlike the relative entropy of entanglement, this quantity is straightforward to calculate, and we find it to be precisely equal to the G-asymmetry, a measure of frameness introduced by Vaccaro et al. It is shown to provide an upper bound on the mutual information between the group element encoded into the token and the group element that may be extracted from it by measurement. In this sense, it quantifies the extent to which the token successfully simulates a full reference frame. We also show that despite a suggestive analogy from entanglement theory, the regularized relative entropy of frameness is zero and therefore does not quantify the rate of interconversion between the token and some standard form of quantum reference frame. Finally, we show how these investigations yield an approach to bounding the relative entropy of entanglement.",
-                "number": "1",
-                "journal": "Physical Review A",
-                "month": "July",
-                "year": "2009",
-                "pages": "012307"
             },),),
             ("horodecki_are_2002", Entry("article", persons={"author": [Person("Horodecki, {Micha\\l}"),Person("Oppenheim, Jonathan"),Person("Horodecki, Ryszard")],}, fields={
                 "title": "Are the Laws of Entanglement Theory Thermodynamical?",
@@ -1008,31 +1113,8 @@ class TestWorks(unittest.TestCase):
 
 
 
-    def test_dupli(self):
-
-        entries = self.get_entries_set()
-        entries_ok = self.get_entries_set_merged()
-
-        filt = DuplicatesFilter()
-
-        bf = BibolamaziFile(...)
-        bf.bibliography_data = ......
-
-        filt.filter_bibolamazifile(bf)
-
-        ............
-        self.assert_bibdata_equal(entries, entries_ok, order=False)
-
-
-
-
-    def assert_keyentrylists_equal(self, e1, e2):
-        assert_keyentrylists_equal(self, e1, e2)
-
-
 
 
 if __name__ == '__main__':
-    from bibolamazi.core import blogger
     blogger.setup_simple_console_logging(level=1)
     unittest.main()
