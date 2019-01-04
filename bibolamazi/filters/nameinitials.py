@@ -36,7 +36,7 @@ from pybtex.textutils import abbreviate
 from pybtex.bibtex.utils import split_tex_string
 
 from pylatexenc import latexwalker
-from pylatexenc import latex2text
+from pylatexenc.latex2text import LatexNodes2Text
 
 from bibolamazi.core.butils import getbool
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
@@ -140,26 +140,12 @@ class NameInitialsFilter(BibFilter):
                 if self._names_to_utf8:
                     # delatex everything to UTF-8, but honor names protected by braces and keep those
                     rxmacrospace = re.compile(r'(\\[a-zA-Z]+)\s+')
-                    detex_fn = lambda x: latex2text.latex2text(rxmacrospace.sub(r'\1{}', x)).strip()
-                    def protected_detex(x, detex_fn=detex_fn):
-                        rx = re.compile(r'\{')
-                        pos = 0
-                        lw = latexwalker.LatexWalker(x)
-                        res = ''
-                        while True:
-                            m = rx.search(x, pos)
-                            if m is None:
-                                res += detex_fn(x[pos:])
-                                return res
-                            # m is not None:
-                            res += detex_fn(x[pos:m.start()])
-                            (nd, pos2, len_) = lw.get_latex_braced_group(m.start())
-                            newpos = pos2+len_
-                            res += '{' + protected_detex(x[m.start()+1:newpos-1]) + '}'
-                            pos = newpos
+                    protected_detex_fn = lambda x: LatexNodes2Text(keep_braced_groups=True).latex_to_text(
+                        rxmacrospace.sub(r'\1{}', x)
+                    ).strip()
 
                     # join name again to correctly treat accents like "Fran\c cois" or "\AA berg"
-                    p = Person(protected_detex(unicodestr(p)))
+                    p = Person(protected_detex_fn(unicodestr(p)))
 
                     # do_detex = lambda lst: [ protected_detex(x) for x in lst ]
                     # p.first_names = do_detex(p.first_names)

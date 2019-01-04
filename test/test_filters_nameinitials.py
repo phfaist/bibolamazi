@@ -38,7 +38,11 @@ class TestWorks(unittest.TestCase):
                                           Person('\\AA sm\\"ussen, Erik'),
                                           Person("Fr\\'ed\\'eric Dupond"),
                                           Person("{\\AA sm\\o ssen}, Erik"),
-                                          Person("{Van \\AA sm\\o ssen}, Erik"),]})
+                                          Person("{Van \\AA sm\\o ssen}, Erik"),
+                                          Person("Cr{\\'e}peau, Claude"),
+                                          Person("Alhambra, {\\'A}lvaro"),
+                                          Person("Dupuis, Fr\\'ed{\\'e}ric"),
+                                          Person("Brand{\\~{a}}o, F."),]})
         n = NameInitialsFilter(names_to_utf8=True)
         n.filter_bibentry(entry)
         self.assertEqual(unicodestr(entry.persons['author'][0]), 'Dupont, F.')
@@ -46,6 +50,10 @@ class TestWorks(unittest.TestCase):
         self.assertEqual(unicodestr(entry.persons['author'][2]), 'Dupond, F.')
         self.assertEqual(unicodestr(entry.persons['author'][3]), '{\N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER O WITH STROKE}ssen}, E.')
         self.assertEqual(unicodestr(entry.persons['author'][4]), '{Van \N{LATIN CAPITAL LETTER A WITH RING ABOVE}sm\N{LATIN SMALL LETTER O WITH STROKE}ssen}, E.')
+        self.assertEqual(unicodestr(entry.persons['author'][5]), 'Cr\N{LATIN SMALL LETTER E WITH ACUTE}peau, C.')
+        self.assertEqual(unicodestr(entry.persons['author'][6]), 'Alhambra, \N{LATIN CAPITAL LETTER A WITH ACUTE}.')
+        self.assertEqual(unicodestr(entry.persons['author'][7]), 'Dupuis, F.')
+        self.assertEqual(unicodestr(entry.persons['author'][8]), 'Brand\N{LATIN SMALL LETTER A WITH TILDE}o, F.')
 
 
 if __name__ == '__main__':
