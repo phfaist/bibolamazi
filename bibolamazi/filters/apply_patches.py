@@ -125,21 +125,42 @@ class ApplyPatchesFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, patch_series="", add_value_separator=", ", *args):
+    def __init__(self, patch_series="", add_value_separator=", ", discard=False, *args):
         r"""
+        Arguments:
+        
+        - patch_series: The given patch series is applied, i.e., the patches are
+          given as entries whose keys are of the form
+          "<OriginalBibtexKey>.PATCH.<PatchSeriesName>".  If no patch series is
+          specified, the patches are those entries with keys of the form
+          "<OriginalBibtexKey>.PATCH".
+
+        - add_value_separator: Separator to use when concatenating values.  This
+          happens when the original entry already has a given field value, and a
+          patch instruction of the form "+field = {...}" is specified.
+
+        - discard(bool): If set to `True`, then we discard all entries of the
+          given patch series instead of applying the patches.  The original
+          entries are left unchanged, and the bibliography database is cleared
+          of these patch entries.
         """
         super(ApplyPatchesFilter, self).__init__()
 
         self.patch_series = patch_series
         self.add_value_separator = add_value_separator
+        self.discard = discard
 
         logger.debug("apply_patches filter constructor done.")
 
 
     def getRunningMessage(self):
+        seriesmsg = ""
         if self.patch_series:
-            return "Applying entry patch series {}".format(self.patch_series)
-        return "Applying entry patches"
+            seriesmsg = " (series {})".format(self.patch_series)
+        actionmsg = "Applying"
+        if self.discard:
+            actionmsg = "Discarding"
+        return "{} entry patches{}".format(actionmsg, seriesmsg)
 
 
     def action(self):
@@ -175,14 +196,19 @@ class ApplyPatchesFilter(BibFilter):
                                    key, origkey)
                     continue
                 
+                # Store the patch key into the list of keys that have been
+                # processed.  They will be deleted from the bibliography.
+                patch_entry_key_list.append(key)
+
+                # check if we are discarding the patch, or applying it
+                if self.discard:
+                    # don't apply patch, only discard it
+                    continue
 
                 # apply patch to original entry
                 origentry = bibdata.entries[origkey]
                 self.apply_patch(entry, origentry)
 
-                # finally store the patch key into the list of keys that have
-                # been processed.  They will be deleted from the bibliography
-                patch_entry_key_list.append(key)
 
         for key in patch_entry_key_list:
             del bibdata.entries[key]
