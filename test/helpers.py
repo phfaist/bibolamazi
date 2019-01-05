@@ -16,6 +16,9 @@ class CustomAssertions(object):
         if isinstance(a, Entry) and isinstance(b, Entry):
             self.assert_entries_equal(a, b)
 
+        if isinstance(a, BibliographyData) and isinstance(b, BibliographyData):
+            self.assert_keyentrylists_equal(a.entries, b.entries, msg=msg)
+
         return super(CustomAssertions, self).assertEqual(a, b, msg=msg)
 
 
@@ -24,16 +27,22 @@ class CustomAssertions(object):
         self.assertEqual(e1.type, e2.type)
 
         for role in 'author', 'editor':
-            self.assertEqual(role in e1.persons, role in e2.persons)
+            self.assertEqual(role in e1.persons, role in e2.persons,
+                             msg="mismatch in presence of persons role '{}'".format(role))
             if role in e1.persons:
                 self.assertListEqual(e1.persons[role], e2.persons[role])
 
         self.assertDictEqual(dict(e1.fields), dict(e2.fields), **kwargs)
 
 
-    def assert_keyentrylists_equal(self, l1, l2, order=True):
+    def assert_keyentrylists_equal(self, l1, l2, order=True, msg=None):
 
         #logger.debug("assert_keyentrylists_equal (%d,%d)"%(len(l1),len(l2)))
+
+        def domsg(x, msg=msg):
+            if msg:
+                return x + '\n --- ' + msg
+            return x
 
         if not order:
             # if order doesn't count, then sort both lists according to key
@@ -45,19 +54,19 @@ class CustomAssertions(object):
             kl1 = set(dict(l1).keys())
             kl2 = set(dict(l2).keys())
             common = kl1 & kl2
-            raise self.failureException(("List lengths differ, {} != {}.\n"
-                                         "Keys in 1 not in 2 = {!r}\n"
-                                         "Keys in 2 not in 1 = {!r}")
-                                        .format(len(l1), len(l2), kl1 - common, kl2 - common))
+            raise self.failureException(domsg(("List lengths differ, {} != {}.\n"
+                                               "Keys in 1 not in 2 = {!r}\n"
+                                               "Keys in 2 not in 1 = {!r}")
+                                              .format(len(l1), len(l2), kl1 - common, kl2 - common)))
 
         for n in range(len(l1)):
 
-            self.assertEqual(len(l1[n]), 2, msg="Entry #{} isn't 2-tuple".format(n))
-            self.assertEqual(len(l2[n]), 2, msg="Entry #{} isn't 2-tuple".format(n))
+            self.assertEqual(len(l1[n]), 2, msg=domsg("Entry #{} isn't 2-tuple".format(n)))
+            self.assertEqual(len(l2[n]), 2, msg=domsg("Entry #{} isn't 2-tuple".format(n)))
 
             #logger.debug("Checking entry (%s,%s)"%(l1[n][0],l1[n][1]))
 
             self.assertEqual(l1[n][0], l2[n][0],
-                             msg="Entry keys differ {!r} != {!r}".format(l1[n][0],l2[n][0]))
+                             msg=domsg("Entry keys differ {!r} != {!r}".format(l1[n][0],l2[n][0])))
             self.assert_entries_equal(l1[n][1], l2[n][1],
-                                      msg="Entry #{} key={}".format(n, l1[n][0]))
+                                      msg=domsg("Entry #{} key={}".format(n, l1[n][0])))

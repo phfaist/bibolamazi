@@ -97,8 +97,8 @@ def verbosity_logger_level(verbosity):
 
 class BibolamaziNoSourceEntriesError(BibolamaziError):
     def __init__(self):
-        msg = "Error: No source entries found. Stopping before we overwrite the bibolamazi file.";
-        BibolamaziError.__init__(self, msg);
+        msg = "Error: No source entries found. Stopping before we overwrite the bibolamazi file."
+        BibolamaziError.__init__(self, msg)
 
 
 
@@ -137,7 +137,7 @@ def get_args_parser():
         prog='bibolamazi',
         epilog="Log messages will be produced in color by default if outputting to a TTY. To override "
         "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
-        add_help=False);
+        add_help=False)
 
     parser.add_argument('-o', '--output', action='store', dest='output', metavar="FILE", nargs='?',
                         help="Do not overwrite the original bibolamazi file, and write "
@@ -147,16 +147,16 @@ def get_args_parser():
 
     parser.add_argument('-N', '--new', action=argparseactions.opt_init_empty_template, nargs=1,
                         metavar="NEW_FILENAME",
-                        help="Create a new bibolamazi file with a template configuration.");
+                        help="Create a new bibolamazi file with a template configuration.")
     parser.add_argument('-F', '--list-filters', action=argparseactions.opt_list_filters, dest='list_filters',
-                        help="Show a list of available filters along with their description, and exit.");
+                        help="Show a list of available filters along with their description, and exit.")
     parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
                         help="Bypass and ignore any existing cache file, and regenerate the cache. If "
-                        "the cache file exists, it will be overwritten.");
+                        "the cache file exists, it will be overwritten.")
     parser.add_argument('-z', '--cache-timeout', dest='cache_timeout', type=butils.parse_timedelta,
                         default=None,
                         help="The default timeout after which to consider items in cache to be invalid. "
-                        "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s");
+                        "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s")
 
     parser.add_argument('--help', '-h', action=argparseactions.opt_action_help, nargs='?',
                         metavar='filter',
@@ -175,7 +175,7 @@ def get_args_parser():
     parser.add_argument('--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
     parser.add_argument('-q', '-v0', '--quiet', action=argparseactions.opt_set_verbosity, nargs=0, const=0,
-                        help="Don't display any messages (same as --verbosity=0)");
+                        help="Don't display any messages (same as --verbosity=0)")
     parser.add_argument('-v1', action=argparseactions.opt_set_verbosity, nargs=0, const=1,
                         help='Set normal verbosity mode (same as --verbosity=1)')
     parser.add_argument('-v', '-v2', '--verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=2,
@@ -197,13 +197,13 @@ def get_args_parser():
     parser.add_argument('bibolamazifile',
                         # note the %'s are parsed as formatting:
                         help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
-                        'configuration tags.');
+                        'configuration tags.')
 
     return parser
 
 
 
-ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout', 'output'));
+ArgsStruct = namedtuple('ArgsStruct', ('bibolamazifile', 'use_cache', 'cache_timeout', 'output'))
 
 
 
@@ -231,7 +231,7 @@ def main(argv=sys.argv[1:]):
 
         # debugging post-mortem
         import traceback; traceback.print_exc()
-        import pdb; pdb.post_mortem();
+        import pdb; pdb.post_mortem()
 
     
 
@@ -264,7 +264,7 @@ def _main_helper(argv):
 
     parser = get_args_parser()
 
-    args = parser.parse_args(args=argv);
+    args = parser.parse_args(args=argv)
 
     return run_bibolamazi_args(args)
 
@@ -277,7 +277,7 @@ def run_bibolamazi(bibolamazifile, **kwargs):
         'cache_timeout': None,
         'output': None
         }
-    kwargs2.update(kwargs);
+    kwargs2.update(kwargs)
     args = ArgsStruct(bibolamazifile, **kwargs2)
     return run_bibolamazi_args(args)
 
@@ -294,7 +294,7 @@ def run_bibolamazi_args(args):
     """         %   {
                      'ver': version.version_str,
                      'copy_year': version.copyright_year,
-                     }));
+                     }))
 
 
     # open the bibolamazifile, which is the main bibtex file
@@ -317,9 +317,9 @@ def run_bibolamazi_args(args):
     bfile = BibolamaziFile(args.bibolamazifile, **kwargs)
 
 
-    bibdata = bfile.bibliographyData();
+    bibdata = bfile.bibliographyData()
     if (bibdata is None or not len(bibdata.entries)):
-        logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.");
+        logger.critical("No source entries found. Stopping before we overwrite the bibolamazi file.")
         raise BibolamaziNoSourceEntriesError()
 
 
@@ -349,7 +349,7 @@ def run_bibolamazi_args(args):
         bfile.saveToFile()
 
 
-    logger.debug('Done.');
+    logger.debug('Done.')
 
     return None
 
