@@ -41,7 +41,6 @@ class FullCaseTester(object):
                 if os.path.exists(os.path.join(full_cases_dir, name + auxfext)):
                     shutil.copyfile(os.path.join(full_cases_dir, name + auxfext),
                                     os.path.join(tmpdir, name + auxfext))
-
             
             bf_orig = BibolamaziFile(tmpbib)
 
@@ -78,6 +77,9 @@ class TestFullCases(unittest.TestCase, helpers.CustomAssertions, FullCaseTester)
 
     def test_5(self):
         self._run_full_case_test('test5')
+
+    def test_5a(self):
+        self._run_full_case_test('test5a')
 
     def test_6(self):
         self._run_full_case_test('test6')
