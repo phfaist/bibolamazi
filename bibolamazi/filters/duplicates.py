@@ -215,7 +215,7 @@ def normstr(x, lower=True):
 
 def getlast(pers, lower=True):
     # join last names
-    last = normstr(unicodestr(delatex(" ".join(pers.prelast()+pers.last())).split()[-1]),
+    last = normstr(unicodestr(butils.latex_to_text(" ".join(pers.prelast()+pers.last())).split()[-1]),
                    lower=lower)
     initial = re.sub('[^a-z]', '',
                      normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first()]),
@@ -395,7 +395,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
 
         def cleantitle(title):
-            title = unicodedata.normalize('NFKD', unicodestr(delatex(title).lower()))
+            title = unicodedata.normalize('NFKD', unicodestr(butils.latex_to_text(title).lower()))
             # remove any unicode compositions (accents, etc.)
             title = re.sub(b'[^\\x00-\\x7f]', b'', title.encode('utf-8')).decode('utf-8')
             # remove any unusual characters
@@ -989,16 +989,6 @@ def bibolamazi_filter_class():
     return DuplicatesFilter
 
 
-
-
-
-def delatex(s):
-    # Fixed: bug in pybtex.
-    #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
-    #    s = s.replace(r'\ ', r'\~')
-    if (not isinstance(s, unicodestr)):
-        s = unicodestr(s.decode('utf-8'))
-    return latex2text.LatexNodes2Text(strict_latex_spaces=True).latex_to_text(s, tolerant_parsing=True)
 
 
 

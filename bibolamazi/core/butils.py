@@ -38,6 +38,8 @@ import math
 import datetime
 import logging
 
+from pylatexenc import latex2text
+
 import bibolamazi.init
 from . import version
 
@@ -49,7 +51,7 @@ def get_version():
     """
     Return the version string :py:data:`~core.version.version_str`, unchanged.
     """
-    return version.version_str;
+    return version.version_str
 
 _theversionsplit = None
 
@@ -63,18 +65,19 @@ def get_version_split():
 
     """
     if (_theversionsplit is None):
-        m = re.match(r'^(\d+)(?:\.(\d+)(?:\.(\d+)(.+)?)?)?', version.version_str);
-        _theversionsplit = (m.group(1), m.group(2), m.group(3), m.group(4));
-    return _theversionsplit;
+        m = re.match(r'^(\d+)(?:\.(\d+)(?:\.(\d+)(.+)?)?)?', version.version_str)
+        _theversionsplit = (m.group(1), m.group(2), m.group(3), m.group(4))
+    return _theversionsplit
 
 
 def get_copyrightyear():
     """
     Return the copyright year :py:data:`~core.version.copyright_year`, unchanged.
     """
-    return version.copyright_year;
+    return version.copyright_year
 
 
+# ------------------------------------------------------------------------------
 
 
 
@@ -86,14 +89,15 @@ class BibolamaziError(Exception):
     :py:class:`~core.bibusercache.BibUserCacheError`.
     """
     def __init__(self, msg, where=None):
-        self.where = where;
+        self.where = where
         fullmsg = msg
         if (where is not None):
-            fullmsg += "\n\t@: "+where;
+            fullmsg += "\n\t@: "+where
 
-        super(BibolamaziError, self).__init__(fullmsg);
+        super(BibolamaziError, self).__init__(fullmsg)
 
 
+# ------------------------------------------------------------------------------
 
 def getbool(x):
     """
@@ -111,13 +115,13 @@ def getbool(x):
     except (TypeError, ValueError):
         pass
     if isinstance(x, (str,basestring)):
-        m = re.match(r'^\s*(t(?:rue)?|1|y(?:es)?|on)\s*$', x, re.IGNORECASE);
+        m = re.match(r'^\s*(t(?:rue)?|1|y(?:es)?|on)\s*$', x, re.IGNORECASE)
         if m:
             return True
-        m = re.match(r'^\s*(f(?:alse)?|0|n(?:o)?|off)\s*$', x, re.IGNORECASE);
+        m = re.match(r'^\s*(f(?:alse)?|0|n(?:o)?|off)\s*$', x, re.IGNORECASE)
         if m:
             return False
-    raise ValueError("Can't parse boolean value: %r" % x);
+    raise ValueError("Can't parse boolean value: %r" % x)
 
 
 
@@ -195,7 +199,7 @@ def quotearg(x):
     if (_rx_quotearg_oknames.match(x)):
         # only very sympathetic chars
         return x
-    return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"';
+    return '"' + re.sub(r'("|\\)', lambda m: '\\'+m.group(), x) + '"'
 
 
 
@@ -207,15 +211,15 @@ def guess_encoding_decode(dat, encoding=None):
         return dat # already unicode
 
     if encoding:
-        return dat.decode(encoding);
+        return dat.decode(encoding)
 
     try:
-        return dat.decode('utf-8');
+        return dat.decode('utf-8')
     except UnicodeDecodeError:
         pass
 
     # this should always succeed
-    return dat.decode('latin1');
+    return dat.decode('latin1')
 
 
 
@@ -323,3 +327,25 @@ def warn_deprecated(classname, oldname, newname, modulename=None, explanation=No
             'stack': traceback.format_stack(limit=3)[0],
             }
         )
+
+
+# ------------------------------------------------------------------------------
+
+# _latex2text_default_text_replacements = (
+#     ("~", " "),
+#     ("``", '"'),
+#     ("''", '"'),
+#     #
+#     # do NOT replace tabular alignment symbol '&', because most often it's used
+#     # in names perhaps unescaped, like in "Taylor & Francis"
+# )
+
+_l2t = latex2text.LatexNodes2Text(
+    #text_replacements=_latex2text_default_text_replacements,
+    strict_latex_spaces=True
+)
+
+def latex_to_text(x):
+    if (not isinstance(x, unicodestr)):
+        x = unicodestr(x.decode('utf-8'))
+    return _l2t.latex_to_text(x, tolerant_parsing=True)

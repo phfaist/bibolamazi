@@ -272,9 +272,9 @@ class CiteKeyFilter(BibFilter):
             'year': lambda entry: entry.fields.get('year', ''),
             'year2': lambda entry: '%02d' % (int(entry.fields.get('year', '')) % 100),
             'journal_abb': lambda entry: fmtjournal(entry.fields.get('journal', '')),
-            'journal': lambda entry: short_journal(normstr(delatex(entry.fields.get('journal', '')),lower=False)),
+            'journal': lambda entry: short_journal(normstr(butils.latex_to_text(entry.fields.get('journal', '')),lower=False)),
             'title_word': lambda entry: next(
-                (word for word in re.sub(r'[^\w\s]', '', delatex(entry.fields.get('title', ''))).split()
+                (word for word in re.sub(r'[^\w\s]', '', butils.latex_to_text(entry.fields.get('title', ''))).split()
                  if word.lower() not in BORING_TITLE_WORDS),
                 ''
                  ),
@@ -346,10 +346,4 @@ def bibolamazi_filter_class():
 
 
 
-
-
-def delatex(s):
-    if (not isinstance(s, unicodestr)):
-        s = unicodestr(s.decode('utf-8'))
-    return latex2text.LatexNodes2Text(strict_latex_spaces=True).latex_to_text(s, tolerant_parsing=True)
 

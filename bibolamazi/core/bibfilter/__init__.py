@@ -57,13 +57,13 @@ class BibFilter(object):
     """
 
     # constants
-    BIB_FILTER_SINGLE_ENTRY = 1;
+    BIB_FILTER_SINGLE_ENTRY = 1
     """
     A constant that indicates that the filter should act upon individual entries only. 
     See documentation for the :py:meth:`action()` method for more details.
     """
 
-    BIB_FILTER_BIBOLAMAZIFILE = 3;
+    BIB_FILTER_BIBOLAMAZIFILE = 3
     """
     A constant that indicates that the filter should act upon the whole bibliography at
     once. See documentation for the :py:meth:`action()` method for more details.
@@ -268,7 +268,7 @@ class BibFilter(object):
         There's no use overriding this. When writing filters, there's also no need calling
         this explicitly, it's done in :py:class:`~core.bibolamazifile.BibolamaziFile`.
         """
-        self._bibolamazifile = bibolamazifile;
+        self._bibolamazifile = bibolamazifile
 
     def bibolamaziFile(self):
         """
@@ -277,7 +277,7 @@ class BibFilter(object):
 
         There's no use overriding this.
         """
-        return self._bibolamazifile;
+        return self._bibolamazifile
     
     def cacheAccessor(self, klass):
         """
@@ -294,7 +294,7 @@ class BibFilter(object):
         subclass to describe what you're doing. The core bibolamazi program displays this
         information to the user as it runs the filter.
         """
-        return self.name();
+        return self.name()
 
 
     # convenience functions, no need to (i.e. should not) override
@@ -307,7 +307,7 @@ class BibFilter(object):
         There's no need to (translate: you should not) reimplement this function in your
         subclass.
         """
-        return cls.helpauthor.strip();
+        return cls.helpauthor.strip()
 
     @classmethod
     def getHelpDescription(cls):
@@ -318,7 +318,7 @@ class BibFilter(object):
         There's no need to (translate: you should not) reimplement this function in your
         subclass.
         """
-        return cls.helpdescription.strip();
+        return cls.helpdescription.strip()
 
     @classmethod
     def getHelpText(cls):
@@ -329,7 +329,7 @@ class BibFilter(object):
         There's no need to (translate: you should not) reimplement this function in your
         subclass.
         """
-        return cls.helptext.strip();
+        return cls.helptext.strip()
     
 
 

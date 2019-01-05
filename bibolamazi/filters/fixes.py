@@ -437,17 +437,17 @@ class FixesFilter(BibFilter):
         # first apply filters that are applied to all fields of the entry
 
         def thefilter(x):
-            if (self.fix_space_after_escape):
+            if self.fix_space_after_escape:
                 x = do_fix_space_after_escape(x)
-            if (self.fix_swedish_a):
+            if self.fix_swedish_a:
                 # OBSOLETE, but still accepted for backwards compatibility
                 x = re.sub(r'\\AA\s+', r'\AA{}', x)
                 x = re.sub(r'\\o\s+', r'\o{}', x)
-            if (self.encode_utf8_to_latex):
+            if self.encode_utf8_to_latex:
                 # use custom encoder
                 x = custom_utf8tolatex(x)
-            if (self.encode_latex_to_utf8):
-                x = latex2text.LatexNodes2Text(strict_latex_spaces=True).latex_to_text(x, tolerant_parsing=True)
+            if self.encode_latex_to_utf8:
+                x = butils.latex_to_text(x)
             return x
 
         def filter_person(p):
