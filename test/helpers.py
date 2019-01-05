@@ -4,7 +4,7 @@ from __future__ import print_function, unicode_literals
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import Entry, Person
+from pybtex.database import Entry, Person, BibliographyData
 
 
 
@@ -17,7 +17,7 @@ class CustomAssertions(object):
             self.assert_entries_equal(a, b)
 
         if isinstance(a, BibliographyData) and isinstance(b, BibliographyData):
-            self.assert_keyentrylists_equal(a.entries, b.entries, msg=msg)
+            self.assert_keyentrylists_equal(list(a.entries.items()), list(b.entries.items()), msg=msg)
 
         return super(CustomAssertions, self).assertEqual(a, b, msg=msg)
 

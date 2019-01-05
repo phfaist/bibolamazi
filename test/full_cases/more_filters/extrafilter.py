@@ -118,7 +118,7 @@ class UselessFixesFilter(BibFilter):
 
         def thefilter(x):
             if (self.fix_swedish_a):
-                x = re.sub(r'\\AA\s+', r'\AA{}', x);
+                x = re.sub(r'\\AA\s+', r'\\AA{}', x);
             if (self.encode_utf8_to_latex):
                 x = latexencode.utf8tolatex(x, non_ascii_only=True);
             if (self.encode_latex_to_utf8):

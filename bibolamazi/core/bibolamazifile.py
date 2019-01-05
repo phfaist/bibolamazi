@@ -425,8 +425,7 @@ class BibolamaziFile(object):
     def rawRest(self):
         """
         Return all the contents after the config section at the moment the file was read from
-        the disk. This includes the begin and end config section tags
-        (:py:const:`CONFIG_BEGIN_TAG` and :py:const:`CONFIG_END_TAG`).
+        the disk.
 
         Any changes to the bibliography data will not be reflected here, even if you call
         :py:meth:`saveToFile()`.

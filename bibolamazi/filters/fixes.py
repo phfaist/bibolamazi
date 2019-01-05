@@ -441,8 +441,8 @@ class FixesFilter(BibFilter):
                 x = do_fix_space_after_escape(x)
             if self.fix_swedish_a:
                 # OBSOLETE, but still accepted for backwards compatibility
-                x = re.sub(r'\\AA\s+', r'\AA{}', x)
-                x = re.sub(r'\\o\s+', r'\o{}', x)
+                x = re.sub(r'\\AA\s+', r'\\AA{}', x)
+                x = re.sub(r'\\o\s+', r'\\o{}', x)
             if self.encode_utf8_to_latex:
                 # use custom encoder
                 x = custom_utf8tolatex(x)

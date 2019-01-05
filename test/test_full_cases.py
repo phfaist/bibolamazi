@@ -9,9 +9,16 @@ import logging
 from bibolamazi.core.bibolamazifile import BibolamaziFile
 import bibolamazi.core.main
 
+# import pybtex *after* bibolamazi (might need monkey-patching)
+import pybtex.database.input.bibtex
+
 import helpers
 
 from bibolamazi.core import blogger
+
+
+use_mkdtemp = True
+localtmpdir = '_tmpdir' # used if use_mkdtemp=False
 
 
 class FullCaseTester(object):
@@ -25,7 +32,11 @@ class FullCaseTester(object):
             name
         )
         
-        tmpdir = tempfile.mkdtemp()
+        if use_mkdtemp:
+            tmpdir = tempfile.mkdtemp()
+        else:
+            tmpdir = os.path.abspath(os.path.join(os.path.dirname(__file__), localtmpdir))
+
         try:
             tmpbib = os.path.join(tmpdir, name+'.bibolamazi.bib')
             full_cases_dir = os.path.realpath(
@@ -36,35 +47,42 @@ class FullCaseTester(object):
             # symlink source files
             os.symlink(os.path.join(full_cases_dir, 'srcbib'),
                        os.path.join(tmpdir, 'srcbib'))
+            # symlink extra filter package source
+            os.symlink(os.path.join(full_cases_dir, 'more_filters'),
+                       os.path.join(tmpdir, 'more_filters'))
             # ... and any necessary tex/aux files
             for auxfext in ('.tex', '.aux', '_jobname.tex', '_jobname.aux', '_job.tex', '_job.aux'):
                 if os.path.exists(os.path.join(full_cases_dir, name + auxfext)):
                     shutil.copyfile(os.path.join(full_cases_dir, name + auxfext),
                                     os.path.join(tmpdir, name + auxfext))
             
-            bf_orig = BibolamaziFile(tmpbib)
+            bfile = BibolamaziFile(tmpbib)
 
-            # run bibolamazi on the file
-            bibolamazi.core.main.run_bibolamazi(tmpbib)
+            parser = pybtex.database.input.bibtex.Parser()
+            bf_orig_data = parser.parse_string(bfile.rawRest())
 
-            bf_after = BibolamaziFile(tmpbib)
+            # run bibolamazi on the file -- run all filters
+            for filtr in bfile.filters():
+                bfile.runFilter(filtr)
 
-            # compare the contents before and after the run
-            self.assertEqual(bf_orig.bibliographyData(), bf_after.bibliographyData())
-
-            # run bibolamazi again on the file, using the cache this time
-            bibolamazi.core.main.run_bibolamazi(tmpbib)
-
-            bf_after_2 = BibolamaziFile(tmpbib)
+            bfile.saveToFile() # for debugging
 
             # compare the contents before and after the run
-            self.assertEqual(bf_orig.bibliographyData(), bf_after_2.bibliographyData())
+            self.assert_keyentrylists_equal(list(bf_orig_data.entries.items()),
+                                            list(bfile.bibliographyData().entries.items()))
 
         finally:
-            shutil.rmtree(tmpdir)
+            if use_mkdtemp:
+                shutil.rmtree(tmpdir)
 
 
-class TestFullCases(unittest.TestCase, helpers.CustomAssertions, FullCaseTester):
+class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions):
+
+    def __init__(self, *args, **kwargs):
+        super(TestFullCases, self).__init__(*args, **kwargs)
+
+        self.maxDiff = None
+
 
     def test_0(self):
         self._run_full_case_test('test0')
@@ -74,6 +92,9 @@ class TestFullCases(unittest.TestCase, helpers.CustomAssertions, FullCaseTester)
 
     def test_2(self):
         self._run_full_case_test('test2')
+
+    def test_3(self):
+        self._run_full_case_test('test3')
 
     def test_5(self):
         self._run_full_case_test('test5')
