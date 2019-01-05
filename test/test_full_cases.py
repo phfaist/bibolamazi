@@ -5,6 +5,7 @@ import os.path
 import tempfile
 import shutil
 import logging
+import time
 
 from bibolamazi.core.bibolamazifile import BibolamaziFile
 import bibolamazi.core.main
@@ -55,6 +56,8 @@ class FullCaseTester(object):
                 if os.path.exists(os.path.join(full_cases_dir, name + auxfext)):
                     shutil.copyfile(os.path.join(full_cases_dir, name + auxfext),
                                     os.path.join(tmpdir, name + auxfext))
+
+            time.sleep(0.5)
             
             bfile = BibolamaziFile(tmpbib)
 
