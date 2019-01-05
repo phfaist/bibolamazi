@@ -607,7 +607,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "language": "en",
                 "title": "Contractivity of positive and trace preserving maps under L_p norms",
                 "journal": "Journal of Mathematical Physics",
-                "abstract": "We provide a complete picture of contractivity of trace preserving positive maps with respect to p-norms. We show that for p>1 contractivity holds in general if and only if the map is unital. When the domain is restricted to the traceless subspace of Hermitian matrices, then contractivity is shown to hold in the case of qubits for arbitrary p≥ 1 and in the case of qutrits if and only if p=1,∞. In all non-contractive cases best possible bounds on the p-norms are derived.",
+                "abstract": "We provide a complete picture of contractivity of trace preserving positive maps with respect to p-norms. We show that for p>1 contractivity holds in general if and only if the map is unital. When the domain is restricted to the traceless subspace of Hermitian matrices, then contractivity is shown to hold in the case of qubits for arbitrary p≥1 and in the case of qutrits if and only if p=1,∞. In all non-contractive cases best possible bounds on the p-norms are derived.",
                 "issn": "00222488",
                 "mendeley-tags": "majorization,thermo",
                 "number": "8",

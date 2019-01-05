@@ -197,13 +197,16 @@ class HelpTopicPage(object):
         html_bottom = "</body></html>"
         if self._content_type == 'txt':
             return (html_top
-                    + wrapInHtmlContentContainer("<pre class=\"txtcontent\">" + htmlescape(self._content) + "</pre>")
+                    + wrapInHtmlContentContainer("<pre class=\"txtcontent\">"
+                                                 + htmlescape(self._content)
+                                                 + "</pre>")
                     + html_bottom)
         elif self._content_type == 'markdown':
             return (html_top
                     + wrapInHtmlContentContainer(
                         markdown2.markdown(self._content,
-                                           extras=["footnotes", "fenced-code-blocks", "smarty-pants", "tables"])
+                                           extras=["footnotes", "fenced-code-blocks",
+                                                   "smarty-pants", "tables"])
                     )
                     + html_bottom)
         elif self._content_type == 'html':

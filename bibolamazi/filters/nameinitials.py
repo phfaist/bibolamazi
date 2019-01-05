@@ -140,9 +140,8 @@ class NameInitialsFilter(BibFilter):
                 if self._names_to_utf8:
                     # delatex everything to UTF-8, but honor names protected by braces and keep those
                     rxmacrospace = re.compile(r'(\\[a-zA-Z]+)\s+')
-                    protected_detex_fn = lambda x: LatexNodes2Text(keep_braced_groups=True).latex_to_text(
-                        rxmacrospace.sub(r'\1{}', x)
-                    ).strip()
+                    l2t = LatexNodes2Text(keep_braced_groups=True, strict_latex_spaces=True)
+                    protected_detex_fn = lambda x: l2t.latex_to_text(rxmacrospace.sub(r'\1{}', x)).strip()
 
                     # join name again to correctly treat accents like "Fran\c cois" or "\AA berg"
                     p = Person(protected_detex_fn(unicodestr(p)))

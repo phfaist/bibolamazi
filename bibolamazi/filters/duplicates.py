@@ -996,7 +996,9 @@ def delatex(s):
     # Fixed: bug in pybtex.
     #    ### FIXME: Where the hell are all the "\~"'s being replaced by "\ " ??
     #    s = s.replace(r'\ ', r'\~')
-    return latex2text.latex2text(unicodestr(s), tolerant_parsing=True)
+    if (not isinstance(s, unicodestr)):
+        s = unicodestr(s.decode('utf-8'))
+    return latex2text.LatexNodes2Text(strict_latex_spaces=True).latex_to_text(s, tolerant_parsing=True)
 
 
 

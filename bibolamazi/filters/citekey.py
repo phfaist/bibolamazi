@@ -351,6 +351,5 @@ def bibolamazi_filter_class():
 def delatex(s):
     if (not isinstance(s, unicodestr)):
         s = unicodestr(s.decode('utf-8'))
-    return latex2text.latex2text(s)
-
+    return latex2text.LatexNodes2Text(strict_latex_spaces=True).latex_to_text(s, tolerant_parsing=True)
 
