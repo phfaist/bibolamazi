@@ -291,8 +291,6 @@ class SourceListEditor(QWidget):
     
     @pyqtSlot()
     def emitSourceListChanged(self):
-        #if (self._is_updating):
-        #    return
         logger.debug("emitting sourceListChanged()!")
         self.sourceListChanged.emit(self.sourcelist)
 
@@ -301,86 +299,3 @@ class SourceListEditor(QWidget):
     def on_btnAddSource_clicked(self):
         self.requestAddSourceList.emit()
 
-    
-    # @pyqtSlot()
-    # def on_btnAddSourceAltLoc_clicked(self):
-    #     self.ui.lstSources.addItem("")
-    #     self.ui.lstSources.setCurrentRow(self.ui.lstSources.count()-1)
-    #     self.ui.txtFile.setFocus()
-    #     self.emitSourceListChanged()
-
-    # @pyqtSlot()
-    # def on_btnRemoveSourceAltLoc_clicked(self):
-    #     row = self.ui.lstSources.currentRow()
-    #     if (row < 0):
-    #         logger.debug("No row selected")
-    #         return
-
-    #     logger.debug('removing row %d', row)
-    #     item = self.ui.lstSources.takeItem(row)
-    #     # ###TODO: FIXME: delete item?!?
-
-    #     self.emitSourceListChanged()
-
-    # @pyqtSlot()
-    # def update_stuff_moved(self):
-    #     # user moved stuff around
-    #     logger.debug("Stuff moved around!")
-
-    #     self.emitSourceListChanged()
-        
-    # @pyqtSlot('QListWidgetItem*')
-    # def on_lstSources_itemDoubleClicked(self, item):
-    #     logger.debug('double-clicked!!')
-    #     self.ui.txtFile.setFocus()
-
-    # @pyqtSlot(int)
-    # def on_lstSources_currentRowChanged(self, row):
-    #     logger.debug("current row changed.. row=%d", row)
-    #     if (self.ui.lstSources.count() == 0  or  row < 0):
-    #         self.ui.txtFile.setText("")
-    #         self.ui.btnRemoveSourceAltLoc.setEnabled(False)
-    #         self.ui.gbxEditSource.setEnabled(False)
-    #     else:
-    #         self.ui.btnRemoveSourceAltLoc.setEnabled(True)
-    #         self.ui.gbxEditSource.setEnabled(True)
-    #         self.ui.txtFile.setText(self.ui.lstSources.item(row).text())
-
-
-    # @pyqtSlot('QString')
-    # def on_txtFile_textChanged(self, text):
-    #     row = self.ui.lstSources.currentRow()
-    #     if (row < 0):
-    #         logger.debug("No row selected")
-    #         return
-
-    #     item = self.ui.lstSources.item(row);
-    #     if (item.text() != text):
-    #         item.setText(text)
-    #         self.emitSourceListChanged()
-
-    # @pyqtSlot()
-    # def on_btnBrowse_clicked(self):
-    #     row = self.ui.lstSources.currentRow()
-    #     if (row < 0):
-    #         logger.debug("No row selected")
-    #         return
-        
-    #     fname, _filter = QFileDialog.getOpenFileName(self, 'Select BibTeX File', str(),
-    #                                                  'BibTeX Files (*.bib);;All Files (*)')
-    #     logger.debug("fname=%r.", fname)
-    #     if (not fname):
-    #         return
-
-    #     # decide on whether to refer to file in absolute or relative fashion
-    #     if (self._ref_dir):
-    #         relpath = os.path.relpath(os.path.realpath(fname), os.path.realpath(self._ref_dir))
-    #         if '..' in relpath.split(os.sep) or '..' in relpath.split(os.altsep):
-    #             # out of scope, so use absolute.
-    #             pass
-    #         else:
-    #             # can easily be referred to by relative path (in same or sub directory), use relative.
-    #             fname = relpath
-
-    #     self.ui.txtFile.setText(fname)
-        
