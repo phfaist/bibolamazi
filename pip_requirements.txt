@@ -12,9 +12,15 @@ arxiv2bib >= 1.0.2
 #
 # My own pylatexenc.
 #
-pylatexenc >= 0.9
+pylatexenc >= 1.4
 
 #
 # `future` for both python2 & python3 support
 #
 future
+
+#
+# `bs4` and `requests` for citeinspirehep filter
+#
+bs4
+requests

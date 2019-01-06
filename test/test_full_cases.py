@@ -18,8 +18,16 @@ import helpers
 from bibolamazi.core import blogger
 
 
-use_mkdtemp = True
+#
+# TO DEBUG: Create an empty subdir in this directory called '_tmpdir' and set
+# `use_mkdtemp=False` below.  The processed bibolamazi file will be left there,
+# we can diff with the original to see what happened.  Don't forget to clean up
+# the directory for each run.
+#
+use_mkdtemp = True #False
 localtmpdir = '_tmpdir' # used if use_mkdtemp=False
+
+
 
 
 class FullCaseTester(object):
