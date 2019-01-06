@@ -7,6 +7,11 @@ want, by collecting entries from sources such as your master bibtex file, or
 bibtex files produced by your favorite reference manager, and applying specific
 rules.
 
+[![License](https://img.shields.io/github/license/phfaist/bibolamazi.svg?style=flat)](https://github.com/phfaist/pylatexenc/blob/master/LICENSE.txt)
+[![Build Status](https://img.shields.io/travis/phfaist/bibolamazi.svg?style=flat)](https://travis-ci.org/phfaist/bibolamazi)
+[![PyPI Version](https://img.shields.io/pypi/v/pylatexenc.svg?style=flat)](https://pypi.org/project/pylatexenc/)
+
+
 
 Download & Install Bibolamazi
 -----------------------------
