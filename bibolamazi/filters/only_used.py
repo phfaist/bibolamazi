@@ -19,8 +19,14 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 import logging
-logger = logging.getLogger(__name__)
 
 import os
 import re
@@ -31,6 +37,9 @@ from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
 
 from .util import auxfile
+
+logger = logging.getLogger(__name__)
+
 
 HELP_AUTHOR = u"""\
 only_used filter by Philippe Faist, (C) 2013, GPL 3+
@@ -122,13 +131,13 @@ class OnlyUsedFilter(BibFilter):
         
         newentries = OrderedCaseInsensitiveDict()
 
-        for key,entry in bibdata.entries.iteritems():
+        for key,entry in iteritems(bibdata.entries):
             if key in citations:
                 newentries[key] = entry
 
         logger.longdebug("the new database has entries %r" %(newentries.keys()))
 
-        bibolamazifile.setEntries(newentries.iteritems())
+        bibolamazifile.setEntries(iteritems(newentries))
 
         return
 

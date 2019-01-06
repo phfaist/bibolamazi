@@ -134,11 +134,11 @@ class UselessFixesFilter(BibFilter):
             #return Person(**parts);
 
 
-        for (role,perslist) in entry.persons.iteritems():
+        for (role,perslist) in iteritems(entry.persons):
             for k in range(len(perslist)):
                 entry.persons[role][k] = filter_person(perslist[k]);
         
-        for (k,v) in entry.fields.iteritems():
+        for (k,v) in iteritems(entry.fields):
             entry.fields[k] = thefilter(v);
 
 
@@ -156,7 +156,7 @@ class UselessFixesFilter(BibFilter):
 
 
         def filter_entry_remove_full_braces(entry, fieldlist):
-            for k,v in entry.fields.iteritems():
+            for k,v in iteritems(entry.fields):
                 if (fieldlist is None or k in fieldlist):
                     val = v.strip();
                     if (len(val) and val[0] == '{' and val[-1] == '}'):
@@ -168,11 +168,11 @@ class UselessFixesFilter(BibFilter):
 
 
         def filter_protect_names(entry):
-            for key, val in entry.fields.iteritems():
+            for key, val in iteritems(entry.fields):
                 if key in ('url', 'file'):
                     continue
                 newval = val;
-                for n,r in self.protect_names.iteritems():
+                for n,r in iteritems(self.protect_names):
                     newval = r.sub('{'+n+'}', newval);
                 if (newval != val):
                     entry.fields[key] = newval;
