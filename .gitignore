@@ -10,3 +10,5 @@ gui/build
 gui/dist
 *.bibolamazicache
 bibolamazi.egg-info
+.cache
+test/_tmpdir
