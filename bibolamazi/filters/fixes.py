@@ -33,6 +33,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
+from pybtex.bibtex.utils import split_tex_string
 
 from pylatexenc import latexencode
 from pylatexenc import latexwalker
@@ -178,6 +179,10 @@ For now, the implemented fixes are:
     such as permuting the punctuation etc. (See also the LaTeX package
     {csquotes})
 
+  -dUnprotectFullLastNames
+    If provided, remove curly braces that surround the full last name of people.
+    (Mendeley protects composite last names like this, which is not always
+    necessary.)
 
 The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
@@ -228,6 +233,7 @@ class FixesFilter(BibFilter):
                  convert_sgl_quotes=False,
                  dbl_quote_macro=r'\qq',
                  sgl_quote_macro=r'\q',
+                 unprotect_full_last_names=False,
                  # obsolete:
                  fix_swedish_a=False):
         """
@@ -269,6 +275,7 @@ class FixesFilter(BibFilter):
                 invoke a LaTeX macro. Pass
                 true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
           - sgl_quote_macro: the macro to use for single-quotes when convert_sgl_quotes is set
+          - unprotect_full_last_names(bool): remove curly braces around complete last names
           - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
                 transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
                 problem occurs in files generated e.g. by Mendeley); revtex tends to
@@ -399,6 +406,7 @@ class FixesFilter(BibFilter):
             # just passed a bool, e.g. 'True'
             self.convert_sgl_quotes = ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
         
+        self.unprotect_full_last_names = unprotect_full_last_names
 
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
@@ -408,7 +416,8 @@ class FixesFilter(BibFilter):
                       'map_annote_to_note=%r, auto_urlify=%r, rename_language=%r, rename_language_rx=%r, '
                       'fix_mendeley_bug_urls=%r,'
                       'protect_capital_letter_after_dot=%r,protect_capital_letter_at_begin=%r,'
-                      'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r')
+                      'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r,'
+                      'unprotect_full_last_names=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -422,7 +431,8 @@ class FixesFilter(BibFilter):
                         (self.rename_language_rx.pattern if self.rename_language_rx else None),
                         self.fix_mendeley_bug_urls,
                         self.protect_capital_letter_after_dot, self.protect_capital_letter_at_begin,
-                        self.convert_dbl_quotes,self.dbl_quote_macro,self.convert_sgl_quotes,self.sgl_quote_macro
+                        self.convert_dbl_quotes,self.dbl_quote_macro,self.convert_sgl_quotes,self.sgl_quote_macro,
+                        self.unprotect_full_last_names
                         ))
         
 
@@ -474,6 +484,13 @@ class FixesFilter(BibFilter):
 
         # additionally:
 
+        if self.unprotect_full_last_names:
+            for (role,perslist) in iteritems(entry.persons):
+                for p in perslist:
+                    if len(p.last_names) == 1:
+                        lname = remove_full_braces(p.last_names[0])
+                        p.last_names = split_tex_string(lname)
+
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
                 return
@@ -502,23 +519,8 @@ class FixesFilter(BibFilter):
 
         def filter_entry_remove_full_braces(entry, fieldlist):
             for k,v in iteritems(entry.fields):
-                if (fieldlist is None or k in fieldlist):
-                    val = v.strip()
-                    if (len(val) and val[0] == '{' and val[-1] == '}'):
-                        # remove the extra braces. But first, check that the braces
-                        # enclose the full field, and we don't have e.g. "{Maxwell}'s
-                        # demon versus {Szilard}", in which case a dumb algorithm would
-                        # leave the invalid LaTeX string "Maxwell}'s demon versus
-                        # {Szilard"
-                        try:
-                            (nodes,pos,length) = latexwalker.get_latex_braced_group(val, 0,
-                                                                                    tolerant_parsing=True)
-                            if (pos + length == len(val)):
-                                # yes, all fine: the braces are one block for the field
-                                entry.fields[k] = val[1:-1]
-                        except latexwalker.LatexWalkerError:
-                            logger.longdebug("LatexWalkerError while checking enclosing braces for key %s,"
-                                             " for field %s = `%s' --ignoring", entry.key, k, val)
+                if fieldlist is None or k in fieldlist:
+                    entry.fields[k] = remove_full_braces(v)
 
         if self.remove_full_braces:
             if entry.fields.get('language','').lower() not in self.remove_full_braces_not_lang:
@@ -653,6 +655,27 @@ class FixesFilter(BibFilter):
 # used to store variables in a way we can access from inner functions
 class _Namespace:
     pass
+
+
+def remove_full_braces(val):
+    val = val.strip()
+    if len(val) and val[0] == '{' and val[-1] == '}':
+        # remove the extra braces. But first, check that the braces
+        # enclose the full field, and we don't have e.g. "{Maxwell}'s
+        # demon versus {Szilard}", in which case a dumb algorithm would
+        # leave the invalid LaTeX string "Maxwell}'s demon versus
+        # {Szilard"
+        try:
+            (nodes,pos,length) = latexwalker.LatexWalker(val, tolerant_parsing=True).get_latex_braced_group(0)
+            if pos + length == len(val):
+                # yes, all fine: the braces are one block for the field
+                return val[1:-1]
+        except latexwalker.LatexWalkerError:
+            logger.longdebug(
+                "LatexWalkerError while attempting to remove curly braces around valud in %s",
+                val
+            )
+    return val
 
 
 # custom utf8_to_latex
