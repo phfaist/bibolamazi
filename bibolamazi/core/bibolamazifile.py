@@ -1000,7 +1000,8 @@ class BibolamaziFile(object):
                     cache_accessor = req_cache(bibolamazifile=self)
                     self._cache_accessors[req_cache] = cache_accessor
                 except Exception as e:
-                    ## ### TODO: ADD STACK TRACE IN VERBOSE OUTPUT
+                    import traceback
+                    logger.debug(traceback.format_exc())
                     raise BibolamaziError(
                         (u"Error in cache %s: Exception while instantiating the class:\n"
                          u"%s: %s")

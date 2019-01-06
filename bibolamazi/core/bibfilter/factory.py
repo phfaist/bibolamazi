@@ -365,9 +365,24 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             return " (dir `%s')"%(fpd) if fpd else ""
         
         def deal_with_import_error(import_errors, name, fpn, fpd, exctypestr, e,
-                                   fmt_exc='', is_caused_by_module=True):
-            if fmt_exc:
-                fmt_exc = '\n > ' + fmt_exc.replace('\n', '\n > ')
+                                   tb_info, is_caused_by_module=True):
+            fmt_exc = ''
+            if tb_info:
+                # print traceback, but try to remove all the stack frames that
+                # concern bibolamazi and python importlib internals (to shorten
+                # output, and focus the stack trace on the filter's code)
+                last_importlib_frame = -1
+                exc_type, exc_value, tb = tb_info
+                rximportlib = re.compile(r'\bimportlib\b')
+                extracted_tb = traceback.extract_tb(tb)
+                for i, t in enumerate(extracted_tb):
+                    if rximportlib.search(t[0]):
+                        last_importlib_frame = i
+                fmt_exc = "".join(traceback.format_list(extracted_tb[last_importlib_frame+1:])).strip()
+                if fmt_exc:
+                    fmt_exc = '\n > ' + fmt_exc.replace('\n', '\n > ')
+            logger.debug("Module import failed.", exc_info=tb_info)
+
             if is_caused_by_module:
                 # if the module itself caused the error, we'll report it as a
                 # warning. This is really useful for filter developers.
@@ -399,7 +414,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             
             deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
                                    fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
-                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   tb_info=(exc_type, exc_value, tb_root),
                                    is_caused_by_module=False)
             mod = None
         except ImportError:
@@ -420,21 +435,23 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
                              "".join(traceback.format_tb(tb_root)))
             tb1 = traceback.extract_tb(tb_root)[-1]
             logger.longdebug("tb1 = %r", tb1)
-            if re.search(r'\bimportlib(?:[/.]__init__[^/]{0,4})?$', tb1[0]): # or:  tb1[2] == 'import_module':
+            if re.search(r'\bimportlib(?:[/.]__init__[^/]{0,4})?(?:[.]py)?$', tb1[0]):
+                # alternatively, we could have used:  tb1[2] == 'import_module'
                 caused_by_module = False
+                logger.longdebug("ImportError was not caused by the module. The module was not found.")
 
             # and so, now deal with the exception. Maybe log a warning for the user in
             # case the module has an erroneous import statement.
             deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
                                    fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
-                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   tb_info=(exc_type, exc_value, tb_root),
                                    is_caused_by_module=caused_by_module)
             mod = None
         except Exception as e:
             exc_type, exc_value, tb_root = sys.exc_info()
             deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
                                    fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
-                                   fmt_exc="".join(traceback.format_exception(exc_type, exc_value, tb_root, 5)),
+                                   tb_info=(exc_type, exc_value, tb_root),
                                    is_caused_by_module=True)
             mod = None
         finally:
@@ -997,7 +1014,6 @@ class FilterInfo(object):
             pargs2 = [None]+pargs; # extra argument for `self` slot
             inspect.getcallargs(self.fclass.__init__, *pargs2, **kwargs)
         except Exception as e:
-            import traceback
             logger.debug("Filter exception:\n" + traceback.format_exc())
             raise FilterCreateArgumentError(unicodestr(e), self.name)
     
@@ -1053,7 +1069,6 @@ class FilterInfo(object):
         try:
             return self.fclass(*pargs, **kwargs)
         except Exception as e:
-            import traceback
             logger.debug("Filter exception:\n" + traceback.format_exc())
             msg = unicodestr(e)
             if (not isinstance(e, FilterError) and e.__class__ != Exception):

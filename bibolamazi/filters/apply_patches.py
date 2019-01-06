@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2013-2018 by Philippe Faist                                  #
+#   Copyright (C) 2013-2019 by Philippe Faist                                  #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -30,7 +30,7 @@ from builtins import str as unicodestr
 import re
 import logging
 
-from pybtex.database import BibliographyData, Entry, FieldDict
+from pybtex.database import BibliographyData, Entry
 from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.bibtex.utils
 
@@ -46,52 +46,99 @@ logger = logging.getLogger(__name__)
 
 
 
-HELP_AUTHOR = u"""\
-apply_patches filter by Philippe Faist, (C) 2013-2018, GPL 3+
+HELP_AUTHOR = """\
+apply_patches filter by Philippe Faist, (C) 2018-2019, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = """\
 Applies patches marked in the bibliography database as special entries named "xxx.PATCH"
 """
 
 HELP_TEXT = r"""
 
-DOC HERE ..........................
+Suppose that you keep your bibtex database synchronized with a bibliography
+manager.  Suppose that for a single document, you need to tweak some specific
+bibtex entries (e.g., maybe you need add annot={...} fields with some specific
+annotations which you otherwise wouldn't want to have).  You can do that by
+creating a bibtex file with entries of the form "xyz.PATCH".  This filter
+recognizes entries of this form: It looks for a corresponding bibtex entry with
+key "xyz", and applies a set of changes described by the "PATCH" entry.
 
-TODO: NEEDS TESTING (especially patch series)
+You can also selectively apply different sets of patches, identified by a "patch
+series".  See below.
 
+EXAMPLE:
 
-IDEA:
+Suppose our database has following the entry:
 
-    @article{Einstein1935_EPR.PATCH,  % patch the Einsten1935EPR entry
-    !type = {article}                 % change bibtex entry type to article
-    -file = {},                       % remove "file" field
-    issn = {XXXX-YYYY},               % add/replace "issn" field value
-    +note = {this is a cool paper}    % add to existing note
+    @article{Einstein1935_EPR,
+    author = {Einstein, Albert and Podolsky, Boris and Rosen, Nathan},
+    doi = {10.1103/PhysRev.47.777},
+    journal = {Physical Review},
+    month = {may},
+    number = {10},
+    pages = {777--780},
+    title = {Can Quantum-Mechanical Description of Physical Reality
+             Be Considered Complete?},
+    volume = {47},
+    year = {1935}
     }
 
-FIELD KEYS:
+Now suppose we also have an entry, perhaps in a different source bibtex file, as
+follows:
 
-    fieldname = {...}
+    @article{Einstein1935_EPR.PATCH,  % patch the Einsten1935EPR entry
+    !type = {misc}                    % change bibtex entry type
+    -doi = {},                        % remove "doi" field
+    month = {May},                    % set "month" (replace)
+    +note = {this is a cool paper}    % set "note" (append)
+    }
 
-    Replace the value of the given field by the new value
+After running the `apply_patches' filter, the Einstein1935_EPR.PATCH entry is
+removed from the database, and the original Einstein1935_EPR entry becomes
 
-    -fieldname = {}
+    @misc{Einstein1935_EPR,
+    author = {Einstein, Albert and Podolsky, Boris and Rosen, Nathan},
+    journal = {Physical Review},
+    month = {May},
+    number = {10},
+    pages = {777--780},
+    title = {Can Quantum-Mechanical Description of Physical Reality
+             Be Considered Complete?},
+    volume = {47},
+    year = {1935},
+    note = {this is a cool paper}
+    }
 
-    Remove the field from the entry entirely.
+Note that the type was changed to "misc", the doi field was removed, the month
+was changed to the capitalized version, and the note field was added.
 
-    +fieldname = {...}
+PATCH SYNTAX REFERENCE:
+
+The PATCH entry is read and parsed as a normal entry, but is interpreted
+specially by the `apply_patches` filter as instructions of changes to perform on
+a corresponding original bibtex entry.
+
+fieldname = {...}
+
+    Set the value of the given field to the new value.  If the field is already
+    set, replace its value by the new one.
+
+-fieldname = {}
+
+    Remove the field from the entry entirely. The braces should be empty.
+
++fieldname = {...}
 
     Add the given field value to the existing field value.  If the field doesn't
     exist previously, set the field to this value.  If it does exist, then
     append this value using the separator specified by -sAddValueSeparator (by
     default, a comma and a space).
 
-SPECIAL DIRECTIVES:
+!type = {<new bibtex entry type>}
 
-    !type = {bibtextype}
-
-    Replace the bibtex entry type by the given type.
+    Replace the bibtex entry type by the given type.  This is a special
+    instruction that acts on the bibtex type instead of any field in particular.
 
 PATCH SERIES:
 
