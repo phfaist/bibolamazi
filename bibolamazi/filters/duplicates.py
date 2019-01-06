@@ -37,7 +37,7 @@ import textwrap
 import copy
 import logging
 
-from pybtex.database import BibliographyData, Entry, FieldDict
+from pybtex.database import BibliographyData, Entry
 from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.textutils
 
