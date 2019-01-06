@@ -481,7 +481,7 @@ class HelpBrowser(QWidget):
         from . import filterinstanceeditor # cyclic import if done @ top of module
 
         home_src += "<ul>\n"
-        for filt in filterinstanceeditor.get_filter_list():
+        for filt in sorted(filterinstanceeditor.get_filter_list()):
             home_src += (
                 "<li>&nbsp;<a href=\"help:/filters/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
                 )
@@ -617,7 +617,7 @@ specifying boolean ON/OFF switches.</p>
                 html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
 
                 html += "<table>"
-                for finfo in fplist:
+                for finfo in sorted(fplist, key=lambda x: x.filtername):
 
                     html += ("<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
                              "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
