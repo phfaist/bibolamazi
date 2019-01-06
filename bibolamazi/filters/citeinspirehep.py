@@ -342,15 +342,15 @@ class CiteInspireHEPFilter(BibFilter):
               directories; separate directories with commas e.g. 'path/to/dir1,path/to/dir2'
         """
 
-        BibFilter.__init__(self);
+        super(CiteInspireHEPFilter, self).__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
 
-        if (not self.search_dirs):
+        if not self.search_dirs:
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)
 
-        logger.debug('citeinspirehep: jobname=%r' % (jobname,));
+        logger.debug('citeinspirehep: jobname=%r' % (jobname,))
 
 
     def getRunningMessage(self):
@@ -358,7 +358,7 @@ class CiteInspireHEPFilter(BibFilter):
 
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def requested_cache_accessors(self):
         return [
@@ -371,6 +371,7 @@ class CiteInspireHEPFilter(BibFilter):
 
         # dictionary of { userkey: key }
         used_keys_dic = {}
+        used_keys = [] # keys, in the order they were encountered in the aux file
 
         #
         # find and analyze jobname.aux. Look for \citation{...}'s and collect them.
@@ -382,8 +383,11 @@ class CiteInspireHEPFilter(BibFilter):
                 # didn't recognize citation, skip.
                 return
 
+            if userkey in used_keys:
+                return
+            
             used_keys_dic[userkey] = key
-            return
+            used_keys.append(userkey)
                 
         auxfile.get_all_auxfile_citations(self.jobname, bibolamazifile,
                                           filtername=self.name(),
@@ -395,17 +399,19 @@ class CiteInspireHEPFilter(BibFilter):
         #
         # Now, fetch all bib entries that we need.
         #
-        if used_keys_dic:
-            cache_accessor.fetchInspireHEPApiInfo(used_keys_dic.values())
+        if used_keys:
+            cache_accessor.fetchInspireHEPApiInfo( used_keys_dic.values() )
 
         #
         # Now, include all the entries in used_keys_dic
         #
         # Variable thebibdata is a pybtex.database.BibliographyData object
         #
-        thebibdata = bibolamazifile.bibliographyData();
+        thebibdata = bibolamazifile.bibliographyData()
 
-        for (userkey, key) in iteritems(used_keys_dic):
+        for userkey in used_keys:
+            key = used_keys_dic[userkey]
+
             # get the bibtex data
             dat = cache_accessor.getInspireHEPInfo(key)
 
@@ -413,14 +419,15 @@ class CiteInspireHEPFilter(BibFilter):
             parser = inputbibtex.Parser()
             new_bib_data = None
             with io.StringIO(unicodestr(dat['bibtex'])) as stream:
-                new_bib_data = parser.parse_stream(stream);
+                new_bib_data = parser.parse_stream(stream)
             
             # and add them to the main list
-            if (len(new_bib_data.entries.keys()) != 1):
-                logger.warning("Got either none or more than one bibtex entry when retreiving `%s'!", userkey)
+            if len(new_bib_data.entries.keys()) != 1:
+                logger.warning("Got either none or more than one bibtex entry when retreiving `%s'!",
+                               userkey)
 
-            for val in new_bib_data.entries.values():
-                thebibdata.add_entry(userkey, val);
+            for vk in new_bib_data.entries:
+                thebibdata.add_entry(userkey, new_bib_data.entries[vk])
 
         #
         # yay, done!
@@ -430,5 +437,5 @@ class CiteInspireHEPFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return CiteInspireHEPFilter;
+    return CiteInspireHEPFilter
 

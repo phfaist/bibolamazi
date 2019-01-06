@@ -215,10 +215,10 @@ def normstr(x, lower=True):
 
 def getlast(pers, lower=True):
     # join last names
-    last = normstr(unicodestr(butils.latex_to_text(" ".join(pers.prelast()+pers.last())).split()[-1]),
+    last = normstr(unicodestr(butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1]),
                    lower=lower)
     initial = re.sub('[^a-z]', '',
-                     normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first()]),
+                     normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first_names]),
                              lower=lower),
                      flags=re.IGNORECASE)[0:1] # only first initial [a-z]
     return (last, initial)
@@ -422,6 +422,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 
 # ------------------------------------------------
 
+
+
 class DuplicatesFilter(BibFilter):
 
     helpauthor = HELP_AUTHOR
@@ -484,10 +486,12 @@ class DuplicatesFilter(BibFilter):
             if self.dupfile is None:
                 self.dupfile = args[0]
             else:
-                raise BibFilterError("duplicates", "Repeated values given for dupfile: one as an option (`%s'), "
+                raise BibFilterError("duplicates",
+                                     "Repeated values given for dupfile: one as an option (`%s'), "
                                      "the other as a positional argument (`%s')"%(self.dupfile, args[0]))
         elif len(args) != 0:
-            raise BibFilterError("duplicates", "Received unexpected positional arguments (at most one expected, "
+            raise BibFilterError("duplicates",
+                                 "Received unexpected positional arguments (at most one expected, "
                                  "the dupfile name): [%s]"%(",".join(["%s"%(x) for x in args])))
 
         self.keep_only_used = False
@@ -793,12 +797,19 @@ class DuplicatesFilter(BibFilter):
         # into the actual new list.
         #
 
+        def iter_over_bibdata(bibdata):
+            # Iterate while respecting the order of the elements in the bibdata.
+            # This might not be guaranteed with .items() or iteritems() (?)
+            for k in bibdata.entries:
+                yield k, bibdata.entries[k]
+            #
+
         if self.ensure_conflict_keys_are_duplicates:
             # first, go through the whole bibliography, and make sure that any
             # entry of the form 'xxxxx.conflictkey.N' is a duplicate of 'xxxx'
             rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
             confldup_entries_to_remove = []
-            for (key, entry) in iteritems(bibdata.entries):
+            for (key, entry) in iter_over_bibdata(bibdata):
                 m = rx_conflictkey.match(key)
                 if not m: # not a conflictkey entry
                     continue
@@ -835,7 +846,7 @@ class DuplicatesFilter(BibFilter):
                     
         if self.merge_duplicates or self.warn:
 
-            for (key, entry) in iteritems(bibdata.entries):
+            for (key, entry) in iter_over_bibdata(bibdata):
                 #
                 # search the newbibdata object, in case this entry already exists.
                 #
@@ -920,7 +931,8 @@ class DuplicatesFilter(BibFilter):
             if (self.warn and duplicates):
                 def warnline(dupalias, duporiginal):
                     def fmt(key, entry, cache_entry):
-                        s = ", ".join(string.capwords('%s, %s' % (x[0], "".join(x[1]))) for x in cache_entry['pers'])
+                        s = ", ".join(string.capwords('%s, %s' % (x[0], "".join(x[1])))
+                                      for x in cache_entry['pers'])
                         if 'title_clean' in cache_entry and cache_entry['title_clean']:
                             s += ', "' + (cache_entry['title_clean']).capitalize() + '"'
                         if 'j_abbrev' in cache_entry and cache_entry['j_abbrev']:
@@ -956,7 +968,8 @@ class DuplicatesFilter(BibFilter):
                                                 'orig': duporiginal
                                                 }
                             + "\n".join( ('%s%s%s%s' %(' '*DUPL_WARN_ENTRY_BEGCOL,
-                                                       linealias + ' '*(DUPL_WARN_ENTRY_COLWIDTH-len(linealias)),
+                                                       linealias +
+                                                       ' '*(DUPL_WARN_ENTRY_COLWIDTH-len(linealias)),
                                                        ' '*DUPL_WARN_ENTRY_COLSEP,
                                                        lineorig)
                                           for (linealias, lineorig) in
