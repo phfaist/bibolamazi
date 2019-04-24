@@ -478,7 +478,7 @@ class OpenBibFile(QWidget):
 
     # use close() to close the widget and file
     def closeEvent(self, closeEvent):
-        if hasattr(self, '_closedcalled'): # don't call below code twice...
+        if getattr(self, '_closedcalled', False): # don't call below code twice...
             return super(OpenBibFile, self).closeEvent(closeEvent)
 
         # refuse to close if the bibolamazi thread is busy for us

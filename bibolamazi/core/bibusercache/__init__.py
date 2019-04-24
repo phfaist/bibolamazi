@@ -208,7 +208,7 @@ class BibUserCacheDic(collections.MutableMapping):
                              key, self.dic.get(key), self.tokens[key])
         if self.parent:
             self.parent.child_notify_changed(self)
-                
+            
 
     def __getitem__(self, key):
         return self.dic.get(key, BibUserCacheDic({}, parent=self, on_set_bind_to_key=key))
@@ -465,16 +465,21 @@ class BibUserCache(object):
         Saves the cache to the file-like object `cachefobj`. This dumps a pickle-d version
         of the cache information into the stream.
         """
+
+        #
+        # TODO: first, serialize self.cachedic using compression to reduce file size.
+        #
+
         data = {
             # cache pickle versions for Bibolamazi versions:
             #   --1.4:  <no information saved, incompatible>
-            #   1.5+:   1
-            #   2.x :   2
+            #   1.5:    1
+            #   2.0+:   2
             'cachepickleversion': 2,
             'cachedic': self.cachedic,
             }
         logger.longdebug("Saving cache. Cache keys are: %r", self.cachedic.dic.keys())
-        pickle.dump(data, cachefobj, protocol=2);
+        pickle.dump(data, cachefobj, protocol=2)
 
 
 

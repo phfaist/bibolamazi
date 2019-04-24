@@ -78,6 +78,9 @@ For now, the implemented fixes are:
     Removes any `type=' field from @phdthesis{..} bibtex entries if it contains
     the word(s) 'PhD' or 'Ph.D.'.
 
+  -dRemovePagesFromBook
+    Removes the `pages=' field from all @book{..} bibtex entries.
+
   -dRemoveFullBraces
   -sRemoveFullBraces=title,journal
     Removes the extra protective braces around the field value. For example,
@@ -217,6 +220,7 @@ class FixesFilter(BibFilter):
                  encode_utf8_to_latex=False,
                  encode_latex_to_utf8=False,
                  remove_type_from_phd=False,
+                 remove_pages_from_book=False,
                  remove_full_braces=False,
                  remove_full_braces_not_lang=[],
                  protect_names=None,
@@ -245,6 +249,7 @@ class FixesFilter(BibFilter):
           - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
           - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
           - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
+          - remove_pages_from_book(bool): Removes the `pages=' field from @book{..} bibtex entries.
           - remove_full_braces(BoolOrFieldList): removes overprotective global braces in field values.
           - remove_full_braces_not_lang(CommaStrList): (in conjunction with --remove-full-braces) removes the
             overprotective global braces only if the language of the entry (as per language={..} bibtex field)
@@ -301,6 +306,8 @@ class FixesFilter(BibFilter):
                                  "Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.")
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
+
+        self.remove_pages_from_book = butils.getbool(remove_pages_from_book)
 
         remove_full_braces = BoolOrFieldList(remove_full_braces)
         if remove_full_braces.valuetype is bool:
@@ -410,6 +417,7 @@ class FixesFilter(BibFilter):
 
         logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
+                      'remove_pages_from_book=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
                       'protect_names=%r, remove_file_field=%r, '
                       'remove_fields=%r, remove_doi_prefix=%r, fix_swedish_a=%r, '
@@ -419,7 +427,7 @@ class FixesFilter(BibFilter):
                       'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r,'
                       'unprotect_full_last_names=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
-                        self.remove_type_from_phd,
+                        self.remove_type_from_phd, self.remove_pages_from_book,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
                         self.remove_full_braces_not_lang,
                         self.protect_names,
@@ -500,6 +508,10 @@ class FixesFilter(BibFilter):
             
         if (self.remove_type_from_phd):
             filter_entry_remove_type_from_phd(entry)
+
+        if (self.remove_pages_from_book):
+            if (entry.type == 'book' and 'pages' in entry.fields):
+                del entry.fields['pages']
 
 
         #

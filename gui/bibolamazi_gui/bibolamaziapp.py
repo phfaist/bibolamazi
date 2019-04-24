@@ -377,6 +377,7 @@ class BibolamaziApplication(QApplication):
             if not ans:
                 # if the widget cancels the close, then abort
                 event.ignore()
+                self.is_quitting_app = False
                 return False
 
         # at this point, quit is confirmed and we shut down everything
