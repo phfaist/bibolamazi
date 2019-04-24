@@ -35,6 +35,7 @@ import unicodedata
 import string
 import textwrap
 import copy
+import collections
 import logging
 
 from pybtex.database import BibliographyData, Entry
@@ -215,12 +216,17 @@ def normstr(x, lower=True):
 
 def getlast(pers, lower=True):
     # join last names
-    last = normstr(unicodestr(butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1]),
-                   lower=lower)
-    initial = re.sub('[^a-z]', '',
-                     normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first_names]),
-                             lower=lower),
-                     flags=re.IGNORECASE)[0:1] # only first initial [a-z]
+    last = normstr(
+        unicodestr( butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1] ),
+        lower=lower
+    )
+    initial = re.sub(
+        '[^a-z]',
+        '',
+        normstr(u"".join([pybtex.textutils.abbreviate(x) for x in pers.first_names]),
+                lower=lower),
+        flags=re.IGNORECASE
+    )[0:1] # only first initial [a-z]
     return (last, initial)
 
 def fmtjournal(x):
@@ -424,18 +430,80 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 
 
 
+rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
+rx_keyword_previously = re.compile(r'previously--(?P<aliaskey>[^ ,;]+)')
+
+
+#AliasPair = collections.namedtuple("AliasPair", ('alias', 'origkey', 'is_extra',), )
+# need a mutable version:
+class AliasPair(object):
+    def __init__(self, aliaskey, origkey, is_extra=False):
+        super(AliasPair, self).__init__()
+        self.aliaskey = aliaskey
+        self.origkey = origkey
+        self.is_extra = is_extra # CANNOT CHANGE if used in AliasList
+
+class AliasList(object):
+    #
+    # Idea: store AliasPair() objects and update them as we add more alias
+    # objects.
+    #
+    def __init__(self):
+        super(AliasList, self).__init__()
+        # The elements in these containers are AliasPair() objects that are
+        # shared among the containers
+        self.aliases = []
+        self.aliases_by_aliaskey = {}
+        self.aliases_by_origkey = {}
+        self.extra_aliases = []
+
+    def add_alias(self, alias):
+        if alias.aliaskey in self.aliases_by_aliaskey:
+            raise ValueError("Alias is already defined")
+        if alias.aliaskey in self.aliases_by_origkey:
+            # this aliaskey is used as the target origkey for another alias,
+            # update that one.
+            #
+            # We have otheralias.origkey == alias.aliaskey
+            otheralias = self.aliases_by_origkey[alias.aliaskey]
+            self._update_alias_origkey(otheralias, alias.origkey)
+
+        self.aliases.append(alias)
+        if alias.is_extra:
+            self.extra_aliases.append(alias)
+        self.aliases_by_aliaskey[alias.aliaskey] = alias
+        self._register_alias_in_origkey_dic(alias)
+            
+    def _update_alias_origkey(self, alias, neworigkey):
+        del self.aliases_by_origkey[alias.origkey]
+        alias.origkey = neworigkey
+        self._register_alias_in_origkey_dic(self, alias)
+
+    def _register_alias_in_origkey_dic(self, alias):
+        if alias.origkey not in self.aliases_by_origkey:
+            self.aliases_by_origkey[alias.origkey] = [ alias ]
+        else:
+            self.aliases_by_origkey[alias.origkey].append(alias)
+
+
+
 class DuplicatesFilter(BibFilter):
 
     helpauthor = HELP_AUTHOR
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-
-    def __init__(self, dupfile=None, merge_duplicates=True,
+    def __init__(self,
+                 dupfile=None,
+                 merge_duplicates=True,
                  ensure_conflict_keys_are_duplicates=True,
-                 warn=False, custom_bibalias=False,
-                 keep_only_used=None, jobname=None,
-                 keep_only_used_in_jobname=None, jobname_search_dirs=None,
+                 create_alias_from_previously_keyword=True,
+                 warn=False,
+                 custom_bibalias=False,
+                 keep_only_used=None,
+                 jobname=None,
+                 keep_only_used_in_jobname=None,
+                 jobname_search_dirs=None,
                  ignore_fields_warning=None,
                  *args):
         r"""DuplicatesFilter constructor.
@@ -443,11 +511,18 @@ class DuplicatesFilter(BibFilter):
         *dupfile: the name of a file to write latex code for defining duplicates to. This file
                will be overwritten!!
         *merge_duplicates(bool): Whether to actually merge the duplicates in the bibliography data
-               or not. True by default.
+               or not. True by default. Set this to False and set -dWarn for instance if you would
+               like to have a warning only without actually any duplicate culling in the resulting
+               bibliography.
         *ensure_conflict_keys_are_duplicates(bool): If true (the default), then keys of the form
                "xxxxxx.conflictkey.N" are verified to indeed be duplicates of the corresponding
                "xxxxxx" entry. These conflict key entries are created automatically when two
                bibtex sources have entries with the same key.
+        *create_alias_from_previously_keyword(bool): if set to true, then the 'keywords' field
+               of all entries are scanned for any keywords of the form 'previously--XYZ'.  If such
+               a "keyword" is found, then an alias to that entry is created with the bibtex
+               name 'XYZ' when writing to the bibalias file set with -sDupfile.  Note that
+               the aliases collected in this way are not included in the warning emitted by -dWarn.
         *warn(bool): if this flag is set, a warning is issued for every duplicate entry found
                in the database.
         *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
@@ -476,37 +551,49 @@ class DuplicatesFilter(BibFilter):
 
         self.merge_duplicates = butils.getbool(merge_duplicates)
 
+        self.create_alias_from_previously_keyword = \
+            butils.getbool(create_alias_from_previously_keyword)
+
         self.warn = butils.getbool(warn)
         
         self.custom_bibalias = butils.getbool(custom_bibalias)
         
-        self.ensure_conflict_keys_are_duplicates = butils.getbool(ensure_conflict_keys_are_duplicates)
+        self.ensure_conflict_keys_are_duplicates = \
+            butils.getbool(ensure_conflict_keys_are_duplicates)
 
         if len(args) == 1:
             if self.dupfile is None:
                 self.dupfile = args[0]
             else:
-                raise BibFilterError("duplicates",
-                                     "Repeated values given for dupfile: one as an option (`%s'), "
-                                     "the other as a positional argument (`%s')"%(self.dupfile, args[0]))
+                raise BibFilterError(
+                    "duplicates",
+                    "Repeated values given for dupfile: one as an option (`%s'), "
+                    "the other as a positional argument (`%s')"%(self.dupfile, args[0])
+                )
         elif len(args) != 0:
-            raise BibFilterError("duplicates",
-                                 "Received unexpected positional arguments (at most one expected, "
-                                 "the dupfile name): [%s]"%(",".join(["%s"%(x) for x in args])))
+            raise BibFilterError(
+                "duplicates",
+                "Received unexpected positional arguments (at most one expected, "
+                "the dupfile name): [%s]"%(",".join(["%s"%(x) for x in args]))
+            )
 
         self.keep_only_used = False
         self.jobname = None
         
         if keep_only_used_in_jobname:
-            logger.warning("duplicates filter: the -sKeepOnlyUsedInJobname=<jobname> option is now obsolete. "
-                           "Please replace this option by '-dKeepOnlyUsed -sJobname=<jobname>'")
+            logger.warning(
+                "duplicates filter: the -sKeepOnlyUsedInJobname=<jobname> option is now obsolete. "
+                "Please replace this option by '-dKeepOnlyUsed -sJobname=<jobname>'"
+            )
             self.keep_only_used = True
             self.jobname = keep_only_used_in_jobname
 
         if keep_only_used is not None:
             if keep_only_used_in_jobname:
-                logger.warning("duplicates filter: options -sKeepOnlyUsedInJobname=<jobname> and "
-                               " -dKeepOnlyUsed may not be specified simultaneously")
+                logger.warning(
+                    "duplicates filter: options -sKeepOnlyUsedInJobname=<jobname> and "
+                    " -dKeepOnlyUsed may not be specified simultaneously"
+                )
             self.keep_only_used = keep_only_used
             self.jobname = jobname
 
@@ -531,8 +618,10 @@ class DuplicatesFilter(BibFilter):
         self.cache_entries_validator = None
 
         #if (not self.dupfile and not self.warn):
-        #    logger.warning("bibolamazi duplicates filter: no action will be taken as neither -sDupfile or"+
-        #                   " -dWarn are given!")
+        #    logger.warning(
+        #        "bibolamazi duplicates filter: no action will be taken as neither -sDupfile or"+
+        #        " -dWarn are given!"
+        #    )
 
         logger.debug('duplicates: dupfile=%r, warn=%r' % (dupfile, warn))
 
@@ -589,7 +678,8 @@ class DuplicatesFilter(BibFilter):
             if lev_dist > 0:
                 pending_pos_match_warning.append(
                     "Duplicate entries {} and {} have possible typo in author name: \"{}\" vs \"{}\""
-                    .format(a.key, b.key, str(a.persons.get('author',[])[k]), str(b.persons.get('author',[])[k]))
+                    .format(a.key, b.key, str(a.persons.get('author',[])[k]),
+                            str(b.persons.get('author',[])[k]))
                 )
 
 
@@ -612,10 +702,12 @@ class DuplicatesFilter(BibFilter):
         # authors are the same. check year
         if (compare_neq_fld(a.fields, b.fields, 'year')):
             logger.longdebug
-            return False, "Years %r and %r differ"%(a.fields.get('year', None), b.fields.get('year', None))
+            return False, "Years %r and %r differ"%(a.fields.get('year', None),
+                                                    b.fields.get('year', None))
 
         if (compare_neq_fld(a.fields, b.fields, 'month', filt=normalize_month)):
-            return False, "Months %r and %r differ"%(a.fields.get('month', None), b.fields.get('month', None))
+            return False, "Months %r and %r differ"%(a.fields.get('month', None),
+                                                     b.fields.get('month', None))
 
         doi_a = sanitize_doi(a.fields.get('doi'))
         doi_b = sanitize_doi(b.fields.get('doi'))
@@ -650,8 +742,9 @@ class DuplicatesFilter(BibFilter):
         # create abbreviations of the journals by keeping only the uppercase letters
         j_abbrev_a = cache_a['j_abbrev']
         j_abbrev_b = cache_b['j_abbrev']
-        # don't require them to be equal, but just that they have good overlap... e.g. "PNAS" and "PNASUSA"
-        # allow also one typo per approx. 4 chars
+        # don't require them to be equal, but just that they have good
+        # overlap... e.g. "PNAS" and "PNASUSA" allow also one typo per approx. 4
+        # chars
         if ( j_abbrev_a and j_abbrev_b and
              (levenshtein(j_abbrev_a[:len(j_abbrev_b)], j_abbrev_b[:len(j_abbrev_a)])
               > (1+int(min(len(j_abbrev_a),len(j_abbrev_b))/4))
@@ -659,10 +752,12 @@ class DuplicatesFilter(BibFilter):
             return False, "Journal (parsed & simplified) %r and %r differ"%(j_abbrev_a, j_abbrev_b)
 
         if ( compare_neq_fld(a.fields, b.fields, 'volume') ):
-            return False, "Volumes %r and %r differ"%(a.fields.get('volume', None), b.fields.get('volume', None))
+            return False, "Volumes %r and %r differ"%(a.fields.get('volume', None),
+                                                      b.fields.get('volume', None))
 
         if ( compare_neq_fld(a.fields, b.fields, 'number') ):
-            return False, "Numbers %r and %r differ"%(a.fields.get('number', None), b.fields.get('number', None))
+            return False, "Numbers %r and %r differ"%(a.fields.get('number', None),
+                                                      b.fields.get('number', None))
 
         titlea = cache_a['title_clean']
         titleb = cache_b['title_clean']
@@ -670,7 +765,8 @@ class DuplicatesFilter(BibFilter):
         if (titlea and titleb and titlea != titleb):
             return False, "Titles %r and %r differ"%(titlea, titleb)
 
-        # ### Unreliable. Bad for arxiv entries and had some other bugs. (E.g. "123--5" vs "123--125" vs "123")
+        # ### Unreliable. Bad for arxiv entries and had some other
+        # ### bugs. (E.g. "123--5" vs "123--125" vs "123")
         #
         #if ( compare_neq_fld(a.fields, b.fields, 'pages') ):
         #    print("pages differ!")
@@ -750,7 +846,8 @@ class DuplicatesFilter(BibFilter):
             jobname = self.jobname
             if not jobname:
                 # use bibolamazi file base name
-                jobname = re.sub(r'(\.bibolamazi)?\.bib$', '', os.path.basename(bibolamazifile.fname()))
+                jobname = re.sub(r'(\.bibolamazi)?\.bib$', '',
+                                 os.path.basename(bibolamazifile.fname()))
                 logger.debug("Using jobname %s guessed from bibolamazi file name", jobname)
 
             logger.debug("Getting list of used citations from %s.aux.", jobname)
@@ -759,7 +856,7 @@ class DuplicatesFilter(BibFilter):
                 self.jobname_search_dirs, return_set=True
             )
 
-        duplicates = []
+        aliases = AliasList()
 
         arxivaccess = arxivutil.setup_and_get_arxiv_accessor(bibolamazifile)
 
@@ -806,8 +903,7 @@ class DuplicatesFilter(BibFilter):
 
         if self.ensure_conflict_keys_are_duplicates:
             # first, go through the whole bibliography, and make sure that any
-            # entry of the form 'xxxxx.conflictkey.N' is a duplicate of 'xxxx'
-            rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
+            # entry of the form 'xxxxx.conflictkey.N' is a duplicate of 'xxxxx'
             confldup_entries_to_remove = []
             for (key, entry) in iter_over_bibdata(bibdata):
                 m = rx_conflictkey.match(key)
@@ -819,20 +915,25 @@ class DuplicatesFilter(BibFilter):
                 logger.longdebug("Looking at conflictkey entry %s", key)
 
                 if origkey not in bibdata.entries:
-                    logger.warning("Entry with conflict key %s has no corresponding entry %s", key, origkey)
+                    logger.warning("Entry with conflict key %s has no corresponding entry %s",
+                                   key, origkey)
                     continue
 
                 origentry = bibdata.entries[origkey]
 
-                same, reason = self.compare_entries(entry, origentry,
-                                                    dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                    dupl_entryinfo_cache_accessor.get_entry_cache(origkey))
+                same, reason = self.compare_entries(
+                    entry,
+                    origentry,
+                    dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                    dupl_entryinfo_cache_accessor.get_entry_cache(origkey)
+                )
                 if not same:
                     logger.warning("Entry with conflict key %s is NOT a duplicate of entry %s: %s",
                                    key, origkey, reason)
 
                 # entries are proper duplicates as expected, remove the conflictkey entry
-                logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s", key, origkey)
+                logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s",
+                             key, origkey)
 
                 # do merge the entries, in case they are not exact copies and
                 # one has more information than the other
@@ -843,10 +944,43 @@ class DuplicatesFilter(BibFilter):
                 confldup_entries_to_remove.append(key)
             for k in confldup_entries_to_remove:
                 del bibdata.entries[k]
-                    
+
         if self.merge_duplicates or self.warn:
 
+            #
+            # examine all the entries, to see if they have any "previously--..."
+            # keywords for which we would want to create corresponding aliases.
+            # Collect these into the aliases list as extra aliases.
+            #
+            # Do this now, before we start discarding unused entries which might
+            # have an alias that is used
+            #
+            if self.create_alias_from_previously_keyword:
+                logger.debug("create_alias_from_previously_keyword=True, scanning keywords")
+                for k, e in iter_over_bibdata(bibdata):
+                    if 'keywords' in e.fields:
+                        for m in rx_keyword_previously.finditer(e.fields['keywords']):
+                            aliaskey = m.group('aliaskey')
+                            if aliaskey in bibdata.entries:
+                                logger.warning("Can't create alias '%s' to '%s', alias key name "
+                                               "already exists in database as another entry",
+                                               aliaskey, k)
+                                continue
+                            if used_citations is not None and aliaskey not in used_citations:
+                                # alias is not used, drop it
+                                logger.debug("ignoring alias %r -> %r because it's not used",
+                                             aliaskey, k)
+                            else:
+                                logger.debug("extra alias: %r -> %r", aliaskey, k)
+                                aliases.add_alias( AliasPair(aliaskey, k, is_extra=True) )
+
+
             for (key, entry) in iter_over_bibdata(bibdata):
+                #
+                # examine this entry, see if it is a duplicate of an entry that
+                # we've already seen.
+                #
+                
                 #
                 # search the newbibdata object, in case this entry already exists.
                 #
@@ -854,19 +988,28 @@ class DuplicatesFilter(BibFilter):
                 is_duplicate_of = None
                 duplicate_original_is_unused = False
                 for (nkey, nentry) in iteritems(newbibdata.entries):
-                    same, reason = self.compare_entries(entry, nentry,
-                                                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
+                    same, reason = self.compare_entries(
+                        entry,
+                        nentry,
+                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey)
+                    )
                     if same:
-                        logger.debug("Entry %s is duplicate of existing entry %s: %s", key, nkey, reason)
+                        logger.debug("Entry %s is duplicate of existing entry %s: %s",
+                                     key, nkey, reason)
                         is_duplicate_of = nkey
                         break
+                    
                 for (nkey, nentry) in iteritems(unused.entries):
-                    same, reason = self.compare_entries(entry, nentry,
-                                                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                                                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey))
+                    same, reason = self.compare_entries(
+                        entry,
+                        nentry,
+                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
+                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey)
+                    )
                     if same:
-                        logger.debug("Entry %s is duplicate of entry %s: %s", key, nkey, reason)
+                        logger.debug("Entry %s is duplicate of entry %s: %s",
+                                     key, nkey, reason)
                         is_duplicate_of = nkey
                         duplicate_original_is_unused = True
                         break
@@ -875,16 +1018,17 @@ class DuplicatesFilter(BibFilter):
                 # if it's a duplicate
                 #
                 if is_duplicate_of is not None:
-                    dup = (key, is_duplicate_of)
                     if duplicate_original_is_unused:
-                        self.update_entry_with_duplicate(is_duplicate_of, unused.entries[is_duplicate_of],
+                        self.update_entry_with_duplicate(is_duplicate_of,
+                                                         unused.entries[is_duplicate_of],
                                                          key, entry)
                     else:
                         # a duplicate of a key we have used. So update the original ...
-                        self.update_entry_with_duplicate(is_duplicate_of, newbibdata.entries[is_duplicate_of],
+                        self.update_entry_with_duplicate(is_duplicate_of,
+                                                         newbibdata.entries[is_duplicate_of],
                                                          key, entry)
                         # ... and register the alias.
-                        duplicates.append(dup)
+                        aliases.add_alias( AliasPair(key, is_duplicate_of) )
 
                     if duplicate_original_is_unused and used_citations and key in used_citations:
                         # if we had set the original in the unused list, but we need the
@@ -902,9 +1046,21 @@ class DuplicatesFilter(BibFilter):
                         # new entry and we want it. So add it to the main newbibdata list.
                         newbibdata.add_entry(key, entry)
 
-            # output duplicates to the duplicates file
+            #
+            # now, make sure that all originals corresponding to "extra" aliases
+            # (e.g., caused by "previously--X" keywords) are in the newbibdata
+            # and not in the unused list.
+            #
+            for alias in aliases.extra_aliases:
+                if alias.origkey in unused.entries:
+                    # the seemingly unused entry is actually used! put it back.
+                    newbibdata.add_entry(alias.origkey, unused.entries[alias.origkey])
+                    del unused.entries[alias.origkey]
 
-            if (self.dupfile):
+
+            # output aliases to the duplicates file
+
+            if self.dupfile:
                 # and write definitions to the dupfile
                 dupfilepath = os.path.join(bibolamazifile.fdir(), self.dupfile)
                 check_overwrite_dupfile(dupfilepath)
@@ -917,11 +1073,12 @@ class DuplicatesFilter(BibFilter):
                     if not self.custom_bibalias:
                         dupf.write(BIBALIAS_LATEX_DEFINITIONS)
 
-                    # Note: Sort entries in some way (e.g. alphabetically according to
-                    # (alias, original)), to avoid diffs in VCS's
-                    for (dupalias, duporiginal) in sorted(duplicates, key=lambda x: (x[0],x[1])):
-                        dupf.write((r'\bibalias{%s}{%s}' % (dupalias, duporiginal)) + "\n")
-                        dupstrlist.append("\t%s is an alias of %s" % (dupalias,duporiginal)) 
+                    # Note: Sort entries in some way (e.g. alphabetically
+                    # according to (alias, original)), to avoid diffs in VCS's
+                    for alias in sorted(aliases.aliases,
+                                        key=lambda x: (x.aliaskey,x.origkey)):
+                        dupf.write((r'\bibalias{%s}{%s}' % (alias.aliaskey, alias.origkey)) + "\n")
+                        dupstrlist.append("\t%s is an alias of %s" % (alias.aliaskey,alias.origkey))
 
                     dupf.write('\n\n')
 
@@ -929,6 +1086,9 @@ class DuplicatesFilter(BibFilter):
                 logger.debug("wrote duplicates to file: \n" + "\n".join(dupstrlist))
 
             if (self.warn and duplicates):
+                #
+                # prepare formatting for a single duplicate info pair
+                #
                 def warnline(dupalias, duporiginal):
                     def fmt(key, entry, cache_entry):
                         s = ", ".join(string.capwords('%s, %s' % (x[0], "".join(x[1])))
@@ -977,11 +1137,21 @@ class DuplicatesFilter(BibFilter):
                                               linesorig + ['']*(maxlines-len(linesorig)))) )
                             + "\n\n"
                             )
+
+                # Now glue together a mega-string of all lines, and emit a
+                # warning with it to our standard logger.
+                #
+                # Note: no warning is emitted for extra aliases
+                # (e.g. "previously--" keywords) --- what would be the point of
+                # that?
+
                 logger.warning(DUPL_WARN_TOP  +
-                               "".join([ warnline(dupalias, duporiginal)
-                                         for (dupalias, duporiginal) in duplicates
+                               "".join([ warnline(alias.aliaskey, alias.origkey)
+                                         for alias in aliases.aliases
+                                         if not alias.is_extra
                                          ])  +
                                DUPL_WARN_BOTTOM % {'num_dupl': len(duplicates)})
+
 
             if self.merge_duplicates:
                 #
@@ -1045,4 +1215,7 @@ def check_overwrite_dupfile(dupfilepath):
             head_content += f.readline()
 
     if BIBALIAS_WARNING_HEADER not in head_content:
-        raise BibFilterError('duplicates', "File `%s' does not seem to have been generated by bibolamazi. Won't overwrite. Please remove the file manually." %(dupfilepath))
+        raise BibFilterError(
+            'duplicates',
+            ("File `%s' does not seem to have been generated by bibolamazi. "
+             "Won't overwrite. Please remove the file manually.")%(dupfilepath))
