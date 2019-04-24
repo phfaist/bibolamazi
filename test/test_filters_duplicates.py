@@ -10,7 +10,8 @@ from pybtex.database import Entry, Person, BibliographyData
 from bibolamazi.core import blogger
 from helpers import CustomAssertions
 from bibolamazi.filters.util import arxivutil
-from bibolamazi.filters.duplicates import DuplicatesFilter, DuplicatesEntryInfoCacheAccessor, normstr, getlast, fmtjournal
+from bibolamazi.filters.duplicates import (DuplicatesFilter, DuplicatesEntryInfoCacheAccessor,
+                                           normstr, getlast, fmtjournal)
 from bibolamazi.core.bibolamazifile import BibolamaziFile
 
 logger = logging.getLogger(__name__)
@@ -36,12 +37,113 @@ class TestWorks(unittest.TestCase, CustomAssertions):
 
         filt.filter_bibolamazifile(bf)
 
-        self.assert_keyentrylists_equal(list(bf.bibliographyData().entries.items()), entries_ok, order=False)
+        self.assert_keyentrylists_equal(list(bf.bibliographyData().entries.items()),
+                                        entries_ok, order=False)
+
+
+    def test_dupli_merge_with_used(self):
+
+        entries = self.get_entries_set()
+        used_entries = set([
+            'Einstein1935_EPR', 'del2011thermodynamic',
+            'aberg_2013_worklike', 'Aberg2013_worklike',
+        ])
+
+        entries_ok = [ (x,e) for x,e in self.get_entries_set_merged()
+                       if x in ['Einstein1935_EPR', 'delRio2011Nature',
+                                'Aberg2013_worklike'] ]
+        for i, x in enumerate(entries_ok):
+            if x[0] == 'delRio2011Nature':
+                entries_ok[i] = ('del2011thermodynamic', x[1])
+                break
+
+        bf = BibolamaziFile(create=True)
+        bf.setEntries(entries)
+
+        filt = DuplicatesFilter(merge_duplicates=True, dupfile='xxxdupfilexxx',
+                                keep_only_used=True)
+        # monkey-patch filter object so that: 1) we give a hard-coded list of
+        # "used entries" instead of inspecting an aux file and 2) we don't
+        # actually write to the dupfile, but save instead the aliases to a list
+        class _Store: pass
+        register_ns = _Store()
+        filt._get_used_citations = lambda b, u=used_entries: u
+        filt._write_to_dupfile = lambda b, a, ns=register_ns: setattr(ns, 'aliases', a)
+
+        bf.registerFilterInstance(filt)
+
+        filt.filter_bibolamazifile(bf)
+
+        # print("resulting bibliography data:")
+        # print("\n".join(["*** %s [%s] %s"%(x[0], x[1].key, str(x[1])[:100]+"...")
+        #                  for x in bf.bibliographyData().entries.items()]))
+
+        self.assert_keyentrylists_equal(list(bf.bibliographyData().entries.items()),
+                                        entries_ok, order=False)
+
+        # also check that the aliases are there
+        self.assertEqual( set([ a.aliaskey for a in register_ns.aliases.aliases ]),
+                          set(['aberg_2013_worklike']) )
+                                                                                
+        self.assertEqual(register_ns.aliases.aliases_by_aliaskey['aberg_2013_worklike'].origkey,
+                         'Aberg2013_worklike')
+
+
+    def test_dupli_merge_with_used_and_extra_aliases(self):
+
+        entries = self.get_entries_set()
+        used_entries = set([
+            'JacobsonAliasKey', 'BellAliasKey', 'Einstein1935_EPR', 'delRio2010arXiv',
+            'aberg_2013_worklike', 'Aberg2013_worklike',
+        ])
+        entries_ok = [ (x,e) for x,e in self.get_entries_set_merged()
+                       if x in ['Jacobson1995','Bell1964', 'Einstein1935_EPR', 'delRio2011Nature',
+                                'Aberg2013_worklike'] ]
+
+        bf = BibolamaziFile(create=True)
+        bf.setEntries(entries)
+
+        filt = DuplicatesFilter(merge_duplicates=True, dupfile='xxxdupfilexxx',
+                                keep_only_used=True)
+        # monkey-patch filter object so that: 1) we give a hard-coded list of
+        # "used entries" instead of inspecting an aux file and 2) we don't
+        # actually write to the dupfile, but save instead the aliases to a list
+        class _Store: pass
+        register_ns = _Store()
+        filt._get_used_citations = lambda b, u=used_entries: u
+        filt._write_to_dupfile = lambda b, a, ns=register_ns: setattr(ns, 'aliases', a)
+
+        bf.registerFilterInstance(filt)
+
+        filt.filter_bibolamazifile(bf)
+
+        # print("resulting bibliography data:")
+        # print("\n".join(["*** %s [%s] %s"%(x[0], x[1].key, str(x[1])[:100]+"...")
+        #                  for x in bf.bibliographyData().entries.items()]))
+
+        self.assert_keyentrylists_equal(list(bf.bibliographyData().entries.items()),
+                                        entries_ok, order=False)
+
+        # also check that the aliases are there
+        self.assertEqual( set([ a.aliaskey for a in register_ns.aliases.aliases ]),
+                          set(['JacobsonAliasKey', 'BellAliasKey', 'delRio2010arXiv',
+                               'aberg_2013_worklike']) )
+                                                                                
+        self.assertEqual(register_ns.aliases.aliases_by_aliaskey['JacobsonAliasKey'].origkey,
+                         'Jacobson1995')
+        self.assertEqual(register_ns.aliases.aliases_by_aliaskey['BellAliasKey'].origkey,
+                         'Bell1964')
+        self.assertEqual(register_ns.aliases.aliases_by_aliaskey['delRio2010arXiv'].origkey,
+                         'delRio2011Nature')
+        self.assertEqual(register_ns.aliases.aliases_by_aliaskey['aberg_2013_worklike'].origkey,
+                         'Aberg2013_worklike')
 
 
     def test_compare_entries(self):
 
-        # duplicates, despite different author spellings, journal abbreviation, and incomplete page numbers
+        # duplicates, despite different author spellings, journal abbreviation,
+        # and incomplete page numbers
+
         self._check_entries_are_seen_as_duplicates(
             ("del2011thermodynamic", Entry("article", persons={"author": [Person("Del Rio, L."),Person("{\\AA}berg, J."),Person("Renner, R."),Person("Dahlsten, O."),Person("Vedral, V.")],}, fields={
                 "title": "The thermodynamic meaning of negative entropy",
@@ -131,7 +233,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                  "doi": "10.1103/PhysRevLett.75.1260",
                  "issn": "0031-9007",
                  "journal": "Physical Review Letters",
-                 "keywords": "entropic gravity,general relativity,gravity,thermo",
+                 "keywords": "entropic gravity,relativity,thermo,previously--JacobsonAliasKey ",
                  "mendeley-tags": "entropic gravity,general relativity,gravity,thermo",
                  "month": "August",
                  "number": "7",
@@ -160,7 +262,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
             ("Bell1964", Entry("article", persons={"author": [Person("Bell, J. S.")],}, fields={
                 "issn": "0554-128X",
                 "journal": "Physics",
-                "keywords": "Bell's paper,EPR paradox,entanglement,hidden variables",
+                "keywords": "EPR,entanglement,previously--BellAliasKey ; hidden variables",
                 "mendeley-tags": "Bell's paper,EPR paradox,entanglement,hidden variables",
                 "pages": "195",
                 "publisher": "Physics Publishing Company",
@@ -173,7 +275,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "doi": "10.1007/BF02345020",
                 "issn": "0010-3616",
                 "journal": "Communications In Mathematical Physics",
-                "keywords": "black holes,hawking radiation,thermo",
+                "keywords": "previously--Hawking1975AliasKey,black holes,hawking radiation,thermo",
                 "mendeley-tags": "black holes,hawking radiation,thermo",
                 "month": "August",
                 "number": "3",
@@ -513,6 +615,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "number": "7349",
                 "pages": "61--63",
                 "year": "2011",
+                "keywords": "previously--delRio2010arXiv",
                 "publisher": "Nature Publishing Group"
             },),),
             ("dahlsten2011inadequacy", Entry("article", persons={"author": [Person("Dahlsten, O.C.O."),Person("Renner, R."),Person("Rieper, E."),Person("Vedral, V.")],}, fields={
@@ -643,7 +746,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                  "doi": "10.1103/PhysRevLett.75.1260",
                  "issn": "0031-9007",
                  "journal": "Physical Review Letters",
-                 "keywords": "entropic gravity,general relativity,gravity,thermo",
+                 "keywords": "entropic gravity,relativity,thermo,previously--JacobsonAliasKey ",
                  "mendeley-tags": "entropic gravity,general relativity,gravity,thermo",
                  "month": "August",
                  "number": "7",
@@ -672,7 +775,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
             ("Bell1964", Entry("article", persons={"author": [Person("Bell, J. S.")],}, fields={
                 "issn": "0554-128X",
                 "journal": "Physics",
-                "keywords": "Bell's paper,EPR paradox,entanglement,hidden variables",
+                "keywords": "EPR,entanglement,previously--BellAliasKey ; hidden variables",
                 "mendeley-tags": "Bell's paper,EPR paradox,entanglement,hidden variables",
                 "pages": "195",
                 "publisher": "Physics Publishing Company",
@@ -685,7 +788,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "doi": "10.1007/BF02345020",
                 "issn": "0010-3616",
                 "journal": "Communications In Mathematical Physics",
-                "keywords": "black holes,hawking radiation,thermo",
+                "keywords": "previously--Hawking1975AliasKey,black holes,hawking radiation,thermo",
                 "mendeley-tags": "black holes,hawking radiation,thermo",
                 "month": "August",
                 "number": "3",
@@ -770,7 +873,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "file": ":home/................./del Rio et al. - 2011 - The thermodynamic meaning of negative entropy(2).pdf:pdf;:home/................./del Rio et al. - 2011 - The thermodynamic meaning of negative entropy.pdf:pdf",
                 "issn": "1476-4687",
                 "journal": "Nature",
-                "keywords": "Quantum Physics,thermo",
+                "keywords": "Quantum Physics,thermo,previously--delRio2010arXiv", # alias merged from duplicate
                 "mendeley-tags": "thermo",
                 "month": "June",
                 "number": "7349",
@@ -1116,5 +1219,5 @@ class TestWorks(unittest.TestCase, CustomAssertions):
 
 
 if __name__ == '__main__':
-    blogger.setup_simple_console_logging(level=1)
+    blogger.setup_simple_console_logging(level=logging.DEBUG)
     unittest.main()

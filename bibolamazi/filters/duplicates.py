@@ -442,6 +442,8 @@ class AliasPair(object):
         self.aliaskey = aliaskey
         self.origkey = origkey
         self.is_extra = is_extra # CANNOT CHANGE if used in AliasList
+    def __repr__(self):
+        return "AliasPair(%r,%r,is_extra=%r)"%(self.aliaskey,self.origkey,self.is_extra)
 
 class AliasList(object):
     #
@@ -458,6 +460,21 @@ class AliasList(object):
         self.extra_aliases = []
 
     def add_alias(self, alias):
+        # update our database for this alias (eg, resolve dependencies)
+        self.add_virtual_alias(alias)
+
+        # and add the alias
+        self.aliases.append(alias)
+        if alias.is_extra:
+            self.extra_aliases.append(alias)
+        self.aliases_by_aliaskey[alias.aliaskey] = alias
+        self._register_alias_in_origkey_dic(alias)
+
+    def add_virtual_alias(self, alias):
+        #
+        # update current aliases as if we were going to add this alias to the
+        # aliases.
+        #
         if alias.aliaskey in self.aliases_by_aliaskey:
             raise ValueError("Alias is already defined")
         if alias.aliaskey in self.aliases_by_origkey:
@@ -465,20 +482,15 @@ class AliasList(object):
             # update that one.
             #
             # We have otheralias.origkey == alias.aliaskey
-            otheralias = self.aliases_by_origkey[alias.aliaskey]
-            self._update_alias_origkey(otheralias, alias.origkey)
+            otheraliases = self.aliases_by_origkey[alias.aliaskey]
+            logger.longdebug("due to alias %r->%r, updating other aliases %r that pointed to %r",
+                             alias.aliaskey, alias.origkey, otheraliases, alias.aliaskey)
+            del self.aliases_by_origkey[alias.aliaskey]
+            for otheralias in otheraliases:
+                otheralias.origkey = alias.origkey
+                self._register_alias_in_origkey_dic(alias)
 
-        self.aliases.append(alias)
-        if alias.is_extra:
-            self.extra_aliases.append(alias)
-        self.aliases_by_aliaskey[alias.aliaskey] = alias
-        self._register_alias_in_origkey_dic(alias)
             
-    def _update_alias_origkey(self, alias, neworigkey):
-        del self.aliases_by_origkey[alias.origkey]
-        alias.origkey = neworigkey
-        self._register_alias_in_origkey_dic(self, alias)
-
     def _register_alias_in_origkey_dic(self, alias):
         if alias.origkey not in self.aliases_by_origkey:
             self.aliases_by_origkey[alias.origkey] = [ alias ]
@@ -827,6 +839,49 @@ class DuplicatesFilter(BibFilter):
                                origkey, duplkey, fk, origentry.fields[fk], fval)
             
 
+    def _get_used_citations(self, bibolamazifile):
+        jobname = self.jobname
+        if not jobname:
+            # use bibolamazi file base name
+            jobname = re.sub(r'(\.bibolamazi)?\.bib$', '',
+                             os.path.basename(bibolamazifile.fname()))
+            logger.debug("Using jobname %s guessed from bibolamazi file name", jobname)
+
+        logger.debug("Getting list of used citations from %s.aux.", jobname)
+        used_citations = auxfile.get_all_auxfile_citations(
+            jobname, bibolamazifile, self.name(),
+            self.jobname_search_dirs, return_set=True
+        )
+        return used_citations
+        
+    def _write_to_dupfile(self, bibolamazifile, aliases):
+        #
+        # write definitions to the dupfile
+        #
+        dupfilepath = os.path.join(bibolamazifile.fdir(), self.dupfile)
+        check_overwrite_dupfile(dupfilepath)
+
+        dupstrlist = []
+
+        with codecs.open(dupfilepath, 'w', 'utf-8') as dupf:
+
+            dupf.write(BIBALIAS_HEADER.replace('####DUP_FILE_NAME####', self.dupfile))
+
+            if not self.custom_bibalias:
+                dupf.write(BIBALIAS_LATEX_DEFINITIONS)
+
+            # Note: Sort alias pairs in some way (e.g. alphabetically according
+            # to (alias, original)), to avoid diffs in VCS's
+            for alias in sorted(aliases.aliases,
+                                key=lambda x: (x.aliaskey,x.origkey)):
+                dupf.write((r'\bibalias{%s}{%s}' % (alias.aliaskey, alias.origkey)) + "\n")
+                dupstrlist.append("\t%s is an alias of %s" % (alias.aliaskey,alias.origkey))
+
+            dupf.write('\n\n')
+
+        # issue debug message
+        logger.debug("wrote duplicates to file: \n" + "\n".join(dupstrlist))
+
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
@@ -843,18 +898,7 @@ class DuplicatesFilter(BibFilter):
         used_citations = None
         
         if self.keep_only_used:
-            jobname = self.jobname
-            if not jobname:
-                # use bibolamazi file base name
-                jobname = re.sub(r'(\.bibolamazi)?\.bib$', '',
-                                 os.path.basename(bibolamazifile.fname()))
-                logger.debug("Using jobname %s guessed from bibolamazi file name", jobname)
-
-            logger.debug("Getting list of used citations from %s.aux.", jobname)
-            used_citations = auxfile.get_all_auxfile_citations(
-                jobname, bibolamazifile, self.name(),
-                self.jobname_search_dirs, return_set=True
-            )
+            used_citations = self._get_used_citations(bibolamazifile)
 
         aliases = AliasList()
 
@@ -968,7 +1012,7 @@ class DuplicatesFilter(BibFilter):
                                 continue
                             if used_citations is not None and aliaskey not in used_citations:
                                 # alias is not used, drop it
-                                logger.debug("ignoring alias %r -> %r because it's not used",
+                                logger.debug("ignoring extra alias %r -> %r because it's not used",
                                              aliaskey, k)
                             else:
                                 logger.debug("extra alias: %r -> %r", aliaskey, k)
@@ -1022,6 +1066,7 @@ class DuplicatesFilter(BibFilter):
                         self.update_entry_with_duplicate(is_duplicate_of,
                                                          unused.entries[is_duplicate_of],
                                                          key, entry)
+                        aliases.add_virtual_alias( AliasPair(key, is_duplicate_of) )
                     else:
                         # a duplicate of a key we have used. So update the original ...
                         self.update_entry_with_duplicate(is_duplicate_of,
@@ -1035,9 +1080,13 @@ class DuplicatesFilter(BibFilter):
                         # alias, then respawn the original to the newbibdata so we can refer
                         # to it. Bonus: use the name with which we have referred to it, so we
                         # don't need to register any duplicate.
-                        newbibdata.add_entry(key, unused.entries[is_duplicate_of])
-                        #unused_respawned.add(is_duplicate_of)
+                        logger.debug("Resuscitating entry %s as a duplicate is a used citation",
+                                     is_duplicate_of)
+                        ue = unused.entries[is_duplicate_of]
                         del unused.entries[is_duplicate_of]
+                        ue.key = key
+                        newbibdata.add_entry(key, ue)
+                        #unused_respawned.add(is_duplicate_of)
                 else:
                     if used_citations is not None and key not in used_citations:
                         # new entry, but we don't want it. So add it to the unused list.
@@ -1051,9 +1100,12 @@ class DuplicatesFilter(BibFilter):
             # (e.g., caused by "previously--X" keywords) are in the newbibdata
             # and not in the unused list.
             #
+            logger.debug("all aliases = %r", aliases.aliases)
             for alias in aliases.extra_aliases:
                 if alias.origkey in unused.entries:
                     # the seemingly unused entry is actually used! put it back.
+                    logger.debug("Resuscitating entry %s as it is used by an extra alias",
+                                 alias.origkey)
                     newbibdata.add_entry(alias.origkey, unused.entries[alias.origkey])
                     del unused.entries[alias.origkey]
 
@@ -1061,31 +1113,9 @@ class DuplicatesFilter(BibFilter):
             # output aliases to the duplicates file
 
             if self.dupfile:
-                # and write definitions to the dupfile
-                dupfilepath = os.path.join(bibolamazifile.fdir(), self.dupfile)
-                check_overwrite_dupfile(dupfilepath)
-                dupstrlist = []
+                self._write_to_dupfile(bibolamazifile, aliases)
 
-                with codecs.open(dupfilepath, 'w', 'utf-8') as dupf:
-
-                    dupf.write(BIBALIAS_HEADER.replace('####DUP_FILE_NAME####', self.dupfile))
-
-                    if not self.custom_bibalias:
-                        dupf.write(BIBALIAS_LATEX_DEFINITIONS)
-
-                    # Note: Sort entries in some way (e.g. alphabetically
-                    # according to (alias, original)), to avoid diffs in VCS's
-                    for alias in sorted(aliases.aliases,
-                                        key=lambda x: (x.aliaskey,x.origkey)):
-                        dupf.write((r'\bibalias{%s}{%s}' % (alias.aliaskey, alias.origkey)) + "\n")
-                        dupstrlist.append("\t%s is an alias of %s" % (alias.aliaskey,alias.origkey))
-
-                    dupf.write('\n\n')
-
-                # issue debug message
-                logger.debug("wrote duplicates to file: \n" + "\n".join(dupstrlist))
-
-            if (self.warn and duplicates):
+            if (self.warn and aliases.aliases):
                 #
                 # prepare formatting for a single duplicate info pair
                 #
@@ -1144,13 +1174,16 @@ class DuplicatesFilter(BibFilter):
                 # Note: no warning is emitted for extra aliases
                 # (e.g. "previously--" keywords) --- what would be the point of
                 # that?
+                
+                warnlines = [
+                    warnline(alias.aliaskey, alias.origkey)
+                    for alias in aliases.aliases
+                    if not alias.is_extra
+                ]
 
                 logger.warning(DUPL_WARN_TOP  +
-                               "".join([ warnline(alias.aliaskey, alias.origkey)
-                                         for alias in aliases.aliases
-                                         if not alias.is_extra
-                                         ])  +
-                               DUPL_WARN_BOTTOM % {'num_dupl': len(duplicates)})
+                               "".join(warnlines) +
+                               DUPL_WARN_BOTTOM % {'num_dupl': len(warnlines)})
 
 
             if self.merge_duplicates:
