@@ -59,27 +59,27 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
 
         self.fmt_src = QTextCharFormat()
         self.fmt_src.setFontWeight(QFont.Bold)
-        self.fmt_src.setForeground(QColor(0, 127, 127))
+        self.fmt_src.setForeground(QColor(0, 180, 180))
 
         self.fmt_filter = QTextCharFormat()
         self.fmt_filter.setFontWeight(QFont.Bold)
-        self.fmt_filter.setForeground(QColor(127,0,0))
+        self.fmt_filter.setForeground(QColor(200,0,0))
 
         self.fmt_cmdother = QTextCharFormat()
         self.fmt_cmdother.setFontWeight(QFont.Bold)
 
         self.fmt_filtername = QTextCharFormat()
-        self.fmt_filtername.setForeground(QColor(0, 0, 127))
+        self.fmt_filtername.setForeground(QColor(100, 100, 200))
 
         self.fmt_filtername_nonex = QTextCharFormat(self.fmt_filtername)
         self.fmt_filtername_nonex.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
 
         self.fmt_comment = QTextCharFormat()
-        self.fmt_comment.setForeground(QColor(127,127,127))
+        self.fmt_comment.setForeground(QColor(120,140,120))
         self.fmt_comment.setFontItalic(True)
 
         self.fmt_string = QTextCharFormat()
-        self.fmt_string.setForeground(QColor(0,127,0))
+        self.fmt_string.setForeground(QColor(0,180,0))
 
 
     def highlightBlock(self, text):

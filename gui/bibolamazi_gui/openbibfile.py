@@ -140,7 +140,7 @@ class LogToHtmlQtSignal(QObject, logging.Handler):
         elif levelno == logging.WARNING:
             sty = "color: rgb(150,80,0); font-weight: bold;"
         elif levelno == logging.INFO:
-            sty = "color: #000000; font-weight: normal;"
+            sty = "font-weight: normal;" # default color #"color: #000000; font-weight: normal;"
         elif levelno == logging.DEBUG or levelno == blogger.LONGDEBUG:
             sty = "color: #7f7f7f; font-weight: normal;"
         else:
