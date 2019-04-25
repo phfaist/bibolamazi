@@ -63,6 +63,22 @@ logger = logging.getLogger(__name__)
 
 
 
+# helper for wrapping long lines -- used in other files
+def forcewrap_long_lines(x, w=120):
+    lines = []
+    for line in x.split('\n'):
+        # expand tabs first
+        line = line.replace('\t', ' '*8)
+        while len(line)>w:
+            lines.append(line[:(w-1)]+'\\')
+            line = line[(w-1):]
+        lines.append(line)
+    return "\n".join(lines)
+
+
+
+
+
 def getCssHelpStyle(fontsize='medium', fontsize_big='large', fontsize_code='medium', fontsize_small='small'):
     return _HTML_CSS % {'fontsize': fontsize,
                         'fontsize_big': fontsize_big,

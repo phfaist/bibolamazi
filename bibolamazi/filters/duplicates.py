@@ -431,7 +431,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 
 
 rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
-rx_keyword_previously = re.compile(r'previously--(?P<aliaskey>[^ ,;]+)')
+rx_keyword_previously = re.compile(r'previously--(?P<aliaskey>[^ ,;]+)',
+                                   flags=re.IGNORECASE)
 
 
 #AliasPair = collections.namedtuple("AliasPair", ('alias', 'origkey', 'is_extra',), )

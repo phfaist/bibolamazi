@@ -30,8 +30,6 @@ from builtins import range
 from builtins import str as unicodestr
 
 
-from html import escape as htmlescape
-
 from collections import namedtuple
 import logging
 
@@ -40,6 +38,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import bibolamazi.init
+from .helpbrowser import htmlescape, forcewrap_long_lines
 from .overlistbuttonwidget import OverListButtonWidgetBase
 from .qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
 
@@ -202,12 +201,12 @@ class FavoritesModel(QAbstractTableModel):
 
         if role == Qt.BackgroundRole:
             if self._favcmds.favlist[row].builtin:
-                return QBrush(QColor(255,255,235))
+                return QBrush(QColor(180,180,120,60))
             else:
                 if self._edit_mode:
-                    return QBrush(QColor(255,230,230))
+                    return QBrush(QColor(255,230,230, 80))
                 else:
-                    return QBrush(QColor(235,255,255))
+                    return QBrush(QColor(235,255,255, 80))
 
             return None
 
@@ -233,7 +232,7 @@ class FavoritesModel(QAbstractTableModel):
         
         # tool-tip documentation
         if (role == Qt.ToolTipRole):
-            return self._favcmds.favlist[row].cmd
+            return forcewrap_long_lines(self._favcmds.favlist[row].cmd)
 
         return None
 

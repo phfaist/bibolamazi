@@ -53,7 +53,7 @@ from PyQt5.QtWidgets import *
 from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 from . import overlistbuttonwidget
-from .helpbrowser import htmlescape
+from .helpbrowser import htmlescape, forcewrap_long_lines
 from .multitypeseditor import MultiTypesEditorWidget
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
 
     @pyqtSlot(str)
-    def setFilterName(self, filtername, force=False, noemit=False, reset_optionstring=True):
+    def setFilterName(self, filtername, force=False, noemit=False,
+                      reset_optionstring=True):
 
         logger.debug("[Model]/setFilterName(%r)", filtername)
         logger.debug("path in filterpathobj is %r", self._filterpathobj)
@@ -237,7 +238,8 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     def setOptionString(self, optionstring, force=False, noemit=False):
 
         if not self._fopts:
-            logger.warning("Can't set option string because we can't manage filter options for this filter")
+            logger.warning("Can't set option string because we can't manage "
+                           "filter options for this filter")
             return None
 
         optionstring = str(optionstring);
@@ -732,20 +734,42 @@ class FilterInstanceEditor(QWidget):
         self.setOptionString(optionstring, noemit=noemit)
 
 
+    def _mk_errstr_disp(self, errstr):
+        self.lbl_error_msg_raw_string = errstr
+        if len(errstr) > 200:
+            return htmlescape(errstr[:(200-8)])+'... <a href="errormsg:/showpopup">more</a>'
+        else:
+            return htmlescape(errstr)
+
+
     @pyqtSlot(str)
     def show_optionstring_error(self, errstr):
-        self.ui.lblErrorMsg.setText("Error: " + errstr)
+        self.ui.lblErrorMsg.setText("Error: " + self._mk_errstr_disp(errstr))
         self.ui.lblErrorMsg.setVisible(True)
         self.ui.lstOptions.setEnabled(False)
 
     @pyqtSlot(str)
     def show_optionstring_softerror(self, errstr):
-        self.ui.lblErrorMsg.setText("Invalid options: " + errstr)
+        self.ui.lblErrorMsg.setText("Invalid options: " + self._mk_errstr_disp(errstr))
         self.ui.lblErrorMsg.setVisible(True)
+
+    @pyqtSlot(str)
+    def on_lblErrorMsg_linkActivated(self, link):
+        if link == 'errormsg:/showpopup':
+            QWhatsThis.showText(
+                self.ui.lblErrorMsg.mapToGlobal(QPoint(0,0)),
+                ('<pre style="color: rgb(127,0,0); background-color: #efefef; font-weight:bold">'+
+                 htmlescape(forcewrap_long_lines(self.lbl_error_msg_raw_string))+'</pre>'),
+                self
+            )
+        else:
+            QMessageBox.warning(self, 'Unknown link activated', 'Unknown link activated: %s'%(link))
+
 
     @pyqtSlot()
     def clear_optionstring_error(self):
         self.ui.lblErrorMsg.setVisible(False)
+        self.lbl_error_msg_raw_string = None
         self.ui.lstOptions.setEnabled(True)
         
     @pyqtSlot()
@@ -775,7 +799,7 @@ class FilterInstanceEditor(QWidget):
         else:
             self.ui.lblOptionHelp.setVisible(False)
 
-
+    @pyqtSlot(str)
     def on_lblOptionHelp_linkActivated(self, link):
         if link == 'action:/help':
             self.request_filter_help()

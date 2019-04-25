@@ -2,11 +2,12 @@
 
 # Form implementation generated from reading ui file 'filterinstanceeditor.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.12.1
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_FilterInstanceEditor(object):
     def setupUi(self, FilterInstanceEditor):
@@ -41,7 +42,7 @@ class Ui_FilterInstanceEditor(object):
         self.gridLayout.addWidget(self.lblOptionHelp, 4, 0, 1, 2)
         self.lblErrorMsg = QtWidgets.QLabel(FilterInstanceEditor)
         self.lblErrorMsg.setStyleSheet("color: rgb(198, 0, 0)")
-        self.lblErrorMsg.setTextFormat(QtCore.Qt.PlainText)
+        self.lblErrorMsg.setTextFormat(QtCore.Qt.RichText)
         self.lblErrorMsg.setWordWrap(True)
         self.lblErrorMsg.setObjectName("lblErrorMsg")
         self.gridLayout.addWidget(self.lblErrorMsg, 1, 0, 1, 2)
@@ -82,5 +83,6 @@ class Ui_FilterInstanceEditor(object):
         self.btnFilterHelp.setText(_translate("FilterInstanceEditor", "info"))
         self.btnAddFavorite.setToolTip(_translate("FilterInstanceEditor", "Add this full command line to your favorites"))
         self.btnAddFavorite.setText(_translate("FilterInstanceEditor", "add"))
+
 
 from . import bibolamazi_res_rc

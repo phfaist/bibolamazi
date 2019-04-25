@@ -73,7 +73,7 @@
       <string>Error: ...</string>
      </property>
      <property name="textFormat">
-      <enum>Qt::PlainText</enum>
+      <enum>Qt::RichText</enum>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
