@@ -71,7 +71,7 @@ from .qtauto.ui_startupwidget import Ui_StartupWidget
 class StartupWidget(QWidget):
     def __init__(self, bibapp):
         super(StartupWidget, self).__init__()
-        self.setWindowFlag(Qt.Dialog)
+        self.setWindowFlags(self.windowFlags() | Qt.Dialog)
 
         self.bibapp = bibapp
 
