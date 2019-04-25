@@ -431,8 +431,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 
 
 rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
-rx_keyword_previously = re.compile(r'previously--(?P<aliaskey>[^ ,;]+)',
-                                   flags=re.IGNORECASE)
+rx_keyword_aka = re.compile(r'(aka|previously)--(?P<aliaskey>[^ ,;]+)',
+                            flags=re.IGNORECASE)
 
 
 #AliasPair = collections.namedtuple("AliasPair", ('alias', 'origkey', 'is_extra',), )
@@ -510,7 +510,7 @@ class DuplicatesFilter(BibFilter):
                  dupfile=None,
                  merge_duplicates=True,
                  ensure_conflict_keys_are_duplicates=True,
-                 create_alias_from_previously_keyword=True,
+                 create_alias_from_aka_keyword=True,
                  warn=False,
                  custom_bibalias=False,
                  keep_only_used=None,
@@ -531,11 +531,12 @@ class DuplicatesFilter(BibFilter):
                "xxxxxx.conflictkey.N" are verified to indeed be duplicates of the corresponding
                "xxxxxx" entry. These conflict key entries are created automatically when two
                bibtex sources have entries with the same key.
-        *create_alias_from_previously_keyword(bool): if set to true, then the 'keywords' field
-               of all entries are scanned for any keywords of the form 'previously--XYZ'.  If such
-               a "keyword" is found, then an alias to that entry is created with the bibtex
-               name 'XYZ' when writing to the bibalias file set with -sDupfile.  Note that
-               the aliases collected in this way are not included in the warning emitted by -dWarn.
+        *create_alias_from_aka_keyword(bool): if set to true, then the 'keywords' field
+               of all entries are scanned for any keywords of the form 'aka--XYZ' (also
+               'previously--XYZ').  If such a "keyword" is found, then an alias to that entry is
+               created with the bibtex name 'XYZ' when writing to the bibalias file set with
+               -sDupfile.  Note that the aliases collected in this way are not included in
+               the warning emitted by -dWarn.
         *warn(bool): if this flag is set, a warning is issued for every duplicate entry found
                in the database.
         *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
@@ -564,8 +565,8 @@ class DuplicatesFilter(BibFilter):
 
         self.merge_duplicates = butils.getbool(merge_duplicates)
 
-        self.create_alias_from_previously_keyword = \
-            butils.getbool(create_alias_from_previously_keyword)
+        self.create_alias_from_aka_keyword = \
+            butils.getbool(create_alias_from_aka_keyword)
 
         self.warn = butils.getbool(warn)
         
@@ -993,18 +994,18 @@ class DuplicatesFilter(BibFilter):
         if self.merge_duplicates or self.warn:
 
             #
-            # examine all the entries, to see if they have any "previously--..."
+            # examine all the entries, to see if they have any "aka--..."
             # keywords for which we would want to create corresponding aliases.
             # Collect these into the aliases list as extra aliases.
             #
             # Do this now, before we start discarding unused entries which might
             # have an alias that is used
             #
-            if self.create_alias_from_previously_keyword:
-                logger.debug("create_alias_from_previously_keyword=True, scanning keywords")
+            if self.create_alias_from_aka_keyword:
+                logger.debug("create_alias_from_aka_keyword=True, scanning keywords")
                 for k, e in iter_over_bibdata(bibdata):
                     if 'keywords' in e.fields:
-                        for m in rx_keyword_previously.finditer(e.fields['keywords']):
+                        for m in rx_keyword_aka.finditer(e.fields['keywords']):
                             aliaskey = m.group('aliaskey')
                             if aliaskey in bibdata.entries:
                                 logger.warning("Can't create alias '%s' to '%s', alias key name "
@@ -1098,7 +1099,7 @@ class DuplicatesFilter(BibFilter):
 
             #
             # now, make sure that all originals corresponding to "extra" aliases
-            # (e.g., caused by "previously--X" keywords) are in the newbibdata
+            # (e.g., caused by "aka--X" keywords) are in the newbibdata
             # and not in the unused list.
             #
             logger.debug("all aliases = %r", aliases.aliases)
@@ -1173,7 +1174,7 @@ class DuplicatesFilter(BibFilter):
                 # warning with it to our standard logger.
                 #
                 # Note: no warning is emitted for extra aliases
-                # (e.g. "previously--" keywords) --- what would be the point of
+                # (e.g. "aka--" keywords) --- what would be the point of
                 # that?
                 
                 warnlines = [
