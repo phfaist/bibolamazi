@@ -1241,7 +1241,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "month": "nov",
                 "number": "5",
                 "pages": "4247--4247",
-                "title": "Reply to \enquote{Comment on \enquote*{Optical coherence: {A} convenient fiction}}",
+                "title": "Reply to \\enquote{Comment on \\enquote*{Optical coherence: {A} convenient fiction}}",
                 "url": "http://link.aps.org/doi/10.1103/PhysRevA.58.4247",
                 "volume": "58",
                 "year": "1998"

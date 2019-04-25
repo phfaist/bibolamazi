@@ -372,7 +372,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "volume": "474",
                 "year": "2011"
             },),),
-            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\AA}berg, Johan"),],}, fields={
+            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\\AA}berg, Johan"),],}, fields={
                 "abstract": "The work content of non-equilibrium systems in relation to a heat bath is often analysed in terms of expectation values of an underlying random work variable. However, when optimizing the expectation value of the extracted work, the resulting extraction process is subject to intrinsic fluctuations, uniquely determined by the Hamiltonian and the initial distribution of the system. These fluctuations can be of the same order as the expected work content per se, in which case the extracted energy is unpredictable, thus intuitively more heat-like than work-like. This raises the question of the 'truly' work-like energy that can be extracted. Here we consider an alternative that corresponds to an essentially fluctuation-free extraction. We show that this quantity can be expressed in terms of a one-shot relative entropy measure introduced in information theory. This suggests that the relations between information theory and statistical mechanics, as illustrated by concepts like Maxwell's demon, Szilard engines and Landauer's principle, extends to the single-shot regime.",
                 "archivePrefix": "arXiv",
                 "arxivId": "1110.6121",
@@ -885,7 +885,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "volume": "474",
                 "year": "2011"
             },),),
-            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\AA}berg, Johan"),],}, fields={
+            ("Aberg2013_worklike", Entry("article", persons={"author": [Person("{\\AA}berg, Johan"),],}, fields={
                 "abstract": "The work content of non-equilibrium systems in relation to a heat bath is often analysed in terms of expectation values of an underlying random work variable. However, when optimizing the expectation value of the extracted work, the resulting extraction process is subject to intrinsic fluctuations, uniquely determined by the Hamiltonian and the initial distribution of the system. These fluctuations can be of the same order as the expected work content per se, in which case the extracted energy is unpredictable, thus intuitively more heat-like than work-like. This raises the question of the 'truly' work-like energy that can be extracted. Here we consider an alternative that corresponds to an essentially fluctuation-free extraction. We show that this quantity can be expressed in terms of a one-shot relative entropy measure introduced in information theory. This suggests that the relations between information theory and statistical mechanics, as illustrated by concepts like Maxwell's demon, Szilard engines and Landauer's principle, extends to the single-shot regime.",
                 "archivePrefix": "arXiv",
                 "arxivId": "1110.6121",

@@ -10,6 +10,16 @@ from pybtex.database import Entry, Person, BibliographyData
 
 # see https://stackoverflow.com/a/15868615/1694896
 
+def fmt_dbg_entry(e, linefmt='    {field}: "{value}"'):
+    allfields = list(e.fields.items())
+    for role in ('editor', 'author'):
+        if role in e.persons:
+            alist = [str(a) for a in e.persons[role]]
+            allfields = [ (role, "; ".join(alist)) ] + allfields
+
+    return "\n".join([ linefmt.format(field=f,value=v) for f,v in allfields ])
+
+
 class CustomAssertions(object):
 
     def assertEqual(self, a, b, msg=None):
@@ -69,4 +79,4 @@ class CustomAssertions(object):
             self.assertEqual(l1[n][0], l2[n][0],
                              msg=domsg("Entry keys differ {!r} != {!r}".format(l1[n][0],l2[n][0])))
             self.assert_entries_equal(l1[n][1], l2[n][1],
-                                      msg=domsg("Entry #{} key={}".format(n, l1[n][0])))
+                                      msg=domsg("Entry #{} '{}' differs".format(n, l1[n][0])))
