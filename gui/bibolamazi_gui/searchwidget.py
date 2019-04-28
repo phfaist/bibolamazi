@@ -136,9 +136,6 @@ class SearchTextEditManager(QObject):
         self.search_matches = None
 
         highlightcolor = None
-        print("PALETTE BASE COLOR = rgba(%d,%d,%d,%d)"%(
-            [(c.red(), c.green(), c.blue(), c.alpha()) for c in [
-                self.textedit.palette().color(QPalette.Active, QPalette.Base)] ][0]))
         if self.textedit.palette().color(QPalette.Active, QPalette.Base).value() > 127:
             # light base color, use light highlight color
             highlightcolor = QColor(255,255,128)
