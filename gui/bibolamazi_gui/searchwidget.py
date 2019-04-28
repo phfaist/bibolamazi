@@ -53,8 +53,8 @@ class SearchWidget(QWidget):
         self.found_palette = QPalette(self.u.txt.palette())
         self.notfound_palette = QPalette(self.u.txt.palette())
 
-        self.found_palette.setBrush(QPalette.Base, QColor(180,255,180))
-        self.notfound_palette.setBrush(QPalette.Base, QColor(255,180,180))
+        self.found_palette.setBrush(QPalette.Base, QColor(180,255,180,80))
+        self.notfound_palette.setBrush(QPalette.Base, QColor(255,180,180,80))
 
         self.u.btnDone.clicked.connect(self.hide)
         self.u.btnDone.clicked.connect(self.searchDone)
@@ -135,13 +135,25 @@ class SearchTextEditManager(QObject):
         self.pos = -1
         self.search_matches = None
 
+        highlightcolor = None
+        print("PALETTE BASE COLOR = rgba(%d,%d,%d,%d)"%(
+            [(c.red(), c.green(), c.blue(), c.alpha()) for c in [
+                self.textedit.palette().color(QPalette.Active, QPalette.Base)] ][0]))
+        if self.textedit.palette().color(QPalette.Active, QPalette.Base).value() > 127:
+            # light base color, use light highlight color
+            highlightcolor = QColor(255,255,128)
+        else:
+            # dark base color, use corresponding dark hightlight color
+            highlightcolor = QColor(130,130,80)
+        
+
         self.highlight_format = QTextCharFormat()
-        self.highlight_format.setBackground(QColor(255,255,128))
+        self.highlight_format.setBackground(highlightcolor)
         self.highlight_format.setFontUnderline(True)
-        self.highlight_format.setUnderlineColor(QColor(180,180,80))
+        self.highlight_format.setUnderlineColor(highlightcolor) #QColor(180,180,80))
 
         self.cur_highlight_format = QTextCharFormat()
-        self.cur_highlight_format.setBackground(QColor(0,0,80))
+        self.cur_highlight_format.setBackground(QColor(120,70,0))
         self.cur_highlight_format.setForeground(QColor(255,255,255))
         self.cur_highlight_format.setFontUnderline(True)
         self.cur_highlight_format.setUnderlineColor(QColor(128,128,128))
