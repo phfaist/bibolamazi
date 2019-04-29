@@ -628,10 +628,10 @@ class OpenBibFile(QWidget):
             cur.setPosition(cursorpos)
             self.ui.txtConfig.setTextCursor(cur)
 
-        self._needs_update_txtbibentries = True
-
         # now, try to further parse the config
         self._bibolamazifile_reparse()
+
+        self._needs_update_txtbibentries = True
 
         if self.bibolamaziFile.getLoadState() == bibolamazifile.BIBOLAMAZIFILE_PARSED:
             self._display_header()
@@ -699,9 +699,11 @@ class OpenBibFile(QWidget):
         self.ui.txtInfo.setHtml(thehtml)
         
 
-    @pyqtSlot(int)
-    def on_stkInfo_currentChanged(self, index):
-        if self.ui.stkInfo.widget(index) == self.ui.pageInfoEntries:
+    @pyqtSlot(bool)
+    def on_btnInfoPageEntries_toggled(self, on):
+        logger.debug("on_btnInfoPageEntries_toggled(%r)", on)
+        if on: # self.ui.stkInfo.widget(index) is self.ui.pageInfoEntries:
+            logger.debug("displaying bib entries")
             if self._needs_update_txtbibentries:
                 self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
 

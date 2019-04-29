@@ -47,6 +47,9 @@
    </item>
    <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QPushButton" name="btnPageEditConfig">
        <property name="text">
@@ -177,7 +180,7 @@
    <item row="6" column="0">
     <widget class="QStackedWidget" name="tabs">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabPageEditFilters" native="true">
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -420,6 +423,9 @@
        </property>
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="verticalLayout_8">
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <item>
           <spacer name="verticalSpacer_3">
            <property name="orientation">

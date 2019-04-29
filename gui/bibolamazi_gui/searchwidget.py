@@ -38,6 +38,7 @@ from PyQt5.QtWidgets import *
 import bibolamazi.init
 from .qtauto.ui_searchwidget import Ui_SearchWidget
 
+from . import uiutils
 
 logger = logging.getLogger(__name__)
 
@@ -136,12 +137,12 @@ class SearchTextEditManager(QObject):
         self.search_matches = None
 
         highlightcolor = None
-        if self.textedit.palette().color(QPalette.Active, QPalette.Base).value() > 127:
-            # light base color, use light highlight color
-            highlightcolor = QColor(255,255,128)
-        else:
+        if uiutils.is_dark_mode(self.textedit):
             # dark base color, use corresponding dark hightlight color
             highlightcolor = QColor(130,130,80)
+        else:
+            # light base color, use light highlight color
+            highlightcolor = QColor(255,255,128)
         
 
         self.highlight_format = QTextCharFormat()
@@ -150,7 +151,7 @@ class SearchTextEditManager(QObject):
         self.highlight_format.setUnderlineColor(highlightcolor) #QColor(180,180,80))
 
         self.cur_highlight_format = QTextCharFormat()
-        self.cur_highlight_format.setBackground(QColor(120,70,0))
+        self.cur_highlight_format.setBackground(QColor(220,120,0))
         self.cur_highlight_format.setForeground(QColor(255,255,255))
         self.cur_highlight_format.setFontUnderline(True)
         self.cur_highlight_format.setUnderlineColor(QColor(128,128,128))
