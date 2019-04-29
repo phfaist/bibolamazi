@@ -58,6 +58,7 @@ from PyQt5.QtWidgets import *
 
 #print("loaded Qt. executable=", sys.executable, ' meipass=', sys._MEIPASS)
 
+from . import uiutils
 from . import openbibfile
 from . import helpbrowser
 from . import settingswidget
@@ -91,7 +92,10 @@ class StartupWidget(QWidget):
                 #if myratio > 1.01:
                 self.mypict = QPicture()
                 mypaint = QPainter(self.mypict)
-                self.myicon = QIcon(":/pic/bibolamazi.svg")
+                if uiutils.is_dark_mode(self):
+                    self.myicon = QIcon(":/pic/bibolamazi-darkmode.svg")
+                else:
+                    self.myicon = QIcon(":/pic/bibolamazi.svg")
                 mysize = QSize(375, 150)
                 mypaint.drawPixmap(QRect(QPoint(0,0),mysize), self.myicon.pixmap(myratio*mysize))
                 self.ui.lblMain.setPicture(self.mypict)
@@ -122,8 +126,10 @@ class StartupWidget(QWidget):
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
 
     def showAndRaise(self):
+        logger.debug("showing & raising startup widget ...")
         self.show()
         self.raise_()
+        logger.debug("showing & raising startup widget ... done.")
 
     def closeEvent(self, event):
         # Initiate an application quit if either:

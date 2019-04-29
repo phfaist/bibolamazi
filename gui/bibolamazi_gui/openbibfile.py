@@ -36,7 +36,6 @@ from imp import reload
 
 from html import escape as htmlescape
 import sys
-import logging
 import os
 import os.path
 import re
@@ -58,6 +57,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+from . import uiutils
+from .uiutils import ContextAttributeSetter
+from . import buttontabsmanager
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from .favorites import FavoriteCmd, FavoritesModel, FavoritesItemDelegate, FavoritesOverBtns
 from . import filterinstanceeditor
@@ -199,44 +201,6 @@ class LogToGuiContextManager(object):
 
 
 
-
-
-class ContextAttributeSetter:
-    """Give a list of pairs of method and value to set.
-
-    For example:
-
-    >>> with ContextAttributeSetter( (object.isEnabled, object.setEnabled, False), ):
-            ...
-
-    will retreive the current state of if the object is enabled with `object.isEnabled()`, then
-    will disable the object with `object.setEnabled(False)`. Upon exiting the with block, the
-    state is restored to its original state with `object.setEnabled(..)`.
-
-    """
-
-    def __init__(self, *args):
-        """Constructor. Does initializations. The \"enter\" statement is done with __enter__().
-
-        Note: the argument are a list of 3-tuples `(get_method, set_method, set_to_value)`.
-        """
-        self.attribpairs = args
-        self.initvals = None
-
-    def __enter__(self):
-        self.initvals = []
-        for (getm, setm, v) in self.attribpairs:
-            self.initvals.append(getm())
-            setm(v)
-            
-        return self
-
-    def __exit__(self, type, value, traceback):
-        # clean-up, go in reverse order
-        N = len(self.attribpairs)
-        for i in range(N):
-            (getm, setm, v) = self.attribpairs[N-i-1]
-            setm(self.initvals[N-i-1])
 
 
 class RunBibolamaziThread(QThread):
@@ -391,6 +355,17 @@ class OpenBibFile(QWidget):
         self.resize(QSize(1200,800))
         self.ui.splitEditConfig.setSizes([700,500])
 
+        # connect buttons as "tabs"
+        self.btabs = buttontabsmanager.ButtonTabsManager(self.ui.tabs, self)
+        self.btabs.registerButton(self.ui.btnPageEditConfig, self.ui.tabPageEditFilters)
+        self.btabs.registerButton(self.ui.btnPageFileInfo, self.ui.tabPageFileInfo)
+        self.btabs.registerButton(self.ui.btnPageRunMessages, self.ui.tabPageRunMessages)
+
+        # also in info page
+        self.btabsinfo = buttontabsmanager.ButtonTabsManager(self.ui.stkInfo, self)
+        self.btabsinfo.registerButton(self.ui.btnInfoPageHeader, self.ui.pageInfoHeader)
+        self.btabsinfo.registerButton(self.ui.btnInfoPageEntries, self.ui.pageInfoEntries)
+
         self.ui.txtConfig.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
@@ -425,8 +400,6 @@ class OpenBibFile(QWidget):
         self.bibolamaziFile = None
 
         self.updateTimer = QTimer(self)
-        self.updateTimer.setInterval(500)
-        self.updateTimer.setSingleShot(True)
         self.updateTimer.timeout.connect(self.reloadFile)
         
         self._flag_modified_externally = False
@@ -547,6 +520,11 @@ class OpenBibFile(QWidget):
     def delayedUpdateFileContents(self):
         if self.updateTimer.isActive():
             self.updateTimer.stop()
+
+        self.ui.txtConfig.setReadOnly(True)
+
+        self.updateTimer.setInterval(1000)
+        self.updateTimer.setSingleShot(True)
         self.updateTimer.start()
 
 
@@ -555,9 +533,9 @@ class OpenBibFile(QWidget):
 
         # enable/disable these GUI widgets/buttons
         
-        self.ui.pageConfig.setEnabled(file_is_loaded)
+        self.ui.tabPageEditFilters.setEnabled(file_is_loaded)
         self.ui.pageBibEntries.setEnabled(file_is_loaded)
-        self.ui.pageLog.setEnabled(file_is_loaded)
+        self.ui.tabPageRunMessages.setEnabled(file_is_loaded)
 
         self.ui.btnSave.setEnabled(file_is_loaded)
         self.ui.btnGo.setEnabled(file_is_loaded)
@@ -568,9 +546,11 @@ class OpenBibFile(QWidget):
             # disabled state
 
             self.ui.tabs.setCurrentWidget(self.ui.pageInfo)
-            self.ui.txtInfo.setText(errormessagehtml)
+            self.ui.txtParseErrorMessages.setVisible(True)
+            self.ui.txtParseErrorMessages.setText(errormessagehtml)
 
-            with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
+            with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked,
+                                          self.ui.txtConfig.blockSignals, True) ):
                 self.ui.txtConfig.setPlainText("")
 
             self.ui.lblFileName.setText("<no file loaded>")
@@ -586,12 +566,14 @@ class OpenBibFile(QWidget):
         # normal, enabled state
         self.ui.lblFileName.setText(self.bibolamaziFileName)
 
+        self.ui.txtParseErrorMessages.setVisible(False)
+
         self.setWindowFilePath(self.bibolamaziFileName)
         self.setWindowTitle(os.path.basename(self.bibolamaziFileName))
         self.setWindowIcon(QIcon(':/pic/file.png'))
 
         if ifOkSetConfigTab:
-            self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+            self.ui.tabs.setCurrentWidget(self.ui.tabPageEditFilters)
         self.ui.txtConfig.setFocus()
 
 
@@ -630,7 +612,16 @@ class OpenBibFile(QWidget):
 
         self._set_win_state(True)
 
-        with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked, self.ui.txtConfig.blockSignals, True) ):
+        # all set, clear any read-only flags on the txtConfig
+        self.ui.txtConfig.setReadOnly(False)
+
+        has_cache = os.path.exists(os.path.join(self.bibolamaziFile.fdir(),
+                                                self.bibolamaziFileName + '.bibolamazicache'))
+        # if there is a cache file, then offer to delete it
+        self._set_ui_delete_cache_btn(has_cache)
+
+        with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked,
+                                      self.ui.txtConfig.blockSignals, True) ):
             cursorpos = self.ui.txtConfig.textCursor().position()
             self.ui.txtConfig.setPlainText(self.bibolamaziFile.configData())
             cur = self.ui.txtConfig.textCursor()
@@ -643,72 +634,49 @@ class OpenBibFile(QWidget):
         self._bibolamazifile_reparse()
 
         if self.bibolamaziFile.getLoadState() == bibolamazifile.BIBOLAMAZIFILE_PARSED:
-            self._display_info()
+            self._display_header()
 
         logger.debug("file contents updated!")
 
+
+    @pyqtSlot()
+    def on_btnDeleteCache_clicked(self):
+        cachefile = os.path.join(self.bibolamaziFile.fdir(),
+                                 self.bibolamaziFileName + '.bibolamazicache')
+        if not os.path.exists(cachefile):
+            QMessageBox.warning(self, "No cache file",
+                                "There is no cache file to remove (%s)"%(cachefile))
+            return
+
+        logger.debug("removing cache file %r", cachefile)
+        os.remove(cachefile)
+
+        self._set_ui_delete_cache_btn(False)
         
+    def _set_ui_delete_cache_btn(self, is_on):
+        if is_on:
+            self.ui.btnDeleteCache.setText("Delete cache")
+            self.ui.btnDeleteCache.setEnabled(True)
+        else:
+            self.ui.btnDeleteCache.setText("(no cache file)")
+            self.ui.btnDeleteCache.setEnabled(False)
+            
 
-    def _display_info(self):
-
-        def srcurl(s):
-            if re.match(r'^\w+:/', s):
-                # already URL
-                return s
-            s = self.bibolamaziFile.resolveSourcePath(s)
-            return 'file:///'+s
-
-        fileinfo = "<p>Location: <code>" + htmlescape(self.bibolamaziFile.fname()) + "</code></p>"
+    def _display_header(self):
 
         rawheader = self.bibolamaziFile.rawHeader().strip()
         if rawheader:
-            fileinfo += ("<h2>Raw Header</h2>\n"
-                         "<p class=\"shadow\">The top section of the bibolamazi file "
-                         "is ignored by bibolamazi.  Whatever bibtex entries listed here "
-                         "will not be affected by bibolamazi filters and will be retained "
-                         "as is at the top of the file.  These bibtex entries are seen by "
-                         "latex as regular entries that have not been filtered by bibolamazi.  "
-                         "This portion of the file cannot be edited here; use your favorite "
-                         "text editor to edit.</p>"
-                         "<pre class=\"small\">" + htmlescape(rawheader) + "</pre>")
+            fileinfohtml = ("<h2>Raw Header</h2>\n"
+                            "<p class=\"shadow\">The top section of the bibolamazi file "
+                            "is ignored by bibolamazi.  Whatever bibtex entries listed here "
+                            "will not be affected by bibolamazi filters and will be retained "
+                            "as is at the top of the file.  These bibtex entries are seen by "
+                            "latex as regular entries that have not been filtered by bibolamazi.  "
+                            "This portion of the file cannot be edited here; use your favorite "
+                            "text editor to edit.</p>"
+                            "<pre class=\"small\">" + htmlescape(rawheader) + "</pre>")
 
-        sources = []
-        for srcline in self.bibolamaziFile.sourceLists():
-            if isinstance(srcline, list):
-                srclist = srcline
-            else:
-                srclist = [ srcline ]
-
-            sources.append('''<div class="source">%(srcname)s: <ul>%(srclist)s</ul></div>''' % {
-                'srcname': ('Source' if len(srclist) == 1 else 'Source List'), 
-                'srclist': "".join(
-                    ["<li><a href=\"%(sourceurl)s\">%(sourcepath)s</a></li>" % {
-                        'sourcepath': htmlescape(s),
-                        'sourceurl': htmlescape(srcurl(s), quote=True),
-                        }
-                     for s in srclist
-                     ]
-                    )
-                })
-                
-        filters = []
-        for fil in self.bibolamaziFile.filters():
-            filters.append('''<dt>Filter: <a href="helptopic:/filters/%(filtername)s">%(filtername)s</a></dt><dd><p>%(filterdescription)s</p></dd>''' % { 'filtername': fil.name(),
-                     'filterdescription': fil.getHelpDescription(),
-                    })
-
-        htmlcontent = textwrap.dedent("""\
-        <h1>File information</h1>
-        %(fileinfohtml)s
-        <h1>Sources</h1>
-        %(sourceshtml)s
-        <h1>Filters</h1>
-        %(filtershtml)s
-        """) % {
-            'fileinfohtml': fileinfo,
-            'sourceshtml': "".join(sources),
-            'filtershtml': "".join(filters),
-        }
+        dark_mode = uiutils.is_dark_mode(self)
 
         thehtml = textwrap.dedent('''\
         <!DOCTYPE HTML>
@@ -725,21 +693,24 @@ class OpenBibFile(QWidget):
             %(content)s
           </body>
         </html>''') % {
-            'basecss': helpbrowser.getCssHelpStyle(),
-            'content': helpbrowser.wrapInHtmlContentContainer(htmlcontent, width=800)
+            'basecss': helpbrowser.getCssHelpStyle(dark_mode=dark_mode),
+            'content': helpbrowser.wrapInHtmlContentContainer(fileinfohtml, width=800)
         }
         self.ui.txtInfo.setHtml(thehtml)
         
 
     @pyqtSlot(int)
-    def on_tabs_currentChanged(self, index):
-        if self.ui.tabs.widget(index) == self.ui.pageBibEntries:
+    def on_stkInfo_currentChanged(self, index):
+        if self.ui.stkInfo.widget(index) == self.ui.pageInfoEntries:
             if self._needs_update_txtbibentries:
                 self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
 
 
     @pyqtSlot()
     def on_btnGo_clicked(self):
+        self.ui.txtConfig.setReadOnly(True) # enter read-only state because
+                                            # otherwise changes would get
+                                            # overwritten right away
         self.runBibolamazi()
 
     @pyqtSlot()
@@ -776,7 +747,7 @@ class OpenBibFile(QWidget):
 
         if busy:
             self._busy_before_curtab = self.ui.tabs.currentWidget()
-            self.ui.tabs.setCurrentWidget(self.ui.pageLog)
+            self.ui.tabs.setCurrentWidget(self.ui.tabPageRunMessages)
 
 
     @pyqtSlot()
@@ -790,8 +761,8 @@ class OpenBibFile(QWidget):
     @pyqtSlot(str)
     def _run_bibolamaziDoneError(self, errstr):
         QMessageBox.warning(self, "Bibolamazi error", errstr)
-        self.delayedUpdateFileContents()
         self._busy_before_curtab = None
+        self.delayedUpdateFileContents()
 
     @pyqtSlot()
     def _run_clearLog(self):
@@ -828,7 +799,8 @@ class OpenBibFile(QWidget):
                 for modname in allmodules:
                     if modname.startswith(pkgname):
                         mod = sys.modules[modname]
-                        logger.debug("Reloading module `%s` (%r) in user filter package `%s`", modname, mod, pkgname)
+                        logger.debug("Reloading module `%s` (%r) in user filter package `%s`",
+                                     modname, mod, pkgname)
                         origpath = sys.path
                         try:
                             sys.path = [pkgpath] + origpath
@@ -845,7 +817,7 @@ class OpenBibFile(QWidget):
 
     @pyqtSlot(int)
     def gotoConfigLineNo(self, configlineno):
-        self.ui.tabs.setCurrentWidget(self.ui.pageConfig)
+        self.ui.tabs.setCurrentWidget(self.ui.tabPageEditFilters)
         cur = QTextCursor(self.ui.txtConfig.document().findBlockByNumber(configlineno-1))
         self.ui.txtConfig.setTextCursor(cur)
 
@@ -874,10 +846,16 @@ class OpenBibFile(QWidget):
         self._open_anchor(url)
 
     @pyqtSlot(QUrl)
+    def on_txtParseErrorMessages_anchorClicked(self, url):
+        self._open_anchor(url)
+
+    @pyqtSlot(QUrl)
     def on_txtLog_anchorClicked(self, url):
         self._open_anchor(url)
 
     def _open_anchor(self, url):
+        logger.debug("Link clicked: %r", url.toString())
+
         if url.scheme() == "helptopic":
             self.requestHelpTopic.emit(url.path())
             return
@@ -964,9 +942,14 @@ class OpenBibFile(QWidget):
             self.bibolamaziFile.load(to_state=bibolamazifile.BIBOLAMAZIFILE_PARSED)
         except BibolamaziError as e:
             # see if we can parse the error
-            self.ui.txtInfo.setHtml("<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
-                                    bibolamazi_error_html(str(e)))
+            self.ui.txtParseErrorMessages.setVisible(True)
+            self.ui.txtParseErrorMessages.setHtml(
+                "<p style=\"color: rgb(127,0,0)\">Parse Error in file:</p>\n"+
+                bibolamazi_error_html(str(e)))
+            # self.ui.txtInfo.setHtml("<p style=\"color: rgb(180,0,0)\">Parse error in file&mdash;"
+            #                         "check \"Run messages\" tab.</p>")
             return
+        self.ui.txtParseErrorMessages.setVisible(False)
 
     @pyqtSlot()
     def on_txtConfig_cursorPositionChanged(self):
@@ -985,7 +968,8 @@ class OpenBibFile(QWidget):
 
         filter_list = filterinstanceeditor.get_filter_list(filterpath)
 
-        (filtname, ok) = QInputDialog.getItem(self, "Select Filter", "Please select which filter you wish to add",
+        (filtname, ok) = QInputDialog.getItem(self, "Select Filter",
+                                              "Please select which filter you wish to add",
                                               filter_list)
         if not ok:
             # cancelled
@@ -1225,7 +1209,8 @@ class OpenBibFile(QWidget):
             logger.warning("No command to add to favorites!")
             return
 
-        logger.debug("Adding command %s on lines %d--%d to favorites: %r", cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
+        logger.debug("Adding command %s on lines %d--%d to favorites: %r",
+                     cmd.cmd, cmd.lineno, cmd.linenoend, cmd)
 
         cmdtext = []
         doc = self.ui.txtConfig.document()

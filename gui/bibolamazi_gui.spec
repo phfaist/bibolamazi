@@ -121,6 +121,23 @@ if (sys.platform.startswith('win')):
             break
 
 
+add_plist = '''\
+<key>NSPrincipalClass</key>
+<string>NSApplication</string>
+<key>NSHighResolutionCapable</key>
+<string>True</string>
+'''
+
+macosx_deployment_target = os.environ.get('MACOSX_DEPLOYMENT_TARGET', "10.14").strip()
+
+if tuple([int(i) for i in macosx_deployment_target.split(".")]) >= (10, 14):
+    print("Enabling dark mode for Mac OS X deployment target = %r"%(macosx_deployment_target))
+    add_plist += '''\
+<key>NSRequiresAquaSystemAppearance</key>
+<string>False</string>
+'''
+
+
 pyz = PYZ(a.pure)
 if (sys.platform.startswith('darwin')):
     exe = EXE(pyz,
@@ -151,14 +168,7 @@ if (sys.platform.startswith('darwin')):
     with open(plistname, 'r') as f:
         infoplistdata = f.read()
     # insert defs for hi-res displays
-    (infoplistdata, nsubs) = re.subn('</dict>\s*</plist>', '''\
-<key>NSPrincipalClass</key>
-<string>NSApplication</string>
-<key>NSHighResolutionCapable</key>
-<string>True</string>
-</dict>
-</plist>
-''', infoplistdata);
+    (infoplistdata, nsubs) = re.subn('</dict>\s*</plist>', add_plist+'</dict></plist>', infoplistdata)
     if nsubs != 1:
         print("WARNING: COULDN'T MODIFY INFO.PLIST!!")
     else:

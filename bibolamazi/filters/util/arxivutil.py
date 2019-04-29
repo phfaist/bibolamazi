@@ -619,7 +619,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             else:
                 entrydic[k]['primaryclass'] = primaryclass
 
-            if (doi and entrydic[k]['doi'] and entrydic[k]['doi'] != doi):
+            if (doi and entrydic[k]['doi'] and entrydic[k]['doi'].lower() != doi.lower()):
                 logger.warning("Conflicting doi values for entry %s (%s): "
                                "%s (given in bibtex) != %s (retrieved from the arxiv)",
                                k, aid, entrydic[k]['doi'], doi)

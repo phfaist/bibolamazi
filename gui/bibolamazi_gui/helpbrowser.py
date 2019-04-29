@@ -54,6 +54,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+from . import uiutils
 from . import settingswidget
 from . import searchwidget
 
@@ -79,11 +80,16 @@ def forcewrap_long_lines(x, w=120):
 
 
 
-def getCssHelpStyle(fontsize='medium', fontsize_big='large', fontsize_code='medium', fontsize_small='small'):
-    return _HTML_CSS % {'fontsize': fontsize,
-                        'fontsize_big': fontsize_big,
-                        'fontsize_code': fontsize_code,
-                        'fontsize_small': fontsize_small}
+def getCssHelpStyle(fontsize='medium', fontsize_big='large',
+                    fontsize_code='medium', fontsize_small='small',
+                    dark_mode=False):
+    return (
+        _HTML_CSS % {'fontsize': fontsize,
+                     'fontsize_big': fontsize_big,
+                     'fontsize_code': fontsize_code,
+                     'fontsize_small': fontsize_small}
+        + ( _HTML_CSS_COLORS if not dark_mode else _HTML_CSS_COLORS_DARK )
+    )
 
 def wrapInHtmlContentContainer(htmlcontent, width=None):
     if width is None:
@@ -96,10 +102,6 @@ def wrapInHtmlContentContainer(htmlcontent, width=None):
 TABLE_WIDTH = 550 # px
 
 _HTML_CSS = '''
-html, body {
-  background-color: #ffffff;
-  color: #303030;
-}
 .content {
 }
 p {
@@ -121,18 +123,14 @@ code {
   font-size: %(fontsize_code)s;
 }
 .code-meta {
-  color: #80b0b0;
   font-style: italic;
-}
-.shadow {
-  color: #a0a0a0;
 }
 .small {
   font-size: %(fontsize_small)s;
 }
 pre { margin-left: 12px; }
 pre.txtcontent { margin-left: 0px; }
-a { color: #0000a0; text-decoration: none }
+a { text-decoration: none }
 
 .biglink{
   text-decoration: underline;
@@ -157,7 +155,6 @@ th {
   font-weight: bold;
   text-align: left;
   padding-right: 5px;
-  color: #600030;
 }
 td {
   font-size: %(fontsize)s;
@@ -169,6 +166,36 @@ td.indent {
 td p.inner {
   margin-bottom: 0.1em;
 }
+'''
+
+_HTML_CSS_COLORS = '''
+html, body {
+  background-color: #ffffff;
+  color: #303030;
+}
+.code-meta {
+  color: #80b0b0;
+}
+.shadow {
+  color: #a0a0a0;
+}
+a { color: #0000a0; }
+th { color: #600030; }
+'''
+
+_HTML_CSS_COLORS_DARK = '''
+html, body {
+  background-color: #202020;
+  color: #d0d0d0;
+}
+.code-meta {
+  color: #a0d7d7;
+}
+.shadow {
+  color: #808080;
+}
+a { color: #80a0ff; }
+th { color: #c04080; }
 '''
 
 
@@ -205,9 +232,9 @@ class HelpTopicPage(object):
         else:
             raise ValueError("Can't convert %s to markdown"%(self._content_type))
 
-    def contentAsHtml(self):
+    def contentAsHtml(self, dark_mode=False):
         html_top = ("<html><head><style type=\"text/css\">" +
-                    getCssHelpStyle() +
+                    getCssHelpStyle(dark_mode=dark_mode) +
                     "</style></head>" +
                     "<body>")
         html_bottom = "</body></html>"
@@ -265,7 +292,9 @@ class HelpTopicPageWidget(QWidget):
         self.tb.setOpenLinks(False)
         self.tb.anchorClicked.connect(helpbrowser.openHelpTopicUrl)
 
-        html = helptopicpage.contentAsHtml()#fontsize_pt=fontsize_pt, fontsize_code_pt=fontsize_code_pt)
+        dark_mode = uiutils.is_dark_mode(self)
+
+        html = helptopicpage.contentAsHtml(dark_mode=dark_mode)
         logger.longdebug("Help page text = \n%s", html)
         self.tb.setHtml(html)
         

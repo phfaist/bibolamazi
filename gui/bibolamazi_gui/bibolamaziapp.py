@@ -352,8 +352,9 @@ class BibolamaziApplication(QApplication):
         # on Mac OS X, if the last window was closed, then show the start-up
         # window:
         if sys.platform.startswith("darwin"):
-            if not len(self.openbibfiles):
-                QTimer.singleShot(100, self.startup_widget.showAndRaise)
+            #if not len(self.openbibfiles):
+            #    QTimer.singleShot(100, self.startup_widget.showAndRaise)
+            self.startup_widget.showAndRaise()
 
 
 
@@ -495,7 +496,7 @@ def run_app(argv):
             continue
         
         logger.debug("opening arg: %s", fn)
-        app.main_widget.openFile(fn)
+        app.openFile(fn)
 
     sys.exit(app.exec_())
     

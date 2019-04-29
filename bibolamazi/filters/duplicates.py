@@ -252,7 +252,7 @@ def fmtjournal(x):
 def sanitize_doi(doi):
     if doi is None:
         return None
-    return re.sub(r'^DOI\s*:?\s*', '', doi.strip(), flags=re.IGNORECASE)
+    return re.sub(r'^DOI\s*:?\s*', '', doi.strip().lower(), flags=re.IGNORECASE)
 
 # -------------
 
@@ -837,8 +837,13 @@ class DuplicatesFilter(BibFilter):
             # fields differ, but we don't know how to merge them. Warn the user
             # if it's a field that is not listed as an unimportant field
             if fk.lower() not in self.ignore_fields_warning:
+                def trunc_str(x, w=50):
+                    if len(x) <= w: return x
+                    return x[:(w-3)]+'...'
+                f1val = trunc_str(origentry.fields[fk])
+                f2val = trunc_str(fval)
                 logger.warning("Duplicate entries %s and %s differ on field %s. (\"%s\" vs \"%s\")",
-                               origkey, duplkey, fk, origentry.fields[fk], fval)
+                               origkey, duplkey, fk, f1val, f2val)
             
 
     def _get_used_citations(self, bibolamazifile):

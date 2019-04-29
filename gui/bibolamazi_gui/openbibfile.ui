@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>793</width>
-    <height>523</height>
+    <width>840</width>
+    <height>569</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="lyt">
@@ -28,18 +28,158 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QTabWidget" name="tabs">
-     <property name="tabPosition">
-      <enum>QTabWidget::South</enum>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="btnInterrupt">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
      </property>
+     <property name="text">
+      <string>Stop</string>
+     </property>
+     <property name="icon">
+      <iconset resource="bibolamazi_res.qrc">
+       <normaloff>:/pic/closehide.png</normaloff>:/pic/closehide.png</iconset>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="btnPageEditConfig">
+       <property name="text">
+        <string>Edit filters</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnPageFileInfo">
+       <property name="text">
+        <string>Bibolamazi file information</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnPageRunMessages">
+       <property name="text">
+        <string>Run messages</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="0">
+    <widget class="QWidget" name="wHead" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lblFileName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="midLineWidth">
+         <number>1</number>
+        </property>
+        <property name="text">
+         <string>some text here</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnRefresh">
+        <property name="icon">
+         <iconset resource="bibolamazi_res.qrc">
+          <normaloff>:/pic/refresh.png</normaloff>:/pic/refresh.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnSave">
+        <property name="icon">
+         <iconset resource="bibolamazi_res.qrc">
+          <normaloff>:/pic/save.png</normaloff>:/pic/save.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QStackedWidget" name="tabs">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
-     <widget class="QWidget" name="pageConfig">
-      <attribute name="title">
-       <string>Edit Bibolamazi Confguration</string>
-      </attribute>
+     <widget class="QWidget" name="tabPageEditFilters" native="true">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
         <number>3</number>
@@ -264,10 +404,174 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="pageInfo">
-      <attribute name="title">
-       <string>BIbolamazi File Info</string>
-      </attribute>
+     <widget class="QWidget" name="tabPageFileInfo">
+      <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,1">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_8">
+         <item>
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Maximum</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnInfoPageHeader">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>50</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>show header</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnInfoPageEntries">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>50</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>filtered entries</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="1">
+        <widget class="QStackedWidget" name="stkInfo">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="pageInfoHeader">
+          <layout class="QGridLayout" name="gridLayout_5">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QTextBrowser" name="txtInfo">
+             <property name="tabChangesFocus">
+              <bool>true</bool>
+             </property>
+             <property name="html">
+              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic; color:#b1311d;&quot;&gt;&amp;lt;no header to show&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="openLinks">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="pageInfoEntries">
+          <layout class="QGridLayout" name="gridLayout_4">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>5</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="SearchWidget" name="searchPrevBibEntries" native="true"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QTextBrowser" name="txtBibEntries">
+             <property name="font">
+              <font>
+               <family>Courier 10 Pitch</family>
+              </font>
+             </property>
+             <property name="tabChangesFocus">
+              <bool>true</bool>
+             </property>
+             <property name="openLinks">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabsPage" native="true">
       <layout class="QVBoxLayout" name="verticalLayout">
        <property name="leftMargin">
         <number>0</number>
@@ -281,29 +585,9 @@
        <property name="bottomMargin">
         <number>8</number>
        </property>
-       <item>
-        <widget class="QTextBrowser" name="txtInfo">
-         <property name="tabChangesFocus">
-          <bool>true</bool>
-         </property>
-         <property name="html">
-          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:20px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Lucida Grande'; font-style:italic; color:#b1311d;&quot;&gt;&amp;lt;no file open&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="openLinks">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="pageBibEntries">
-      <attribute name="title">
-       <string>Preview Bib Entries</string>
-      </attribute>
+     <widget class="QWidget" name="pageBibEntries" native="true">
       <layout class="QGridLayout" name="gridLayout_2">
        <property name="leftMargin">
         <number>0</number>
@@ -320,31 +604,10 @@ p, li { white-space: pre-wrap; }
        <property name="verticalSpacing">
         <number>3</number>
        </property>
-       <item row="1" column="0">
-        <widget class="QTextBrowser" name="txtBibEntries">
-         <property name="font">
-          <font>
-           <family>Courier 10 Pitch</family>
-          </font>
-         </property>
-         <property name="tabChangesFocus">
-          <bool>true</bool>
-         </property>
-         <property name="openLinks">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="SearchWidget" name="searchPrevBibEntries" native="true"/>
-       </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="pageLog">
-      <attribute name="title">
-       <string>Messages</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout">
+     <widget class="QWidget" name="tabPageRunMessages" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_9">
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -355,9 +618,111 @@ p, li { white-space: pre-wrap; }
         <number>0</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>0</number>
        </property>
-       <item row="0" column="0" colspan="2">
+       <item>
+        <widget class="QTextBrowser" name="txtParseErrorMessages">
+         <property name="tabChangesFocus">
+          <bool>true</bool>
+         </property>
+         <property name="html">
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic; color:#b1311d;&quot;&gt;&amp;lt;no error messages&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="openLinks">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="lytRunOptions">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Options affect next run:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="lblVerbosity">
+           <property name="text">
+            <string>Log verbosity:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="cbxVerbosity">
+           <property name="currentIndex">
+            <number>1</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>Quiet</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Information</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Verbose</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Very Verbose (debug)</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnDeleteCache">
+           <property name="text">
+            <string>Delete cache</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
         <widget class="QTextBrowser" name="txtLog">
          <property name="tabChangesFocus">
           <bool>true</bool>
@@ -377,142 +742,8 @@ p, li { white-space: pre-wrap; }
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="lblVerbosity">
-         <property name="text">
-          <string>Log verbosity level (for next run):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="cbxVerbosity">
-         <property name="currentIndex">
-          <number>1</number>
-         </property>
-         <item>
-          <property name="text">
-           <string>Quiet</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Information</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Verbose</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Very Verbose (for debugging)</string>
-          </property>
-         </item>
-        </widget>
-       </item>
       </layout>
      </widget>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QWidget" name="wHead" native="true">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="lblFileName">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Sunken</enum>
-        </property>
-        <property name="midLineWidth">
-         <number>1</number>
-        </property>
-        <property name="text">
-         <string>some text here</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::PlainText</enum>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnRefresh">
-        <property name="icon">
-         <iconset resource="bibolamazi_res.qrc">
-          <normaloff>:/pic/refresh.png</normaloff>:/pic/refresh.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnSave">
-        <property name="icon">
-         <iconset resource="bibolamazi_res.qrc">
-          <normaloff>:/pic/save.png</normaloff>:/pic/save.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QPushButton" name="btnInterrupt">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>40</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>Stop</string>
-     </property>
-     <property name="icon">
-      <iconset resource="bibolamazi_res.qrc">
-       <normaloff>:/pic/closehide.png</normaloff>:/pic/closehide.png</iconset>
-     </property>
     </widget>
    </item>
   </layout>
