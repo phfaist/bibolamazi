@@ -370,6 +370,12 @@ class OpenBibFile(QWidget):
         self.ui.txtLog.setWordWrapMode(QTextOption.WrapAnywhere)
         self.ui.txtBibEntries.setWordWrapMode(QTextOption.WrapAnywhere)
 
+        p = QPalette(self.ui.stackEditTools.palette())
+        c = p.color(QPalette.Active, QPalette.Window)
+        p.setColor(QPalette.Window, QColor(int(c.red()*0.9), int(c.green()*0.9), int(c.blue()*0.9)))
+        self.ui.stackEditTools.setPalette(p)
+        self.ui.stackEditTools.setAutoFillBackground(True)
+
         font = settingswidget.get_typewriter_font(self.ui.txtConfig)
         self.ui.txtConfig.setFont(font)
         self.ui.txtLog.setFont(font)

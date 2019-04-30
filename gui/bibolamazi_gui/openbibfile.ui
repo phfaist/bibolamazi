@@ -182,7 +182,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabPageEditFilters" native="true">
+     <widget class="QWidget" name="tabPageEditFilters">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
         <number>3</number>
@@ -230,12 +230,6 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
           </property>
           <property name="currentIndex">
            <number>0</number>
@@ -577,7 +571,7 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabsPage" native="true">
+     <widget class="QWidget" name="tabsPage">
       <layout class="QVBoxLayout" name="verticalLayout">
        <property name="leftMargin">
         <number>0</number>
@@ -593,7 +587,7 @@ p, li { white-space: pre-wrap; }
        </property>
       </layout>
      </widget>
-     <widget class="QWidget" name="pageBibEntries" native="true">
+     <widget class="QWidget" name="pageBibEntries">
       <layout class="QGridLayout" name="gridLayout_2">
        <property name="leftMargin">
         <number>0</number>
@@ -612,7 +606,7 @@ p, li { white-space: pre-wrap; }
        </property>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabPageRunMessages" native="true">
+     <widget class="QWidget" name="tabPageRunMessages">
       <layout class="QVBoxLayout" name="verticalLayout_9">
        <property name="leftMargin">
         <number>0</number>

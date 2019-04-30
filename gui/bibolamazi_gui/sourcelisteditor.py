@@ -44,6 +44,7 @@ import bibolamazi.init
 
 from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
 
+from . import uiutils
 from . import helpbrowser
 from .helpbrowser import htmlescape
 
@@ -164,7 +165,7 @@ class SourceListEditor(QWidget):
 <p class=\"heading\">Source:</p>
 %(sourceitems)s</body></html>
 """ % {
-    'basecss': helpbrowser.getCssHelpStyle(),
+    'basecss': helpbrowser.getCssHelpStyle(dark_mode=uiutils.is_dark_mode(self)),
     'sourceitems': items
     }
         #lbltext = ("<ul>" + items + "</ul>")

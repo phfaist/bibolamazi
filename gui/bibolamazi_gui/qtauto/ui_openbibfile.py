@@ -122,8 +122,6 @@ class Ui_OpenBibFile(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.stackEditTools.sizePolicy().hasHeightForWidth())
         self.stackEditTools.setSizePolicy(sizePolicy)
-        self.stackEditTools.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.stackEditTools.setFrameShadow(QtWidgets.QFrame.Raised)
         self.stackEditTools.setObjectName("stackEditTools")
         self.toolspageBase = QtWidgets.QWidget()
         self.toolspageBase.setObjectName("toolspageBase")
