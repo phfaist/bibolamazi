@@ -514,9 +514,9 @@ class HelpBrowser(QWidget):
                      + " \N{EM DASH} " +
                      big_html_link("Annotated filter list", "help:/general/filter-list")
                      + " \N{EM DASH} " +
-                     big_html_link("Bibolamazi version information", "help:/general/version")
-                     + " \N{EM DASH} " +
                      big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
+                     + " \N{EM DASH} " +
+                     big_html_link("Bibolamazi version information", "help:/general/version")
                      + " \N{EM DASH} " +
                      big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
                      + "</p>\n\n")
@@ -644,7 +644,9 @@ specifying boolean ON/OFF switches.</p>
             return HelpTopicPage.makeMarkdownPage(HELP_WELCOME, "Welcome")
 
         elif page == 'version':
-            return HelpTopicPage.makeTxtPage(argparseactions.helptext_prolog(), "Version")
+            return HelpTopicPage.makeMarkdownPage(
+                htmlescape(argparseactions.helptext_prolog().replace("\n", "\n\n")),
+                "Version")
 
         elif page == 'cmdline':
             return HelpTopicPage.makeTxtPage(
@@ -664,11 +666,13 @@ specifying boolean ON/OFF switches.</p>
                 html += "<table>"
                 for finfo in sorted(fplist, key=lambda x: x.filtername):
 
-                    html += ("<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
-                             "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>").format(
-                                 filtname=finfo.filtername,
-                                 filtdesc=finfo.fclass.getHelpDescription()
-                             )
+                    html += (
+                        "<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
+                        "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>"
+                    ).format(
+                        filtname=finfo.filtername,
+                        filtdesc=finfo.fclass.getHelpDescription()
+                    )
                 html += "</table>"
 
             html += ("<p style=\"margin-top: 2em\"><em>Filter packages are listed in the order " +
