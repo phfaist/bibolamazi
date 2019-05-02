@@ -36,7 +36,7 @@ import logging
 import os.path
 from collections import OrderedDict
 
- # don't change this, we use 'from .htmlbrowser import htmlescape'
+# don't change this, we use 'from .htmlbrowser import htmlescape'
 from html import escape as htmlescape
 from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
 
@@ -90,14 +90,6 @@ def getCssHelpStyle(fontsize='medium', fontsize_big='large',
                      'fontsize_small': fontsize_small}
         + ( _HTML_CSS_COLORS if not dark_mode else _HTML_CSS_COLORS_DARK )
     )
-
-def wrapInHtmlContentContainer(htmlcontent, width=None):
-    if width is None:
-        width = TABLE_WIDTH
-    return ("<table width=\""+str(width)+"\" style=\"margin-left:15px\">" +
-            "<tr><td class=\"content\">" +
-            htmlcontent +
-            "</td></tr></table>")
 
 TABLE_WIDTH = 550 # px
 
@@ -199,71 +191,24 @@ th { color: #c04080; }
 '''
 
 
+def wrapInHtmlContentContainer(htmlcontent, dark_mode=False, width=None):
+    if width is None:
+        width = TABLE_WIDTH
 
-class HelpTopicPage(object):
-    def __init__(self, content_type=None, content=None, title=None, tooltip=None):
-        self._content_type = content_type
-        self._content = content
-        self._title = title
-        self._tooltip = tooltip
+    html_top = ("<html><head><style type=\"text/css\">" +
+                getCssHelpStyle(dark_mode=dark_mode) +
+                "</style></head>" +
+                "<body>")
+    html_bottom = "</body></html>"
 
-    @staticmethod
-    def makeMarkdownPage(markdown, title=None, tooltip=None):
-        return HelpTopicPage('markdown', markdown, title, tooltip)
-
-    @staticmethod
-    def makeTxtPage(txt, title=None, tooltip=None):
-        return HelpTopicPage('txt', txt, title, tooltip)
-
-    @staticmethod
-    def makeFullHtmlPage(html, title=None, tooltip=None):
-        return HelpTopicPage('html', html, title, tooltip)
-
-    @staticmethod
-    def makeHtmlFragmentPage(html, title=None, tooltip=None):
-        return HelpTopicPage('htmlfragment', html, title, tooltip)
+    return (html_top +
+            "<table width=\""+str(width)+"\" style=\"margin-left:15px\">" +
+            "<tr><td class=\"content\">" +
+            htmlcontent +
+            "</td></tr></table>" +
+            html_bottom)
 
 
-    def contentAsMarkdown(self):
-        if self._content_type == 'txt':
-            return self._content
-        elif self._content_type == 'markdown':
-            return self._content
-        else:
-            raise ValueError("Can't convert %s to markdown"%(self._content_type))
-
-    def contentAsHtml(self, dark_mode=False):
-        html_top = ("<html><head><style type=\"text/css\">" +
-                    getCssHelpStyle(dark_mode=dark_mode) +
-                    "</style></head>" +
-                    "<body>")
-        html_bottom = "</body></html>"
-        if self._content_type == 'txt':
-            return (html_top
-                    + wrapInHtmlContentContainer("<pre class=\"txtcontent\">"
-                                                 + htmlescape(self._content)
-                                                 + "</pre>")
-                    + html_bottom)
-        elif self._content_type == 'markdown':
-            return (html_top
-                    + wrapInHtmlContentContainer(
-                        markdown2.markdown(self._content,
-                                           extras=["footnotes", "fenced-code-blocks",
-                                                   "smarty-pants", "tables"])
-                    )
-                    + html_bottom)
-        elif self._content_type == 'html':
-            return self._content
-        elif self._content_type == 'htmlfragment':
-            return html_top + wrapInHtmlContentContainer(self._content) + html_bottom
-        else:
-            raise ValueError("Can't convert %s to markdown"%(self._content_type))
-
-    def title(self):
-        return self._title
-
-    def tooltip(self):
-        return self._tooltip
 
 
 
@@ -294,16 +239,16 @@ class HelpTopicPageWidget(QWidget):
 
         dark_mode = uiutils.is_dark_mode(self)
 
-        html = helptopicpage.contentAsHtml(dark_mode=dark_mode)
-        logger.longdebug("Help page text = \n%s", html)
+        htmlfragment = helptopicpage.contentAsHtmlFragment()
+        logger.longdebug("Help page html fragment = \n%s", htmlfragment)
+        html = wrapInHtmlContentContainer(htmlfragment, dark_mode=dark_mode)
         self.tb.setHtml(html)
         
         self.setProperty("HelpTabTitle", helptopicpage.title())
-        if helptopicpage.tooltip:
-            self.setProperty("HelpTabToolTip", helptopicpage.tooltip())
+        if helptopicpage.desc:
+            self.setProperty("HelpTabToolTip", helptopicpage.desc())
 
         self.setProperty("helpurl", urlcanon)
-
 
 
 
@@ -391,6 +336,8 @@ class HelpBrowser(QWidget):
         
         if urlparts.scheme and urlparts.scheme != 'help':
             raise ValueError("Invalid URL scheme: %s [url=%s]"%(urlparts.scheme, url))
+
+        
 
         import posixpath
         path = posixpath.normpath(urlparts.path)
@@ -685,111 +632,3 @@ specifying boolean ON/OFF switches.</p>
         return None
 
 
-
-
-
-
-
-
-HELP_WELCOME = r"""
-
-Bibolamazi --- Prepare consistent BibTeX files for your LaTeX documents
-=======================================================================
-
-Bibolamazi lets you prepare consistent and uniform BibTeX files for your LaTeX
-documents. It lets you prepare your BibTeX entries as you would like them to
-be---adding missing or dropping irrelevant information, capitalizing names or
-turning them into initials, converting unicode characters to latex escapes, etc.
-
-
-What Bibolamazi Does
---------------------
-
-Bibolamazi works by reading your reference bibtex files---the "sources", which
-might for example have been generated by your favorite bibliography manager or
-provided by your collaborators---and merging them all into a new file, applying
-specific rules, or "filters", such as turning all the first names into
-initials or normalizing the way arxiv IDs are presented.
-
-The Bibolamazi file is this new file, in which all the required bibtex entries
-will be merged. When you prepare you LaTeX document, you should create a new
-bibolamazi file, and provide that bibolamazi file as the bibtex file for the
-bibliography.
-
-When you open a bibolamazi file, you will be prompted to edit its configuration.
-This is the set of rules which will tell bibolamazi where to look for your
-bibtex entries and how to handle them. You first need to specify all your
-sources, and then all the filters.
-
-The bibolamazi file is then a valid BibTeX file to include into your LaTeX
-document, so if your bibolamazi file is named `main.bibolamazi.bib', you would
-include the bibliography in your document with a LaTeX command similar to:
-
-    \bibliography{main.bibolamazi}
-
-
-The Bibolamazi Configuration Section
-------------------------------------
-
-If you open the Bibolamazi application and open your bibolamazi file (or create
-a new one), you’ll immediately be prompted to edit its configuration section.
-
-Sources are the normal bibtex files from which bibtex entries are read. A source
-is specified using the bibolamazi command
-
-    src: source-file.bib  [ alternative-source-file.bib  ... ]
-
-Alternative source locations can be specified, in case the first file does not
-exist. This is convenient to locate a file which might be in different locations
-on different computers. Each source file name can be an absolute path or a
-relative path (relative to the bibolamazi file). It can also be an HTTP URL
-which will be downloaded automatically.
-
-You can specify several sources by repeating the src: command.
-
-    src: first-source.bib  alternative-first-source.bib
-    src: second-source.bib
-    ...
-
-Remember: the *first* readable source of *each* source command will be read, and
-merged into the bibolamazi file.
-
-Filters are rules to apply on the whole bibliography database. Their syntax is
-
-    filter: filter_name  <filter-options>
-
-The filter is usually meant to deal with a particular task, such as for example
-changing all first names of authors into initials.
-
-For a list of filters and what they do, please refer the first page of this help
-browser.
-
-You can usually fine-tune the behavior of the filter by providing options. For
-a list of options for a particular filter, please refer again to the help page
-of that filter.
-
-
-What now?
----------
-
-We suggest at this point that you create a new bibolamazi file, and get started
-with the serious stuff :)
-
-You might want to have a look at the documentation. It is available at
-[https://bibolamazi.readthedocs.org/en/latest/](https://bibolamazi.readthedocs.org/en/latest/).
-
-If you want an example, you can have a look at the directory
-[https://github.com/phfaist/bibolamazi/tree/master/tests_basic](https://github.com/phfaist/bibolamazi/tree/master/tests_basic)
-and, in particular the bibolamazi files `testX.bibolamazi.bib`.
-
-
-Command-line
-------------
-
-Please note that you can also use bibolamazi in command-line. If you installed
-the precompiled application, you'll need to install the command-line version
-again. Go to
-[https://github.com/phfaist/bibolamazi](https://github.com/phfaist/bibolamazi)
-and follow the instructions there.
-
-"""

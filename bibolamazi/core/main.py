@@ -180,7 +180,8 @@ def get_args_parser():
                         help='Set normal verbosity mode (same as --verbosity=1)')
     parser.add_argument('-v', '-v2', '--verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=2,
                         help='Set verbose mode (same as --verbosity=2)')
-    parser.add_argument('-vv', '-v3', '--long-verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=3,
+    parser.add_argument('-vv', '-v3', '--long-verbose', action=argparseactions.opt_set_verbosity,
+                        nargs=0, const=3,
                         help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
     parser.add_argument('--fine-log-levels', action=argparseactions.opt_set_fine_log_levels,
                         help=textwrap.dedent('''\
