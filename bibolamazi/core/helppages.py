@@ -49,9 +49,6 @@ from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
 from urllib.parse import quote_plus as urlquoteplus
 
 
-# for formatting documentation
-import markdown2
-
 # pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
 # it should automatically.
 import pydoc
@@ -200,6 +197,12 @@ class HelpTopicPage(object):
             return self.getContent('htmlfragment')
 
         if 'markdown' in self._content:
+
+            # format documentation using markdown2.  Import this now only, so
+            # that as long as we don't need markdown->html then this module
+            # doesn't have to be installed
+            import markdown2
+
             return ( markdown2.markdown(
                 self.getContent('markdown'),
                 extras=["footnotes", "fenced-code-blocks",
