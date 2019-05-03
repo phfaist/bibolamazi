@@ -1302,7 +1302,8 @@ class BibolamaziFile(object):
         This should only be useful in an editor (e.g., the GUI) where you edit
         the config and save back to disk without running bibolamazi.
 
-        .. versionadded: 1.5
+        .. versionadded:: 4.2
+           Added the `saveRawToFile()` method.
         """
 
         if fname is None:
