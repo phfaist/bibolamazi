@@ -37,8 +37,6 @@ import logging
 import os.path
 from collections import OrderedDict
 
-# don't change this, we use 'from .htmlbrowser import htmlescape'
-from html import escape as htmlescape
 from urllib.parse import urlsplit
 
 import markdown2
@@ -51,6 +49,7 @@ from bibolamazi.core import butils
 from bibolamazi.core import argparseactions
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import helppages
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -63,20 +62,6 @@ from . import searchwidget
 from .qtauto.ui_helpbrowser import Ui_HelpBrowser
 
 logger = logging.getLogger(__name__)
-
-
-
-# helper for wrapping long lines -- used in other files
-def forcewrap_long_lines(x, w=120):
-    lines = []
-    for line in x.split('\n'):
-        # expand tabs first
-        line = line.replace('\t', ' '*8)
-        while len(line)>w:
-            lines.append(line[:(w-1)]+'\\')
-            line = line[(w-1):]
-        lines.append(line)
-    return "\n".join(lines)
 
 
 

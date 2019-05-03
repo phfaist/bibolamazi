@@ -45,6 +45,7 @@ from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage,
 from bibolamazi.core import butils
 from bibolamazi.core.bibfilter.argtypes import EnumArgType, MultiTypeArgType, \
     CommaStrList, ColonCommaStrDict, StrEditableArgType
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -54,7 +55,6 @@ from PyQt5.QtWidgets import *
 from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 from . import overlistbuttonwidget
-from .helpbrowser import htmlescape, forcewrap_long_lines
 from .multitypeseditor import MultiTypesEditorWidget
 
 logger = logging.getLogger(__name__)

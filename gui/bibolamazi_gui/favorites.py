@@ -38,7 +38,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import bibolamazi.init
-from .helpbrowser import htmlescape, forcewrap_long_lines
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
+
 from .overlistbuttonwidget import OverListButtonWidgetBase
 from .qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
 

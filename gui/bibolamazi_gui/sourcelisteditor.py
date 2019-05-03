@@ -41,12 +41,13 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import bibolamazi.init
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
 
 from . import uiutils
 from . import helpbrowser
-from .helpbrowser import htmlescape
+
 
 
 def sanitize_bib_rel_path(fname, ref_dir=None):
