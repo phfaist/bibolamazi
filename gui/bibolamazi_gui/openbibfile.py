@@ -508,7 +508,7 @@ class OpenBibFile(QWidget):
         
         # change the config block.
         self.bibolamaziFile.setConfigData(config_data)
-        self.bibolamaziFile.saveToFile()
+        self.bibolamaziFile.saveRawToFile()
 
         self._set_modified(False)
 
@@ -589,8 +589,6 @@ class OpenBibFile(QWidget):
 
         self._flag_modified_externally = False
 
-        self._set_modified(False)
-
         # we may be sensitive again to external changes again
         if self.fwatcher.signalsBlocked():
             self.fwatcher.blockSignals(False)
@@ -636,6 +634,8 @@ class OpenBibFile(QWidget):
 
         # now, try to further parse the config
         self._bibolamazifile_reparse()
+
+        self._set_modified(False)
 
         self._needs_update_txtbibentries = True
 
@@ -709,7 +709,15 @@ class OpenBibFile(QWidget):
     def on_btnInfoPageEntries_toggled(self, on):
         logger.debug("on_btnInfoPageEntries_toggled(%r)", on)
         if on: # self.ui.stkInfo.widget(index) is self.ui.pageInfoEntries:
-            logger.debug("displaying bib entries")
+            logger.debug("redisplaying bib entries")
+            if self._needs_update_txtbibentries:
+                self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
+
+    @pyqtSlot(bool)
+    def on_btnPageFileInfo_toggled(self, on):
+        logger.debug("on_btnPageFileInfo_toggled(%r)", on)
+        if on and self.ui.btnInfoPageEntries.isChecked():
+            logger.debug("redisplaying bib entries")
             if self._needs_update_txtbibentries:
                 self.ui.txtBibEntries.setPlainText(self.bibolamaziFile.rawRest())
 

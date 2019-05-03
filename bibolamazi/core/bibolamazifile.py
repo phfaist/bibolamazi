@@ -1294,6 +1294,30 @@ class BibolamaziFile(object):
         
 
 
+    def saveRawToFile(self, fname=None, cachefname=None):
+        """
+        Save the current bibolamazi file object to disk, using the rawRest() content
+        instead of the current bib database.
+
+        This should only be useful in an editor (e.g., the GUI) where you edit
+        the config and save back to disk without running bibolamazi.
+
+        .. versionadded: 1.5
+        """
+
+        if fname is None:
+            fname = self._fname
+
+        with codecs.open(fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
+            f.write(self._header)
+            f.write(self._config)
+            f.write(self._rest)
+            
+            logger.info("Saved file '%s'", fname)
+
+
+        
+
     def saveToFile(self, fname=None, cachefname=None):
         """
         Save the current bibolamazi file object to disk.
@@ -1364,7 +1388,7 @@ class BibolamaziFile(object):
                 w = outputbibtex.Writer()
                 f.write(w.to_string(self._bibliographydata))
             
-            logger.info("Updated output file `"+self._fname+"'.")
+            logger.info("Updated output file '%s'", fname)
 
         # if we have cache to save, save it
         if (cachefname and self._user_cache and self._user_cache.hasCache()):
@@ -1373,7 +1397,7 @@ class BibolamaziFile(object):
                     logger.debug("Writing cache to file %s", cachefname)
                     self._user_cache.saveCache(f)
             except IOError as e:
-                logger.debug("Couldn't save cache to file `%s'.", cachefname)
+                logger.debug("Couldn't save cache to file '%s'.", cachefname)
                 pass
 
         
