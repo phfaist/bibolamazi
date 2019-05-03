@@ -31,14 +31,13 @@ from builtins import str as unicodestr
 from future.standard_library import install_aliases
 install_aliases()
 
+import re
 import sys
 import logging
 import os.path
 from collections import OrderedDict
 
- # don't change this, we use 'from .htmlbrowser import htmlescape'
-from html import escape as htmlescape
-from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
+from urllib.parse import urlsplit
 
 import markdown2
 
@@ -49,6 +48,8 @@ from bibolamazi.core.blogger import logger
 from bibolamazi.core import butils
 from bibolamazi.core import argparseactions
 from bibolamazi.core.bibfilter import factory as filters_factory
+from bibolamazi.core import helppages
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -64,20 +65,6 @@ logger = logging.getLogger(__name__)
 
 
 
-# helper for wrapping long lines -- used in other files
-def forcewrap_long_lines(x, w=120):
-    lines = []
-    for line in x.split('\n'):
-        # expand tabs first
-        line = line.replace('\t', ' '*8)
-        while len(line)>w:
-            lines.append(line[:(w-1)]+'\\')
-            line = line[(w-1):]
-        lines.append(line)
-    return "\n".join(lines)
-
-
-
 
 
 def getCssHelpStyle(fontsize='medium', fontsize_big='large',
@@ -90,14 +77,6 @@ def getCssHelpStyle(fontsize='medium', fontsize_big='large',
                      'fontsize_small': fontsize_small}
         + ( _HTML_CSS_COLORS if not dark_mode else _HTML_CSS_COLORS_DARK )
     )
-
-def wrapInHtmlContentContainer(htmlcontent, width=None):
-    if width is None:
-        width = TABLE_WIDTH
-    return ("<table width=\""+str(width)+"\" style=\"margin-left:15px\">" +
-            "<tr><td class=\"content\">" +
-            htmlcontent +
-            "</td></tr></table>")
 
 TABLE_WIDTH = 550 # px
 
@@ -128,7 +107,10 @@ code {
 .small {
   font-size: %(fontsize_small)s;
 }
-pre { margin-left: 12px; }
+pre {
+  margin-left: 12px;
+  font-size: %(fontsize_code)s;
+}
 pre.txtcontent { margin-left: 0px; }
 a { text-decoration: none }
 
@@ -199,76 +181,29 @@ th { color: #c04080; }
 '''
 
 
+def wrapInHtmlContentContainer(htmlcontent, dark_mode=False, width=None):
+    if width is None:
+        width = TABLE_WIDTH
 
-class HelpTopicPage(object):
-    def __init__(self, content_type=None, content=None, title=None, tooltip=None):
-        self._content_type = content_type
-        self._content = content
-        self._title = title
-        self._tooltip = tooltip
+    html_top = ("<html><head><style type=\"text/css\">" +
+                getCssHelpStyle(dark_mode=dark_mode) +
+                "</style></head>" +
+                "<body>")
+    html_bottom = "</body></html>"
 
-    @staticmethod
-    def makeMarkdownPage(markdown, title=None, tooltip=None):
-        return HelpTopicPage('markdown', markdown, title, tooltip)
-
-    @staticmethod
-    def makeTxtPage(txt, title=None, tooltip=None):
-        return HelpTopicPage('txt', txt, title, tooltip)
-
-    @staticmethod
-    def makeFullHtmlPage(html, title=None, tooltip=None):
-        return HelpTopicPage('html', html, title, tooltip)
-
-    @staticmethod
-    def makeHtmlFragmentPage(html, title=None, tooltip=None):
-        return HelpTopicPage('htmlfragment', html, title, tooltip)
+    return (html_top +
+            "<table width=\""+str(width)+"\" style=\"margin-left:15px\">" +
+            "<tr><td class=\"content\">" +
+            htmlcontent +
+            "</td></tr></table>" +
+            html_bottom)
 
 
-    def contentAsMarkdown(self):
-        if self._content_type == 'txt':
-            return self._content
-        elif self._content_type == 'markdown':
-            return self._content
-        else:
-            raise ValueError("Can't convert %s to markdown"%(self._content_type))
-
-    def contentAsHtml(self, dark_mode=False):
-        html_top = ("<html><head><style type=\"text/css\">" +
-                    getCssHelpStyle(dark_mode=dark_mode) +
-                    "</style></head>" +
-                    "<body>")
-        html_bottom = "</body></html>"
-        if self._content_type == 'txt':
-            return (html_top
-                    + wrapInHtmlContentContainer("<pre class=\"txtcontent\">"
-                                                 + htmlescape(self._content)
-                                                 + "</pre>")
-                    + html_bottom)
-        elif self._content_type == 'markdown':
-            return (html_top
-                    + wrapInHtmlContentContainer(
-                        markdown2.markdown(self._content,
-                                           extras=["footnotes", "fenced-code-blocks",
-                                                   "smarty-pants", "tables"])
-                    )
-                    + html_bottom)
-        elif self._content_type == 'html':
-            return self._content
-        elif self._content_type == 'htmlfragment':
-            return html_top + wrapInHtmlContentContainer(self._content) + html_bottom
-        else:
-            raise ValueError("Can't convert %s to markdown"%(self._content_type))
-
-    def title(self):
-        return self._title
-
-    def tooltip(self):
-        return self._tooltip
 
 
 
 class HelpTopicPageWidget(QWidget):
-    def __init__(self, helptopicpage, urlcanon, helpbrowser, parent):
+    def __init__(self, helptopicpage, helpbrowser, parent):
         super(HelpTopicPageWidget, self).__init__(parent)
 
         self.lyt = QVBoxLayout(self)
@@ -294,24 +229,31 @@ class HelpTopicPageWidget(QWidget):
 
         dark_mode = uiutils.is_dark_mode(self)
 
-        html = helptopicpage.contentAsHtml(dark_mode=dark_mode)
-        logger.longdebug("Help page text = \n%s", html)
+        htmlfragment = helptopicpage.contentAsHtmlFragment()
+        logger.longdebug("Help page html fragment = \n%s", htmlfragment)
+        html = wrapInHtmlContentContainer(htmlfragment, dark_mode=dark_mode)
         self.tb.setHtml(html)
         
         self.setProperty("HelpTabTitle", helptopicpage.title())
-        if helptopicpage.tooltip:
-            self.setProperty("HelpTabToolTip", helptopicpage.tooltip())
-
-        self.setProperty("helpurl", urlcanon)
+        if helptopicpage.desc:
+            self.setProperty("HelpTabToolTip", helptopicpage.desc())
 
 
-
+    def scrollToAnchor(self, aname):
+        self.tb.scrollToAnchor(aname)
 
 
 class TabAlreadyOpen(Exception):
     def __init__(self, widget):
         super(TabAlreadyOpen, self).__init__()
         self.widget = widget
+
+
+
+_rx_scheme_frag = re.compile(
+    r'^((?P<scheme>[A-Za-z0-9_.-]+):)?(?P<rest>.*)(\#(?P<fragment>[a-zA-Z0-9%_.-]+))?$'
+)
+
 
 
 class HelpBrowser(QWidget):
@@ -336,12 +278,11 @@ class HelpBrowser(QWidget):
         # home page
         # ---------
 
-        self.openHelpTopic('/') # welcome page.
+        self.openHelpTopic('/home') # welcome page.
 
         # make the home page un-closeable
         self.ui.tabs.tabBar().setTabButton(0, QTabBar.LeftSide, None)
         self.ui.tabs.tabBar().setTabButton(0, QTabBar.RightSide, None)
-
 
 
 
@@ -375,7 +316,12 @@ class HelpBrowser(QWidget):
 
     @pyqtSlot('QUrl')
     def openHelpTopicUrl(self, url):
-        self.openHelpTopic(url.toString())
+        urlstr = url.toString()
+        if urlstr.startswith('#'):
+            # pure fragment part, internal scroll
+            self.sender().scrollToAnchor(urlstr[1:])
+            return
+        self.openHelpTopic(urlstr)
 
 
     @pyqtSlot(str)
@@ -383,413 +329,110 @@ class HelpBrowser(QWidget):
 
         logger.debug("Help: open topic at URL %s", url)
 
-        urlparts = urlparse(url)
+        # split off scheme and fragment, if any
+        (scheme, netloc, path, query, fragment) = urlsplit(url)
 
-        if urlparts.scheme in ['http', 'https']:
+        logger.debug("url parsed into (scheme,netloc,path,query,fragment) = %r",
+                     (scheme, netloc, path, query, fragment))
+
+        if scheme in ['http', 'https']:
             QDesktopServices.openUrl(QUrl(url))
             return
         
-        if urlparts.scheme and urlparts.scheme != 'help':
-            raise ValueError("Invalid URL scheme: %s [url=%s]"%(urlparts.scheme, url))
+        if scheme and scheme != 'help':
+            raise ValueError("Invalid URL scheme: {} [url={}]".format(scheme, url))
 
-        import posixpath
-        path = posixpath.normpath(urlparts.path)
-        qs = parse_qs(urlparts.query) # any options etc.
+        # combine path with query string
+        pathqs = path
+        if query:
+            pathqs += '?' + query
 
-        logger.debug("got options qs = %r", qs)
-
-        opt = {}
-
-        if 'filterpackage' in qs:
-            fpkgspec = qs.pop('filterpackage')[0]
-            fpname, fpdir = filters_factory.parse_filterpackage_argstr(fpkgspec)
-            opt['filterpackage'] = (fpname, fpdir)
-        # add other url options here ...
-        if qs:
-            raise ValueError("Unknown help topic url options: %r"%(qs))
-
-        pathitems = [x for x in path.split('/') if x]
+        def canonpath_check_fn(canonpath):
+            urlcanon = 'help:'+canonpath
+            logger.debug("requested page has canonical url %r", urlcanon)
+            # check to see if the tab is already open
+            for tab in self.openTabs:
+                if (str(tab.property('helpurl')) == urlcanon):
+                    # just raise this tab.
+                    raise TabAlreadyOpen(tab)
 
         widget = None
         try:
-            widget = self._gethelptopicwidget(pathitems, opt=opt, parent=self.ui.tabs)
+
+            page = helppages.get_help_page(
+                pathqs,
+                html_table_width_px=TABLE_WIDTH,
+                canonpath_check_fn=canonpath_check_fn, # raise tab if page already open
+            )
+
+            widget = HelpTopicPageWidget(page, self, self.ui.tabs)
+            widget.setProperty("helpurl", 'help:'+page.canonpath())
+
+            tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle'))
+            self.ui.tabs.setTabToolTip(tabindex, widget.property('HelpTabToolTip'))
+            #self.ui.tabs.setCurrentIndex(tabindex)
+
+            self.openTabs.append(widget)
+
         except TabAlreadyOpen as t:
-            self.ui.tabs.setCurrentWidget(t.widget)
-            return
+            widget = t.widget
 
         if widget is None:
             logger.debug("Couldn't open help topic widget for %r", url)
             return
 
-        tabindex = self.ui.tabs.addTab(widget, widget.property('HelpTabTitle'))
-        self.ui.tabs.setTabToolTip(tabindex, widget.property('HelpTabToolTip'))
-        self.ui.tabs.setCurrentIndex(tabindex)
+        self.ui.tabs.setCurrentWidget(widget)
 
-        self.openTabs.append(widget)
-
-
-    def _findopenhelptopicwidget(self, urlcanon):
-
-        # check to see if the tab is already open
-        for tab in self.openTabs:
-            if (str(tab.property('helpurl')) == urlcanon):
-                # just raise this tab.
-                raise TabAlreadyOpen(tab)
-
-    def _mkhelptopicwidget(self, helptopicpage, urlcanon, parent):
-
-        return HelpTopicPageWidget(helptopicpage, urlcanon, self, parent)
-
-    
-    def _gethelptopicwidget(self, pathitems, opt, parent):
-
-        logger.debug("_gethelptopicwidget(): pathitems=%r, opt=%r", pathitems, opt)
-
-        if len(pathitems) == 0:
-            # home page
-
-            urlcanon = 'help:/'
-            self._findopenhelptopicwidget(urlcanon)
-            return self._mkhelptopicwidget(self._gethelptopic_home(), urlcanon, parent=parent)
-
-        if (pathitems[0] == 'general'):
-            if (len(pathitems) < 2):
-                logger.warning("_gethelptopicwidget(): No help topic general page specified!!")
-                return None
-
-            urlcanon = 'help:/' + '/'.join(pathitems)
-            self._findopenhelptopicwidget(urlcanon)
-            return self._mkhelptopicwidget(self._gethelptopic_general('/'.join(pathitems[1:])),
-                                           urlcanon, parent=parent)
+        if fragment:
+            # we were asked to scroll to a specific anchor
+            widget.scrollToAnchor(fragment)
 
 
-        if pathitems[0] == 'filters' or pathitems[0] == 'rawfilterdoc':
-
-            if (len(pathitems) < 2):
-                logger.warning("_gethelptopicwidget(): No filter specified!!")
-                return None
-
-            filtname = pathitems[1]
-
-            if 'filterpackage' in opt:
-                filterpath = OrderedDict([opt['filterpackage']])
-            else:
-                filterpath = filters_factory.filterpath
-
-            finfo = filters_factory.FilterInfo(filtname, filterpath=filterpath)
-
-            urlcanon = ('help:/' + pathitems[0] + '/' + finfo.filtername + '?'
-                        + urlencode([('filterpackage', finfo.filterpackagespec)]))
-
-            self._findopenhelptopicwidget(urlcanon)
-
-            page = None
-            if pathitems[0] == 'filters':
-                page = self._gethelptopic_filters(finfo)
-            elif pathitems[0] == 'rawfilterdoc':
-                page = self._gethelptopic_rawfilterdoc(finfo)
-            else:
-                raise RuntimeError("pathitems[0]=%r ??"%(pathitems[0]))
-
-            return self._mkhelptopicwidget(page, urlcanon, parent=parent)
-        
-        logger.warning("_gethelptopicwidget(): Unknown help topic: %r", "/".join(pathitems))
-        return None
-
-            
-
-    def _gethelptopic_home(self):
-        """
-        Return a `HelpTopicPage` object or `None`.
-        """
-
-        def big_html_link(txt, link):
-            return """<a class="biglink" href="{link}">{txt}</a>""".format(
-                txt=txt, link=link
-                )
-
-        home_src = "<h1>Help &amp; Reference Browser</h1>\n\n"
-
-        home_src += ("<p>" + big_html_link("Welcome to bibolamazi", "help:/general/welcome")
-                     + " \N{EM DASH} " +
-                     big_html_link("Annotated filter list", "help:/general/filter-list")
-                     + " \N{EM DASH} " +
-                     big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
-                     + " \N{EM DASH} " +
-                     big_html_link("Bibolamazi version information", "help:/general/version")
-                     + " \N{EM DASH} " +
-                     big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
-                     + "</p>\n\n")
-
-        home_src += "<h2>Filters</h2>\n\n"
-
-        from . import filterinstanceeditor # cyclic import if done @ top of module
-
-        home_src += "<ul>\n"
-        for filt in sorted(filterinstanceeditor.get_filter_list()):
-            home_src += (
-                "<li>&nbsp;<a href=\"help:/filters/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
-                )
-        home_src += "</ul>\n"
-
-        return HelpTopicPage.makeHtmlFragmentPage(home_src, "Home")
-
-    def _gethelptopic_filters(self, filtinfo):
-
-        filtname = filtinfo.filtername
-
-        title = filtname + ' filter'
-
-        html = "<h1>Filter: {}</h1>\n\n".format(filtname)
-
-        fpn = filtinfo.filterpackagename
-        html += "<p class=\"shadow\">In filter package <b>" + htmlescape(fpn) + "</b></p>\n\n"
-
-        author = filtinfo.fclass.getHelpAuthor().strip()
-        if author:
-            html += "<p>" + htmlescape(author) + "</p>\n\n"
-
-        desc = filtinfo.fclass.getHelpDescription().strip()
-        if desc:
-            html += "<p>" + htmlescape(desc) + "</p>\n\n"
-
-        fopt = filtinfo.defaultFilterOptions()
-        if fopt:
-            # we're in business -- filter options
-
-            html += "<h2>Filter Options:</h2>\n\n"
-
-            html += "<table width=\""+str(TABLE_WIDTH)+"\">"
-
-            for arg in fopt.filterOptions():
-                html += "<tr><th>" + htmlescape(fopt.getSOptNameFromArg(arg.argname)) + "</th></tr>"
-                html += "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">"
-                html += "<p class=\"inner\">" + htmlescape(arg.doc if arg.doc else '') + "</p>"
-
-                if arg.argtypename:
-                    typ = butils.resolve_type(arg.argtypename, filtinfo.fmodule)
-                    if typ is bool:
-                        html += ("<p class=\"inner shadow\">Expects a boolean argument type" +
-                                 " (True/1/Yes/On or False/0/No/Off)</p>")
-                    elif typ is int:
-                        html += ("<p class=\"inner shadow\">Expects an integer as argument</p>")
-                    elif hasattr(typ, '__doc__') and typ.__doc__: # e.g., is not None
-                        docstr = typ.__doc__.strip()
-                        if len(docstr):
-                            html += ("<p class=\"inner shadow\">Expects argument type " +
-                                     "<code>" + htmlescape(arg.argtypename) + "</code>: "
-                                     + docstr + "</p>")
-
-                html += "</td></tr>\n"
-
-            if fopt.filterAcceptsVarArgs():
-                html += "<tr><th>(...)</th></tr>"
-                html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
-                         "additional positional arguments (see doc below)</td></tr>")
-            if fopt.filterAcceptsVarKwargs():
-                html += "<tr><th>(...=...)</th></tr>"
-                html += ("<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">This filter accepts "
-                         "additional named/keyword arguments (see doc below)</td></tr>")
-
-            html += "</table>"
-
-            html += """
-
-<p>Pass options with the syntax <code>-s</code><span
-class="code-meta">OptionName</span><code>="</code><span class="code-meta">option
-value</span><code>"</code> or <code>-d</code><span
-class="code-meta">OptionName[</span><code>=True</code><span
-class="code-meta">|</span><code>False</code><span class="code-meta">]</span>.
-The form <code>-sXXX</code> is for passing strings (which must be quoted if
-comprising spaces or special characters), and the form <code>-dXXX</code> is for
-specifying boolean ON/OFF switches.</p>
-
-"""
-
-            html += "<h2>Filter Documentation:</h2>\n\n"
-
-            html += "<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText()) + "</div>\n\n"
-
-            urlrawdoc = ('help:/rawfilterdoc/' + filtinfo.filtername + '?' +
-                         urlencode([('filterpackage', filtinfo.filterpackagespec)]))
-
-            html += ("<p style=\"margin-top: 2em\"><a href=\""+htmlescape(urlrawdoc)+"\">" +
-                     "View this filter's raw documentation</a></p>\n\n")
-
-            return HelpTopicPage.makeHtmlFragmentPage(html, title)
-
-        if hasattr(filtinfo.fmodule, 'format_help'):
-            html += "<div style=\"white-space: pre-wrap\">" + filtinfo.fmodule.format_help() + "</div>"
-            return HelpTopicPage.makeHtmlFragmentPage(html, title)
 
 
-        return HelpTopicPage.makeMarkdownPage(
-            "*No documentation available for filter {}*".format(filtname),
-            title
+
+
+#
+# initial help page for the GUI --- /home
+#
+def _get_help_page_home(pathitems, kwargs):
+
+    if len(pathitems) != 0:
+        raise ValueError("Invalid help path: {}".format('/'.join(kwargs['basepathitems']+pathitems)))
+
+    def big_html_link(txt, link):
+        return """<a class="biglink" href="{link}">{txt}</a>""".format(
+            txt=txt, link=link
         )
-    
 
-    def _gethelptopic_rawfilterdoc(self, finfo):
+    home_src = "<h1>Help &amp; Reference Browser</h1>\n\n"
 
-        filtertxt = finfo.formatFilterHelp()
-        title = '%s filter (raw doc)'%(finfo.filtername)
-        desc = finfo.fclass.getHelpDescription()
+    home_src += ("<p>" + big_html_link("Welcome to bibolamazi", "help:/general/welcome")
+                 + " \N{EM DASH} " +
+                 big_html_link("Annotated filter list", "help:/filters")
+                 + " \N{EM DASH} " +
+                 big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
+                 + " \N{EM DASH} " +
+                 big_html_link("Bibolamazi version information", "help:/general/version")
+                 + " \N{EM DASH} " +
+                 big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
+                 + "</p>\n\n")
 
-        return HelpTopicPage.makeTxtPage(filtertxt, title, desc)
+    home_src += "<h2>Filters</h2>\n\n"
 
+    from . import filterinstanceeditor # cyclic import if done @ top of module
 
-    def _gethelptopic_general(self, page):
+    home_src += "<ul>\n"
+    for filt in sorted(filterinstanceeditor.get_filter_list()):
+        home_src += (
+            "<li>&nbsp;<a href=\"help:/filter/{filtname}\"><b>{filtname}</b></a>\n".format(filtname=filt)
+            )
+    home_src += "</ul>\n"
 
-        if page == 'welcome':
-            return HelpTopicPage.makeMarkdownPage(HELP_WELCOME, "Welcome")
-
-        elif page == 'version':
-            return HelpTopicPage.makeMarkdownPage(
-                htmlescape(argparseactions.helptext_prolog().replace("\n", "\n\n")),
-                "Version")
-
-        elif page == 'cmdline':
-            return HelpTopicPage.makeTxtPage(
-                argparseactions.helptext_prolog() +
-                bibolamazimain.get_args_parser().format_help(),
-                "Command-Line Help")
-
-        elif page == 'filter-list':
-            html = "<h1>List of filters</h1>\n\n"
-
-            filterpath = filters_factory.filterpath
-
-            for (fp,fplist) in iteritems(filters_factory.detect_filter_package_listings(filterpath=filterpath)):
-
-                html += "<h2>Filter package <b>{filterpackage}</b></h2>\n\n".format(filterpackage=fp)
-
-                html += "<table>"
-                for finfo in sorted(fplist, key=lambda x: x.filtername):
-
-                    html += (
-                        "<tr><th><a href=\"help:/filters/{filtname}\">{filtname}</a></th></tr>"+
-                        "<tr><td class=\"indent\" width=\""+str(TABLE_WIDTH)+"\">{filtdesc}</td></tr>"
-                    ).format(
-                        filtname=finfo.filtername,
-                        filtdesc=finfo.fclass.getHelpDescription()
-                    )
-                html += "</table>"
-
-            html += ("<p style=\"margin-top: 2em\"><em>Filter packages are listed in the order " +
-                     "they are searched.</em></p>")
-
-            return HelpTopicPage.makeHtmlFragmentPage(html, "Filter List")
-
-        logger.warning("Unknown general help page: %s", page)
-
-        return None
+    return helppages.HelpTopicPage.makeHtmlFragmentPage(home_src, title="Home", canonpath='/home')
 
 
-
-
-
-
-
-
-HELP_WELCOME = r"""
-
-Bibolamazi --- Prepare consistent BibTeX files for your LaTeX documents
-=======================================================================
-
-Bibolamazi lets you prepare consistent and uniform BibTeX files for your LaTeX
-documents. It lets you prepare your BibTeX entries as you would like them to
-be---adding missing or dropping irrelevant information, capitalizing names or
-turning them into initials, converting unicode characters to latex escapes, etc.
-
-
-What Bibolamazi Does
---------------------
-
-Bibolamazi works by reading your reference bibtex files---the "sources", which
-might for example have been generated by your favorite bibliography manager or
-provided by your collaborators---and merging them all into a new file, applying
-specific rules, or "filters", such as turning all the first names into
-initials or normalizing the way arxiv IDs are presented.
-
-The Bibolamazi file is this new file, in which all the required bibtex entries
-will be merged. When you prepare you LaTeX document, you should create a new
-bibolamazi file, and provide that bibolamazi file as the bibtex file for the
-bibliography.
-
-When you open a bibolamazi file, you will be prompted to edit its configuration.
-This is the set of rules which will tell bibolamazi where to look for your
-bibtex entries and how to handle them. You first need to specify all your
-sources, and then all the filters.
-
-The bibolamazi file is then a valid BibTeX file to include into your LaTeX
-document, so if your bibolamazi file is named `main.bibolamazi.bib', you would
-include the bibliography in your document with a LaTeX command similar to:
-
-    \bibliography{main.bibolamazi}
-
-
-The Bibolamazi Configuration Section
-------------------------------------
-
-If you open the Bibolamazi application and open your bibolamazi file (or create
-a new one), you’ll immediately be prompted to edit its configuration section.
-
-Sources are the normal bibtex files from which bibtex entries are read. A source
-is specified using the bibolamazi command
-
-    src: source-file.bib  [ alternative-source-file.bib  ... ]
-
-Alternative source locations can be specified, in case the first file does not
-exist. This is convenient to locate a file which might be in different locations
-on different computers. Each source file name can be an absolute path or a
-relative path (relative to the bibolamazi file). It can also be an HTTP URL
-which will be downloaded automatically.
-
-You can specify several sources by repeating the src: command.
-
-    src: first-source.bib  alternative-first-source.bib
-    src: second-source.bib
-    ...
-
-Remember: the *first* readable source of *each* source command will be read, and
-merged into the bibolamazi file.
-
-Filters are rules to apply on the whole bibliography database. Their syntax is
-
-    filter: filter_name  <filter-options>
-
-The filter is usually meant to deal with a particular task, such as for example
-changing all first names of authors into initials.
-
-For a list of filters and what they do, please refer the first page of this help
-browser.
-
-You can usually fine-tune the behavior of the filter by providing options. For
-a list of options for a particular filter, please refer again to the help page
-of that filter.
-
-
-What now?
----------
-
-We suggest at this point that you create a new bibolamazi file, and get started
-with the serious stuff :)
-
-You might want to have a look at the documentation. It is available at
-[https://bibolamazi.readthedocs.org/en/latest/](https://bibolamazi.readthedocs.org/en/latest/).
-
-If you want an example, you can have a look at the directory
-[https://github.com/phfaist/bibolamazi/tree/master/tests_basic](https://github.com/phfaist/bibolamazi/tree/master/tests_basic)
-and, in particular the bibolamazi files `testX.bibolamazi.bib`.
-
-
-Command-line
-------------
-
-Please note that you can also use bibolamazi in command-line. If you installed
-the precompiled application, you'll need to install the command-line version
-again. Go to
-[https://github.com/phfaist/bibolamazi](https://github.com/phfaist/bibolamazi)
-and follow the instructions there.
-
-"""
+#
+# register help page dispatcher for /home
+#
+helppages.help_page_dispatchers['home'] = _get_help_page_home

@@ -36,7 +36,8 @@ import re
 import logging
 import textwrap
 from collections import OrderedDict
-from urllib.parse import urlencode
+from urllib.parse import urlencode, parse_qs
+from urllib.parse import quote_plus as urlquoteplus
 
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
@@ -44,6 +45,7 @@ from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage,
 from bibolamazi.core import butils
 from bibolamazi.core.bibfilter.argtypes import EnumArgType, MultiTypeArgType, \
     CommaStrList, ColonCommaStrDict, StrEditableArgType
+from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -53,7 +55,6 @@ from PyQt5.QtWidgets import *
 from .qtauto.ui_filterinstanceeditor import Ui_FilterInstanceEditor
 
 from . import overlistbuttonwidget
-from .helpbrowser import htmlescape, forcewrap_long_lines
 from .multitypeseditor import MultiTypesEditorWidget
 
 logger = logging.getLogger(__name__)
@@ -340,7 +341,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
     
 
 
-    def argdocForIndex(self, index):
+    def arginfoForIndex(self, index):
         if not self._fopts:
             return None
         
@@ -351,7 +352,12 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
         row = index.row()
         if (row < 0 or row >= len(filteroptions)):
             return None
-        arg = filteroptions[row]
+        return filteroptions[row]
+
+    def argdocForIndex(self, index):
+        arg = self.arginfoForIndex(index)
+        if arg is None:
+            return None
         return arg.doc
         
 
@@ -789,10 +795,11 @@ class FilterInstanceEditor(QWidget):
     
     @pyqtSlot('QModelIndex', 'QModelIndex')
     def option_selected(self, currentindex, previousindex=None):
-        doc = self._filteroptionsmodel.argdocForIndex(currentindex)
-        if doc:
-            doc = ("<p>" + htmlescape(doc) +
-                   " <a style=\"text-decoration:none\" href=\"action:/help\">" +
+        arg = self._filteroptionsmodel.arginfoForIndex(currentindex)
+        if arg:
+            doc = ("<p>" + htmlescape(arg.doc) +
+                   " <a style=\"text-decoration:none\" href=\"action:/help?anchorname={}\">"\
+                   .format(urlquoteplus('a-filter-option-'+arg.argname)) +
                    "more\N{HORIZONTAL ELLIPSIS}</a></p>")
             self.ui.lblOptionHelp.setText(doc)
             self.ui.lblOptionHelp.setVisible(True)
@@ -801,8 +808,14 @@ class FilterInstanceEditor(QWidget):
 
     @pyqtSlot(str)
     def on_lblOptionHelp_linkActivated(self, link):
-        if link == 'action:/help':
-            self.request_filter_help()
+        link_help_m = re.match(r'action\:\/help(\?(?P<qs>.*))?', link)
+        if link_help_m:
+            qsstr = link_help_m.group('qs')
+            qs = {}
+            if qsstr:
+                qs = parse_qs(qsstr)
+            anchorname = "".join(qs.pop('anchorname', None)[-1:])
+            self.request_filter_help(anchorname=anchorname, qs=qs)
         else:
             logger.warning("Invalid link action in filter instance: %r", link)
 
@@ -810,16 +823,19 @@ class FilterInstanceEditor(QWidget):
     def on_btnFilterHelp_clicked(self):
         self.request_filter_help()
 
-    def request_filter_help(self):
+    def request_filter_help(self, anchorname=None, qs=None):
         finfo = self._filteroptionsmodel.filterInfo()
 
         if finfo is None:
             logger.warning("request_filter_help: No filter information available.")
             return
         
-        url = 'help:/filters/%s' % ( str(finfo.filtername) )
-        qs = dict(filterpackage=finfo.filterpackagespec)
+        url = 'help:/filter/%s' % ( str(finfo.filtername) )
+        qs = dict(qs) if qs else {}
+        qs.update(filterpackage=finfo.filterpackagespec)
         url += '?'+urlencode(qs)
+        if anchorname:
+            url += '#'+anchorname
         logger.debug("Filter help: requesting topic URL %s", url)
         self.filterHelpRequested.emit(url)
 

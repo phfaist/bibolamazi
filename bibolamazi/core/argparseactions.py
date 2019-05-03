@@ -50,23 +50,11 @@ import bibolamazi.init
 from . import butils
 from . import blogger
 from .butils import getbool
+from . import helppages
 
 logger = logging.getLogger(__name__)
 
 from .bibfilter.argtypes import LogLevel
-
-
-def run_pager(text):
-    """
-    Call `pydoc.pager()` in a unicode-safe way.
-    """
-    if PY2:
-        encoding = locale.getpreferredencoding()
-        if not encoding:
-            encoding = "utf-8"
-        return pydoc.pager(text.encode(encoding, 'ignore'))
-    else:
-        return pydoc.pager(text)
 
 
 class store_or_count(argparse.Action):
@@ -251,112 +239,30 @@ class store_key_const(argparse.Action):
             setattr(namespace, self.dest, d)
 
 
-def helptext_prolog():
-    return ("""
-Bibolamazi Version %(version)s by Philippe Faist (C) %(copyrightyear)s
-Licensed under the terms of the GNU Public License GPL, version 3 or higher.
-
-""" % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
-        } )
-    
-
 
 class opt_action_help(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
 
-        if (not values or values == "elp"): # in case of -help: seen as -h elp
-            helptext = helptext_prolog()
-            helptext += parser.format_help()
+        if not values or values == "elp": # in case of -help: seen as -h elp
+            helppages.cmdl_show_help('/general/cmdline', parser=parser)
+            parser.exit()
 
-            run_pager(helptext)
+        if values and len(values) and values[0] == '/':
+            path = values
+            helppages.cmdl_show_help(path, parser=parser)
             parser.exit()
 
         thefilter = values
-
-        from bibolamazi.core.bibfilter import factory
-        try:
-            helptext = factory.format_filter_help(thefilter)
-            run_pager(helptext)
-            parser.exit()
-        except factory.NoSuchFilter as e:
-            logger.error(unicodestr(e))
-            parser.exit()
-        except factory.NoSuchFilterPackage as e:
-            logger.error(unicodestr(e))
-            parser.exit()
-        except Exception as e:
-            logger.error(unicodestr(e))
-            parser.exit()
-
+        helppages.cmdl_show_help('/filter/'+thefilter, parser=parser)
+        parser.exit()
 
 
 class opt_action_version(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
-
-        helptext = """\
-Version: %(version)s
-Bibolamazi by Philippe Faist
-(C) %(copyrightyear)s Philippe Faist
-Licensed under the terms of the GNU Public License GPL, version 3 or higher.
-""" % { 'version': butils.get_version(), 'copyrightyear': butils.get_copyrightyear()
-}
-        sys.stdout.write(helptext)
+        # no pager for version
+        p = helppages.get_help_page('/general/cmdlversion')
+        sys.stdout.write(p.contentAsTxt())
         parser.exit()
-
-
-
-
-
-FILTERS_HELP = """
-
-List of available filters:
---------------------------
-
-%(full_filter_list)s
-
---------------------------
-
-Filter packages are listed in the order they are searched.
-
-Use  bibolamazi --help <filter>  for more information about a specific filter
-and its options.
-
-
-"""
-
-FILTER_HELP_INNER_PACKAGE_LIST = """\
-Package `%(filterpackage)s':
-
-%(filterlistcontents)s
-""".rstrip() # no trailing '\n'
-
-
-def help_list_filters():
-
-    import textwrap
-    from bibolamazi.core.bibfilter import factory
-
-    def fmt_filter_helpline(finfo, fp):
-
-        nlindentstr = "\n%16s"%(""); # newline, followed by 16 whitespaces
-        return ( "  %-13s " %(finfo.filtername) +
-                 nlindentstr.join(textwrap.wrap(finfo.fclass.getHelpDescription(),
-                                                (80-16) # 80 line width, -16 indent chars
-                                                ))
-                 )
-
-    full_filter_list = []
-    for (fp,fplist) in iteritems(factory.detect_filter_package_listings()):
-        filter_list = [
-            fmt_filter_helpline(f, fp)
-            for f in fplist
-            ]
-        full_filter_list.append(
-            FILTER_HELP_INNER_PACKAGE_LIST % {'filterpackage': fp,
-                                              'filterlistcontents': "\n".join(filter_list)}
-            )
-
-    return FILTERS_HELP % {'full_filter_list': "\n\n".join(full_filter_list)}
 
 
 
@@ -364,14 +270,10 @@ class opt_list_filters(argparse.Action):
     def __init__(self, nargs=0, **kwargs):
         if nargs != 0:
             raise ValueError('nargs for opt_list_filters must be == 0')
-
-        argparse.Action.__init__(self, nargs=0, **kwargs)
+        super(opt_list_filters, self).__init__(nargs=0, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
-
-        all_text = help_list_filters()
-
-        run_pager(all_text)
+        helppages.cmdl_show_help('/filters')
         parser.exit()
 
 
@@ -402,7 +304,6 @@ class opt_init_empty_template(argparse.Action):
         bfile.saveToFile()
 
         parser.exit()
-
 
 
 
