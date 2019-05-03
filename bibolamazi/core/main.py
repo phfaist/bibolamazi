@@ -105,7 +105,7 @@ class BibolamaziNoSourceEntriesError(BibolamaziError):
 def setup_filterpackage_from_argstr(argstr):
     """
     Add a filter package definition and path to filterfactory.filterpath from a string
-    that is a e.g. a command-line argument to --filterpath or a part of the environment
+    that is a e.g. a command-line argument to --filterpackage or a part of the environment
     variable BIBOLAMAZI_FILTER_PATH.
     """
 
@@ -168,9 +168,11 @@ def get_args_parser():
     parser.add_argument('--filterpackage', action=AddFilterPackageAction,
                         help="Add a package name in which to search for filters. You may specify this "
                         "option multiple times; last specified filter packages are searched first. Valid "
-                        "values for this option are a simple python package name (if it is in the "
-                        "PYTHONPATH), or a pair 'package=/some/location' where package is the python "
-                        "package name, which will be loaded with the given path prepended to sys.path.")
+                        "values for this option are either (1) a simple python package name (if it is in the "
+                        "PYTHONPATH); (2) a string 'pkgname=/some/location' where pkgname is the python "
+                        "package name which will be loaded with the given path prepended to sys.path; or "
+                        "(3) a full path to a package directory '/some/location/to/pkgname' which has the "
+                        "same effect as the value 'pkgname=/some/location/to'.")
 
     parser.add_argument('--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
