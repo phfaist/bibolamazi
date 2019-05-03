@@ -36,6 +36,7 @@ import string
 import textwrap
 import copy
 import collections
+import hashlib
 import logging
 
 from pybtex.database import BibliographyData, Entry
@@ -373,6 +374,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
                 # from arxivInfo
                 arxivutil.arxivinfo_from_bibtex_fields +
                 [
+                    # 'author' is not a field in pybtex, see store_persons above
                     'note',
                     'journal',
                     'title',
@@ -381,12 +383,12 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 
         self.cacheDic()['entries'].set_validation(cache_entries_validator)
 
-
     def prepare_entry_cache(self, key, a, arxivaccess):
 
         entriescache = self.cacheDic()['entries']
 
         if key in entriescache and entriescache[key]:
+            # already in cache, all fine
             return
 
         cache_a = entriescache[key]
@@ -413,6 +415,53 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
             return title.strip()
 
         cache_a['title_clean'] = cleantitle(a.fields.get('title', ''))
+
+
+    # PhF -- turns out to be slower with cached comparison !!! Probably because
+    # we gotta compute a sh*tload of hashes?
+
+
+    # def _pairkey_entries(self, entriescache, key1, key2):
+    #     # do NOT use python's built-in hash(), it can change from one process to
+    #     # another.  Use md5, which will always give the same hash
+    #     return hashlib.md5(
+    #             ('%s\n%s\n%s\n%s'%(str(key1), str(entriescache.token_for(key1)),
+    #                                str(key2), str(entriescache.token_for(key2))) ).encode('utf-8')
+    #         ).digest()
+
+    # def query_cache_comparison(self, key1, key2):
+
+    #     entriescache = self.cacheDic()['entries']
+    #     comparisonscache =  self.cacheDic()['comparisons']
+
+    #     if key1 not in entriescache or key2 not in entriescache:
+    #         raise ValueError("store_cache_comparison: entries must already be in entries cache (%s and %s)",
+    #                          key1, key2)
+
+    #     pairkey = self._pairkey_entries(entriescache, key1, key2)
+
+    #     if pairkey not in comparisonscache:
+    #         return None
+
+    #     return comparisonscache[pairkey]
+
+    # def store_cache_comparison(self, key1, key2, is_duplicate):
+
+    #     entriescache = self.cacheDic()['entries']
+    #     comparisonscache =  self.cacheDic()['comparisons']
+
+    #     if key1 not in entriescache or key2 not in entriescache:
+    #         raise ValueError("store_cache_comparison: entries must already be in entries cache (%s and %s)",
+    #                          key1, key2)
+
+    #     pairkey = self._pairkey_entries(entriescache, key1, key2)
+
+    #     comparisonscache[pairkey] = bool(is_duplicate)
+
+        
+
+        
+        
 
 
     def get_entry_cache(self, key):
@@ -659,7 +708,7 @@ class DuplicatesFilter(BibFilter):
             ]
 
 
-    def compare_entries(self, a, b, cache_a, cache_b):
+    def compare_entries(self, akey, bkey, a, b, dupl_entryinfo_cache_accessor):
         """
         Returns a tuple `(is_same, reason)` of a boolean and a string. The `reason`
         is a human-readable explanations of why the entries are considered the
@@ -668,7 +717,25 @@ class DuplicatesFilter(BibFilter):
 
         # compare author list first
 
-        logger.longdebug('Comparing entries %s and %s', a.key, b.key)
+        logger.longdebug('Comparing entries %s and %s', akey, bkey)
+
+        # PhF -- turns out to be slower with cached comparison !!! Probably
+        # because we gotta compute a sh*tload of hashes?
+        #
+        # r = dupl_entryinfo_cache_accessor.query_cache_comparison(akey, bkey)
+        # if r is not None:
+        #     return r, "Cached comparison result; clear cache to re-compare"
+
+        cache_a = dupl_entryinfo_cache_accessor.get_entry_cache(akey)
+        cache_b = dupl_entryinfo_cache_accessor.get_entry_cache(bkey)
+
+        tf, reason = self._do_compare_entries(a, b, cache_a, cache_b)
+
+        # dupl_entryinfo_cache_accessor.store_cache_comparison(akey, bkey, tf)
+
+        return tf, reason
+
+    def _do_compare_entries(self, a, b, cache_a, cache_b):
 
         apers = cache_a['pers']
         bpers = cache_b['pers']
@@ -973,10 +1040,8 @@ class DuplicatesFilter(BibFilter):
                 origentry = bibdata.entries[origkey]
 
                 same, reason = self.compare_entries(
-                    entry,
-                    origentry,
-                    dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                    dupl_entryinfo_cache_accessor.get_entry_cache(origkey)
+                    key, origkey, entry, origentry,
+                    dupl_entryinfo_cache_accessor
                 )
                 if not same:
                     logger.warning("Entry with conflict key %s is NOT a duplicate of entry %s: %s",
@@ -1040,10 +1105,8 @@ class DuplicatesFilter(BibFilter):
                 duplicate_original_is_unused = False
                 for (nkey, nentry) in iteritems(newbibdata.entries):
                     same, reason = self.compare_entries(
-                        entry,
-                        nentry,
-                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey)
+                        key, nkey, entry, nentry,
+                        dupl_entryinfo_cache_accessor
                     )
                     if same:
                         logger.debug("Entry %s is duplicate of existing entry %s: %s",
@@ -1053,10 +1116,8 @@ class DuplicatesFilter(BibFilter):
                     
                 for (nkey, nentry) in iteritems(unused.entries):
                     same, reason = self.compare_entries(
-                        entry,
-                        nentry,
-                        dupl_entryinfo_cache_accessor.get_entry_cache(key),
-                        dupl_entryinfo_cache_accessor.get_entry_cache(nkey)
+                        key, nkey, entry, nentry,
+                        dupl_entryinfo_cache_accessor
                     )
                     if same:
                         logger.debug("Entry %s is duplicate of entry %s: %s",

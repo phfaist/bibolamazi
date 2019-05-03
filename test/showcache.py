@@ -43,7 +43,11 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
     if isinstance(cacheobj, BibUserCacheDic):
         ncount = 0
         for (key, val) in iteritems(cacheobj.dic):
-            f.write("\n" + " "*indent + key + ": ")
+            if isinstance(key, str):
+                skey = key
+            else:
+                skey = repr(key)
+            f.write("\n" + " "*indent + skey + ": ")
             dump_bibcacheobj(val, name=key, indent=indent+indent_step, **kwargs)
             if key in cacheobj.tokens:
                 f.write("\n" + " "*(indent+indent_step) + "{token: "+repr(cacheobj.tokens[key])+"}")

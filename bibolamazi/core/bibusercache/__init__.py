@@ -183,6 +183,15 @@ class BibUserCacheDic(collections.MutableMapping):
             del self.tokens[key]
         return False
 
+    def token_for(self, key):
+        """
+        Return the token that was stored associated with the given `key`.
+
+        Raise an exception if no cache validation set or if the `key` doesn't
+        exist.
+        """
+        return self.tokens[key]
+
     def new_value_set(self, key=None):
         """
         Informs the dic that the value for `key` has been updated, and a new validation
@@ -370,7 +379,7 @@ class BibUserCache(object):
         dictionary does not exist, it is created.
         """
         if not cache_name in self.cachedic:
-            self.cachedic[cache_name] = {}
+            self.cachedic[cache_name] = {} # will be turned into a BibUserCacheDic automatically
 
         return self.cachedic[cache_name]
 
