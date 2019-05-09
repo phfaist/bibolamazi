@@ -457,15 +457,12 @@ class OpenBibFile(QWidget):
 
     # use close() to close the widget and file
     def closeEvent(self, closeEvent):
-        if getattr(self, '_closedcalled', False): # don't call below code twice...
-            return super(OpenBibFile, self).closeEvent(closeEvent)
 
         # refuse to close if the bibolamazi thread is busy for us
         if self.run_bibolamazi.isBusy():
+            logger.debug("Bibolamazi is running, can't close window")
             closeEvent.ignore()
             return
-
-        self._closedcalled = True
 
         logger.debug("closeEvent(): cleaning up.")
         
@@ -480,7 +477,6 @@ class OpenBibFile(QWidget):
                 
             if ans == QMessageBox.Cancel:
                 # ignore the event
-                self._closecalled = False
                 closeEvent.ignore()
                 return
         
@@ -490,7 +486,7 @@ class OpenBibFile(QWidget):
         if self.bibolamaziFile:
             self.bibolamaziFile = None
 
-        self.fileClosed.emit()
+        QMetaObject.invokeMethod(self, 'fileClosed', Qt.QueuedConnection)
         
         return super(OpenBibFile, self).closeEvent(closeEvent)
 
