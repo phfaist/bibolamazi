@@ -178,6 +178,14 @@ class BibolamaziApplication(QApplication):
         self.recentFilesActions = {}
         self.recentFilesList.filesChanged.connect(self.updateRecentFilesMenus)
 
+        # load additional settings
+        s = QSettings()
+        # -- Ui group
+        s.beginGroup("Ui")
+        self.hide_startup_window_on_open_doc = \
+            s.value("HideStartupWindowOnOpenDoc", sys.platform.startswith('darwin'), type=int)
+        s.endGroup()
+
         # thread in which bibolamazi is run
         self.bibolamazi_thread = openbibfile.global_run_bibolamazi_thread_instance()
 
@@ -242,12 +250,12 @@ class BibolamaziApplication(QApplication):
                 logger.debug("File %r already open, raising window.", fnamecanon)
                 return
 
-        # on Mac OS X, we show the start-up window, and then we hide it once we
-        # open a file or create a new file (to avoid clutter).  You can always
-        # show again the start-up window in "File->Show Startup Window".
-        if sys.platform.startswith('darwin') and not self.hasOpenFiles():
+        if self.startup_widget.isVisible() and self.hide_startup_window_on_open_doc:
+            # Setting designed for Mac OS X.  We show the start-up window, and
+            # then we hide it once we open a file or create a new file (to avoid
+            # clutter).  You can always show again the start-up window in
+            # "File->Show Startup Window".
             self.startup_widget.hide()
-
 
         w = openbibfile.OpenBibFile()
         w.setFavoriteCmdsList(self.favoriteCmdsList)
@@ -298,6 +306,10 @@ class BibolamaziApplication(QApplication):
             self.openFile(fname)
 
         
+    def setHideStartupWindowOnOpenDoc(self, on):
+        self.hide_startup_window_on_open_doc = bool(on)
+
+
     @pyqtSlot()
     def createNewFile(self):
         logger.debug("creating new bibolamazi file")
@@ -351,46 +363,48 @@ class BibolamaziApplication(QApplication):
 
         # on Mac OS X, if the last window was closed, then show the start-up
         # window:
-        if sys.platform.startswith("darwin"):
+        if not self.startup_widget.isVisible():
             if not len(self.openbibfiles):
                 #    QTimer.singleShot(100, self.startup_widget.showAndRaise)
                 self.startup_widget.showAndRaise()
 
 
-
-
     @pyqtSlot()
     def quit_app(self):
-        if self.is_quitting_app: return
+        if self.is_quitting_app:
+            return
         self.is_quitting_app = True
+        try:
 
-        logger.info("App quit")
+            logger.info("App quit")
 
-        settings = QSettings()
-        self.favoriteCmdsList.saveToSettings(settings)
-        self.recentFilesList.saveToSettings(settings)
+            settings = QSettings()
+            self.favoriteCmdsList.saveToSettings(settings)
+            self.recentFilesList.saveToSettings(settings)
 
-        # close open bib files one by one
-        while len(self.openbibfiles):
-            w = self.openbibfiles[0]
-            ans = w.close() # this will call bibFileClosed and remove the window
-                            # from the openbibfiles list
-            if not ans:
-                # if the widget cancels the close, then abort
-                event.ignore()
-                self.is_quitting_app = False
-                return False
+            # close open bib files one by one
+            for i in range(len(self.openbibfiles)):
+                w = self.openbibfiles[i]
+                ans = w.close() # this will call bibFileClosed and remove the window
+                                # from the openbibfiles list
+                if not ans:
+                    # if the widget cancels the close, then abort
+                    event.ignore()
+                    return False
 
-        # at this point, quit is confirmed and we shut down everything
+            # at this point, quit is confirmed and we shut down everything
 
-        while self.bibolamazi_thread.busy:
-            QThread.currentThread().usleep(100000) # 0.1 seconds
-        self.bibolamazi_thread.doQuit()
+            while self.bibolamazi_thread.busy:
+                QThread.currentThread().usleep(100000) # 0.1 seconds
+            self.bibolamazi_thread.doQuit()
 
-        if self.helpbrowser:
-            self.helpbrowser.close()
+            if self.helpbrowser:
+                self.helpbrowser.close()
 
-        self.quit()
+            self.quit()
+
+        finally:
+            self.is_quitting_app = False
 
 
 

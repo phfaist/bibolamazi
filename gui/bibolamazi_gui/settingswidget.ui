@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>483</width>
-    <height>331</height>
+    <width>402</width>
+    <height>446</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,6 +31,13 @@
        <widget class="QLabel" name="label">
         <property name="text">
          <string>Remember recent files:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QCheckBox" name="chkHideStartupWindow">
+        <property name="text">
+         <string>Hide startup window after opening a document</string>
         </property>
        </widget>
       </item>

@@ -219,6 +219,8 @@ class SettingsWidget(QDialog):
 
         self.ui.spnMaxRecentFiles.setValue(bibapp.recentFilesList.max_recent_files)
 
+        self.ui.chkHideStartupWindow.setChecked(bibapp.hide_startup_window_on_open_doc)
+
         # filter packages
 
         self.fpmodel = MyOrderedDictModel(filters_factory.filterpath)
@@ -329,21 +331,38 @@ class SettingsWidget(QDialog):
     def on_spnMaxRecentFiles_valueChanged(self, num):
         self.bibapp.recentFilesList.max_recent_files = int(num)
 
+
+    @pyqtSlot(bool)
+    def on_chkHideStartupWindow_toggled(self, on):
+        logger.debug("set HideStartupWindowOnOpenDoc = %r", on)
+        self.bibapp.setHideStartupWindowOnOpenDoc(on)
+        self.save_settings()
+
+
     @pyqtSlot()
     def save_settings(self):
+
+        logger.debug("settingswidget: Saving settings")
 
         s = QSettings()
 
         # max_recent_files is saved along with the recent files themselves
 
-        s.beginGroup("BibolamaziCore")
+        ### Group "Ui"
+        s.beginGroup("Ui")
+        s.setValue("HideStartupWindowOnOpenDoc", int(self.ui.chkHideStartupWindow.isChecked()))
+        s.endGroup()
 
+
+        ### Group "BibolamaziCore"
+        s.beginGroup("BibolamaziCore")
         s.setValue("filterpath",
                    os.pathsep.join(( "%s=%s"%(k, v if v else "")
                                      for k,v in filters_factory.filterpath.items() ))
                    )
+        s.endGroup()
+
         # reset the filter cache.
         filters_factory.reset_filters_cache()
 
-        s.endGroup()
         s.sync()
