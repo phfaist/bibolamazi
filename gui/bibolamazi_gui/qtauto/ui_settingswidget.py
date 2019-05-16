@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_SettingsWidget(object):
     def setupUi(self, SettingsWidget):
         SettingsWidget.setObjectName("SettingsWidget")
-        SettingsWidget.resize(425, 449)
+        SettingsWidget.resize(402, 446)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(SettingsWidget)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.wGeneral = QtWidgets.QGroupBox(SettingsWidget)

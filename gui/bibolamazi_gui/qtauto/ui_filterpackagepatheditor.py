@@ -2,11 +2,12 @@
 
 # Form implementation generated from reading ui file 'filterpackagepatheditor.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.12.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_FilterPackagePathEditor(object):
     def setupUi(self, FilterPackagePathEditor):
@@ -26,9 +27,12 @@ class Ui_FilterPackagePathEditor(object):
         self.lblInfo.setWordWrap(True)
         self.lblInfo.setObjectName("lblInfo")
         self.verticalLayout.addWidget(self.lblInfo)
-        self.btnChange = QtWidgets.QPushButton(FilterPackagePathEditor)
-        self.btnChange.setObjectName("btnChange")
-        self.verticalLayout.addWidget(self.btnChange)
+        self.btnSetLocalPackage = QtWidgets.QPushButton(FilterPackagePathEditor)
+        self.btnSetLocalPackage.setObjectName("btnSetLocalPackage")
+        self.verticalLayout.addWidget(self.btnSetLocalPackage)
+        self.btnSetLocation = QtWidgets.QPushButton(FilterPackagePathEditor)
+        self.btnSetLocation.setObjectName("btnSetLocation")
+        self.verticalLayout.addWidget(self.btnSetLocation)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem1)
 
@@ -40,5 +44,7 @@ class Ui_FilterPackagePathEditor(object):
         FilterPackagePathEditor.setWindowTitle(_translate("FilterPackagePathEditor", "Form"))
         self.label.setText(_translate("FilterPackagePathEditor", "Imported filter package"))
         self.lblInfo.setText(_translate("FilterPackagePathEditor", "path"))
-        self.btnChange.setText(_translate("FilterPackagePathEditor", "change ..."))
+        self.btnSetLocalPackage.setText(_translate("FilterPackagePathEditor", "set local python package ..."))
+        self.btnSetLocation.setText(_translate("FilterPackagePathEditor", "set location ..."))
+
 

@@ -55,11 +55,8 @@ from .bibfilter import BibFilter
 from . import argparseactions
 from . import butils
 from .butils import BibolamaziError
-from . import pkgfetcher
-from .pkgfetcher import fetcher_github as pkgfetcher_github
-
-# for list of filters
 from .bibfilter import factory as filterfactory
+from .bibfilter import pkgfetcher_github
 
 
 # our logger for the main module
@@ -257,19 +254,16 @@ def _main_helper(argv):
     #except ImportError:
     #    pass
 
+
+    # set up the filter package providers
+    # -----------------------------------
+    github_provider = pkgfetcher_github.GithubPackageProvider()
+    filterfactory.package_provider_manager.registerPackageProvider(github_provider)
     
     # set up extra filter packages from environment variables
     # -------------------------------------------------------
 
     setup_filterpackages_from_env()
-
-
-    # set up remote package fetchers
-    # ------------------------------
-
-    global pkgprovidermanager
-    pkgprovidermanager = pkgfetcher.PackageProviderManager
-    ...... ### should this be done here or at a later stage?? when do we coordinate with the GUI??
 
     
     # parse the command line arguments

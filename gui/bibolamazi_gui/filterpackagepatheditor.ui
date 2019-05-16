@@ -57,9 +57,16 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="btnChange">
+    <widget class="QPushButton" name="btnSetLocalPackage">
      <property name="text">
-      <string>change ...</string>
+      <string>set local python package ...</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btnSetLocation">
+     <property name="text">
+      <string>set location ...</string>
      </property>
     </widget>
    </item>

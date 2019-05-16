@@ -38,6 +38,8 @@ from html import escape as htmlescape
 
 import bibolamazi.init
 
+from bibolamazi.core.bibfilter import factory as filters_factory
+
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -68,9 +70,13 @@ class FilterPackagePathEditor(QWidget):
         self.ref_dir = ref_dir
 
     @pyqtSlot(str, str)
-    def setFilterPackageInfo(self, filterpkg, filterdir):
-        self.ui.lblInfo.setText("<b>{}:</b> {}".format(htmlescape(str(filterpkg)),
-                                                       htmlescape(str(filterdir))))
+    def setFilterPackageInfo(self, arg):
+        fpspec = filters_factory.FilterPackageSpec(arg)
+        if fpspec.is_url:
+            self.ui.lblInfo.setText("Location: <b>{}</b>".format(htmlescape(str(fpspec.url))))
+        else:
+            self.ui.lblInfo.setText("<b>{}:</b> {}".format(htmlescape(str(fpspec.fpname)),
+                                                           htmlescape(str(fpspec.fpdir))))
 
     @pyqtSlot(str)
     def setFilterPackageError(self, errmsg):
@@ -78,9 +84,9 @@ class FilterPackagePathEditor(QWidget):
 
 
     @pyqtSlot()
-    def on_btnChange_clicked(self):
+    def on_btnSetLocalPackage_clicked(self):
 
-        fpath = str(QFileDialog.getExistingDirectory(self, "Locate Filter Package", str()))
+        fpath = QFileDialog.getExistingDirectory(self, "Locate Filter Package", str())
 
         logger.debug("User selected fpath = %r", fpath)
 
@@ -89,6 +95,22 @@ class FilterPackagePathEditor(QWidget):
 
         fpath = sanitize_bib_rel_path(fpath, ref_dir=self.ref_dir)
         self.filterPackagePathChanged.emit(fpath)
+
+    @pyqtSlot()
+    def on_btnSetLocation_clicked(self):
+
+        self.promptLocation('')
+
+    @pyqtSlot(str)
+    def promptLocation(self, orig_str):
+
+        floc, okPressed = QInputDialog.getText(self, "Package URL", "Enter path or URL:",
+                                               QLineEdit.Normal, orig_str)
+
+        if not okPressed or not floc:
+            return
+
+        self.filterPackagePathChanged.emit(floc)
 
         
     

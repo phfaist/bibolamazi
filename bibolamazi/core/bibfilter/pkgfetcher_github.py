@@ -48,7 +48,7 @@ import github
 import requests
 
 import bibolamazi.init
-import bibolamazi.pkgfetcher as pkgfetcher
+from bibolamazi.core.butils import BibolamaziError
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ rx_github_path = re.compile(r'''
 (?P<username>[a-zA-Z0-9_.-]+)
   / (?P<repo>[a-zA-Z0-9_.-]+)
   (?: / (?P<commit>[a-zA-Z0-9_.+-]+) )?
-''' flags=re.VERBOSE)
+''', flags=re.VERBOSE)
 
 
 class Fetcher(object):
@@ -90,17 +90,29 @@ class Fetcher(object):
 
         self.sha = self.C.sha
 
+        logger.debug("Preparing to inspect and/or fetch filter package %s/%s [%s] (sha=%s)",
+                     self.username, self.repo, self.effective_commit, self.sha)
+
 
     def check_cache_is_up_to_date(self, provider_data):
 
         cached_shacommit = provider_data['cached_shacommit']
         
-        return cached_shacommit == self.sha
+        if cached_shacommit == self.sha:
+            logger.debug("Previously downloaded package was sha=%r and is up to date.",
+                         cached_shacommit)
+            return True
+
+        logger.debug("Previously downloaded package was sha=%r but the URL points to sha=%r; "
+                     "we'll need to re-download.", cached_shacommit, self.sha)
+        return False
 
 
     def fetch_to_dir(self, fullcachedir):
 
         zip_url = self.R.get_archive_link('zipball', self.sha)
+
+        logger.longdebug("Downloading zipball at %r ...", zip_url)
 
         # this should also work for private repositories as the URL should
         # include necessary tokens apparently
@@ -119,41 +131,54 @@ class Fetcher(object):
 
         pkg_subdir = self.sha
 
-        # if all files are within a subdir provided by the github api, include that, too:
+        # if all files are within a subdir provided by the github api, then
+        # rename the directory into the package name, and include that, too:
         xtract_contents_root = os.listdir(os.path.join(fullcachedir, pkg_subdir))
         if len(xtract_contents_root) == 1:
-            pkg_subdir += '/' + xtract_contents_root[0]
-            
+            onlydir = xtract_contents_root[0]
+            os.rename(os.path.join(fullcachedir, pkg_subdir, onlydir),
+                      os.path.join(fullcachedir, pkg_subdir, self.repo))
+            pkg_subdir += '/' + self.repo
 
-        if os.path.isdir(os.path.join(fullcachedir, pkg_subdir, self.repo)):
+        if not os.path.exists(os.path.join(fullcachedir, pkg_subdir, '__init__.py')) and \
+           os.path.isdir(os.path.join(fullcachedir, pkg_subdir, self.repo)):
+            # no __init__.py as a root file in the repo, and there exists a
+            # subdir of the same name. So point to that.
             pkg_subdir += '/' + self.repo
 
         provider_data = {
             'cached_shacommit': self.sha
         }
 
-        return pkg_subdir, provder_data
+        logger.longdebug("pkg_subdir=%r, provider_data=%r", pkg_subdir, provider_data)
+
+        return pkg_subdir, provider_data
 
 
 
 
-class GithubUrlPkgProvider(object):
+class GithubPackageProvider(object):
     def __init__(self):
-        super(GithubUrlPkgProvider, self).__init__()
+        super(GithubPackageProvider, self).__init__()
 
     def can_provide_from(self, scheme):
         return (scheme == 'github')
 
     def get_fetcher(self, url):
+
+        logger.longdebug("Creating github instance fetcher for URL = %r", url)
         
         p = urlparse(url)
         if p.scheme != 'github':
             raise ValueError("GithubUrlPkgProvider can only handle \"github:<...>\" urls")
-        if p.host:
+        if p.hostname:
             raise ValueError("GithubUrlPkgProvider can only fetch repos on github.com "
                              "and you cannot provide a host name in the URL.")
         m = rx_github_path.match(p.path)
         if not m:
-            raise ValueError("Can't parse github pseudo-path: {}".format(p.path))
+            raise BibolamaziError("Can't parse github pseudo-path: {}".format(p.path))
         
-        return Fetcher(**m.groupdict())
+        try:
+            return Fetcher(**m.groupdict())
+        except (requests.ConnectionError,github.GithubException) as e:
+            raise BibolamaziError("Cannot retrieve github package: {}".format(e))

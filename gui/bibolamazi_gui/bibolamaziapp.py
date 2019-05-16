@@ -48,6 +48,7 @@ from bibolamazi.core import main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
+from bibolamazi.core.bibfilter import pkgfetcher_github
 from bibolamazi.core import version as bibolamaziversion
 
 
@@ -486,8 +487,12 @@ def run_app(argv):
 
     app = BibolamaziApplication(argv)
 
-    #if getattr(sys, 'frozen', False):
-    #    hack_pybtex_plugins()
+
+    # set up the filter package providers
+    #
+    github_provider = pkgfetcher_github.GithubPackageProvider()
+    filters_factory.package_provider_manager.registerPackageProvider(github_provider)
+
 
     try:
         # load filter packages from environment ...
@@ -500,6 +505,7 @@ def run_app(argv):
                             "Please edit your settings.")
         pass
 
+
     args = app.arguments()
     _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE)
     for k in range(1,len(args)): # skip program name == argv[0]
@@ -511,6 +517,7 @@ def run_app(argv):
         
         logger.debug("opening arg: %s", fn)
         app.openFile(fn)
+
 
     sys.exit(app.exec_())
     

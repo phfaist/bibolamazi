@@ -97,6 +97,7 @@ sys.excepthook = exception_handler
 
 def main():
 
+
     blogger.setup_simple_console_logging(level=logging.DEBUG)
 
     argv = list(sys.argv)
@@ -121,6 +122,7 @@ def main():
     setup_qt5_plugins_path()
 
 
+
     # ## Seems we still need this for pyinstaller, I'm not sure why....
     #
     # load precompiled filters, if we've got any
@@ -132,6 +134,8 @@ def main():
     except ImportError:
         pass
 
+
+    # note: package providers will be loaded after loading the Qt application:
 
     from . import bibolamaziapp
 
