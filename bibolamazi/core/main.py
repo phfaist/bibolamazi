@@ -55,6 +55,8 @@ from .bibfilter import BibFilter
 from . import argparseactions
 from . import butils
 from .butils import BibolamaziError
+from . import pkgfetcher
+from .pkgfetcher import fetcher_github as pkgfetcher_github
 
 # for list of filters
 from .bibfilter import factory as filterfactory
@@ -260,6 +262,14 @@ def _main_helper(argv):
     # -------------------------------------------------------
 
     setup_filterpackages_from_env()
+
+
+    # set up remote package fetchers
+    # ------------------------------
+
+    global pkgprovidermanager
+    pkgprovidermanager = pkgfetcher.PackageProviderManager
+    ...... ### should this be done here or at a later stage?? when do we coordinate with the GUI??
 
     
     # parse the command line arguments

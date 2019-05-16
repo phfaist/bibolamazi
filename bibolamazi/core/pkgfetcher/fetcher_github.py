@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 # github URLs are of the form:
 #
-# github:phfaist/bib2enxml  (default branch)
+# github:phfaist/bib2enxml    (-> use default branch)
 # github:phfaist/bib2enxml/<branch or tag or commit>
 #
 #
