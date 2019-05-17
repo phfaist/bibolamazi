@@ -42,6 +42,7 @@ from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import main
 
 from . import githubauthenticationdialog
+from . import uiutils
 from .uiutils import BlockedSignals
 from .qtauto.ui_settingswidget import Ui_SettingsWidget
 
@@ -356,8 +357,8 @@ class SettingsWidget(QDialog):
 
         if is_authenticated:
             self.ui.lblGithubAuthStatus.setText("""\
-<span style="color: #00ff00;">\N{CHECK MARK} Access token configured</span>
-""")
+<span style="color: %(green)s">\N{CHECK MARK} Access token configured</span>
+"""%{'green': '#50ff50' if uiutils.is_dark_mode(self) else '#006000'})
         else:
             self.ui.lblGithubAuthStatus.setText("""\
 <span style="font-style: italic;"> Currently not authenticated</span>
