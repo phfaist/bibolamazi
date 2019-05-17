@@ -171,3 +171,8 @@ filter package ..."; choose the directory corresponding to your filter package
 within your filter package with the syntax ``myfilters:filtername`` or simply
 ``filtername`` (as long as the filter name does not clash with another filter of
 the same name in a different filter package).
+
+TODO: DOC .................. SINCE 4.2: Can specify URLs of the form
+github:user/repo & bibolamazi automatically downloads the filter
+package. .............. To set up authentication in app: see settings. In
+command-line, use --github-auth, see --help. .............

@@ -46,6 +46,7 @@ from PyQt5.QtWidgets import *
 
 from .qtauto.ui_filterpackagepatheditor import Ui_FilterPackagePathEditor
 from .sourcelisteditor import sanitize_bib_rel_path
+from . import githubreposelector
 
 logger = logging.getLogger(__name__)
 
@@ -97,20 +98,14 @@ class FilterPackagePathEditor(QWidget):
         self.filterPackagePathChanged.emit(fpath)
 
     @pyqtSlot()
-    def on_btnSetLocation_clicked(self):
+    def on_btnSetGithubRepo_clicked(self):
 
-        self.promptLocation('')
-
-    @pyqtSlot(str)
-    def promptLocation(self, orig_str):
-
-        floc, okPressed = QInputDialog.getText(self, "Package URL", "Enter path or URL:",
-                                               QLineEdit.Normal, orig_str)
-
-        if not okPressed or not floc:
+        gh = githubreposelector.GithubRepoSelector(self)
+        
+        r = gh.exec_()
+        if r != QDialog.Accepted:
             return
 
-        self.filterPackagePathChanged.emit(floc)
+        url = gh.getFilterPackageUrl()
 
-        
-    
+        self.filterPackagePathChanged.emit(url)

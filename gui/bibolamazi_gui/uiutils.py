@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import *
 
 
 
-class ContextAttributeSetter:
+class ContextAttributeSetter(object):
     """Give a list of pairs of method and value to set.
 
     For example:
@@ -60,6 +60,7 @@ class ContextAttributeSetter:
 
         Note: the argument are a list of 3-tuples `(get_method, set_method, set_to_value)`.
         """
+        super(ContextAttributeSetter, self).__init__()
         self.attribpairs = args
         self.initvals = None
 
@@ -77,6 +78,22 @@ class ContextAttributeSetter:
         for i in range(N):
             (getm, setm, v) = self.attribpairs[N-i-1]
             setm(self.initvals[N-i-1])
+
+
+
+
+class BlockedSignals(ContextAttributeSetter):
+    """
+    with BlockedSignals(object1, object2, ...):
+       # those Qt object's signals are temporarily blocked in this with statement.
+    """
+
+    def __init__(self, *args):
+        attrlist = [
+            (obj.signalsBlocked, obj.blockSignals, True)
+            for obj in args
+        ]
+        super(BlockedSignals, self).__init__( *attrlist )
 
 
 

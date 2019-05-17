@@ -29,7 +29,7 @@ change if I feel the need for it.)
 from __future__ import unicode_literals, print_function
 from past.builtins import basestring
 from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
+from builtins import range, input
 from builtins import str as unicodestr
 import sys
 PY2 = (sys.version_info[0] == 2)
@@ -304,6 +304,64 @@ class opt_init_empty_template(argparse.Action):
         bfile.saveToFile()
 
         parser.exit()
+
+
+
+
+class opt_action_github_auth(argparse.Action):
+
+    def _check_token_valid(self, token, parser):
+        if re.match(r'^[a-zA-Z0-9]{32,}$', token) is None:
+            logger.error("Invalid access token.")
+            parser.exit(13)
+
+
+    def __call__(self, parser, namespace, values, option_string):
+        from . import main
+        if values:
+            # auth key directly specified
+            token = values[0].strip()
+            if token == '-':
+                # unset auth
+                main.save_github_auth_token(None)
+                parser.exit()
+
+        else:
+            # get token from user input
+
+            print("""\
+
+INSTRUCTIONS FOR GITHUB AUTHENTICATION
+
+This process will generate a personal access token authorizing bibolamazi to
+access your github account. This procedure ensures that bibolamazi never sees
+your github password. The personal access token can be revoked in your github
+settings at any time.
+
+Please visit this URL in your browser and follow the instructions below:
+
+    https://github.com/settings/tokens
+
+1. Click on the button “Generate new token”
+
+2. Give a name to the access token such as “bibolamazi access”, and select the
+   “repo” scope
+
+3. Scroll down and click on “Generate token”
+
+4. Paste the access token below:
+
+""")
+
+            token = input('Access token: ')
+
+        self._check_token_valid(token, parser)
+
+        # set the given token
+        main.save_github_auth_token(token)
+        parser.exit()
+        
+
 
 
 

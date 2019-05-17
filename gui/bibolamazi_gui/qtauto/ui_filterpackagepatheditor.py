@@ -30,9 +30,9 @@ class Ui_FilterPackagePathEditor(object):
         self.btnSetLocalPackage = QtWidgets.QPushButton(FilterPackagePathEditor)
         self.btnSetLocalPackage.setObjectName("btnSetLocalPackage")
         self.verticalLayout.addWidget(self.btnSetLocalPackage)
-        self.btnSetLocation = QtWidgets.QPushButton(FilterPackagePathEditor)
-        self.btnSetLocation.setObjectName("btnSetLocation")
-        self.verticalLayout.addWidget(self.btnSetLocation)
+        self.btnSetGithubRepo = QtWidgets.QPushButton(FilterPackagePathEditor)
+        self.btnSetGithubRepo.setObjectName("btnSetGithubRepo")
+        self.verticalLayout.addWidget(self.btnSetGithubRepo)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem1)
 
@@ -45,6 +45,6 @@ class Ui_FilterPackagePathEditor(object):
         self.label.setText(_translate("FilterPackagePathEditor", "Imported filter package"))
         self.lblInfo.setText(_translate("FilterPackagePathEditor", "path"))
         self.btnSetLocalPackage.setText(_translate("FilterPackagePathEditor", "set local python package ..."))
-        self.btnSetLocation.setText(_translate("FilterPackagePathEditor", "set location ..."))
+        self.btnSetGithubRepo.setText(_translate("FilterPackagePathEditor", "set github repository ..."))
 
 

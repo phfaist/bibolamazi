@@ -72,13 +72,17 @@ rx_github_path = re.compile(r'''
 
 
 class Fetcher(object):
-    def __init__(self, username, repo, commit=None):
+    def __init__(self, auth_token, username, repo, commit=None):
         super(Fetcher, self).__init__()
+        self.auth_token = auth_token
         self.username = username
         self.repo = repo
         self.commit = commit
 
-        self.G = github.Github()
+        if self.auth_token:
+            self.G = github.Github(self.auth_token)
+        else:
+            self.G = github.Github()
         self.R = self.G.get_repo(self.username + '/' + self.repo)
         
         if self.commit:
@@ -158,8 +162,15 @@ class Fetcher(object):
 
 
 class GithubPackageProvider(object):
-    def __init__(self):
+    def __init__(self, auth_token=None):
         super(GithubPackageProvider, self).__init__()
+        self.auth_token = auth_token
+
+    def setAuthToken(self, token):
+        self.auth_token = token
+
+    def getAuthToken(self):
+        return self.auth_token
 
     def can_provide_from(self, scheme):
         return (scheme == 'github')
@@ -179,6 +190,6 @@ class GithubPackageProvider(object):
             raise BibolamaziError("Can't parse github pseudo-path: {}".format(p.path))
         
         try:
-            return Fetcher(**m.groupdict())
+            return Fetcher(auth_token=self.auth_token, **m.groupdict())
         except (requests.ConnectionError,github.GithubException) as e:
             raise BibolamaziError("Cannot retrieve github package: {}".format(e))

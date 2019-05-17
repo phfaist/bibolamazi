@@ -40,8 +40,10 @@ import argparse
 import textwrap
 import types
 from collections import namedtuple
+import json
 import logging
 
+import appdirs
 
 # import all the parts we need from our own application.
 # ------------------------------------------------------
@@ -173,6 +175,13 @@ def get_args_parser():
                         "(3) a full path to a package directory '/some/location/to/pkgname' which has the "
                         "same effect as the value 'pkgname=/some/location/to'.")
 
+    parser.add_argument('--github-auth', action=argparseactions.opt_action_github_auth, nargs='?',
+                        help="Store authentication information for accessing filter packages specified "
+                        "directly as github repositories.  Use this option without argument for an "
+                        "interactive setup, or if you know what you're doing, directly specify the "
+                        "access token as argument to this option or specify '-' as argument to reset "
+                        "the stored authentication.")
+
     parser.add_argument('--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
                         help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
     parser.add_argument('-q', '-v0', '--quiet', action=argparseactions.opt_set_verbosity, nargs=0, const=0,
@@ -235,7 +244,75 @@ def main(argv=sys.argv[1:]):
         import traceback; traceback.print_exc()
         import pdb; pdb.post_mortem()
 
+
+class CmdlSettings(object):
+    """
+    Stores settings for the command-line app.  Read/write json-objects to the
+    `config` property of this object.  Config is loaded upon object
+    creation. Call `saveConfig()` after changing the `config` property.
+    """
+    def __init__(self, configfname='cmdl_settings.json'):
+        super(CmdlSettings, self).__init__()
+        self.configfname = configfname
+
+        self.user_config_dir = appdirs.user_config_dir('bibolamazi')
+        if not os.path.exists(self.user_config_dir):
+            os.mkdir(self.user_config_dir)
+        self.full_config_fname = os.path.join(self.user_config_dir, self.configfname)
+
+        self.config = {}
+
+        self.reloadConfig()
+        
+    def reloadConfig(self):
+        if os.path.exists(self.full_config_fname):
+            try:
+                with open(self.full_config_fname) as f:
+                    self.config = json.load(f)
+            except Exception as e:
+                logger.warning("Failed to load config file %s: %s", self.full_config_fname, e)
+
+    def saveConfig(self):
+        with open(self.full_config_fname, 'w') as f:
+            json.dump(self.config, f, indent=4)
     
+    
+# Note: gui doesn't use these, see bibolamazi_gui.bibolamaziapp
+cmdl_filterpackage_providers = {}
+
+def load_filterpackage_providers():
+    settings = CmdlSettings()
+    if 'RemoteFilterPackages' not in settings.config:
+        settings.config['RemoteFilterPackages'] = {}
+
+    github_auth_token = settings.config['RemoteFilterPackages'].get('GithubAuthToken', '')
+
+    cmdl_filterpackage_providers['github'] = \
+        pkgfetcher_github.GithubPackageProvider(github_auth_token if github_auth_token else None)
+
+    filterfactory.package_provider_manager.registerPackageProvider(
+        cmdl_filterpackage_providers['github']
+    )
+
+    #print("Loaded filterpackage providers (cmdl version)")
+
+def save_github_auth_token(github_auth_token):
+
+    #cmdl_filterpackage_providers['github'].setAuthToken(github_auth_token)
+
+    settings = CmdlSettings()
+    if 'RemoteFilterPackages' not in settings.config:
+        settings.config['RemoteFilterPackages'] = {}
+
+    settings.config['RemoteFilterPackages']['GithubAuthToken'] = github_auth_token
+    settings.saveConfig()
+
+    logger.debug("Set auth token %s",
+                 '[...]{}'.format(github_auth_token[-4:]) if github_auth_token else 'None')
+
+    
+
+
 
 def _main_helper(argv):
 
@@ -257,8 +334,7 @@ def _main_helper(argv):
 
     # set up the filter package providers
     # -----------------------------------
-    github_provider = pkgfetcher_github.GithubPackageProvider()
-    filterfactory.package_provider_manager.registerPackageProvider(github_provider)
+    load_filterpackage_providers()
     
     # set up extra filter packages from environment variables
     # -------------------------------------------------------

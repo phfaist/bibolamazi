@@ -41,6 +41,8 @@ import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import main
 
+from . import githubauthenticationdialog
+from .uiutils import BlockedSignals
 from .qtauto.ui_settingswidget import Ui_SettingsWidget
 
 
@@ -232,6 +234,9 @@ class SettingsWidget(QDialog):
         self.slot_lstFilterPackages_selectionChanged()
         self.fpmodel.dicChanged.connect(self.save_settings)
 
+        # update auth status
+        self._update_githubauth_guistate()
+
 
     def filterpackages_selected_rows(self):
         idxlist = self.ui.lstFilterPackages.selectedIndexes()
@@ -337,6 +342,47 @@ class SettingsWidget(QDialog):
         logger.debug("set HideStartupWindowOnOpenDoc = %r", on)
         self.bibapp.setHideStartupWindowOnOpenDoc(on)
         self.save_settings()
+
+
+    def _update_githubauth_guistate(self):
+        from . import bibolamaziapp
+        is_authenticated = False
+        if bibolamaziapp.app_filterpackage_providers['github'].getAuthToken():
+            is_authenticated = True
+            
+        if self.ui.chkGithubAuth.isChecked() != is_authenticated:
+            with BlockedSignals(self.ui.chkGithubAuth):
+                self.ui.chkGithubAuth.setChecked(is_authenticated)
+
+        if is_authenticated:
+            self.ui.lblGithubAuthStatus.setText("""\
+<span style="color: #00ff00;">\N{CHECK MARK} Access token configured</span>
+""")
+        else:
+            self.ui.lblGithubAuthStatus.setText("""\
+<span style="font-style: italic;"> Currently not authenticated</span>
+""") # don't use \N{CROSS MARK}, it's a little too prominent
+
+    @pyqtSlot(bool)
+    def on_chkGithubAuth_toggled(self, on):
+        logger.debug("Clicked github auth checkbox = %r", on)
+        from . import bibolamaziapp
+        if not on:
+            bibolamaziapp.app_filterpackage_providers['github'].setAuthToken(None)
+        else:
+            try:
+                dlg = githubauthenticationdialog.GithubAuthenticationDialog(self)
+                r = dlg.exec_()
+                if r == QDialog.Accepted:
+                    token = dlg.getAuthToken()
+                    logger.debug("Got auth token = [...]%s", token[-4:])
+                    bibolamaziapp.set_github_auth_token(token)
+            except Exception as e:
+                logger.warning("Can't generate access token: %s: %s", e.__class__.__name__, e)
+                logger.exception("Exception")
+                pass
+
+        self._update_githubauth_guistate()
 
 
     @pyqtSlot()

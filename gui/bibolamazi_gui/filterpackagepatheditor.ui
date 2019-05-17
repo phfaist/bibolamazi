@@ -64,9 +64,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="btnSetLocation">
+    <widget class="QPushButton" name="btnSetGithubRepo">
      <property name="text">
-      <string>set location ...</string>
+      <string>set github repository ...</string>
      </property>
     </widget>
    </item>
