@@ -282,11 +282,11 @@ def normalize_month(x):
 
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2013-2018, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Detect duplicate bibtex entries and create corresponding aliases.
 """
 
@@ -608,7 +608,7 @@ class DuplicatesFilter(BibFilter):
                AUX file in the given directories, as for the only_used filter.
         """
 
-        BibFilter.__init__(self)
+        super(DuplicatesFilter, self).__init__()
 
         self.dupfile = dupfile
 

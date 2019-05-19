@@ -41,11 +41,11 @@ from .util import auxfile
 logger = logging.getLogger(__name__)
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Discard all BibTeX entries that are not used in a LaTeX document
 """
 
@@ -92,7 +92,7 @@ class OnlyUsedFilter(BibFilter):
               (escape commas and backslashes with a backslash)
         """
 
-        BibFilter.__init__(self);
+        super(OnlyUsedFilter, self).__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -100,7 +100,7 @@ class OnlyUsedFilter(BibFilter):
         if (not self.search_dirs):
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)
 
-        logger.debug('only_used: jobname=%r', jobname);
+        logger.debug('only_used: jobname=%r', jobname)
 
 
     def getRunningMessage(self):
@@ -108,7 +108,7 @@ class OnlyUsedFilter(BibFilter):
 
     
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
 
     def filter_bibolamazifile(self, bibolamazifile):
@@ -122,7 +122,7 @@ class OnlyUsedFilter(BibFilter):
         logger.debug("Getting list of used citations from %s.aux.", jobname)
 
         citations = auxfile.get_all_auxfile_citations(jobname, bibolamazifile, self.name(), self.search_dirs,
-                                                      return_set=True);
+                                                      return_set=True)
 
         logger.longdebug("set of citations: %r", citations)
 
@@ -143,6 +143,6 @@ class OnlyUsedFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return OnlyUsedFilter;
+    return OnlyUsedFilter
 
 

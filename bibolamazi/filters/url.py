@@ -38,11 +38,11 @@ from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from .util import arxivutil
 
 
-HELP_AUTHOR = r"""\
-URLs filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Remove or add URLs from entries according to given rules, e.g. whether DOI or ArXiv ID are present
 """
 
@@ -102,7 +102,7 @@ class UrlNormalizeFilter(BibFilter):
                          argument.
 
         """
-        BibFilter.__init__(self)
+        super(UrlNormalizeFilter, self).__init__()
 
         self.strip = getbool(Strip)
         self.stripallifdoiorarxiv = getbool(StripAllIfDoiOrArxiv)

@@ -263,16 +263,16 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist & Romain M\u00FCller, (C) 2015, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Collects bibtex entries from Inspire.net for citations of the form
 \cite{inspire:PhysRev.47.777--EPR+paper}
 """
 
-HELP_TEXT = r"""\
+HELP_TEXT = r"""
 This filter scans a LaTeX document for citations of the form
 \cite{inspire:some-form-of-identifier.99} or
 \cite{inspire:some-form-of-identifier.99--some-comment} and adds the

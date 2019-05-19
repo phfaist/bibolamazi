@@ -38,11 +38,11 @@ from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from pybtex.database import Person
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Shorten-authors-etal filter by Philippe Faist, (C) 2018, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Shorten author list to a custom length and add "et al.", for standard BibTeX styles
 """
 

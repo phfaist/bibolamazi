@@ -42,12 +42,12 @@ from bibolamazi.core.butils import getbool
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 
 
-HELP_AUTHOR = r"""\
-Name Initials filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
 HELP_DESC = r"""
-Name Initials filter: Turn full first names into only initials for all entries.
+Turn full first names into only initials for all entries.
 """
 
 HELP_TEXT = r"""
@@ -96,7 +96,7 @@ class NameInitialsFilter(BibFilter):
             names entirely.
 
         """
-        BibFilter.__init__(self)
+        super(NameInitialsFilter, self).__init__()
 
         self.roles = roles
         if not self.roles:

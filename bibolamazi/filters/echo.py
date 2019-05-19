@@ -40,11 +40,11 @@ from bibolamazi.core.bibfilter.argtypes import LogLevel
 
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Echo a custom message in the bibolamazi log
 """
 
@@ -90,7 +90,7 @@ class EchoFilter(BibFilter):
           - format(EchoFormat): how to display the message (one of 'default', 'simple' or 'warn')
           - warn(bool): short for '-sFormat=warn -sLevel=WARNING'
         """
-        BibFilter.__init__(self);
+        super(EchoFilter, self).__init__()
 
         self.message = message
         if len(args) > 0:
@@ -115,7 +115,7 @@ class EchoFilter(BibFilter):
 
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def filter_bibolamazifile(self, bibolamazifile):
 
@@ -127,5 +127,5 @@ class EchoFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return EchoFilter;
+    return EchoFilter
 

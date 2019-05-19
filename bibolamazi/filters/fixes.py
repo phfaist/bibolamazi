@@ -46,11 +46,11 @@ from bibolamazi.core import butils
 
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = r"""\
+HELP_DESC = r"""
 Perform some various known fixes for bibtex entries
 """
 
@@ -287,7 +287,7 @@ class FixesFilter(BibFilter):
                 insert a blank after the `\\AA' or `\\o' otherwise.
         """
         
-        BibFilter.__init__(self)
+        super(FixesFilter, self).__init__()
 
         self.fix_space_after_escape = butils.getbool(fix_space_after_escape)
         self.fix_swedish_a = butils.getbool(fix_swedish_a); # OBSOLETE

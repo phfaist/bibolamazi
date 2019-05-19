@@ -50,12 +50,12 @@ from .util import arxivutil
 from .util import auxfile
 
 
-HELP_AUTHOR = r"""\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = r"""\
-Filter that fills BibTeX files with relevant entries to cite with \cite{1211.1037}
+HELP_DESC = r"""
+Filter that fills BibTeX files with relevant entries to cite with \\cite{1211.1037}
 """
 
 HELP_TEXT = r"""
@@ -103,7 +103,7 @@ class CiteArxivFilter(BibFilter):
               no prefix)
         """
 
-        BibFilter.__init__(self);
+        super(CiteArxivFilter, self).__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -113,7 +113,7 @@ class CiteArxivFilter(BibFilter):
         if (not self.search_dirs):
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)
 
-        logger.debug('citearxiv: jobname=%r' % (jobname,));
+        logger.debug('citearxiv: jobname=%r' % (jobname,))
 
 
     def getRunningMessage(self):
@@ -121,7 +121,7 @@ class CiteArxivFilter(BibFilter):
 
     
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def requested_cache_accessors(self):
         return [
@@ -150,7 +150,7 @@ class CiteArxivFilter(BibFilter):
                 return
 
             # citekey is an arxiv ID
-            arxivid = citekey;
+            arxivid = citekey
             if (arxivid not in citearxiv_uselist):
                 citearxiv_uselist.append(arxivid)
                 
@@ -175,7 +175,7 @@ class CiteArxivFilter(BibFilter):
         # Variable bibdata is a pybtex.database.BibliographyData object
         #
 
-        thebibdata = bibolamazifile.bibliographyData();
+        thebibdata = bibolamazifile.bibliographyData()
 
 
         addprefix = self.prefix+":" if self.prefix else ""
@@ -191,10 +191,10 @@ class CiteArxivFilter(BibFilter):
                     }
 
             # parse bibtex
-            parser = inputbibtex.Parser();
-            new_bib_data = None;
+            parser = inputbibtex.Parser()
+            new_bib_data = None
             with io.StringIO(unicodestr(dat['bibtex'])) as stream:
-                new_bib_data = parser.parse_stream(stream);
+                new_bib_data = parser.parse_stream(stream)
             
             # and add them to the main list
             if (len(new_bib_data.entries.keys()) != 1):
@@ -202,8 +202,8 @@ class CiteArxivFilter(BibFilter):
 
             for val in new_bib_data.entries.values():
                 if (not self.journal_ref_in_note and 'note' in val.fields):
-                    del val.fields['note'];
-                thebibdata.add_entry(addprefix+arxivid, val);
+                    del val.fields['note']
+                thebibdata.add_entry(addprefix+arxivid, val)
 
         #
         # yay, done!

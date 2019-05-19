@@ -46,11 +46,11 @@ logger = logging.getLogger(__name__)
 
 
 
-HELP_AUTHOR = """\
+HELP_AUTHOR = r"""
 Philippe Faist, (C) 2018-2019, GPL 3+
 """
 
-HELP_DESC = """\
+HELP_DESC = r"""
 Applies patches marked in the bibliography database as special entries named "xxx.PATCH"
 """
 
