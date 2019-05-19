@@ -27,7 +27,11 @@ from builtins import range
 from builtins import str as unicodestr
 
 
-import collections
+try:
+    from collections.abc import MutableMapping, MutableSequence
+except ImportError:
+    from collections import MutableMapping, MutableSequence
+
 import inspect
 import pickle
 import traceback
@@ -60,7 +64,7 @@ def _to_bibusercacheobj(obj, parent):
 
 
 
-class BibUserCacheDic(collections.MutableMapping):
+class BibUserCacheDic(MutableMapping):
     """
     Implements a cache where information may be stored between different runs of
     bibolamazi, and between different filter runs.
@@ -302,7 +306,7 @@ class BibUserCacheDic(collections.MutableMapping):
 
 
 
-class BibUserCacheList(collections.MutableSequence):
+class BibUserCacheList(MutableSequence):
     def __init__(self, *args, **kwargs):
         self.lst = []
         self.parent = kwargs.pop('parent', None)

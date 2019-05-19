@@ -20,7 +20,18 @@ pylatexenc >= 1.4
 future
 
 #
+# `appdirs` to find where to store config files and caches
+#
+appdirs
+
+#
+# `PyGithub` and `requests`
+#
+PyGithub
+requests[security]
+
+#
 # `bs4` and `requests` for citeinspirehep filter
 #
 bs4
-requests
+#requests
