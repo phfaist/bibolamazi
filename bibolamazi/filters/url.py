@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
@@ -31,15 +38,15 @@ from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from .util import arxivutil
 
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""\
 URLs filter by Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""\
 Remove or add URLs from entries according to given rules, e.g. whether DOI or ArXiv ID are present
 """
 
-HELP_TEXT = """
+HELP_TEXT = r"""
 This filter removes or adds URLs to/from entries according to certain given
 rules. Please see the documentation for each option above for details about
 what the rule performs. Each rule may be set or removed individually.
@@ -62,28 +69,38 @@ class UrlNormalizeFilter(BibFilter):
 
           - Strip(bool): Removes all URLs from the entry. Maybe add URLs according to the
                          other options. [default: False]
+
           - StripAllIfDoiOrArxiv(bool): Removes all URLs from the entry, but only if a DOI
                          identifier or an ArXiv ID is present. [default: False]
+
           - StripDoiUrl(bool): Remove any URL that is in fact a DOI lookup, e.g. of the form
                          `https://dx.doi.org/<DOI>`  [default: True]
+
           - StripArxivUrl(bool): Remove any URL that looks like an arxiv lookup, i.e. of the
                          form `http(s)://arxiv.org/abs/<ID>`  [default: True]
+
           - UrlFromDoi(bool): If the entry has a DOI identifier, then add an explicit URL
                          that is a DOI lookup, i.e. `https://dx.doi.org/<DOI>`  [default: False]
+
           - UrlFromArxiv(bool): If the entry has an ArXiv identifier, then add an explicit URL
                          that links to the arXiv page, i.e. `https://arxiv.org/abs/<ARXIV-ID>`
                          [default: False]
+
           - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all
                          the other stripping rules, keep only the first remaining URL, if any.
                          [default: False]
+
           - StripForTypes: strip all URLs specified for entries among the given list of types.
                          Common types to strip would be e.g. 'book' or 'phdthesis'.
+
           - AddAsHowPublished(bool): Add a howpublished={available at \url{...}} entry to the bibtex.
+
           - HowPublishedText: replace the 'available at ' text for -dAddAsHowPublished.  Use Python
                          string formatting. Available keys are '{urlstr}' to insert
                          list of URLs concatenated with a comma, '{url}' to insert the
                          first url and the key 'urls' is passed the raw Python list as
                          argument.
+
         """
         BibFilter.__init__(self)
 

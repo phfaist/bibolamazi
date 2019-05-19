@@ -1,3 +1,31 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
+
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -19,15 +47,15 @@ from bibolamazi.core.bibfilter.argtypes import enum_class
 from .util import arxivutil
 
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""\
 Order entries filter by Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""\
 Order bibliographic entries in bibtex file
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 This filter orders the entries in the bibtex file.
 
 Possible ordering modes are:
@@ -100,7 +128,10 @@ class OrderEntriesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
 
     def getRunningMessage(self):
-        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographyData().entries))
+        return "{}: Processing {} entries".format(
+            self.name(),
+            len(self.bibolamaziFile().bibliographyData().entries)
+        )
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
@@ -229,5 +260,4 @@ _month_regexps = (
 
 
 def bibolamazi_filter_class():
-    return OrderEntriesFilter;
-
+    return OrderEntriesFilter

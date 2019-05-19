@@ -187,7 +187,7 @@ def detectEntryArXivInfo(entry):
         # this gives the arxiv ID
         try:
             d['arxivid'] = extract_pure_id(fields['eprint'], primaryclass=fields.get('primaryclass', None))
-            m = re.match('^([-\w.]+)/', d['arxivid'])
+            m = re.match(r'^([-\w.]+)/', d['arxivid'])
             if (m):
                 d['primaryclass'] = m.group(1)
         except IndexError as e:

@@ -38,7 +38,7 @@ rx_citation_aux_macro_pat = r'(?:\\citation|\\abx@aux@cite)'
 
 def get_all_auxfile_citations(jobname, bibolamazifile, filtername, search_dirs=None,
                               callback=None, return_set=True):
-    """
+    r"""
     Get a list of bibtex keys that a specific LaTeX document cites, by inspecting its .aux
     file.
 

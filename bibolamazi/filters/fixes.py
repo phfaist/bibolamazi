@@ -46,15 +46,15 @@ from bibolamazi.core import butils
 
 
 
-HELP_AUTHOR = u"""\
-Fixes filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""\
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
-Fixes filter: perform some various known fixes for bibtex entries
+HELP_DESC = r"""\
+Perform some various known fixes for bibtex entries
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 Perform some various fixes for bibtex entries.
 
 For now, the implemented fixes are:
@@ -62,7 +62,7 @@ For now, the implemented fixes are:
   -dFixSpaceAfterEscape
     Removes any space after a LaTeX escape and replaces it by a pair of braces. 
     Indeed, some bibtex styles wrongfully split a word into two halves in such
-    cases. For example, \"\\AA berg\" is replaced by \"\\AA{}berg\".
+    cases. For example, "\AA berg" is replaced by "\AA{}berg".
 
   -dEncodeUtf8ToLatex
     Encodes known non-ascii special characters, e.g. accented characters, into
@@ -109,8 +109,8 @@ For now, the implemented fixes are:
   -sProtectNames=Name1,Name2...
     A list of names that should be protected within most fields. Whenever a
     field contains one of the given names (as full word), then the name is
-    wrapped in braces (e.g. \"On Bell Experiments\" -> \"On {Bell}
-    Experiments\") in order to protect the possible upper casing. This applies
+    wrapped in braces (e.g. "On Bell Experiments" -> "On {Bell}
+    Experiments") in order to protect the possible upper casing. This applies
     to all fields except 'url', 'file', and people (authors and editors).
 
   -dRemoveFileField
@@ -133,7 +133,7 @@ For now, the implemented fixes are:
   -dAutoUrlify
   -sAutoUrlify=field1,field2...
     Automatically wrap strings that look like an URL in the `note' field into
-    `\\url{}' commands. If a list of fields is provided, then the
+    `\url{}' commands. If a list of fields is provided, then the
     auto-urlification is applied to those given bibtex fields.
 
   -sRenameLanguage=alias1:language1,alias2:language2...
@@ -191,9 +191,9 @@ The following switch is OBSOLETE, but is still accepted for backwards
 compatibility:
 
   -dFixSwedishA [use -dFixSpaceAfterEscape instead]
-    Changes \"\\AA berg\" to \"\\AA{}berg\" and \"M\\o lmer\" to \"M\\o{}lmer\"
-    to prevent bibtex/revtex from inserting a blank after the \"\\AA\" or
-    \"\\o\". (This fix is needed for, e.g., the bibtex that Mendeley generates)
+    Changes "\AA berg" to "\AA{}berg" and "M\o lmer" to "M\o{}lmer"
+    to prevent bibtex/revtex from inserting a blank after the "\AA" or
+    "\o". (This fix is needed for, e.g., the bibtex that Mendeley generates)
 
 
 """

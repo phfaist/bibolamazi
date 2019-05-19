@@ -37,8 +37,8 @@ from urllib.error import HTTPError
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import BibliographyData;
-import pybtex.database.input.bibtex as inputbibtex;
+from pybtex.database import BibliographyData
+import pybtex.database.input.bibtex as inputbibtex
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
@@ -50,15 +50,15 @@ from .util import arxivutil
 from .util import auxfile
 
 
-HELP_AUTHOR = u"""\
-Cite Arxiv IDs filter by Philippe Faist, (C) 2013, GPL 3+ (with code from Nathan Grigg (C) new BSD license)
+HELP_AUTHOR = r"""\
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""\
 Filter that fills BibTeX files with relevant entries to cite with \cite{1211.1037}
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 This filter scans a LaTeX document for citations of the form `\cite{arxiv-id}'
 (i.e.  `\cite{XXXX.XXXX}', `\cite{XXXX.XXXXX}' or `\cite{quant-ph/XXXXXXX}'),
 and adds the corresponding bibtex items in the combined bibtex database with the
@@ -79,14 +79,6 @@ If the option `-dJournalRefInNote' is provided, then the journal reference, as
 returned by the arXiv query and if existing, is added in the `note={}' field of
 the bibtex entry.
 
-
-Note: this filter uses some 3rd party code (arxiv2bib) by Nathan Grigg,
-available at
-
-  https://github.com/nathangrigg/arxiv2bib
-
-and licensed under the new BSD license.
-
 """
 
 
@@ -98,7 +90,7 @@ class CiteArxivFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, jobname, search_dirs=[], prefix="", journal_ref_in_note=False):
-        """CiteArxivFilter constructor.
+        r"""CiteArxivFilter constructor.
 
         Arguments:
           - jobname: the base name of the latex file. Will search for jobname.aux and look

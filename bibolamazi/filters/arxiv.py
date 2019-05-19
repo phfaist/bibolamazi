@@ -58,11 +58,11 @@ class TolerantReplacer:
 
 
 HELP_AUTHOR = u"""\
-ArXiv clean-up filter by Philippe Faist, (C) 2013, GPL 3+
+Philippe Faist, (C) 2013, GPL 3+
 """
 
 HELP_DESC = u"""\
-ArXiv clean-up filter: tune the way each bibliographic entry refers to arXiv IDs
+Standardize the way each bibliographic entry refers to arXiv IDs
 """
 
 HELP_TEXT = u"""

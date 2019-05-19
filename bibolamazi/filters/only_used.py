@@ -41,15 +41,15 @@ from .util import auxfile
 logger = logging.getLogger(__name__)
 
 
-HELP_AUTHOR = u"""\
-only_used filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""\
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
-Filter that keeps only BibTeX entries which are referenced in the LaTeX document
+HELP_DESC = r"""\
+Discard all BibTeX entries that are not used in a LaTeX document
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 This filter detects which citations you have referenced in a LaTeX document, and keeps
 only those bibtex entries; the rest is discarded. (Of course this doesn't modify your
 original sources.)
@@ -81,7 +81,7 @@ class OnlyUsedFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, jobname=None, search_dirs=[]):
-        """OnlyUsedFilter constructor.
+        r"""OnlyUsedFilter constructor.
 
         Arguments:
           - jobname: the base name of the latex file. Will search for jobname.aux and look for
