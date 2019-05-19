@@ -26,7 +26,7 @@ clean:
 	rm $(TARGETS)
 
 
-$(QTAUTODIR)/%_rc.py: %.qrc
+$(QTAUTODIR)/%_rc.py: %.qrc pic/*
 	pyrcc5 -o $@ $<
 
 $(QTAUTODIR)/ui_%.py: %.ui

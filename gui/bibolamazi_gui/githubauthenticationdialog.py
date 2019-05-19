@@ -55,6 +55,10 @@ class GithubAuthenticationDialog(QDialog):
         self.ui = Ui_GithubAuthenticationDialog()
         self.ui.setupUi(self)
 
+        # Button screenshots: take on hi dpi mac, scale image @ 80%, export to
+        # png, note dimensions; specify 1/2 of the dimensions as image sizes
+        # below so that pictures appear nice on retina displays
+
         self.ui.lbl.setText("""\
 <html><head>
 <style>
@@ -74,14 +78,16 @@ procedure ensures that bibolamazi never sees your github password.</p>
 
 <p>1. Click on the button <img
     src=":/pic/github_generate_new_personal_access_token.png" alt="Generate new
-    token"></p>
+    token" width="128" height="29" style="vertical-align: middle; width: 128px; height: 29px;"></p>
 
 <p>2. Give a name to the access token such as “bibolamazi access” and select the “repo” scope:</p>
 
-<p><img src=":/pic/github_generate_new_personal_access_token_details.png" alt=""></p>
+<p><img src=":/pic/github_generate_new_personal_access_token_details.png" alt=""
+        width="312" height="236" style="width: 312px; height: 236px;"></p>
 
 <p>3. Scroll down and click <img src=":/pic/github_generate_new_personal_access_token_generatebtn.png"
-    alt=""></p>
+    alt="Generate token" width="117" height="32"
+    style="vertical-align: middle; width: 117px; height: 32px;"></p>
 
 <p><b>4. Paste the access token in the field below:</b></p>
 
@@ -92,6 +98,7 @@ procedure ensures that bibolamazi never sees your github password.</p>
         self._update_gui_state()
 
         self.adjustSize()
+        self.resize(self.size() + QSize(150,80))
 
 
     def getAuthToken(self):
