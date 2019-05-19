@@ -57,15 +57,15 @@ class TolerantReplacer:
 
 
 
-HELP_AUTHOR = u"""\
-ArXiv clean-up filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
-ArXiv clean-up filter: tune the way each bibliographic entry refers to arXiv IDs
+HELP_DESC = r"""
+Standardize the way each bibliographic entry refers to arXiv IDs
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 There are two common ways to include arXiv IDs in bib files:
 
     @unpublished{Key,
@@ -174,7 +174,7 @@ The following presets may be also used as fields:
                          '{arXiv:quant-ph/XXXXXXX}'
 
     'notefmt_href'    => default format, produced with a hyperlink using
-                         the \\href command
+                         the \href command
 
     'notefmt_primcl_default', 'notefmt_primcl_href'
                       => same as default formats, but with the primary class
@@ -318,7 +318,7 @@ class ArxivNormalizeFilter(BibFilter):
                    -sNoteString and -sNoteStringFmt.
         """
         
-        BibFilter.__init__(self)
+        super(ArxivNormalizeFilter, self).__init__()
 
         self.mode = Mode(mode)
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None

@@ -51,6 +51,8 @@ from bibolamazi.core.argparseactions import store_key_val, store_key_const, stor
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import BibFilter
+from . import pkgprovider
+
 
 
 logger = logging.getLogger(__name__)
@@ -266,39 +268,114 @@ def reset_filters_cache():
 
 
 
+
+
+package_provider_manager = pkgprovider.PackageProviderManager()
+"""
+The package provider manager.  If we a filterpackage is specified with a
+URL, then this is the manager we use to retreive the remote filter package.
+"""
+
+
+class FilterPackageSpec(object):
+    """
+    Stores a filter package specification, and provides a convenient API to
+    download remote packages.
+
+    Constructor: FilterPackageSpec(argstr) or FilterPackageSpec(path) or
+    FilterPackageSpec(url) or FilterPackageSpec(fpname, fpdir)
+
+    Properties:
+
+      - is_url -- True if the filter package was specified directly as a
+        path to the python package, or as a URL.  False if individual filter
+        names and python-path were specified.
+
+      - url -- if is_url==True, then this is the path or URL that was specified.
+
+      - fpname -- the name of the filter, may be None if is_url==True until
+        materialize() is called.
+
+      - fpdir -- the directory which needs to be added to sys.path to load the
+        filter package, may be None if is_url==True until materialize() is
+        called.
+
+    .. versionadded:: 4.2
+       Added FilterPackageSpec class.
+    """
+    def __init__(self, a, b=None):
+        super(FilterPackageSpec, self).__init__()
+        
+        if not a:
+            raise BibolamaziError("Invalid filter package: No filter package specified")
+
+        if b is not None:
+            self.is_url = False
+            self.url = None
+            self.fpname = a
+            self.fpdir = b
+            return
+
+        if re.match(r'^([a-zA-Z0-9_.]+)=', a):
+            # FilterPackageSpec("filterpkgname=path")
+            fpparts = a.split('=',1)
+            self.is_url = False
+            self.url = None
+            self.fpname = fpparts[0].strip()
+            self.fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
+            return
+
+        # FilterPackageSpec(url)
+        self.is_url = True
+        self.url = a
+        self.fpname = None
+        self.fpdir = None
+
+
+    def materialize(self):
+        """
+        Ensures that the filter package is present on the local filesystem, if it is
+        a remote filesystem, and returns specific information on how to load it.
+
+        This method may be called regardless of whether the spec was originally
+        an URL or not, i.e., for either value of is_url the return value of this
+        is correct.
+
+        Returns a tuple (fpname, fpdir) of a filter package name and filesystem
+        directory which needs to be added to the sys.path in order to load the
+        former.
+        """
+
+        if self.is_url:
+            self.fpname, self.fpdir = package_provider_manager.provide_for_url(self.url)
+
+        return self.fpname, self.fpdir
+
+    def repr(self):
+        if self.is_url:
+            return 'FilterPackageSpec({!r})'.format(self.url)
+        return 'FilterPackageSpec({!r},{!r})'.format(self.fpname, self.fpdir)
+
 def parse_filterpackage_argstr(argstr):
     """
-    Parse filter package specification given as
-    \"filterpackage=path/to/the/package\" or \"filterpackage=\" or
-    \"path/to/the/package\"
+    Parse filter package specification given as \"path/to/the/package\" or as a
+    URL.  The format \"filterpackage=path/to/the/package\" or \"filterpackage=\"
+    is also accepted for local filesystem paths, but not for URLs.
+
+    Returns a tuple (fpname, fpdir) of a filter package name and filesystem
+    directory which needs to be added to the sys.path in order to load the
+    former.
+
+    Note that if a remote URL is provided, then it is downloaded and stored in
+    cache.
+
+    .. deprecated:: 4.2
+       Use the FilterPackageSpec class instead.
     """
 
-    if not argstr:
-        raise BibolamaziError("Invalid filter package: No filter package specified")
+    fpspec = FilterPackageSpec(argstr)
+    return fpspec.materialize()
 
-    fpparts = argstr.split('=',1)
-    if len(fpparts) == 1:
-        path = fpparts[0].strip()
-        fpname = os.path.basename(path)
-        fpdir = os.path.dirname(path)
-    else:
-        fpname = fpparts[0].strip()
-        fpdir = fpparts[1].strip() if len(fpparts) >= 2 and fpparts[1] else None
-
-    if not fpdir:
-        # e.g., built-in filters must have None as fpdir because they don't
-        # reside at a specific location.  Note that when loading filters, we
-        # will also check the '.' directory
-        fpdir = None
-
-
-    if not fpname or re.search(r'[^a-zA-Z0-9_\.]', fpname):
-        raise BibolamaziError("Invalid filter package: '%s': not a valid python identifier. "
-                              "Did you get the filterpackage syntax wrong? "
-                              "Syntax: '<packagename>[=<path>]' or 'path/to/packagename'."
-                              %(fpname))
-
-    return (fpname, fpdir)
 
 
 def _syspath_for_fpkgdir(fpkgdir, oldpath):
@@ -404,19 +481,19 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             logger.longdebug("Attempting to import module `%s` from package `%s`"%('.'+name, fpn))
             mod = importlib.import_module('.'+name, package=fpn)
             _setup_imported_filter_module(mod, fpn, fpd)
-        except ModuleNotFoundError:
-            exc_type, exc_value, tb_root = sys.exc_info()
-
-            logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
-                         unicodestr(exc_value))
-            logger.debug("sys.path was: %r", sys.path)
-            
-            deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
-                                   fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
-                                   tb_info=(exc_type, exc_value, tb_root),
-                                   is_caused_by_module=False)
-            mod = None
+        # except ModuleNotFoundError:
+        #     exc_type, exc_value, tb_root = sys.exc_info()
+        #
+        #     logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
+        #                  name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
+        #                  unicodestr(exc_value))
+        #     logger.debug("sys.path was: %r", sys.path)
+        #
+        #     deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
+        #                            fpd=fpd, exctypestr=exc_type.__name__, e=exc_value,
+        #                            tb_info=(exc_type, exc_value, tb_root),
+        #                            is_caused_by_module=False)
+        #     mod = None
         except ImportError:
             exc_type, exc_value, tb_root = sys.exc_info()
 
@@ -425,17 +502,22 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
                          unicodestr(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
-            # On Python 2 and Python < 3.6, attempt to understand whether the
-            # ImportError was due to a missing module (e.g. invalid module
-            # name), or if the module was found but the code had an invalid
-            # import statement. For that, see hack at:
-            # http://lucumr.pocoo.org/2011/9/21/python-import-blackbox/
             caused_by_module = True
+            # Attempt to understand whether the ImportError was due to a missing
+            # module (e.g. invalid module name), or if the module was found but
+            # the code had an invalid import statement. For that, see hack at:
+            # http://lucumr.pocoo.org/2011/9/21/python-import-blackbox/
+            #
+            # This is *NOT* mitigated by using "ModuleNotFoundError" (Py >= 3.6)
+            # instead as commented out above, because ModuleNotFoundError can
+            # also be raised by the module we were trying to import!! (e.g. by
+            # the module's own import statements)
+            #
             logger.longdebug("[was caused by module?] will inspect stack frames:\n%s",
                              "".join(traceback.format_tb(tb_root)))
             tb1 = traceback.extract_tb(tb_root)[-1]
             logger.longdebug("tb1 = %r", tb1)
-            if re.search(r'\bimportlib(?:[/.]__init__[^/]{0,4})?(?:[.]py)?$', tb1[0]):
+            if re.search(r'\bimportlib\b', tb1[0]):
                 # alternatively, we could have used:  tb1[2] == 'import_module'
                 caused_by_module = False
                 logger.longdebug("ImportError was not caused by the module. The module was not found.")

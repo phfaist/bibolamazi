@@ -42,15 +42,15 @@ from bibolamazi.core.butils import getbool
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 
 
-HELP_AUTHOR = u"""\
-Name Initials filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""
-Name Initials filter: Turn full first names into only initials for all entries.
+HELP_DESC = r"""
+Turn full first names into only initials for all entries.
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 In all entries, turn the first and middle names of people into initials.
 
 Warning: this filter only works well with the option -dNamesToUtf8, which is by
@@ -96,7 +96,7 @@ class NameInitialsFilter(BibFilter):
             names entirely.
 
         """
-        BibFilter.__init__(self)
+        super(NameInitialsFilter, self).__init__()
 
         self.roles = roles
         if not self.roles:

@@ -38,7 +38,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from pybtex.database import BibliographyData, Entry;
+from pybtex.database import BibliographyData, Entry
 
 from pylatexenc import latex2text
 
@@ -98,15 +98,15 @@ KNOWN_JOURNALS = {
 
 
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""
 Cite-Key filter by Philippe Faist, (C) 2014, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""
 Set the citation key of entries in a standard format
 """
 
-HELP_TEXT = u"""\
+HELP_TEXT = r"""
 This filter replaces the bibtex citation key of all the concerned entries by a
 key generated using a standard scheme.
 
@@ -191,9 +191,9 @@ class CiteKeyFilter(BibFilter):
              applies to all entries.
         """
 
-        BibFilter.__init__(self);
+        super(CiteKeyFilter, self).__init__()
 
-        self.fmt = format;
+        self.fmt = format
         if if_published is None or if_published == '':
             self.if_published = None
         else:

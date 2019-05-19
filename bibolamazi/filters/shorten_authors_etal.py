@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
@@ -31,15 +38,15 @@ from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from pybtex.database import Person
 
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""
 Shorten-authors-etal filter by Philippe Faist, (C) 2018, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""
 Shorten author list to a custom length and add "et al.", for standard BibTeX styles
 """
 
-HELP_TEXT = """
+HELP_TEXT = r"""
 This filter shortens long author lists (you can specify max length with
 -sMaxNumAuthors=5) by instead "First author et al.".
 

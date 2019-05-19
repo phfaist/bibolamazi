@@ -405,9 +405,15 @@ class OpenBibFile(QWidget):
         self.bibolamaziFileName = None
         self.bibolamaziFile = None
 
+        # to implement delayed reparsing of the current textedit contents
+        self.reparseTimer = QTimer(self)
+        self.reparseTimer.timeout.connect(self._reparse_textedit)
+        
+        # to implement delayed full reload of the file
         self.updateTimer = QTimer(self)
         self.updateTimer.timeout.connect(self.reloadFile)
         
+
         self._flag_modified_externally = False
 
         self.fwatcher = QFileSystemWatcher(self)
@@ -944,8 +950,26 @@ class OpenBibFile(QWidget):
         logger.debug('modified!!')
 
         self.bibolamaziFile.setConfigData(str(self.ui.txtConfig.toPlainText()))
-        self._bibolamazifile_reparse()
 
+        # set a short time-out to reparse the file. This is to avoid reparsing
+        # too often, especially when doing
+        # computationally/transactionally-intensive changes such as changing the
+        # argument of a 'package:' directive with a remote location.
+        self._delayed_reparse_textedit()
+
+
+    @pyqtSlot()
+    def _delayed_reparse_textedit(self):
+        if self.reparseTimer.isActive():
+            self.reparseTimer.stop()
+
+        self.reparseTimer.setInterval(500)
+        self.reparseTimer.setSingleShot(True)
+        self.reparseTimer.start()
+
+    @pyqtSlot()
+    def _reparse_textedit(self):
+        self._bibolamazifile_reparse()
         self._do_update_edittools()
 
 
@@ -1119,8 +1143,7 @@ class OpenBibFile(QWidget):
 
         if cmd.cmd == "package":
             try:
-                fp, fdir = filterfactory.parse_filterpackage_argstr(cmd.text.strip())
-                self.ui.filterPackagePathEditor.setFilterPackageInfo(fp, fdir)
+                self.ui.filterPackagePathEditor.setFilterPackageInfo(cmd.text.strip())
                 self.ui.filterPackagePathEditor.setRefDir(self.bibolamaziFile.fdir())
             except BibolamaziError as e:
                 self.ui.filterPackagePathEditor.setFilterPackageError(str(e))

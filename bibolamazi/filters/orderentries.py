@@ -1,3 +1,31 @@
+################################################################################
+#                                                                              #
+#   This file is part of the Bibolamazi Project.                               #
+#   Copyright (C) 2013 by Philippe Faist                                       #
+#   philippe.faist@bluewin.ch                                                  #
+#                                                                              #
+#   Bibolamazi is free software: you can redistribute it and/or modify         #
+#   it under the terms of the GNU General Public License as published by       #
+#   the Free Software Foundation, either version 3 of the License, or          #
+#   (at your option) any later version.                                        #
+#                                                                              #
+#   Bibolamazi is distributed in the hope that it will be useful,              #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of             #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              #
+#   GNU General Public License for more details.                               #
+#                                                                              #
+#   You should have received a copy of the GNU General Public License          #
+#   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
+#                                                                              #
+################################################################################
+
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import os
 import os.path
@@ -8,26 +36,26 @@ import calendar
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import BibliographyData;
+from pybtex.database import BibliographyData
 
 
 from bibolamazi.core import bibfilter
 from bibolamazi.core import butils
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import enum_class
 
 from .util import arxivutil
 
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""
 Order entries filter by Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""
 Order bibliographic entries in bibtex file
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 This filter orders the entries in the bibtex file.
 
 Possible ordering modes are:
@@ -82,12 +110,12 @@ class OrderEntriesFilter(BibFilter):
                 values: see below.
           - reverse(bool): Reverse the sorting order. Has no effect with 'raw' order mode.
         """
-        BibFilter.__init__(self);
+        super(OrderEntriesFilter, self).__init__()
 
         self.order = OrderMode(order)
         self.reverse = butils.getbool(reverse)
 
-        logger.debug('orderentries: self.order=%r' % self.order);
+        logger.debug('orderentries: self.order=%r' % self.order)
 
     
     def requested_cache_accessors(self):
@@ -97,38 +125,41 @@ class OrderEntriesFilter(BibFilter):
             ]
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def getRunningMessage(self):
-        return "%s: Processing %d entries" %(self.name(), len(self.bibolamaziFile().bibliographyData().entries))
+        return "{}: Processing {} entries".format(
+            self.name(),
+            len(self.bibolamaziFile().bibliographyData().entries)
+        )
 
     def filter_bibolamazifile(self, bibolamazifile):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
 
-        logger.debug("ordering entries according to mode=%r." %(self.order));
+        logger.debug("ordering entries according to mode=%r." %(self.order))
 
         if (self.order == ORDER_CITATION_KEY_ALPHA):
             
-            bibdata = bibolamazifile.bibliographyData();
+            bibdata = bibolamazifile.bibliographyData()
 
             #newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
-            entries = bibdata.entries;
+            entries = bibdata.entries
 
             # bibdata.entries is of type pybtex.util.OrderedCaseInsensitiveDict, which has
             # an attribute `order`, which is a list of keys in the relevant order. So use
             # list.sort(), which is slightly more efficient.
             bibdata.entries.order.sort(reverse=self.reverse)
 
-            #newbibdata = BibliographyData(entries=newentries);
-            #bibolamazifile.setBibliographyData(newbibdata);
+            #newbibdata = BibliographyData(entries=newentries)
+            #bibolamazifile.setBibliographyData(newbibdata)
 
         elif (self.order == ORDER_DATE):
 
-            bibdata = bibolamazifile.bibliographyData();
+            bibdata = bibolamazifile.bibliographyData()
 
-            entries = bibdata.entries;
+            entries = bibdata.entries
 
             arxivaccessor = arxivutil.setup_and_get_arxiv_accessor(self.bibolamaziFile())
 
@@ -141,7 +172,7 @@ class OrderEntriesFilter(BibFilter):
                     return mkdkey(datetime.today(), 0)
                 fields = entry.fields
 
-                arxivinfo = arxivaccessor.getArXivInfo(key);
+                arxivinfo = arxivaccessor.getArXivInfo(key)
                 if arxivinfo is not None and not arxivinfo['published']:
                     # use arxiv ID information only if entry is not published--otherwise,
                     # try to get actual publication date.
@@ -182,7 +213,7 @@ class OrderEntriesFilter(BibFilter):
                     except ValueError:
                         pass
                 if day is None:
-                    day = calendar.monthrange(year, month)[1];
+                    day = calendar.monthrange(year, month)[1]
 
                 try:
                     return mkdkey(datetime.date(year, month, day), 0)
@@ -198,15 +229,15 @@ class OrderEntriesFilter(BibFilter):
 
             # see above. Note the "not reverse" because the date key will sort
             # increasingly, whereas we want the default sort order to be newest first.
-            bibdata.entries.order.sort(key=getentrysortkey, reverse=(not self.reverse));
+            bibdata.entries.order.sort(key=getentrysortkey, reverse=(not self.reverse))
 
         elif (self.order == ORDER_RAW):
             # natural order mode. don't do anything.
             pass
         else:
-            raise BibFilterError(self.name(), "Bad order mode: %r !" %(self.order));
+            raise BibFilterError(self.name(), "Bad order mode: %r !" %(self.order))
             
-        logger.debug("ordered entries as wished.");
+        logger.debug("ordered entries as wished.")
 
         return
 
@@ -229,5 +260,4 @@ _month_regexps = (
 
 
 def bibolamazi_filter_class():
-    return OrderEntriesFilter;
-
+    return OrderEntriesFilter

@@ -15,7 +15,9 @@ TARGETS = $(QTAUTODIR)/bibolamazi_res_rc.py \
 	 $(QTAUTODIR)/ui_overlistbuttonwidget.py \
 	 $(QTAUTODIR)/ui_settingswidget.py \
 	 $(QTAUTODIR)/ui_favoritesoverbtns.py \
-	 $(QTAUTODIR)/ui_searchwidget.py
+	 $(QTAUTODIR)/ui_searchwidget.py \
+	 $(QTAUTODIR)/ui_githubreposelector.py \
+	 $(QTAUTODIR)/ui_githubauthenticationdialog.py
 
 
 all: $(TARGETS)
@@ -24,7 +26,7 @@ clean:
 	rm $(TARGETS)
 
 
-$(QTAUTODIR)/%_rc.py: %.qrc
+$(QTAUTODIR)/%_rc.py: %.qrc pic/*
 	pyrcc5 -o $@ $<
 
 $(QTAUTODIR)/ui_%.py: %.ui

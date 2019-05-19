@@ -19,6 +19,13 @@
 #                                                                              #
 ################################################################################
 
+# Py2/Py3 support
+from __future__ import unicode_literals, print_function
+from past.builtins import basestring
+from future.utils import python_2_unicode_compatible, iteritems
+from builtins import range
+from builtins import str as unicodestr
+
 
 import re
 import logging
@@ -33,15 +40,15 @@ from bibolamazi.core.bibfilter.argtypes import LogLevel
 
 
 
-HELP_AUTHOR = u"""\
-ECHO filter by Philippe Faist, (C) 2013, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""
 Echo a custom message in the bibolamazi log
 """
 
-HELP_TEXT = """
+HELP_TEXT = r"""
 Echo a custom message in the bibolamazi log. This does not affect the database,
 but might provide someone running Bibolamazi with some important information.
 """
@@ -83,7 +90,7 @@ class EchoFilter(BibFilter):
           - format(EchoFormat): how to display the message (one of 'default', 'simple' or 'warn')
           - warn(bool): short for '-sFormat=warn -sLevel=WARNING'
         """
-        BibFilter.__init__(self);
+        super(EchoFilter, self).__init__()
 
         self.message = message
         if len(args) > 0:
@@ -108,7 +115,7 @@ class EchoFilter(BibFilter):
 
 
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def filter_bibolamazifile(self, bibolamazifile):
 
@@ -120,5 +127,5 @@ class EchoFilter(BibFilter):
 
 
 def bibolamazi_filter_class():
-    return EchoFilter;
+    return EchoFilter
 

@@ -46,11 +46,11 @@ logger = logging.getLogger(__name__)
 
 
 
-HELP_AUTHOR = """\
-apply_patches filter by Philippe Faist, (C) 2018-2019, GPL 3+
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2018-2019, GPL 3+
 """
 
-HELP_DESC = """\
+HELP_DESC = r"""
 Applies patches marked in the bibliography database as special entries named "xxx.PATCH"
 """
 
@@ -63,6 +63,9 @@ annotations which you otherwise wouldn't want to have).  You can do that by
 creating a bibtex file with entries of the form "xyz.PATCH".  This filter
 recognizes entries of this form: It looks for a corresponding bibtex entry with
 key "xyz", and applies a set of changes described by the "PATCH" entry.
+
+The "xyz.PATCH" entries are specified just like normal bibtex entries and can
+appear in any of the bibtex sources specified in the bibolamazi file.
 
 You can also selectively apply different sets of patches, identified by a "patch
 series".  See below.

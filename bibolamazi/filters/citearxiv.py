@@ -37,8 +37,8 @@ from urllib.error import HTTPError
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import BibliographyData;
-import pybtex.database.input.bibtex as inputbibtex;
+from pybtex.database import BibliographyData
+import pybtex.database.input.bibtex as inputbibtex
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
@@ -50,15 +50,15 @@ from .util import arxivutil
 from .util import auxfile
 
 
-HELP_AUTHOR = u"""\
-Cite Arxiv IDs filter by Philippe Faist, (C) 2013, GPL 3+ (with code from Nathan Grigg (C) new BSD license)
+HELP_AUTHOR = r"""
+Philippe Faist, (C) 2013, GPL 3+
 """
 
-HELP_DESC = u"""\
-Filter that fills BibTeX files with relevant entries to cite with \cite{1211.1037}
+HELP_DESC = r"""
+Filter that fills BibTeX files with relevant entries to cite with \\cite{1211.1037}
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 This filter scans a LaTeX document for citations of the form `\cite{arxiv-id}'
 (i.e.  `\cite{XXXX.XXXX}', `\cite{XXXX.XXXXX}' or `\cite{quant-ph/XXXXXXX}'),
 and adds the corresponding bibtex items in the combined bibtex database with the
@@ -79,14 +79,6 @@ If the option `-dJournalRefInNote' is provided, then the journal reference, as
 returned by the arXiv query and if existing, is added in the `note={}' field of
 the bibtex entry.
 
-
-Note: this filter uses some 3rd party code (arxiv2bib) by Nathan Grigg,
-available at
-
-  https://github.com/nathangrigg/arxiv2bib
-
-and licensed under the new BSD license.
-
 """
 
 
@@ -98,7 +90,7 @@ class CiteArxivFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, jobname, search_dirs=[], prefix="", journal_ref_in_note=False):
-        """CiteArxivFilter constructor.
+        r"""CiteArxivFilter constructor.
 
         Arguments:
           - jobname: the base name of the latex file. Will search for jobname.aux and look
@@ -111,7 +103,7 @@ class CiteArxivFilter(BibFilter):
               no prefix)
         """
 
-        BibFilter.__init__(self);
+        super(CiteArxivFilter, self).__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -121,7 +113,7 @@ class CiteArxivFilter(BibFilter):
         if (not self.search_dirs):
             self.search_dirs = ['.', '_cleanlatexfiles'] # also for my cleanlatex utility :)
 
-        logger.debug('citearxiv: jobname=%r' % (jobname,));
+        logger.debug('citearxiv: jobname=%r' % (jobname,))
 
 
     def getRunningMessage(self):
@@ -129,7 +121,7 @@ class CiteArxivFilter(BibFilter):
 
     
     def action(self):
-        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE;
+        return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
     def requested_cache_accessors(self):
         return [
@@ -158,7 +150,7 @@ class CiteArxivFilter(BibFilter):
                 return
 
             # citekey is an arxiv ID
-            arxivid = citekey;
+            arxivid = citekey
             if (arxivid not in citearxiv_uselist):
                 citearxiv_uselist.append(arxivid)
                 
@@ -183,7 +175,7 @@ class CiteArxivFilter(BibFilter):
         # Variable bibdata is a pybtex.database.BibliographyData object
         #
 
-        thebibdata = bibolamazifile.bibliographyData();
+        thebibdata = bibolamazifile.bibliographyData()
 
 
         addprefix = self.prefix+":" if self.prefix else ""
@@ -199,10 +191,10 @@ class CiteArxivFilter(BibFilter):
                     }
 
             # parse bibtex
-            parser = inputbibtex.Parser();
-            new_bib_data = None;
+            parser = inputbibtex.Parser()
+            new_bib_data = None
             with io.StringIO(unicodestr(dat['bibtex'])) as stream:
-                new_bib_data = parser.parse_stream(stream);
+                new_bib_data = parser.parse_stream(stream)
             
             # and add them to the main list
             if (len(new_bib_data.entries.keys()) != 1):
@@ -210,8 +202,8 @@ class CiteArxivFilter(BibFilter):
 
             for val in new_bib_data.entries.values():
                 if (not self.journal_ref_in_note and 'note' in val.fields):
-                    del val.fields['note'];
-                thebibdata.add_entry(addprefix+arxivid, val);
+                    del val.fields['note']
+                thebibdata.add_entry(addprefix+arxivid, val)
 
         #
         # yay, done!

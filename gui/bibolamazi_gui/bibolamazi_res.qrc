@@ -16,5 +16,8 @@
     <file>pic/ok.png</file>
     <file>pic/refresh.png</file>
     <file>pic/save.png</file>
+    <file>pic/github_generate_new_personal_access_token.png</file>
+    <file>pic/github_generate_new_personal_access_token_details.png</file>
+    <file>pic/github_generate_new_personal_access_token_generatebtn.png</file>
   </qresource>
 </RCC>

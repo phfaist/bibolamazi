@@ -209,9 +209,8 @@ class TestWorks(unittest.TestCase, CustomAssertions):
         dupl_entryinfo_cache_accessor.prepare_entry_cache(keya, a, arxivaccess)
         dupl_entryinfo_cache_accessor.prepare_entry_cache(keyb, b, arxivaccess)
 
-        same, reason = filt.compare_entries(a, b,
-                                            dupl_entryinfo_cache_accessor.get_entry_cache(keya),
-                                            dupl_entryinfo_cache_accessor.get_entry_cache(keyb))
+        same, reason = filt.compare_entries(keya, keyb, a, b,
+                                            dupl_entryinfo_cache_accessor)
         msg = "Entries {} and {} are {}the same{}".format(keya, keyb, "NOT " if not same else "",
                                                           " because "+reason if not same else "")
         logger.debug(msg)

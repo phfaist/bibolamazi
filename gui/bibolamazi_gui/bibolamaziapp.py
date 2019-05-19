@@ -48,6 +48,7 @@ from bibolamazi.core import main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
+from bibolamazi.core.bibfilter import pkgfetcher_github
 from bibolamazi.core import version as bibolamaziversion
 
 
@@ -478,6 +479,32 @@ class BibolamaziApplication(QApplication):
 
 #
 
+app_filterpackage_providers = {}
+
+def load_filterpackage_providers(app):
+    settings = QSettings()
+
+    settings.beginGroup('RemoteFilterPackages')
+    github_auth_token = settings.value('GithubAuthToken', '').strip()
+    settings.endGroup()
+
+    app_filterpackage_providers['github'] = \
+        pkgfetcher_github.GithubPackageProvider(github_auth_token if github_auth_token else None)
+
+    filters_factory.package_provider_manager.registerPackageProvider(
+        app_filterpackage_providers['github']
+    )
+
+def set_github_auth_token(github_auth_token):
+    app_filterpackage_providers['github'].setAuthToken(github_auth_token)
+
+    settings = QSettings()
+
+    settings.beginGroup('RemoteFilterPackages')
+    settings.setValue('GithubAuthToken', github_auth_token)
+    settings.endGroup()
+
+    settings.sync()
 
 
 def run_app(argv):
@@ -486,8 +513,11 @@ def run_app(argv):
 
     app = BibolamaziApplication(argv)
 
-    #if getattr(sys, 'frozen', False):
-    #    hack_pybtex_plugins()
+
+    # set up the filter package providers
+    #
+    load_filterpackage_providers(app)
+
 
     try:
         # load filter packages from environment ...
@@ -500,6 +530,7 @@ def run_app(argv):
                             "Please edit your settings.")
         pass
 
+
     args = app.arguments()
     _rxscript = re.compile('\.(py[co]?|exe)$', flags=re.IGNORECASE)
     for k in range(1,len(args)): # skip program name == argv[0]
@@ -511,6 +542,7 @@ def run_app(argv):
         
         logger.debug("opening arg: %s", fn)
         app.openFile(fn)
+
 
     sys.exit(app.exec_())
     

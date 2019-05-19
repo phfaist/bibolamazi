@@ -57,11 +57,11 @@ import pybtex.database.input.bibtex as inputbibtex
 import pybtex.database.output.bibtex as outputbibtex
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from bibolamazi.core import butils
-from bibolamazi.core.butils import BibolamaziError
-from bibolamazi.core.bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError, factory
-from bibolamazi.core.bibfilter.factory import PrependOrderedDict
+from . import butils
+from .butils import BibolamaziError
+from .bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
+from .bibfilter import BibFilter, BibFilterError, factory
+from .bibfilter.factory import PrependOrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +214,11 @@ sources loaded. See doc for :py:class:`BibolamaziFile`.
 
 
 BIBOLAMAZIFILE_COMMANDS = ['src', 'package', 'filter']
+
+
+
+
+
 
 
 
