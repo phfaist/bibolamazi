@@ -294,6 +294,8 @@ class RunBibolamazi(QObject):
                 with LogToGuiContextManager(logqtsig=self.logqtsig,
                                             bibolamazi_fname=bibolamazifilename) as log2sig:
                     try:
+                        # TODO: we should reload all relevant packages here, not
+                        # in the other method below
                         bibolamazimain.run_bibolamazi(bibolamazifile=bibolamazifilename)
                         self.logqtsig.dolog(" --> Finished successfully. <--")
                         self.bibolamaziDone.emit()
@@ -310,7 +312,7 @@ class RunBibolamazi(QObject):
                         logger.error(stre)
                         import traceback
                         logger.error(traceback.format_exc())
-                        self.logqtsig.dolog(" --> INTERNAL ERROR <--")
+                        self.logqtsig.dolog(" --> EXCEPTION <--")
                         self.bibolamaziDoneError.emit(stre)
 
         finally:
@@ -811,6 +813,10 @@ class OpenBibFile(QWidget):
         if self.bibolamaziFile is not None:
             # reload all relevant local filter packages, in case the filter packages
             # have changed.
+            #
+            # FIXME/TODO: This should be done at the point where we actually run
+            # bibolamazi, to benefit from proper error handling!!
+            #
             allmodules = sorted(sys.modules.keys(), reverse=True) # so that "pkg.submodule" appears before "pkg"
             for pkgname, pkgpath in self.bibolamaziFile.filterPath().items():
                 logger.debug("Inspecting user filter package `%s` to reload modules ...", pkgname)
@@ -823,12 +829,23 @@ class OpenBibFile(QWidget):
                         try:
                             sys.path = [pkgpath] + origpath
                             reload(mod)
+                        except Exception as e:
+                            stre = str(e)
+                            logger.error(stre)
+                            import traceback
+                            errmsg = traceback.format_exc()
+                            logger.error(errmsg)
+                            self._run_clearLog()
+                            self._run_logHtml(bibolamazi_error_html(errmsg))
+                            return
                         finally:
                             sys.path = origpath
                 
         
 
         verbosity_level = self.ui.cbxVerbosity.currentIndex()
+
+        self.ui.txtParseErrorMessages.setVisible(False)
 
         self.requestRunBibolamazi.emit(self.bibolamaziFileName, verbosity_level)
 
