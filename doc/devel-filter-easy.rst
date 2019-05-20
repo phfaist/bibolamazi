@@ -28,6 +28,10 @@ The file ``add_constant_field.py`` might look like this::
     
     def bib_filter_entry(entry, field_name='note', value='Hello world'):
         """
+        Author: Philippe Faist (C) 2019 GPL 3+
+
+        Description: Add a fixed field to each entry
+
         This filter adds to each entry an additional field named `field_name`
         set to the constant value `value`.
 

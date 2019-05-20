@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="/">
+    <file>pic/configlocalrepos.svg</file>
+    <file>pic/remoterepos.svg</file>
+    <file>pic/generalsettings.svg</file>
     <file>pic/question.png</file>
     <file>pic/rightarrow.png</file>
     <file>pic/bookmark.png</file>

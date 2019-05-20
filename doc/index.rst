@@ -17,8 +17,7 @@ Table of Contents:
    using-bibolamazi-app
    bibolamazi-config-section
    using-bibolamazi-cmdl
-   devel-filter-easy
-   devel-filter
+   filter-packages
    bibolamazi.core
    bibolamazi.filters.util
    credits-contact

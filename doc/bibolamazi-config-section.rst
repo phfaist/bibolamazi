@@ -139,6 +139,8 @@ click on the various filters displayed to view their documentation on how to use
 them.
 
 
+.. _bibolamazi-config-section-pkg-directive:
+
 Filter Packages
 ---------------
 
@@ -146,15 +148,12 @@ Filters are organized into *filter packages*. All built-in filters are in the
 package named `bibolamazi.filters`. If you want to write your own filters, or
 use someone else's own filters, then you can install further filter packages.
 
-A *filter package* is a Python package, i.e. a directory containing a
-``__init__.py`` file, which contains python modules that implement the
-bibolamazi filter API. (The ``__init__.py`` file is usually empty.)
-
-If you develop your own filters, it is recommended to group them in a filter
-package, and not for example fiddle with the built-in filter package. Put your
-filters in a directory called, say, `myfilters`, and place an additional empty
-file in it called `__init__.py`. This will create a python package named
-`myfilters` with your filters as submodules.
+A *filter package* is a regular Python package whose modules can be run as
+filters.  These are documented at greater length in the Section
+:ref:`filter-packages`.  If you develop your own filters, it is recommended to
+group them in your own filter package (please do not fiddle with the built-in
+filter package unless you plan to submit your changes to improve
+bibolamazi).
 
 You can include filter packages from within a bibolamazi file by using the
 syntax::
@@ -162,17 +161,28 @@ syntax::
   package: path/to/filter/pkgname
 
 The path should point to a directory which is a valid python package, i.e.,
-which contains a ``__init__.py`` file.
+which contains the ``__init__.py`` file.  More generally, you can use the
+syntax::
 
-You may also register filter packages at specific locations in a way which
-applies to all bibolamazi files.  Open the settings dialog, and click "Add
-filter package ..."; choose the directory corresponding to your filter package
-(e.g. `myfilters`). Now you can refer in your bibolamazi file to the filters
-within your filter package with the syntax ``myfilters:filtername`` or simply
-``filtername`` (as long as the filter name does not clash with another filter of
-the same name in a different filter package).
+  package: <filter-package-specification>
 
-TODO: DOC .................. SINCE 4.2: Can specify URLs of the form
-github:user/repo & bibolamazi automatically downloads the filter
-package. .............. To set up authentication in app: see settings. In
-command-line, use --github-auth, see --help. .............
+Where *<filter-package-specification>* is any valid specification of a filter
+package as documented in :ref:`import-filter-package`.  For instance, since
+Bibolamazi 4.2, you may also specify a github repository directly::
+
+  package: github:phfaist/mybibolamazifilters
+
+When such a directive is encountered, the package is automatically downloaded in
+a cached directory, and the filters it contains can directly be used in the
+bibolamazi file.  To specify a specific branch or commit ID, you may use the
+syntax::
+
+  package: github:phfaist/mybibolamazifilters/mybranch
+
+
+See :ref:`filter-packages` for further documentation on filter packages, how to
+import them, how to create your own, etc.  There, you'll also see how it is
+possible to register filter packages at specific locations in a way which
+applies to all bibolamazi files, without having to include `package:` directives
+(but then it might be harder to share your bibolamazi file with others).
+

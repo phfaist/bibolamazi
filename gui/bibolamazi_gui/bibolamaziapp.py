@@ -48,7 +48,7 @@ from bibolamazi.core import main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
-from bibolamazi.core.bibfilter import pkgfetcher_github
+from bibolamazi.core.bibfilter import pkgprovider, pkgfetcher_github
 from bibolamazi.core import version as bibolamaziversion
 
 
@@ -348,8 +348,12 @@ class BibolamaziApplication(QApplication):
     def openSettings(self):
         if self.settingswidget is None:
             self.settingswidget = settingswidget.SettingsWidget(bibapp=self)
+            # let the package provider/manager notify the settings widget of changes
+            filters_factory.package_provider_manager.settings_widget = self.settingswidget
+
         self.settingswidget.show()
         self.settingswidget.raise_()
+
 
 
     @pyqtSlot()
@@ -478,11 +482,70 @@ class BibolamaziApplication(QApplication):
 
 
 #
+class AppPackageProviderManager(pkgprovider.PackageProviderManager):
+    def __init__(self):
+        super(AppPackageProviderManager, self).__init__()
+        settings = QSettings()
+        settings.beginGroup('RemoteFilterPackages')
+        self.prompted_for_remote = settings.value('PromptedForRemote', False)
+        self.allow_remote = settings.value('AllowRemote', False)
+        settings.endGroup()
+
+        self.settings_widget = None
+
+    def saveRemoteAllowedPreference(self, allow_remote):
+
+        self.allow_remote = allow_remote
+
+        self.prompted_for_remote = True
+        settings = QSettings()
+        settings.beginGroup('RemoteFilterPackages')
+        settings.setValue('PromptedForRemote', True)
+        settings.setValue('AllowRemote', self.allow_remote)
+        settings.endGroup()
+        settings.sync()
+
+        if self.settings_widget:
+            self.settings_widget.update_allow_remote_filterpackages()
+
+        if self.allow_remote:
+            logger.warning("Allowing remote filter packages for future sessions. "
+                           "You can change this in the settings.")
+        
+
+    def remoteAllowed(self):
+        if not self.prompted_for_remote:
+            # ask for remote
+            r = QMessageBox.warning(
+                None,
+                "Allow remote filter packages",
+                "Filter packages are python scripts that can execute arbitrary code. "
+                "You should only run filters from sources you trust.  Do you want to "
+                "enable automatically downloading remote packages when a remote package "
+                "is specified?  (You can change this later in the settings window.)",
+                QMessageBox.Yes | QMessageBox.No
+            )
+
+            allow_remote = ( r == QMessageBox.Yes )
+
+            self.saveRemoteAllowedPreference(allow_remote)
+
+        elif not self.allow_remote:
+            logger.warning("Remote filter packages have been disabled. To enable remote "
+                           "filter packages, you need to enable the corresponding option "
+                           "in the settings.")
+
+        return self.allow_remote
+
+
 
 app_filterpackage_providers = {}
 
 def load_filterpackage_providers(app):
     settings = QSettings()
+
+    # first, create our package provider manager.
+    filters_factory.package_provider_manager = AppPackageProviderManager()
 
     settings.beginGroup('RemoteFilterPackages')
     github_auth_token = settings.value('GithubAuthToken', '').strip()

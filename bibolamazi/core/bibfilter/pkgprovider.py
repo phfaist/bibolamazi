@@ -115,6 +115,8 @@ class PackageProviderManager(object):
 
         self.pkg_providers = []
 
+        self.allow_remote = False
+
         # ensure the user cache directory itself exists
         if not os.path.isdir(self.user_cache_dir):
             os.mkdir(self.user_cache_dir)
@@ -161,6 +163,12 @@ class PackageProviderManager(object):
     def registerPackageProvider(self, pkg_provider):
         self.pkg_providers.append(pkg_provider)
 
+    def remoteAllowed(self):
+        return self.allow_remote
+
+    def allowRemote(self, on):
+        self.allow_remote = on
+    
     def _pkgcacheinfofile(self):
         return os.path.join(self.user_cache_dir, "pkgcacheinfo.json")
 
@@ -236,6 +244,9 @@ class PackageProviderManager(object):
             fpname = os.path.basename(p.path)
             fpdir = os.path.dirname(p.path)
             return fpname, fpdir
+
+        if not self.remoteAllowed():
+            raise BibolamaziError("Remote filter packages were not explicitly allowed: {}".format(url))
 
         # do we have a recently-checked item in the cache already?
         try:

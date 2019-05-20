@@ -58,7 +58,7 @@ from . import argparseactions
 from . import butils
 from .butils import BibolamaziError
 from .bibfilter import factory as filterfactory
-from .bibfilter import pkgfetcher_github
+from .bibfilter import pkgprovider, pkgfetcher_github
 
 
 # our logger for the main module
@@ -263,6 +263,9 @@ class CmdlSettings(object):
         self.config = {}
 
         self.reloadConfig()
+
+        if 'RemoteFilterPackages' not in self.config:
+            self.config['RemoteFilterPackages'] = {}
         
     def reloadConfig(self):
         if os.path.exists(self.full_config_fname):
@@ -277,13 +280,61 @@ class CmdlSettings(object):
             json.dump(self.config, f, indent=4)
     
     
+# Note: not used by GUI
+class CmdlMainPackageProviderManager(pkgprovider.PackageProviderManager):
+    def __init__(self):
+        super(CmdlMainPackageProviderManager, self).__init__()
+        settings = CmdlSettings()
+        self.prompted_for_remote = settings.config['RemoteFilterPackages'].get('PromptedForRemote', False)
+        self.allow_remote = settings.config['RemoteFilterPackages'].get('AllowRemote', False)
+
+    def remoteAllowed(self):
+        if not self.prompted_for_remote:
+            # ask for remote
+            print("""\
+
+WARNING: Filter packages are python scripts that can execute arbitrary code.
+Only run filters from sources you trust.  Do you want to enable automatically
+downloading remote packages when a remote package is specified?
+
+""")
+
+            yn = None
+            while yn not in ['Y', 'n']:
+                yn = input('Allow remote packages? (Y/n) ')
+                yn = yn.strip()[0]
+                if yn not in ['Y', 'n']:
+                    print("Please answer with Y or n.")
+
+            self.allow_remote = ( yn == 'Y' )
+
+            self.prompted_for_remote = True
+            settings = CmdlSettings()
+            settings.config['RemoteFilterPackages']['PromptedForRemote'] = True
+            settings.config['RemoteFilterPackages']['AllowRemote'] = self.allow_remote
+            settings.saveConfig()
+
+            if self.allow_remote:
+                logger.warning("Allowing remote filter packages for future sessions. Edit "
+                               "config file %s to change this.", settings.full_config_fname)
+            
+
+        elif not self.allow_remote:
+            settings = CmdlSettings()
+            logger.warning("Remote filter packages have been disabled. Edit config file %s"
+                           " to change.", settings.full_config_fname)
+
+        return self.allow_remote
+            
+
 # Note: gui doesn't use these, see bibolamazi_gui.bibolamaziapp
 cmdl_filterpackage_providers = {}
 
 def load_filterpackage_providers():
     settings = CmdlSettings()
-    if 'RemoteFilterPackages' not in settings.config:
-        settings.config['RemoteFilterPackages'] = {}
+
+    # first, create our package provider manager.
+    filterfactory.package_provider_manager = CmdlMainPackageProviderManager()
 
     github_auth_token = settings.config['RemoteFilterPackages'].get('GithubAuthToken', '')
 
@@ -310,7 +361,6 @@ def save_github_auth_token(github_auth_token):
     logger.debug("Set auth token %s",
                  '[...]{}'.format(github_auth_token[-4:]) if github_auth_token else 'None')
 
-    
 
 
 

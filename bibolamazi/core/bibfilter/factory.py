@@ -270,10 +270,13 @@ def reset_filters_cache():
 
 
 
-package_provider_manager = pkgprovider.PackageProviderManager()
+package_provider_manager = None
 """
 The package provider manager.  If we a filterpackage is specified with a
 URL, then this is the manager we use to retreive the remote filter package.
+
+The main module is responsible for instantiating a `PackageProviderManager`
+instance and storing it here.
 """
 
 

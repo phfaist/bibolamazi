@@ -43,6 +43,7 @@ from bibolamazi.core import main
 
 from . import githubauthenticationdialog
 from . import uiutils
+from . import buttontabsmanager
 from .uiutils import BlockedSignals
 from .qtauto.ui_settingswidget import Ui_SettingsWidget
 
@@ -218,6 +219,15 @@ class SettingsWidget(QDialog):
         self.ui = Ui_SettingsWidget()
         self.ui.setupUi(self)
 
+        # connect buttons as "tabs"
+        self.btabs = buttontabsmanager.ButtonTabsManager(self.ui.tabs, self)
+        self.btabs.registerButton(self.ui.btnTabGeneral, self.ui.pageGeneral)
+        self.btabs.registerButton(self.ui.btnTabLocalRepos, self.ui.pageLocalRepos)
+        self.btabs.registerButton(self.ui.btnTabRemoteRepos, self.ui.pageRemoteRepos)
+
+        self.ui.tabs.setCurrentWidget(self.ui.pageGeneral)
+        self.ui.btns.setFocus()
+
         # general
 
         self.ui.spnMaxRecentFiles.setValue(bibapp.recentFilesList.max_recent_files)
@@ -236,6 +246,7 @@ class SettingsWidget(QDialog):
         self.fpmodel.dicChanged.connect(self.save_settings)
 
         # update auth status
+        self.update_allow_remote_filterpackages()
         self._update_githubauth_guistate()
 
 
@@ -344,6 +355,20 @@ class SettingsWidget(QDialog):
         self.bibapp.setHideStartupWindowOnOpenDoc(on)
         self.save_settings()
 
+
+    @pyqtSlot(bool)
+    def on_chkRemoteAllow_toggled(self, on):
+        logger.debug("set remote allowed = %r", on)
+        filters_factory.package_provider_manager.saveRemoteAllowedPreference(on)
+
+    def update_allow_remote_filterpackages(self):
+        settings = QSettings()
+        settings.beginGroup('RemoteFilterPackages')
+        allow_remote = settings.value('AllowRemote', False)
+        settings.endGroup()
+        
+        self.ui.chkRemoteAllow.setChecked(allow_remote)
+        self.ui.grpGithubAuth.setEnabled(allow_remote)
 
     def _update_githubauth_guistate(self):
         from . import bibolamaziapp
