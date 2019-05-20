@@ -23,7 +23,7 @@
 # This is the current BIBOLAMAZI version.
 # Bump the number here for different version numbers.
 
-version_str = "4.1p1"
+version_str = "4.2"
 """
 The version string. This is increased upon each release.
 """
