@@ -257,7 +257,7 @@ class CmdlSettings(object):
 
         self.user_config_dir = appdirs.user_config_dir('bibolamazi')
         if not os.path.exists(self.user_config_dir):
-            os.mkdir(self.user_config_dir)
+            os.makedirs(self.user_config_dir, exist_ok=True)
         self.full_config_fname = os.path.join(self.user_config_dir, self.configfname)
 
         self.config = {}

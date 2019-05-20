@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import *
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import main
+from bibolamazi.core import butils
 
 from . import githubauthenticationdialog
 from . import uiutils
@@ -367,7 +368,8 @@ class SettingsWidget(QDialog):
     def update_allow_remote_filterpackages(self):
         settings = QSettings()
         settings.beginGroup('RemoteFilterPackages')
-        allow_remote = settings.value('AllowRemote', False)
+        # on Windows, Python 3.4 and Qt 5.7, this returns str... so ensure it is a bool
+        allow_remote = butils.getbool(settings.value('AllowRemote', False))
         settings.endGroup()
         
         with BlockedSignals(self.ui.chkRemoteAllow):

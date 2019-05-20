@@ -106,6 +106,12 @@ class _FoundInCache(Exception):
         super(_FoundInCache, self).__init__('<found: {}>'.format(self.cachedirname))
 
 
+# class RemoteFilterPackageInaccessible(Exception):
+#     def __init__(self, msg):
+#         super(RemoteFilterPackageInaccessible, self).__init__(msg)
+
+        
+
 class PackageProviderManager(object):
     def __init__(self, user_cache_dir=None):
         super(PackageProviderManager, self).__init__()
@@ -119,7 +125,7 @@ class PackageProviderManager(object):
 
         # ensure the user cache directory itself exists
         if not os.path.isdir(self.user_cache_dir):
-            os.mkdir(self.user_cache_dir)
+            os.makedirs(self.user_cache_dir, exist_ok=True)
 
         self.pkgcacheinfo = {
             #
@@ -235,7 +241,7 @@ class PackageProviderManager(object):
         Return a tuple (fpname, fpdir).
         """
         
-        logger.longdebug("provide_for_url, url=%r", url)
+        logger.debug("provide_for_url, url=%r", url)
 
         p = urlparse(url)
 
@@ -260,9 +266,11 @@ class PackageProviderManager(object):
             # we have the cache directly, no need to go via a pkg-provider
             return self._filterpackagespec_for_cachedirname(f.cachedirname)
 
+        logger.debug("Looking for providers for %s...", url)
+
         for pkg_provider in self.pkg_providers:
             if pkg_provider.can_provide_from(p.scheme):
-                logger.longdebug("Using provider %s", pkg_provider.__class__.__name__)
+                logger.debug("Using provider %s", pkg_provider.__class__.__name__)
                 fetcher = pkg_provider.get_fetcher(url)
                 return self._get_filterpackagespec_via_provider(fetcher, url, p)
 
@@ -275,14 +283,24 @@ class PackageProviderManager(object):
             for cachedirname, pkgi in iteritems(self.pkgcacheinfo['pkgcaches']):
                 if pkgi.get('url', None) == url:
 
-                    if fetcher.check_cache_is_up_to_date(pkgi.get('provider_data', None)):
+                    try:
+                        logger.debug("Checking whether or not existing cache for %s is up-to-date ...", url)
+                        
+                        if fetcher.check_cache_is_up_to_date(pkgi.get('provider_data', None)):
 
-                        # if it's confirmed still up-to-date, then use it and
-                        # record the fact that we checked now
-                        str_now = datetime_to_str(datetime.datetime.now())
-                        self.pkgcacheinfo['pkgcaches'][cachedirname]['lastchecked_datetime'] = str_now
-                        self._save_pkgcacheinfo()
+                            # if it's confirmed still up-to-date, then use it and
+                            # record the fact that we checked now
+                            str_now = datetime_to_str(datetime.datetime.now())
+                            self.pkgcacheinfo['pkgcaches'][cachedirname]['lastchecked_datetime'] = str_now
+                            self._save_pkgcacheinfo()
 
+                            raise _FoundInCache(cachedirname)
+
+                    except _FoundInCache:
+                        raise
+
+                    except Exception as e:
+                        logger.warning("Unable to check whether or not cache for %s is up-to-date: %s", url, str(e))
                         raise _FoundInCache(cachedirname)
 
                     # this cache is out of date, so we should remove it.

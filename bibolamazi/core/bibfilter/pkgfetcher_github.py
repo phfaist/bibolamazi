@@ -49,6 +49,7 @@ import requests
 
 import bibolamazi.init
 from bibolamazi.core.butils import BibolamaziError
+from . import pkgprovider
 
 logger = logging.getLogger(__name__)
 
@@ -79,26 +80,43 @@ class Fetcher(object):
         self.repo = repo
         self.commit = commit
 
-        if self.auth_token:
-            self.G = github.Github(self.auth_token)
-        else:
-            self.G = github.Github()
-        self.R = self.G.get_repo(self.username + '/' + self.repo)
-        
-        if self.commit:
-            self.effective_commit = self.commit
-        else:
-            self.effective_commit = self.R.default_branch
+        self.effective_commit = None
+        self.sha = None
+        self.G = None
+        self.R = None
+        self.C = None
 
-        self.C = self.R.get_commit(self.effective_commit)
+        # do the access stuff now, but only raise any exceptions in
+        # check_cache_is_up_to_date() so that old cache can still correctly be
+        # used ...
+        try:
+            if self.auth_token:
+                self.G = github.Github(self.auth_token)
+            else:
+                self.G = github.Github()
+            self.R = self.G.get_repo(self.username + '/' + self.repo)
 
-        self.sha = self.C.sha
+            if self.commit:
+                self.effective_commit = self.commit
+            else:
+                self.effective_commit = self.R.default_branch
+
+            self.C = self.R.get_commit(self.effective_commit)
+
+            self.sha = self.C.sha
+
+            self.access_error = None
+        except Exception as e:
+            self.access_error = e
 
         logger.debug("Preparing to inspect and/or fetch filter package %s/%s [%s] (sha=%s)",
                      self.username, self.repo, self.effective_commit, self.sha)
 
 
     def check_cache_is_up_to_date(self, provider_data):
+
+        if self.access_error is not None:
+            raise self.access_error
 
         cached_shacommit = provider_data['cached_shacommit']
         
@@ -113,6 +131,9 @@ class Fetcher(object):
 
 
     def fetch_to_dir(self, fullcachedir):
+
+        if self.access_error is not None:
+            raise self.access_error
 
         zip_url = self.R.get_archive_link('zipball', self.sha)
 
