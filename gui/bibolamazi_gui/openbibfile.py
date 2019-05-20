@@ -272,14 +272,19 @@ class RunBibolamazi(QObject):
     def isBusy(self):
         return self._busy
     
-    @pyqtSlot(str, int)
-    def runBibolamazi(self, bibolamazifilename, verbosity_level):
+    @pyqtSlot(str, int, list)
+    def runBibolamazi(self, bibolamazifilename, verbosity_level, reload_filter_path):
+
+        # reload_filter_path is a list of 2-tuples (fpname, fpdir)
+
         if self.threadparent.busy:
             logger.warning("Can't run bibolamazi twice simultaneously")
             return
 
-        logger.debug("RunBibolamazi.runBibolamazi(): bibolamazifilename=%r, verbosity_level=%r. thread id=%r",
-                     bibolamazifilename, verbosity_level, QThread.currentThread().objectName())
+        logger.debug("RunBibolamazi.runBibolamazi(): bibolamazifilename=%r, verbosity_level=%r, "
+                     "reload_filter_path=%r. thread id=%r",
+                     bibolamazifilename, verbosity_level, reload_filter_path,
+                     QThread.currentThread().objectName())
 
         self._busy = True
         self.threadparent.busy = True
@@ -296,7 +301,11 @@ class RunBibolamazi(QObject):
                     try:
                         # TODO: we should reload all relevant packages here, not
                         # in the other method below
+
+                        self._reload_filterpkg_modules(reload_filter_path)
+
                         bibolamazimain.run_bibolamazi(bibolamazifile=bibolamazifilename)
+
                         self.logqtsig.dolog(" --> Finished successfully. <--")
                         self.bibolamaziDone.emit()
                     except butils.BibolamaziError as e:
@@ -320,6 +329,28 @@ class RunBibolamazi(QObject):
             self._busy = False
             self.threadparent.busy = False
 
+
+    def _reload_filterpkg_modules(self, reload_filter_path):
+        #
+        # reload all relevant local filter packages, in case the filter packages
+        # have changed.
+        #
+        # reload_filter_path is a list of 2-tuples (fpname, fpdir)
+        #
+        allmodules = sorted(sys.modules.keys(), reverse=True) # so that "pkg.submodule" appears before "pkg"
+        for pkgname, pkgpath in reload_filter_path:
+            logger.debug("Inspecting user filter package `%s` to reload modules ...", pkgname)
+            for modname in allmodules:
+                if modname.startswith(pkgname):
+                    mod = sys.modules[modname]
+                    logger.debug("Reloading module `%s` (%r) in user filter package `%s`",
+                                 modname, mod, pkgname)
+                    origpath = sys.path
+                    try:
+                        sys.path = [pkgpath] + origpath
+                        reload(mod)
+                    finally:
+                        sys.path = origpath
 
     #@pyqtSlot()
     #def _process_some_events(self):
@@ -559,6 +590,8 @@ class OpenBibFile(QWidget):
             self.ui.txtParseErrorMessages.setVisible(True)
             self.ui.txtParseErrorMessages.setText(errormessagehtml)
 
+            self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">parse error in file.</h3>")
+
             with ContextAttributeSetter( (self.ui.txtConfig.signalsBlocked,
                                           self.ui.txtConfig.blockSignals, True) ):
                 self.ui.txtConfig.setPlainText("")
@@ -749,7 +782,7 @@ class OpenBibFile(QWidget):
         os.kill(os.getpid(), sig)
 
 
-    requestRunBibolamazi = pyqtSignal(str, int)
+    requestRunBibolamazi = pyqtSignal(str, int, list)
     
     @pyqtSlot(bool)
     def _run_busy(self, busy):
@@ -810,44 +843,18 @@ class OpenBibFile(QWidget):
             QMessageBox.critical(self, "No open file", "No file selected!")
             return
 
-        if self.bibolamaziFile is not None:
-            # reload all relevant local filter packages, in case the filter packages
-            # have changed.
-            #
-            # FIXME/TODO: This should be done at the point where we actually run
-            # bibolamazi, to benefit from proper error handling!!
-            #
-            allmodules = sorted(sys.modules.keys(), reverse=True) # so that "pkg.submodule" appears before "pkg"
-            for pkgname, pkgpath in self.bibolamaziFile.filterPath().items():
-                logger.debug("Inspecting user filter package `%s` to reload modules ...", pkgname)
-                for modname in allmodules:
-                    if modname.startswith(pkgname):
-                        mod = sys.modules[modname]
-                        logger.debug("Reloading module `%s` (%r) in user filter package `%s`",
-                                     modname, mod, pkgname)
-                        origpath = sys.path
-                        try:
-                            sys.path = [pkgpath] + origpath
-                            reload(mod)
-                        except Exception as e:
-                            stre = str(e)
-                            logger.error(stre)
-                            import traceback
-                            errmsg = traceback.format_exc()
-                            logger.error(errmsg)
-                            self._run_clearLog()
-                            self._run_logHtml(bibolamazi_error_html(errmsg))
-                            return
-                        finally:
-                            sys.path = origpath
-                
-        
+        if not self.bibolamaziFile:
+            QMessageBox.critical(self, "No open file", "No file is open!")
+            return
 
         verbosity_level = self.ui.cbxVerbosity.currentIndex()
 
         self.ui.txtParseErrorMessages.setVisible(False)
 
-        self.requestRunBibolamazi.emit(self.bibolamaziFileName, verbosity_level)
+        reload_filter_path = list(self.bibolamaziFile.filterPath().items())
+
+        self.requestRunBibolamazi.emit(self.bibolamaziFileName, verbosity_level,
+                                       reload_filter_path)
 
 
     @pyqtSlot(int)
