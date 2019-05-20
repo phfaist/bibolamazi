@@ -8,7 +8,7 @@ bibtex files produced by your favorite reference manager, and applying specific
 rules.
 
 [![License](https://img.shields.io/github/license/phfaist/bibolamazi.svg?style=flat)](https://github.com/phfaist/bibolamazi/blob/master/LICENSE.txt)
-[![Build Status](https://img.shields.io/travis/phfaist/bibolamazi.svg?style=flat)](https://travis-ci.org/phfaist/bibolamazi)
+[![Build Status](https://img.shields.io/travis/phfaist/bibolamazi/master.svg?style=flat)](https://travis-ci.org/phfaist/bibolamazi)
 [![PyPI Version](https://img.shields.io/pypi/v/bibolamazi.svg?style=flat)](https://pypi.org/project/bibolamazi/)
 
 
