@@ -539,14 +539,20 @@ class BibolamaziFile(object):
         Return the list of additional filter paths set by the bibolamazi file using
         'package:' commands.
 
+        The returned object is a
+        :py:class:`~bibolamazi.core.bibfilter.factory.PrependOrderedDict`.
+
         See also fullFilterPath().
         """
-        return self._filterpath
+        return PrependOrderedDict(self._filterpath)
 
     def fullFilterPath(self):
         """
         Return the full search path used when creating filter instances from this
         bibolamazi file.
+
+        The returned object is a
+        :py:class:`~bibolamazi.core.bibfilter.factory.PrependOrderedDict`.
 
         See also filterPath().
         """

@@ -177,7 +177,7 @@ class PrependOrderedDict(OrderedDict):
     """
     def __init__(self, *args, **kwargs):
         self.isupdating = False
-        OrderedDict.__init__(self, *args, **kwargs)
+        super(PrependOrderedDict, self).__init__(*args, **kwargs)
         
     def __setitem__(self, key, value):
         if self.isupdating:
