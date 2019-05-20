@@ -34,7 +34,7 @@ from .. import butils
 
 
 
-# for meta-typing. This is particularly used by the graphical interface.
+# for meta-typing. This is used by the graphical interface.
 class EnumArgType:
     def __init__(self, listofvalues):
         self.listofvalues = listofvalues
@@ -48,6 +48,10 @@ class EnumArgType:
 
 def enum_class(class_name, values, default_value=0, value_attr_name='value'):
     """
+    Define a class with the given name `class_name`, which can store one of
+    several choices.  The possible values are fixed.  Each choice has an integer
+    and a string representation.
+
     `class_name` is the class name.
     
     `values` should be a list of tuples `(string_key, numeric_value)` of all the
@@ -183,6 +187,11 @@ def multi_type_class(class_name, typelist,
                      convert_functions=multi_type_class_default_convert_functions,
                      parse_value_fn=None, doc=None):
     """
+    Define a class with the given name `class_name`, which can store a value of
+    one of several fixed types.  This is used, for instance, in the `fixes`
+    filter where for some options one can specify either "True/False" (`bool`
+    type) or a list of fields (`CommaStrList` type).
+
     `class_name` is the class name.
     
     `typelist` should be a list of tuples `(typeobject, description)` of type
@@ -332,7 +341,8 @@ def multi_type_class(class_name, typelist,
 # ------------------------------------------------------------------------------
 
 
-
+# meta type for GUI which can be used for any type (like CommaStrList) that is
+# preferrably edited directly as a string.
 class StrEditableArgType(object):
     def __init__(self):
         pass

@@ -55,7 +55,7 @@ Philippe Faist, (C) 2013, GPL 3+
 """
 
 HELP_DESC = r"""
-Filter that fills BibTeX files with relevant entries to cite with \\cite{1211.1037}
+Filter that fills BibTeX files with relevant entries to cite with \cite{1211.1037}
 """
 
 HELP_TEXT = r"""

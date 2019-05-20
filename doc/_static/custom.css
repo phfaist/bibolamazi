@@ -3,6 +3,11 @@
 @import url('https://fonts.googleapis.com/css?family=IBM+Plex+Mono|IBM+Plex+Sans:400,400i,600,600i');
 
 
+pre {
+    padding: 7px 15px;
+}
+
+
 div.sphinxsidebar li.toctree-l1 {
     margin-bottom: 0.7em;
 }

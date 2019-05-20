@@ -114,25 +114,26 @@ Some remarks:
 Filter General Help Documentation
 ---------------------------------
 
-The filter class should declare the members ``helpauthor``, ``helpdescription`` and
-``helptext`` with meaningful help text:
+The filter class should declare the members ``helpauthor``, ``helpdescription``
+and ``helptext`` with meaningful help text:
 
-  - ``helpauthor`` should be a short one-line description of the filter and contributor
-    with license. E.g.::
+  - ``helpauthor`` should be a short one-line mention of the contributor with
+    license. E.g.::
 
-      ArXiv clean-up filter by Philippe Faist, (C) 2013, GPL 3+
+      Philippe Faist, (C) 2013, GPL 3+
 
-  - ``helpdescription`` is a brief description of what the filter does. This is displayed
-    right after the *Usage* section in the help text, and before the filter arguments
-    description.
+  - ``helpdescription`` is a brief description of what the filter does. This is
+    displayed at the top of the filter help page and in the detailed filter
+    lists.
 
-  - ``helptext`` is a long description of what the filter exactly does, how to use it, the
-    advantages, tricks, pitfalls, etc.
+  - ``helptext`` is a long description of what the filter exactly does, how to
+    use it, the advantages, tricks, pitfalls, etc.  Make this as detailed as
+    necessary.  It is recommended to wrap the text to 80 columns.
 
-In the built-in filters, as well as the examples, the text is declared outside of the
-class (see ``HELP_AUTHOR`` etc.) so that we don't have to deal with the indentation (and
-in the class, we only have ``helpauthor=HELP_AUTHOR`` etc.). That's perfectly fair and
-completely optional.
+In the built-in filters, as well as the examples, the text is declared outside
+of the class (see ``HELP_AUTHOR`` etc.) so that we don't have to deal with the
+indentation (and in the class, we only have ``helpauthor=HELP_AUTHOR``
+etc.). That's perfectly fair and completely optional.
 
 
 .. _filter_argdocs:
@@ -145,6 +146,7 @@ function arguments are specially parsed: they should have the form::
 
   - argument_name(type): Description of the argument. The description may
     span over several lines.
+
   - other_argument_name: Description of the other option. Notice that the
     type is optional and will default to a simple string.
 
@@ -166,6 +168,12 @@ There are some convenient predefined types for filter arguments, all defined in 
       a custom class which represents an enumeration value of several options.
 
 Maybe look at the built-in filters and other examples to get an idea.
+
+It is important to specify the type of arguments because this will influcence
+the type of widget that the user will be presented with in the graphical user
+interface.  For instance, if the argument is a bool, then a "True/False" choice
+dropdown menu is presented, but if the argument is a string, a text input widget
+is shown.
 
 More doc should come here at some point in the future..........
 

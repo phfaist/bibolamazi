@@ -69,7 +69,16 @@ help page (in the bibolamazi application), or by running
 the bibolamazi command-line tool).
 
 In the above example, we modify the entry's fields to add a field with the given
-field name and field value.
+field name and field value.  For instance, we could use this filter as it is in
+a bibolamazi file with the directives::
+
+  package: /path/to/mypackage
+
+  filter: add_constant_field -sFieldName=annote
+                             -sValue='automatic annotation added by my filter'
+
+with the effect of adding the field ``annote = {automatic annotation added by my
+filter}`` to all bibtex entries.
 
 The function `bib_filter_entry()` may also take an argument called
 ``bibolamazifile`` to access properties of the bibolamazifile.  The argument
@@ -134,3 +143,8 @@ You should proceed by trial and error, and you can get inspired by the existing
 built-in filters, see
 `https://github.com/phfaist/bibolamazi/tree/master/bibolamazi/filters
 <https://github.com/phfaist/bibolamazi/tree/master/bibolamazi/filters>`_.
+
+Continue reading :ref:`devel-filter` for more in-depth information about how
+bibolamazi filters work.  Really, the "easy" filter definitions presented here
+are a convenient shorthand for defining a full filter class as described in the
+next section.
