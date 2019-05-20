@@ -20,7 +20,7 @@ your own filter packages, and how to write your own filters.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    import-filter-package
    create-filter-package

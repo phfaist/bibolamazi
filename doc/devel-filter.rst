@@ -1,4 +1,3 @@
-
 .. _devel-filter:
 
 Writing a New Filter (Full Version)
