@@ -4,12 +4,10 @@ Filter Packages
 ===============
 
 Bibolamazi filters are organized in *filter packages*. These are regular python
-packages whose modules can be invoked as filters.
-
-, i.e. a directory containing a
-``__init__.py`` file, which contains python modules that implement the
-bibolamazi filter API. (The ``__init__.py`` file is usually empty.)
-..........
+packages whose modules can be invoked as filters.  This is a directory
+containing a ``__init__.py`` file (which defines the directory as a python
+package) along with python files that define filters.  (The ``__init__.py`` file
+is usually empty.)
 
 All built-in filters are part of the filter package ``bibolamazi.filters``.
 Additional filter packages can be imported for instance using the ``package:``

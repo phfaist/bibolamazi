@@ -17,6 +17,11 @@ import helpers
 
 from bibolamazi.core import blogger
 
+import bibolamazi.core.bibfilter.factory as filters_factory
+from bibolamazi.core.bibfilter import pkgprovider
+filters_factory.package_provider_manager = pkgprovider.PackageProviderManager()
+filters_factory.package_provider_manager.allow_remote = True
+
 
 #
 # TO DEBUG: Create an empty subdir in this directory called '_tmpdir' and set
@@ -33,6 +38,7 @@ localtmpdir = '_tmpdir' # used if use_mkdtemp=False
 class FullCaseTester(object):
     def __init__(self):
         super(FullCaseTester, self).__init__()
+
 
     def _run_full_case_test(self, name):
 
