@@ -219,6 +219,9 @@ class SettingsWidget(QDialog):
         self.ui = Ui_SettingsWidget()
         self.ui.setupUi(self)
 
+        if sys.platform.startswith("darwin"):
+            self.setWindowFlags(Qt.Sheet)
+
         # connect buttons as "tabs"
         self.btabs = buttontabsmanager.ButtonTabsManager(self.ui.tabs, self)
         self.btabs.registerButton(self.ui.btnTabGeneral, self.ui.pageGeneral)
@@ -367,7 +370,9 @@ class SettingsWidget(QDialog):
         allow_remote = settings.value('AllowRemote', False)
         settings.endGroup()
         
-        self.ui.chkRemoteAllow.setChecked(allow_remote)
+        with BlockedSignals(self.ui.chkRemoteAllow):
+            self.ui.chkRemoteAllow.setChecked(allow_remote)
+
         self.ui.grpGithubAuth.setEnabled(allow_remote)
 
     def _update_githubauth_guistate(self):
