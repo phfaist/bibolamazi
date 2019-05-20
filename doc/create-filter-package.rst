@@ -33,3 +33,27 @@ You can then use `myfirstfilter` and `mysecondfilter` as normal filters in your
 bibolamazi file.  In the following sections, we'll detail how to write custom
 filters so that they can do useful stuff, i.e., we'll see how we should go about
 to code the contents of ``myfirstfilter.py`` and ``mysecondfilter.py``.
+
+
+Distributing the filter package as a github repository
+------------------------------------------------------
+
+You can share your filters by creating a github repository to share your
+filters.  The repository must be structured in one of two ways:
+
+  * The repository itself contains a folder which is the python package, which
+    itself contains the ``__init__.py`` file.  The python package must have the
+    same name as the repository, with hyphens converted to underscores.
+
+  * The repository may be the python package itself, i.e., there is a
+    ``__init__.py`` file at the root of the repository.
+
+Create the repository in this way, and then others can use your filters
+automatically by including the directive::
+  
+  package: github:username/repo
+
+You can even keep the repository private, and allow access to your friends; if
+your friends configure github authentication within bibolamazi :ref:`as
+explained here <filter-package-github-auth>`, then they can directly access your
+filters with the same directive.

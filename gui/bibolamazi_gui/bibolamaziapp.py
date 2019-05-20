@@ -251,6 +251,14 @@ class BibolamaziApplication(QApplication):
                 logger.debug("File %r already open, raising window.", fnamecanon)
                 return
 
+        w = openbibfile.OpenBibFile()
+        w.setFavoriteCmdsList(self.favoriteCmdsList)
+        ok = w.setOpenFile(fname)
+
+        if not ok:
+            logger.warning("Failed to open file %s", fname)
+            return
+
         if self.startup_widget.isVisible() and self.hide_startup_window_on_open_doc:
             # Setting designed for Mac OS X.  We show the start-up window, and
             # then we hide it once we open a file or create a new file (to avoid
@@ -258,9 +266,6 @@ class BibolamaziApplication(QApplication):
             # "File->Show Startup Window".
             self.startup_widget.hide()
 
-        w = openbibfile.OpenBibFile()
-        w.setFavoriteCmdsList(self.favoriteCmdsList)
-        w.setOpenFile(fname)
         w.show()
         w.raise_()
         w.fileClosed.connect(self.bibFileClosed)
@@ -270,7 +275,8 @@ class BibolamaziApplication(QApplication):
 
         w.requestHelpTopic.connect(self.openHelpTopic)
 
-        self.recentFilesList.addRecentFile(fname)
+        if ok:
+            self.recentFilesList.addRecentFile(fname)
 
 
     def hasOpenFiles(self):

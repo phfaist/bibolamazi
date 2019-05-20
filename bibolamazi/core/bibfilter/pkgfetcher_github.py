@@ -116,6 +116,8 @@ class Fetcher(object):
 
         zip_url = self.R.get_archive_link('zipball', self.sha)
 
+        logger.info("Fetching filter package %s/%s [%s]", self.username, self.repo, self.effective_commit)
+
         logger.longdebug("Downloading zipball at %r ...", zip_url)
 
         # this should also work for private repositories as the URL should
@@ -144,11 +146,12 @@ class Fetcher(object):
                       os.path.join(fullcachedir, pkg_subdir, self.repo))
             pkg_subdir += '/' + self.repo
 
+        pkgname = self.repo.replace('-', '_')
         if not os.path.exists(os.path.join(fullcachedir, pkg_subdir, '__init__.py')) and \
-           os.path.isdir(os.path.join(fullcachedir, pkg_subdir, self.repo)):
+           os.path.isdir(os.path.join(fullcachedir, pkg_subdir, pkgname)):
             # no __init__.py as a root file in the repo, and there exists a
             # subdir of the same name. So point to that.
-            pkg_subdir += '/' + self.repo
+            pkg_subdir += '/' + pkgname
 
         provider_data = {
             'cached_shacommit': self.sha

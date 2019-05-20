@@ -482,10 +482,12 @@ class OpenBibFile(QWidget):
         self.bibolamaziFileName = filename
         self.bibolamaziFile = None
 
-        self.reloadFile()
+        ok = self.reloadFile()
 
         if self.bibolamaziFileName:
             self.fwatcher.addPath(self.bibolamaziFileName)
+
+        return ok
 
 
     def hasUnsavedModifications(self):
@@ -586,7 +588,7 @@ class OpenBibFile(QWidget):
         if not file_is_loaded:
             # disabled state
 
-            self.ui.tabs.setCurrentWidget(self.ui.pageInfo)
+            self.ui.tabs.setCurrentWidget(self.ui.tabPageRunMessages)
             self.ui.txtParseErrorMessages.setVisible(True)
             self.ui.txtParseErrorMessages.setText(errormessagehtml)
 
@@ -634,7 +636,7 @@ class OpenBibFile(QWidget):
             with ContextAttributeSetter( (self.ui.btnGo.isEnabled, self.ui.btnGo.setEnabled, False) ):
                 self.ui.txtInfo.setText("<h3 style=\"color: rgb(127,0,0)\">no file loaded.</h3>")
                 self.ui.txtConfig.setPlainText("")
-            return
+            return False
 
         if not self.bibolamaziFile:
             self.bibolamaziFile = bibolamazifile.BibolamaziFile()
@@ -649,7 +651,7 @@ class OpenBibFile(QWidget):
             self._set_win_state(False,
                                 "<h3 style=\"color: rgb(127,0,0)\">Error reading file.</h3>\n"
                                 + bibolamazi_error_html(str(e)))
-            return
+            return False
 
         self._set_win_state(True)
 
@@ -680,6 +682,7 @@ class OpenBibFile(QWidget):
             self._display_header()
 
         logger.debug("file contents updated!")
+        return True
 
 
     @pyqtSlot()

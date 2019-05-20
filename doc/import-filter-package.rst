@@ -71,6 +71,12 @@ a string of one of the following forms:
 
       package: github:phfaist/mybibolamazifilters/4c84fd92ec9189ebf28ebd30916d3c9c9e53a8fb
 
+    When a github repository is specified, the repository must either be the
+    contents of the filter package (it contains a ``__init__.py`` file directly
+    in the root directory of the repository), or it must contain a folder of the
+    same name as the repo (possibly with hyphens converted to underscores) which
+    is assumed to be the python filter package.
+
 .. versionadded:: 4.2
                   Remote github repositories can be specified and automatically
                   accessed since Bibolamazi 4.2
@@ -92,6 +98,8 @@ location which is typically `~/.config/bibolamazi/` on Unix-like systems,
 `~/Library/Application Support/bibolamazi/` on Macs; we use the `appdirs Python
 package <https://pypi.org/project/appdirs/>`_ to determine this.
 
+
+.. _filter-package-github-auth:
 
 Github Authentication for Private Repositories
 ----------------------------------------------
