@@ -174,6 +174,17 @@ p, li { white-space: pre-wrap; }
     def on_chkArxivPubIncludeTheses_toggled(self, on):
         self.ui.chkArxivUnpubIncludeTheses.setChecked(not on)
 
+    @pyqtSlot()
+    def slot_update_caveats(self):
+        show_caveats = self.ui.chkKeepOnlyUsed.isChecked() or self.ui.chkFetch.isChecked()
+        self.ui.boxCaveats.setVisible(show_caveats)
+
+    @pyqtSlot(bool)
+    def on_chkKeepOnlyUsed_toggled(self, on):
+        self.slot_update_caveats()
+    @pyqtSlot(bool)
+    def on_chkFetch_toggled(self, on):
+        self.slot_update_caveats()
 
     @pyqtSlot()
     def on_btnSaveFinish_clicked(self):
@@ -269,13 +280,38 @@ p, li { white-space: pre-wrap; }
 
 """
 
+        # fetch from remote sources?
+
+        if self.ui.chkFetch.isChecked():
+            if self.ui.chkFetchArxiv.isChecked():
+                bibolamazi_config += """\
+%% Collect entries from arXiv.org for all citations of the form
+%% \\cite{1211.1037}
+filter: citearxiv
+
+"""
+            if self.ui.chkFetchDoi.isChecked():
+                bibolamazi_config += """\
+%% Collect entries from doi.org for all citations of the form
+%% \\cite{doi:<DOI>}
+filter: citedoi
+
+"""
+            if self.ui.chkFetchInspirehep.isChecked():
+                bibolamazi_config += """\
+%% Collect entries from inspirehep.net for all citations of the form
+%% \\cite{inspire:<DOI>}
+filter: citeinspirehep
+
+"""
+        
         # merge duplicates?
         if srcmulti:
             if self.ui.chkDuplicatesFilter.isChecked():
                 if self.ui.chkKeepOnlyUsed.isChecked():
                     bibolamazi_config += """\
 %% Merge duplicates into a single bibtex entry and create aliases so that
-%% \cite{...} commands may use either key interchangably
+%% \\cite{...} commands may use either key interchangably
 %%
 %% Important: You must include "\\input{bibolamazi_dup_aliases.tex}" in the
 %% preamble of your LaTeX document.
@@ -286,6 +322,7 @@ p, li { white-space: pre-wrap; }
 %% file, you need to set the -sJobname=documentname option here.
 filter: duplicates -dMergeDuplicates
                    -dEnsureConflictKeysAreDuplicates
+                   -dCreateAliasFromAkaKeyword
                    -sDupfile=bibolamazi_dup_aliases.tex
                    -dKeepOnlyUsed
 
@@ -293,12 +330,13 @@ filter: duplicates -dMergeDuplicates
                 else:
                     bibolamazi_config += """\
 %% Merge duplicates into a single bibtex entry and create aliases so that
-%% \cite{...} commands may use either key interchangably
+%% \\cite{...} commands may use either key interchangably
 %%
 %% Important: You must include "\\input{bibolamazi_dup_aliases.tex}" in the
 %% preamble of your LaTeX document.
 filter: duplicates -dMergeDuplicates
                    -dEnsureConflictKeysAreDuplicates
+                   -dCreateAliasFromAkaKeyword
                    -sDupfile=bibolamazi_dup_aliases.tex
 
 """
@@ -344,10 +382,10 @@ filter: only_used
                 fixesopts += [ '-dEncodeUtf8ToLatex' ]
 
             bibolamazi_config += ("""\
-%%%% Apply some general fixes & hacks
-filter: fixes %(fixesoptstr)s
+%% Apply some general fixes & hacks
+filter: fixes {fixesoptstr}
 
-"""%dict(fixesoptstr="\n              ".join(fixesopts)))
+""".format(fixesoptstr="\n              ".join(fixesopts)))
 
 
         if self.ui.chkArxivUnpublished.isChecked():

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
-    <height>592</height>
+    <width>575</width>
+    <height>597</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
    <item>
     <widget class="QStackedWidget" name="stk">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="page">
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -196,6 +196,18 @@ p, li { white-space: pre-wrap; }
      </widget>
      <widget class="QWidget" name="page_2">
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="chkArxivUnpublished">
          <property name="title">
@@ -344,6 +356,18 @@ p, li { white-space: pre-wrap; }
      </widget>
      <widget class="QWidget" name="page_3">
       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="chkFixesFilter">
          <property name="title">
@@ -379,12 +403,111 @@ p, li { white-space: pre-wrap; }
        <item>
         <widget class="QGroupBox" name="chkKeepOnlyUsed">
          <property name="title">
-          <string>Keep only entries that I actually use in my LaTeX document</string>
+          <string>Only keep those entries that I actually use in my LaTeX document</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Do not include entries that are not cited in your LaTeX document.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::RichText</enum>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="chkFetch">
+         <property name="title">
+          <string>Automatically fetch entries</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chkFetchDoi">
+            <property name="text">
+             <string>fetch from doi.org for citations of the form &quot;\cite{doi:&lt;DOI&gt;}&quot;</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="chkFetchArxiv">
+            <property name="text">
+             <string>fetch from arXiv.org for citations of the form &quot;\cite{1211.1037}&quot;</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="chkFetchInspirehep">
+            <property name="text">
+             <string>fetch from Insprehep.net for citations of the form &quot;\cite{inspire:...}&quot;</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Automatically collect relevant bibtex entries from the internet depending on what you cite in your document.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="textFormat">
+             <enum>Qt::RichText</enum>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_7">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="boxCaveats">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255,80,40,50)</string>
+         </property>
+         <property name="title">
+          <string>CAVEATS</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
           <item row="0" column="0">
            <widget class="QLabel" name="label_4">
             <property name="sizePolicy">
@@ -481,8 +604,8 @@ p, li { white-space: pre-wrap; }
      <y>89</y>
     </hint>
     <hint type="destinationlabel">
-     <x>359</x>
-     <y>178</y>
+     <x>500</x>
+     <y>216</y>
     </hint>
    </hints>
   </connection>
@@ -497,8 +620,8 @@ p, li { white-space: pre-wrap; }
      <y>104</y>
     </hint>
     <hint type="destinationlabel">
-     <x>434</x>
-     <y>178</y>
+     <x>500</x>
+     <y>268</y>
     </hint>
    </hints>
   </connection>
@@ -513,8 +636,8 @@ p, li { white-space: pre-wrap; }
      <y>104</y>
     </hint>
     <hint type="destinationlabel">
-     <x>494</x>
-     <y>174</y>
+     <x>500</x>
+     <y>320</y>
     </hint>
    </hints>
   </connection>
@@ -529,8 +652,8 @@ p, li { white-space: pre-wrap; }
      <y>114</y>
     </hint>
     <hint type="destinationlabel">
-     <x>82</x>
-     <y>238</y>
+     <x>94</x>
+     <y>522</y>
     </hint>
    </hints>
   </connection>
@@ -541,8 +664,8 @@ p, li { white-space: pre-wrap; }
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>60</x>
-     <y>502</y>
+     <x>72</x>
+     <y>579</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>

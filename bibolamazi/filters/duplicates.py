@@ -568,44 +568,62 @@ class DuplicatesFilter(BibFilter):
                  jobname_search_dirs=None,
                  ignore_fields_warning=None,
                  *args):
-        r"""DuplicatesFilter constructor.
+        r"""
+        DuplicatesFilter constructor.
 
-        *dupfile: the name of a file to write latex code for defining duplicates to. This file
-               will be overwritten!!
-        *merge_duplicates(bool): Whether to actually merge the duplicates in the bibliography data
-               or not. True by default. Set this to False and set -dWarn for instance if you would
-               like to have a warning only without actually any duplicate culling in the resulting
+        *dupfile: the name of a file to write latex code for defining duplicates
+               to. This file will be overwritten!!
+
+        *merge_duplicates(bool): Whether to actually merge the duplicates in the
+               bibliography data or not. True by default. Set this to False and
+               set -dWarn for instance if you would like to have a warning only
+               without actually any duplicate culling in the resulting
                bibliography.
-        *ensure_conflict_keys_are_duplicates(bool): If true (the default), then keys of the form
-               "xxxxxx.conflictkey.N" are verified to indeed be duplicates of the corresponding
-               "xxxxxx" entry. These conflict key entries are created automatically when two
-               bibtex sources have entries with the same key.
-        *create_alias_from_aka_keyword(bool): if set to true, then the 'keywords' field
-               of all entries are scanned for any keywords of the form 'aka--XYZ' (also
-               'previously--XYZ').  If such a "keyword" is found, then an alias to that entry is
-               created with the bibtex name 'XYZ' when writing to the bibalias file set with
-               -sDupfile.  Note that the aliases collected in this way are not included in
-               the warning emitted by -dWarn.
-        *warn(bool): if this flag is set, a warning is issued for every duplicate entry found
-               in the database.
-        *custom_bibalias(bool): if set to TRUE, then no latex definitions will be generated
-               in the file given in `dupfile', and will rely on a user-defined implementation
-               of `\bibalias`.
-        *keep_only_used(bool): if TRUE, then only keep entries which are referenced in the
-               LaTeX file.  Use the --jobname option to specify which LaTeX jobname to look at.
-               Note: This option has no effect if the `merge_duplicates' option is off.
-        *jobname: If --keep-only-used is specified, then look for used citations in the LaTeX
-               file with this base name.  See also the only_used filter. The corresponding AUX
-               file is searched for and analyzed. If --jobname is not specified, then the
-               LaTeX file name is guessed from the bibolamazi file name, as for the only_used
+
+        *ensure_conflict_keys_are_duplicates(bool): If true (the default), then
+               keys of the form "xxxxxx.conflictkey.N" are verified to indeed be
+               duplicates of the corresponding "xxxxxx" entry. These conflict
+               key entries are created automatically when two bibtex sources
+               have entries with the same key.
+
+        *create_alias_from_aka_keyword(bool): if set to true, then the
+               'keywords' field of all entries are scanned for any keywords of
+               the form 'aka--XYZ' (also 'previously--XYZ').  If such a
+               "keyword" is found, then an alias to that entry is created with
+               the bibtex name 'XYZ' when writing to the bibalias file set with
+               -sDupfile.  Note that the aliases collected in this way are not
+               included in the warning emitted by -dWarn.
+
+        *warn(bool): if this flag is set, a warning is issued for every
+               duplicate entry found in the database.
+
+        *custom_bibalias(bool): if set to TRUE, then no latex definitions will
+               be generated in the file given in `dupfile', and will rely on a
+               user-defined implementation of `\bibalias`.
+
+        *keep_only_used(bool): if TRUE, then only keep entries which are
+               referenced in the LaTeX file.  Use the -sJobname option to
+               specify which LaTeX jobname to look at.  Note: This option has no
+               effect if the `merge_duplicates' option is off.
+
+        *jobname: If -dKeepOnlyUsed is specified, then look for used citations
+               in the LaTeX file with this base name.  See also the only_used
+               filter.  The corresponding AUX file is searched for and analyzed.
+               If -sJobname is not specified, then the LaTeX file name is
+               guessed from the bibolamazi file name, as for the only_used
                filter.
-        *ignore_fields_warning(CommaStrList): Normally, warnings are issued if some fields
-               differ between entries that are detected as duplicates.  List some fields here
-               for which you don't care. (By default, this is a reasonable collection of
-               fields which normally don't matter, e.g., 'file'.)
+
+        *ignore_fields_warning(CommaStrList): Normally, warnings are issued if
+               some fields differ between entries that are detected as
+               duplicates.  List some fields here for which you don't care. (By
+               default, this is a reasonable collection of fields which normally
+               don't matter, e.g., 'file'.)
+
         *keep_only_used_in_jobname: OBSOLTE
+
         *jobname_search_dirs(CommaStrList): (use with -sJobname) search for the
                AUX file in the given directories, as for the only_used filter.
+               Paths are absolute or relative to bibolamazi file.
         """
 
         super(DuplicatesFilter, self).__init__()
@@ -914,14 +932,8 @@ class DuplicatesFilter(BibFilter):
             
 
     def _get_used_citations(self, bibolamazifile):
-        jobname = self.jobname
-        if not jobname:
-            # use bibolamazi file base name
-            jobname = re.sub(r'(\.bibolamazi)?\.bib$', '',
-                             os.path.basename(bibolamazifile.fname()))
-            logger.debug("Using jobname %s guessed from bibolamazi file name", jobname)
-
-        logger.debug("Getting list of used citations from %s.aux.", jobname)
+        jobname = auxfile.get_action_jobname(self.jobname, bibolamazifile)
+        #logger.debug("Getting list of used citations from %s.aux.", jobname)
         used_citations = auxfile.get_all_auxfile_citations(
             jobname, bibolamazifile, self.name(),
             self.jobname_search_dirs, return_set=True
