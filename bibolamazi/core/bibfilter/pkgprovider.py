@@ -73,8 +73,8 @@ github API requests.]
 """
 
 
-rx_valid_cachedirname = re.compile('^[A-Za-z0-9_]+$')
-rx_valid_subdirpart   = re.compile('^[A-Za-z0-9_.-]+$')
+rx_valid_cachedirname = re.compile('^[-A-Za-z0-9_]+$')
+rx_valid_subdirpart   = re.compile('^[-A-Za-z0-9_.]+$')
 
 
 def default_pkg_providers():
@@ -154,17 +154,36 @@ class PackageProviderManager(object):
 
         self._load_pkgcacheinfo()
 
-        # check to see if there are caches that are very old
-        pkgs_to_remove = []
+        #
+        # Perform some start-up checks
+        #
+        pkgs_to_remove = [] # (cachedirname, also-delete-cache-dir)
         for cachedirname, pkgi in iteritems(self.pkgcacheinfo['pkgcaches']):
+            #
+            # check that the cache directory still exists (!!) [Maybe removed by
+            # user directly?]
+            #
+            if not os.path.isdir(self._fullcachedir(cachedirname)):
+                # directory no longer exists.  Remove from cache-info.
+                pkgs_to_remove.append( (cachedirname, False) )
+                continue
+
+            #
+            # check to see if this caches is very old
+            #
             pkgi_datetime = datetime_from_str(pkgi.get('downloaded_datetime', None))
             if (datetime.datetime.now() - pkgi_datetime) > max_cache_age:
                 logger.debug("Removing cached package %s which was downloaded on %s",
                              cachedirname, pkgi_datetime)
                 # don't remove right away, we're still iterating over the pkg info dict
-                pkgs_to_remove.append(cachedirname)
-        for cachedirname in pkgs_to_remove:
-            self._rmcachedir(cachedirname)
+                pkgs_to_remove.append( (cachedirname, True) )
+
+        for (cachedirname, also_remove_dir) in pkgs_to_remove:
+            if also_remove_dir:
+                self._rmcachedir(cachedirname)
+            else:
+                del self.pkgcacheinfo['pkgcaches'][cachedirname]
+                self._save_pkgcacheinfo()
         
     def registerPackageProvider(self, pkg_provider):
         self.pkg_providers.append(pkg_provider)
@@ -300,7 +319,8 @@ class PackageProviderManager(object):
                         raise
 
                     except Exception as e:
-                        logger.warning("Unable to check whether or not cache for %s is up-to-date: %s", url, str(e))
+                        logger.warning("Unable to check whether or not cache for %s is up-to-date: %s",
+                                       url, str(e))
                         raise _FoundInCache(cachedirname)
 
                     # this cache is out of date, so we should remove it.
@@ -314,7 +334,7 @@ class PackageProviderManager(object):
 
         digest = hashlib.md5(url.encode('utf-8') + b'\n' +
                              unicodestr(datetime.datetime.now()).encode('ascii')).hexdigest()
-        cachedirname = 'pkg' + digest[-16:]
+        cachedirname = 'pkg-' + digest[-16:]
 
         logger.longdebug("using cachedirname=%s", cachedirname)
 
