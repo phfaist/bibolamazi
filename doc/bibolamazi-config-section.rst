@@ -16,8 +16,9 @@ The configuration section should contain instructions of the form::
 
     keyword: <instruction>
 
-Possible instructions are sources, with the ``src:`` keyword, or filters, with
-the ``filter:`` keyword. All source instructions must preceed any filters.
+The possible keywords are ``src:``, ``package:``, and ``filter:``, and they
+should appear in this order in the bibolamazifile (sources must precede package
+imports which must precede filter instructions).
 
 You may also include comments in the configuration section. Any line starting
 with two percent signs ``%%`` will be ignored by bibolamazi::
@@ -30,33 +31,39 @@ Comments must be on a line of their own.
 Specifying sources
 ------------------
 
-Sources are where your 'original' bibtex entries are stored, the ones you would
-like to process. This is typically a bibtex file which a reference manager such
-as Mendeley keeps in sync.
+Sources are where your original bibtex entries are stored, i.e., the bibtex
+entries you would like to process.  This can be, for instance, a bibtex file
+which a reference manager such as Mendeley keeps in sync.
 
 Sources are specified with the ``src:`` keyword. As an example::
 
     src: mysource.bib
 
-You should specify one or more files from which entries should be read. If more
-than one file is given, only the FIRST file that exists is read. This is useful
-for example if on different computers your bibtex source is in different
-places::
+You should specify one or more files from which entries should be read.  If more
+than one file is given for the same ``src:`` instruction, only the FIRST file
+that exists is read.  This is useful for example if you often work from two
+different computers, on which your bibtex source is in different places::
 
     src: /home/philippe/bibtexfiles/mylibrary.bib /Users/philippe/bibtexfiles/mylibrary.bib
 
-You may also specify HTTP or FTP URLs. If your filename or URL contains spaces,
-enclose the name in double quotes: ``"My Bibtex Library.bib"``.
+You may use separate ``src:`` instructions to merge entries from several files::
 
-To specify several sources that should be read independently, simply use
-multiple ``src:`` commands::
+    src: mysource1.bib
+    src: anothersource.bib
 
-    src: file1.bib [alternativefile1.bib ...]
-    src: file2.bib [alternativefile2.bib ...]
-    [...]
+You can also specify alternate locations for each source file:
 
-This would collect all the entries from the first existing file of each ``src:``
-command.
+    %% merge entries from source1.bib and src2.bib which reside either in
+    %% /home/philippe or /Users/philippe
+    src: /home/philippe/bibtexfiles/source1.bib /Users/philippe/bibtexfiles/source1.bib
+    src: /home/philippe/bibtexfiles/src2.bib /Users/philippe/bibtexfiles/src2.bib
+
+Instead of a file name, you may also specify a HTTP or FTP URL. If your filename
+or URL contains spaces, enclose the name in double quotes: ``"My Bibtex
+Library.bib"``.  You can also specify a path like
+``~/bibtexfiles/mylibrary.bib`` which is interpreted relative to your HOME
+directory.
+
 
 Specifying filters
 ------------------
@@ -74,7 +81,7 @@ may vary in principle from filter to filter. For example, one may use the
 entries, and normalize unpublished entries to refer to the arxiv in a uniform
 fashion::
 
-    filter: arxiv --mode=strip --unpublished-mode=eprint
+    filter: arxiv -sMode=strip -sUnpublishedMode=eprint
 
 In the Bibolamazi application, when editing filter options you can click on the
 "? info" button to get information about that filter.
@@ -93,7 +100,7 @@ searched in each filter package until a match is found. To force the lookup of a
 filter in a specific package, you may prefix the package name to the filter,
 e.g.::
 
-    filter: myfilterpackage:myfiltername --option1=val1  ...
+    filter: myfilterpackage:myfiltername -sOption1=val1  ...
 
 
 Example/Template Configuration Section
@@ -108,8 +115,8 @@ Example/Template Configuration Section
     
     %% The _first_ accessible file in _each_ source list will be read and filtered.
     
-    src:   <source file 1> [ <alternate source file 1> ... ]
-    src:   <source file 2> [ ... ]
+    src:   "<source file 1>" "<alternate source file 1>"
+    src:   "<source file 2>"
     
     %% Add additional sources here. Alternative files are useful, e.g., if the same
     %% file must be accessed with different paths on different machines.
