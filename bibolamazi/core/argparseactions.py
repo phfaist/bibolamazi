@@ -378,7 +378,10 @@ class GithubAuthSetup(object):
 
         print("")
         print("""\
-Would you like to (1) unset the token, (2) set a new token or (q) cancel and exit?
+Would you like to:
+    (1) unset the existing token,
+    (2) set a new token, or
+    (q) cancel and exit?
 """)
 
         while True:

@@ -376,6 +376,9 @@ def _check_token_valid(token):
 
 def save_github_auth_token(github_auth_token):
 
+    # no need to mess with objects in cmdl_filterpcakage_providers -- anyway
+    # we'll quit right away after saving the token to the config file.
+    #
     #cmdl_filterpackage_providers['github'].setAuthToken(github_auth_token)
 
     settings = CmdlSettings()
@@ -383,7 +386,7 @@ def save_github_auth_token(github_auth_token):
         settings.config['RemoteFilterPackages'] = {}
 
     if github_auth_token is not None:
-        _check_token_valid(github_auth_token) # might raise ValueError
+        _check_token_valid(github_auth_token) # raise ValueError for invalid token
 
     settings.config['RemoteFilterPackages']['GithubAuthToken'] = github_auth_token
     settings.saveConfig()
