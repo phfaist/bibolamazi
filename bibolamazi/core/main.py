@@ -337,15 +337,42 @@ def load_filterpackage_providers():
     filterfactory.package_provider_manager = CmdlMainPackageProviderManager()
 
     github_auth_token = settings.config['RemoteFilterPackages'].get('GithubAuthToken', '')
+    if github_auth_token:
+        github_auth_token = github_auth_token.strip()
+    if not github_auth_token:
+        github_auth_token = None
 
     cmdl_filterpackage_providers['github'] = \
-        pkgfetcher_github.GithubPackageProvider(github_auth_token if github_auth_token else None)
+        pkgfetcher_github.GithubPackageProvider(github_auth_token)
 
     filterfactory.package_provider_manager.registerPackageProvider(
         cmdl_filterpackage_providers['github']
     )
 
     #print("Loaded filterpackage providers (cmdl version)")
+
+def get_github_auth_status():
+    """
+    Returns one of `None` (no configuration provided), `False` (configuration
+    exists, token explicitly not set), and `True` (token previously set and
+    saved).
+    """
+
+    settings = CmdlSettings()
+    if 'RemoteFilterPackages' not in settings.config:
+        return None
+    if 'GithubAuthToken' not in settings.config['RemoteFilterPackages']:
+        return None
+
+    token = settings.config['RemoteFilterPackages']['GithubAuthToken']
+    if token is not None and token.strip():
+        return True
+
+    return False
+
+def _check_token_valid(token):
+    if re.match(r'^[a-zA-Z0-9]{32,}$', token) is None:
+        raise ValueError("Invalid access token provided")
 
 def save_github_auth_token(github_auth_token):
 
@@ -355,12 +382,19 @@ def save_github_auth_token(github_auth_token):
     if 'RemoteFilterPackages' not in settings.config:
         settings.config['RemoteFilterPackages'] = {}
 
+    if github_auth_token is not None:
+        _check_token_valid(github_auth_token) # might raise ValueError
+
     settings.config['RemoteFilterPackages']['GithubAuthToken'] = github_auth_token
     settings.saveConfig()
 
     logger.debug("Set auth token %s",
                  '[...]{}'.format(github_auth_token[-4:]) if github_auth_token else 'None')
 
+    if github_auth_token is not None:
+        logger.info("Github authentication token set.")
+    else:
+        logger.info("Unset github authentication token.")
 
 
 

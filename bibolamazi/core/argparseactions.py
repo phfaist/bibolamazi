@@ -309,27 +309,100 @@ class opt_init_empty_template(argparse.Action):
 
 
 class opt_action_github_auth(argparse.Action):
-
-    def _check_token_valid(self, token, parser):
-        if re.match(r'^[a-zA-Z0-9]{32,}$', token) is None:
-            logger.error("Invalid access token.")
-            parser.exit(13)
-
-
     def __call__(self, parser, namespace, values, option_string):
-        from . import main
+
+        ga = GithubAuthSetup(parser)
+
         if values:
-            # auth key directly specified
-            token = values[0].strip()
-            if token == '-':
-                # unset auth
-                main.save_github_auth_token(None)
-                parser.exit()
+
+            ga.setup_from_arg(values[0].strip())
 
         else:
-            # get token from user input
 
-            print("""\
+            ga.interactive_enter()
+
+
+class GithubAuthSetup(object):
+    def __init__(self, parser):
+
+        self.parser = parser
+
+        from . import main
+        self.main = main
+
+    def setup_from_arg(self, arg):
+        #
+        # auth key directly specified as an option argument
+        #
+        if arg == '-':
+            # unset auth
+            self.unset_token_and_exit()
+        elif arg == '?' or not arg:
+            # empty argument, or '?' -- just run the interactive setup
+            self.interactive_enter()
+        else:
+            self.save_token_and_exit(token)
+
+            
+    def print_status(self):
+        status = self.main.get_github_auth_status()
+        if status is None:
+            print("Github authentication has not yet been configured.")
+        elif status:
+            print("Github authentication token is set.")
+        else:
+            print("Github authentication token is NOT set.")
+
+        return status
+
+    def interactive_enter(self):
+        #
+        # First of all, print the current config status
+        #
+
+        print("") # empty line
+        status = self.print_status()
+
+        if status: # token already configured
+
+            # enter "manage token" menu
+            self.interactive_manage_token()
+
+        else:
+
+            # directly ask to set a token
+            self.interactive_setup_token()
+            
+
+    def interactive_manage_token(self):
+
+        print("")
+        print("""\
+Would you like to (1) unset the token, (2) set a new token or (q) cancel and exit?
+""")
+
+        while True:
+            action = input("Selection (1 or 2 or q): ").strip()
+            if action in ['1', '2', 'q']:
+                break
+            print("""Invalid input, please type "1", "2", or "q".""")
+
+        if action == '1':
+            self.unset_token_and_exit()
+
+        elif action == '2':
+            self.interactive_setup_token()
+
+        elif action == 'q':
+            self.parser.exit(0)
+
+        else:
+            raise RuntimeError("It's not possible to get here")
+
+
+    def interactive_setup_token(self):
+        
+        print("""\
 
 INSTRUCTIONS FOR GITHUB AUTHENTICATION
 
@@ -353,13 +426,30 @@ Please visit this URL in your browser and follow the instructions below:
 
 """)
 
-            token = input('Access token: ')
+        token = input("Access token: ").strip()
 
-        self._check_token_valid(token, parser)
+        self.save_token_and_exit(token)
+
+
+
+    def save_token_and_exit(self, token):
 
         # set the given token
-        main.save_github_auth_token(token)
-        parser.exit()
+        try:
+
+            self.main.save_github_auth_token(token)
+
+        except ValueError as e:
+
+            logger.error(unicodestr(e))
+            self.parser.exit(13)
+
+        self.parser.exit()
+        
+    def unset_token_and_exit(self):
+
+        # set the given token
+        self.save_token_and_exit(None)
         
 
 
