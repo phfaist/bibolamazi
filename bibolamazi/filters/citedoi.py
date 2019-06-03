@@ -231,7 +231,7 @@ class CiteDoiFilter(BibFilter):
     helpdescription = HELP_DESC
     helptext = HELP_TEXT
 
-    def __init__(self, jobname, search_dirs=[], prefix=""):
+    def __init__(self, jobname, search_dirs=[], prefix="doi"):
         r"""
         CiteDoiFilter constructor.
 

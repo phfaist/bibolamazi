@@ -502,7 +502,7 @@ def run_bibolamazi_args(args):
         #
         if logger.isEnabledFor(blogger.LONGDEBUG):
             s = "========== Dumping Bibliography Database ==========\n"
-            for key, entry in bibdata.entries.iteritems():
+            for key, entry in iteritems(bibdata.entries):
                 s += "  %10s: %r\n\n"%(key, entry)
             s += "===================================================\n"
             logger.longdebug(s)

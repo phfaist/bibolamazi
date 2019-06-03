@@ -48,59 +48,70 @@ class BibArxivApiFetchError(BibUserCacheError):
         super(BibArxivApiFetchError).__init__('arxiv_fetched_api_info', msg)
 
 
+#
 # --- code to detect arXiv info ---
+#
 
 _RX_BEFORE = r'(?:\s*([;,]?\s*)|\b|\s+|^)'
 _RX_AFTER = r'(?:\s*[;,]?\s*|$)'
 
 _RX_PRIMARY_CLASS_PAT = r'[-a-zA-Z0-9\._]+'
 
-_RX_ARXIVID_NUM_PAT = r'(?<!\d)(?:\d{4}\.\d{4,}|\d{7})(?:v\d+)?' # only the numerical arxiv ID (+possible version)
+# only the numerical arxiv ID (+possible version)
+_RX_ARXIVID_NUM_PAT = r'(?<!\d)(?:\d{4}\.\d{4,}|\d{7})(?:v\d+)?'
+
 _RX_ARXIVID_NUM = r'(?P<arxivid>'+_RX_ARXIVID_NUM_PAT+r')' 
-_RX_ARXIVID_TOL = r'(?P<arxivid>(?:'+_RX_PRIMARY_CLASS_PAT+r'/)?'+_RX_ARXIVID_NUM_PAT+r')' # allow primary-class/ etc.
+
+# allow primary-class/ etc.
+_RX_ARXIVID_TOL = r'(?P<arxivid>(?:'+_RX_PRIMARY_CLASS_PAT+r'/)?'+_RX_ARXIVID_NUM_PAT+r')'
+
 
 def _mk_braced_pair_rx(mid):
     return [ re.compile(_RX_BEFORE + r'\{\s*' + mid + r'\s*\}' + _RX_AFTER, re.IGNORECASE) ,
              re.compile(_RX_BEFORE + mid + _RX_AFTER, re.IGNORECASE) ]
 
-# a list of regexes that we will need often.
+
+# A list of regexes that we will need often.
 #
-# The following are regexes we check for in url fields. Don't include all regexes, because
-# some DOI or parts of URLs may contain sequences of chars which match the easier arXiv
-# regexes.
-_rxarxiv_in_url = (# not tuple, just a multiline expression
-    []
-    + _mk_braced_pair_rx(
-        r'\\href\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
-        )
-    + _mk_braced_pair_rx(
-        r'\\(?:url|href)\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*\}'
-        )
-    + _mk_braced_pair_rx(
-        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*'
-        )
-    )
-# And these regexes are the most tolerant ones, we'll check for these more or less
-# everywhere except in the URL fields.
-_rxarxiv = _rxarxiv_in_url + (# not tuple, just a multiline expression
+# The following are regexes we check for in url fields. Don't include all
+# regexes, because some DOI or parts of URLs may contain sequences of chars
+# which match the easier arXiv regexes.
+_rxarxiv_in_url = \
+    [] + \
     _mk_braced_pair_rx(
-        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
-        )
-    + _mk_braced_pair_rx(
-        r'(?:arXiv[-.:/\s]+)?((?:(?P<primaryclass>' + _RX_PRIMARY_CLASS_PAT + r')/)?' + _RX_ARXIVID_NUM + r')'
-        + r'(?:\s*\[(?P<primaryclass2>' + _RX_PRIMARY_CLASS_PAT + r')\])?'
-        )
+        r'\\href\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/'
+        + _RX_ARXIVID_TOL + r'\s*\}\s*\{[^\{\}]*\}'
+    ) + \
+    _mk_braced_pair_rx(
+        r'\\(?:url|href)\s*\{\s*(?:https?://)?arxiv\.org/(?:abs|pdf)/'
+        + _RX_ARXIVID_TOL + r's*\}'
+    ) + \
+    _mk_braced_pair_rx(
+        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL + r's*'
     )
 
-# getting "pure" arxiv ID means the arxiv ID (with primary class for old IDs only), without version information.
+# And these regexes are the most tolerant ones, we'll check for these more or
+# less everywhere except in the URL fields.
+_rxarxiv = _rxarxiv_in_url + \
+    _mk_braced_pair_rx(
+        r'(?:https?://)?arxiv\.org/(?:abs|pdf)/' + _RX_ARXIVID_TOL
+    ) + \
+    _mk_braced_pair_rx(
+        r'(?:arXiv[-.:/\s]+)?((?:(?P<primaryclass>'
+        + _RX_PRIMARY_CLASS_PAT + r')/)?' + _RX_ARXIVID_NUM + r')'
+        + r'(?:\s*\[(?P<primaryclass2>' + _RX_PRIMARY_CLASS_PAT + r')\])?'
+    )
+
+# getting "pure" arxiv ID means the arxiv ID (with primary class for old IDs
+# only), without version information.
 _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|'+
                              r'('+_RX_PRIMARY_CLASS_PAT+r'/\d{7}))(v\d+)?)', re.IGNORECASE)
 
 _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(?:\.\d{4,}|\d{3})')
 
 #
-# A list of fields which are inspected for arXiv information. This is useful for cache
-# invalidation in various instances.
+# A list of fields which are inspected for arXiv information. This is useful for
+# cache invalidation in various instances.
 #
 arxivinfo_from_bibtex_fields = [
     'journal', 'doi', 'eprint', 'arxivid', 'url',
@@ -111,7 +122,8 @@ arxivinfo_from_bibtex_fields = [
 # extract arXiv info from an entry
 def detectEntryArXivInfo(entry):
     """
-    Extract arXiv information from a `pybtex.database.Entry` bibliographic entry.
+    Extract arXiv information from a `pybtex.database.Entry` bibliographic
+    entry.
 
     Returns upon success a dictionary of the form::
     
@@ -125,8 +137,8 @@ def detectEntryArXivInfo(entry):
           'isnewarxivid': <Whether the arXiv ID is of new style, i.e. 'XXXX.XXXX+' (with 4 or more digits after dot)>,
         }
 
-    Note that 'published' is set to True for PhD and Master's thesis. Also, the arxiv.py
-    filter handles this case separately and explicitly, the option there
+    Note that 'published' is set to True for PhD and Master's thesis. Also, the
+    `arxiv` filter handles this case separately and explicitly, the option there
     `-dThesesCountAsPublished=0` has no effect here.
 
     If no arXiv information was detected, then this function returns None.
@@ -145,17 +157,18 @@ def detectEntryArXivInfo(entry):
            }
 
     #
-    # NOTE: If you add/change the fields that are used here, make sure you update the
-    # EntryFieldsTokenChecker below!
+    # NOTE: If you add/change the fields that are used here, make sure you
+    # update the EntryFieldsTokenChecker below!
     #
     
     if (entry.type == u'unpublished' or entry.type == u'misc'):
         d['published'] = False
     elif entry.type in (u'phdthesis', u'mastersthesis',):
-        # by default, PhD theses and Master's thesis count as published (although this
-        # case is handled specially in the arxiv filter)
+        # by default, PhD theses and Master's thesis count as published
+        # (although this case is handled specially in the arxiv filter)
         d['published'] = True
-    elif entry.type in (u'book', u'booksection', u'inproceedings', u'incollection', u'conference',
+    elif entry.type in (u'book', u'booksection', u'inproceedings',
+                        u'incollection', u'conference',
                         u'inbook', u'proceedings',):
         # proceedings, books, etc. are published
         d['published'] = True
@@ -166,7 +179,8 @@ def detectEntryArXivInfo(entry):
         # otherwise, if there is a journal, it's published
         d['published'] = True
     elif ('journal' not in fields or fields['journal'].strip() == ""):
-        # if there's no journal for an article or an unknown publication type, it's the arxiv.
+        # if there's no journal for an article or an unknown publication type,
+        # it's the arxiv.
         d['published'] = False
     else:
         logger.longdebug('No decisive information about whether this entry is published: %s (type %s), '
@@ -226,7 +240,8 @@ def detectEntryArXivInfo(entry):
 
                         d['arxivid'] = extract_pure_id(m.group('arxivid'), primaryclass=primaryclass)
                     except IndexError as e:
-                        logger.longdebug("indexerror while getting arxivid in note=%r, m=%r: %s", notefield, m, e)
+                        logger.longdebug("indexerror while getting arxivid in note=%r, m=%r: %s",
+                                         notefield, m, e)
                         pass
                 if (not d['primaryclass']):
                     primaryclass = None
@@ -291,8 +306,10 @@ def detectEntryArXivInfo(entry):
 
 
 def stripArXivInfoInNote(notestr):
-    """Assumes that notestr is a string in a note={} field of a bibtex entry, and strips any arxiv identifier
-    information found, e.g. of the form 'arxiv:XXXX.YYYY' (or similar).
+    """
+    Assumes that notestr is a string in a note={} field of a bibtex entry, and
+    strips any arxiv identifier information found, e.g. of the form
+    'arxiv:XXXX.YYYY' (or similar).
     """
 
     newnotestr = notestr
@@ -315,14 +332,23 @@ def stripArXivInfoInNote(notestr):
 
 class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
     """
-    A `BibUserCacheAccessor` for fetching and accessing information retrieved from the
-    arXiv API.
+    A `BibUserCacheAccessor` for fetching and accessing information retrieved
+    from the arXiv API.
     """
     def __init__(self, **kwargs):
         super(ArxivFetchedAPIInfoCacheAccessor, self).__init__(
             cache_name='arxiv_fetched_api_info',
             **kwargs
             )
+
+        # save arxiv IDs for which we couldn't retreive information because the
+        # server responded with an error.
+        #
+        # For these IDs, we do not re-attempt to fetch them right away (to avoid
+        # multiple doomed requests), so that a new attempt is made only next
+        # time bibolamazi is run.
+        self.error_arxivids = {}
+
 
     def initialize(self, cache_obj, **kwargs):
         dic = self.cacheDic()
@@ -342,18 +368,20 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
     def fetchArxivApiInfo(self, idlist):
         """
         Populates the given cache with information about the arXiv entries given in
-        `idlist`. This must be, yes you guessed right, a list of arXiv identifiers that we
-        should fetch.
+        `idlist`. This must be, yes you guessed right, a list of arXiv
+        identifiers that we should fetch.
 
-        This function performs a query on the arXiv.org API, using the arxiv2bib library. 
-        Please note that you should avoid making rapid fire requests in a row (this should
-        normally not happen anyway thanks to our cache mechanism). However, beware that if
-        we get a ``403 Forbidden`` HTTP answer, we should not continue or else arXiv.org
-        might interpret our requests as a DOS attack. If a ``403 Forbidden`` HTTP answer
-        is received this function raises :py:exc:`BibArxivApiFetchError` with a meaningful
+        This function performs a query on the arXiv.org API, using the arxiv2bib
+        library.  Please note that you should avoid making rapid fire requests
+        in a row (this should normally not happen anyway thanks to our cache
+        mechanism). However, beware that if we get a ``403 Forbidden`` HTTP
+        answer, we should not continue or else arXiv.org might interpret our
+        requests as a DOS attack. If a ``403 Forbidden`` HTTP answer is received
+        this function raises :py:exc:`BibArxivApiFetchError` with a meaningful
         error text.
 
-        Only those entries in `idlist` which are not already in the cache are fetched.
+        Only those entries in `idlist` which are not already in the cache are
+        fetched.
 
         `idlist` can be any iterable.
         """
@@ -364,7 +392,8 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         
         cache_entrydic = self.cacheDic()['fetched']
         logger.longdebug("fetchArxivApiInfo(): "
-                         "id(dic['fetched'])=%r, \nid(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
+                         "id(dic['fetched'])=%r, \n"
+                         "id(self.cacheObject().cachedic['arxiv_fetched_api_info']=%r\n"
                          "len(dic['fetched'])=%d",
                          id(cache_entrydic), id(self.cacheObject().cachedic['arxiv_fetched_api_info']),
                          len(cache_entrydic))
@@ -374,7 +403,11 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         still_to_fetch = []
         for aid in idlist:
-            if (aid not in cache_entrydic  or cache_entrydic.get(aid) is None  or
+            if aid in self.error_arxivids:
+                logger.debug("Not re-trying to fetch info for %s, query failed moments ago", aid)
+                # we already tried to fetch this ID moments ago but failed---don't insist
+                continue
+            if (aid not in cache_entrydic  or  cache_entrydic.get(aid) is None  or
                 cache_entrydic.get(aid).get('error', False)):
                 still_to_fetch.append(aid)
 
@@ -382,7 +415,8 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         
 
         # make sure we're not requesting more than batch_len arxiv ids at a time
-        # (or URLs can get too long and we'll get a HTTP 414 "URL too long" response)
+        # (or URLs can get too long and we'll get a HTTP 414 "URL too long"
+        # response)
         batch_len = 64
         sleep_interval = 1 # 1 req/second: see https://groups.google.com/d/msg/arxiv-api/wcPh0w38XN0/p7vKsxjb6ykJ
 
@@ -466,7 +500,9 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             cache_entrydic[k]['reference'] = ref
 
             if ref is None or isinstance(ref, arxiv2bib.ReferenceErrorInfo):
-                cache_entrydic[k]['error'] = '<UNKNOWN ERROR>' if ref is None else unicodestr(ref)
+                errorstr = '<UNKNOWN ERROR>' if ref is None else unicodestr(ref)
+                self.error_arxivids[k] = errorstr
+                cache_entrydic[k]['error'] = errorstr
                 cache_entrydic[k]['bibtex'] = ''
             else:
                 cache_entrydic[k]['error'] = None
@@ -518,6 +554,11 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             cache_name='arxiv_info',
             **kwargs
             )
+        # save bibtex keys for which we couldn't retreive information because
+        # the API accessor returned an error.  We do this to avoid re-attempting
+        # to query information during this run of bibolamazi; Don't save this to
+        # cache, we should re-attempt next time bibolamazi is run.
+        self.failed_keys = []
 
     def initialize(self, cache_obj, **kwargs):
         cache_dic = self.cacheDic()
@@ -568,7 +609,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         for k,v in iteritems(bibdata.entries):
             # arxiv info is in cache and updated with info fetched from the arXiv API
             if (k in entrydic and entrydic[k] is not None  and
-                entrydic[k].get('updated_with_api_info', False)):
+                (entrydic[k].get('updated_with_api_info', False) or k in self.failed_keys)):
                 continue
 
             # else, there's something to refresh and update
@@ -577,7 +618,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             entrydic[k] = arinfo
             logger.longdebug("detected arXiv information for `%s': %r", k, arinfo)
             
-            if (arinfo is not None):
+            if arinfo is not None:
                 needs_to_be_completed.append( (k, arinfo['arxivid'],) )
 
         logger.longdebug("complete_cache(): needs_to_be_completed=%r\nentrydic=%r\n",
@@ -598,6 +639,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                     errstr = ": " + api_info['error']
                 logger.debug("Failed to fetch arXiv information for %s%s", aid, errstr)
                 fail_aids.append(aid)
+                self.failed_keys.append(k)
                 continue
 
             ref = api_info['reference']
@@ -611,8 +653,11 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 pass
             
             if (primaryclass and entrydic[k]['primaryclass'] and
-                # compare overlap only, so that 'cond-mat' and 'cond-mat.stat-mech' don't generate the warning
-                entrydic[k]['primaryclass'][:len(primaryclass)] != primaryclass[:len(entrydic[k]['primaryclass'])]):
+                # compare overlap only, so that 'cond-mat' and
+                # 'cond-mat.stat-mech' don't generate the warning
+                entrydic[k]['primaryclass'][:len(primaryclass)] !=
+                primaryclass[:len(entrydic[k]['primaryclass'])]):
+                #
                 logger.warning("Conflicting primaryclass values for entry %s (%s): "
                                "%s (given in bibtex) != %s (retrieved from the arxiv)",
                                k, aid, entrydic[k]['primaryclass'], primaryclass)

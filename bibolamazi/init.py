@@ -40,7 +40,7 @@ if sys.hexversion < 0x02070000:
 
 import re
 import os.path
-import importlib
+#import importlib
 
 
 # subfolders of 3rdparty/ which we add to sys.path
@@ -150,3 +150,13 @@ def _OrderedCaseInsensitiveDict_delitem(self, key):
 _pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem
 
 
+
+
+
+#
+# Patch for arxiv2bib (see https://github.com/nathangrigg/arxiv2bib/issues/8).
+# Recognize some really old arXiv IDs like 'atom-ph/XXXXXXX' instead of
+# 'physics/XXXXXXX' etc.
+#
+import arxiv2bib as _arxiv2bib
+_arxiv2bib.OLD_STYLE = re.compile(r"""^[a-zA-Z.-]+/\d{7}(v\d+)?$""")
