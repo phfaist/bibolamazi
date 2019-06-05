@@ -18,9 +18,16 @@ import helpers
 from bibolamazi.core import blogger
 
 import bibolamazi.core.bibfilter.factory as filters_factory
-from bibolamazi.core.bibfilter import pkgprovider
+from bibolamazi.core.bibfilter import pkgprovider, pkgfetcher_github
+
+#
+# set up remote filter package fetching, usually this is done in main.py or bibolamaziapp.py
+#
 filters_factory.package_provider_manager = pkgprovider.PackageProviderManager()
 filters_factory.package_provider_manager.allow_remote = True
+filters_factory.package_provider_manager.registerPackageProvider(
+    pkgfetcher_github.GithubPackageProvider(None)
+)
 
 
 #
@@ -91,6 +98,7 @@ class FullCaseTester(object):
         finally:
             if use_mkdtemp:
                 shutil.rmtree(tmpdir)
+
 
 
 class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions):
