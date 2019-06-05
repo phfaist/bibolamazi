@@ -546,7 +546,7 @@ class FixesFilter(BibFilter):
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
                 return
-            if re.search(r'\b(ph)\b\W+\bd\b', entry.fields['type'], flags=re.IGNORECASE):
+            if re.search(r'\bph\W*d\b', entry.fields['type'], flags=re.IGNORECASE):
             #if ('phd' in re.sub(r'[^a-z]', '', entry.fields['type'].lower())):
                 # entry is phd type, so remove explicit type={}
                 del entry.fields['type']
