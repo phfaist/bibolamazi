@@ -50,29 +50,11 @@ Perform some various known fixes for bibtex entries
 HELP_TEXT = r"""
 Perform some various fixes for bibtex entries.
 
-For now, the implemented fixes are:
+The possible fixes are listed above as Filter Options.  Here is some additional
+related information.
 
-  -dFixSpaceAfterEscape
-    Removes any space after a LaTeX escape and replaces it by a pair of braces. 
-    Indeed, some bibtex styles wrongfully split a word into two halves in such
-    cases. For example, "\AA berg" is replaced by "\AA{}berg".
 
-  -dEncodeUtf8ToLatex
-    Encodes known non-ascii special characters, e.g. accented characters, into
-    LaTeX equivalents. This affects ALL fields of the bibliographic entry.
-    (Cannot be used in conjunction with -dEncodeLatexToUtf8.)
-
-  -dEncodeLatexToUtf8
-    Encodes all LaTeX content, including accents and escape sequences, to unicode
-    text saved as UTF-8. This affects ALL fields of the bibliographic entry.
-    (Cannot be used in conjunction with -dEncodeUtf8ToLatex.)
-
-  -dRemoveTypeFromPhd
-    Removes any `type=' field from @phdthesis{..} bibtex entries if it contains
-    the word(s) 'PhD' or 'Ph.D.'.
-
-  -dRemovePagesFromBook
-    Removes the `pages=' field from all @book{..} bibtex entries.
+*** Removing Overprotective Full Braces in Field Values:
 
   -dRemoveFullBraces
   -sRemoveFullBraces=title,journal
@@ -99,64 +81,27 @@ For now, the implemented fixes are:
     preserve the capitalization of nouns in German titles. (Comparision is done
     case insensitive.)
 
-  -sProtectNames=Name1,Name2...
-    A list of names that should be protected within most fields. Whenever a
-    field contains one of the given names (as full word), then the name is
-    wrapped in braces (e.g. "On Bell Experiments" -> "On {Bell}
-    Experiments") in order to protect the possible upper casing. This applies
-    to all fields except 'url', 'file', and people (authors and editors).
 
-  -dRemoveFileField
-    Removes the field file={...} (that e.g. Mendeley introduces) from all
-    entries. (This option is kept for compatibility, consider the newer and more
-    flexible option -sRemoveFields below)
-
-  -sRemoveFields=field1,field2...
-    Removes the given fields from *all entries*. `fieldN` are BibTeX field names
-    of fields to remove from all entries, e.g. `file', `issn', `note', etc.
-
-  -dRemoveDoiPrefix
-    Removes `doi:' prefix from all DOIs, if present.
-
-  -dMapAnnoteToNote
-    Changes the 'annote=' field to 'note='. If the 'note' field already has
-    contents, the contents of the 'annote' field is appended to the existing
-    'note' field.
-
-  -dAutoUrlify
-  -sAutoUrlify=field1,field2...
-    Automatically wrap strings that look like an URL in the 'note' field into
-    '\url{}' commands. If a list of fields is provided, then the
-    auto-urlification is applied to those given bibtex fields.
-
-  -sRenameLanguage=alias1:language1,alias2:language2...
-    Change language={} field values according to the given rules. An alias (case
-    insensitive) is replaced by its corresponding language. Replacements are not
-    done recursively.
-
-  -dFixMendeleyBugUrls
-  -sFixMendeleyBugUrls=field1,field2...
-    Mendeley's BibTeX output currently is buggy and escapes URLs with signs like
-    $\sim$ etc. This option enables reverting Mendeley's escape sequences back
-    to URL characters (for known escape Mendeley sequences).
-
-    This option is off by default. Use the
-    `-sFixMendeleyBugUrls=field1,field2...' variant to specify a list of bibtex
-    fields on which to act (but not author nor editor). If the
-    `-dFixMendeleyBugUrls' variant is given, the only the 'url' field is
-    processed.
+*** Protecting Uppercase Letters:
 
   -dProtectCaptialLetterAfterDot
   -dProtectCaptialLetterAtBegin
   -sProtectCaptialLetterAfterDot=title
   -sProtectCaptialLetterAtBegin=title
+
     In the given fields, or in the title if -dProtectCapitalLetter... is
     provided, protect capital letters following full stops and colons
     (...AfterDot) or at the beginning of the field (...AtBegin) using braces, to
     ensure they are displayed as capital letters. For example,
+
         title = {Exorcist {XIV}. Part {I}. From {Maxwell} to {Szilard}}
+
     becomes
+
         title = {{E}xorcist {XIV}. {P}art {I}. {F}rom {Maxwell} to {Szilard}}
+
+
+*** Replacing Quotes by LaTeX Macros:
 
   -dConvertDblQuotes
   -sConvertDblQuotes=title
@@ -164,30 +109,20 @@ For now, the implemented fixes are:
   -sConvertSglQuotes=title
   -sDblQuoteMacro=\qq
   -sSglQuoteMacro=\q
+
     If provided, expressions in double (resp. single) quotes are detected and
     automatically converted to use the given LaTeX macro (which defaults to \qq
     and \q, respectively). For example,
+
         title = {``Relative state'' formulation of quantum mechanics}
+
     is converted to
+
         title = {\qq{Relative state} formulation of quantum mechanics}
 
     This may be useful if you do fancy stuff with your quotes in your document,
     such as permuting the punctuation etc. (See also the LaTeX package
     {csquotes})
-
-  -dUnprotectFullLastNames
-    If provided, remove curly braces that surround the full last name of people.
-    (Mendeley protects composite last names like this, which is not always
-    necessary.)
-
-The following switch is OBSOLETE, but is still accepted for backwards
-compatibility:
-
-  -dFixSwedishA [use -dFixSpaceAfterEscape instead]
-    Changes "\AA berg" to "\AA{}berg" and "M\o lmer" to "M\o{}lmer"
-    to prevent bibtex/revtex from inserting a blank after the "\AA" or
-    "\o". (This fix is needed for, e.g., the bibtex that Mendeley generates)
-
 
 """
 
@@ -233,53 +168,169 @@ class FixesFilter(BibFilter):
                  unprotect_full_last_names=False,
                  # obsolete:
                  fix_swedish_a=False):
-        """
+        r"""
         Constructor method for FixesFilter
 
         Arguments:
-          - fix_space_after_escape(bool): transform `\\AA berg' and `M\\o ller' into `\\AA{}berg',
-               `M\\o{}ller' to avoid bibtex styles from wrongfully splitting these words.
-          - encode_utf8_to_latex(bool): encode known non-ascii characters into latex escape sequences.
-          - encode_latex_to_utf8(bool): encode known latex escape sequences to unicode text (utf-8).
-          - remove_type_from_phd(bool): Removes any `type=' field from @phdthesis{..} bibtex entries.
-          - remove_pages_from_book(bool): Removes the `pages=' field from @book{..} bibtex entries.
-          - remove_full_braces(BoolOrFieldList): removes overprotective global braces in field values.
-          - remove_full_braces_not_lang(CommaStrList): (in conjunction with --remove-full-braces) removes the
-            overprotective global braces only if the language of the entry (as per language={..} bibtex field)
-            is not in the given list (case insensitive).
-          - protect_names(CommaStrList): list of names to protect from bibtex style casing.
-          - remove_file_field(bool): removes file={...} fields from all entries.
+
+          - fix_space_after_escape(bool): 
+
+            Removes any space after a LaTeX escape and replaces it by a pair of
+            braces.  (Some bibtex styles wrongfully split a word into two halves
+            in such cases.) For example, "\AA berg" is replaced by "\AA{}berg".
+
+          - encode_utf8_to_latex(bool):
+
+            Encodes known non-ascii special characters, e.g. accented characters, into
+            LaTeX equivalents. This affects ALL fields of the bibliographic entry.
+            (Cannot be used in conjunction with -dEncodeLatexToUtf8.)
+
+          - encode_latex_to_utf8(bool):
+
+            Replaces LaTeX macros and accents with their unicode representation.
+            This affects ALL fields of the bibliographic entry.  (Cannot be used
+            in conjunction with -dEncodeUtf8ToLatex.)
+
+          - remove_type_from_phd(bool):
+
+            Removes any ‘type={...}’ field from bibtex entries of type
+            ‘@phdthesis{..}’ as long as the type contains the word(s) ‘PhD’ or
+            ‘Ph.D.’ (or something close to that).
+
+          - remove_pages_from_book(bool):
+
+            Remove the ‘pages={...}’ field from ‘@book{...}’ bibtex entries.
+
+          - remove_full_braces(BoolOrFieldList):
+
+            Remove overprotective global braces in field values.  See below
+            (Filter Documentation) for additional information.
+
+          - remove_full_braces_not_lang(CommaStrList):
+
+            (in conjunction with --remove-full-braces) removes the
+            overprotective global braces only if the language of the entry (as
+            per language={..} bibtex field) is not in the given list (case
+            insensitive).
+
+          - protect_names(CommaStrList):
+
+            A list of names that should be protected within most
+            fields. Whenever a field contains one of the given names (as full
+            word), then the name is wrapped in braces (e.g. "On Bell
+            Experiments" → "On {Bell} Experiments") in order to protect the
+            possible upper casing. This applies to all fields except ‘url’,
+            ‘file’, and people (authors and editors).  Use, e.g.,
+            -sProtectNames="Newton,Bell,Einstein"
+
+          - remove_file_field(bool):
+
+            Remove the ‘file={...}’ field from all entries.  See also
+            -sRemoveFields.
+
           - remove_fields(CommaStrList): removes given fields from all entries.
-          - remove_doi_prefix(bool): removes `doi:' prefix from all DOIs, if present
-          - map_annote_to_note(bool): maps `annote' bibtex field to a `note' field
-          - auto_urlify: automatically wrap URLs into `\\url{}' commands. True/False, or a comma-separated
-                list of fields to act on
-          - rename_language(ColonCommaStrDict): replace e.g. `de' by `Deutsch'. Use
-                format `alias1:language1,alias2:language2...'.
-          - fix_mendeley_bug_urls(BoolOrFieldList): fix the `url' field for Mendeley's
-                buggy output. Pass on a list of fields (comma-separated) to specify
-                which fields to act on; by default if enabled only 'url'.
-          - protect_capital_letter_after_dot(BoolOrFieldList): place first (capital) letter after a full
-                stop or colon in protective braces (for the the given bibtex fields). Pass
-                true or false here, or a list of fields on which to act (by default only 'title')
-          - protect_capital_letter_at_begin(BoolOrFieldList): place first (capital) letter of a field in
-                protective braces (for the the given bibtex fields). Pass
-                true or false here, or a list of fields on which to act (by default only 'title')
-          - convert_dbl_quotes(BoolOrFieldList): detect & convert double-quoted expressions to
-                invoke a LaTeX macro. Pass
-                true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
-          - dbl_quote_macro: the macro to use for double-quotes when convert_dbl_quotes is set
-          - convert_sgl_quotes(BoolOrFieldList): detect & convert single-quoted expressions to
-                invoke a LaTeX macro. Pass
-                true or false here, or a list of fields on which to act (by default 'title,abstract,booktitle,series')
-          - sgl_quote_macro: the macro to use for single-quotes when convert_sgl_quotes is set
-          - unprotect_full_last_names(bool): remove curly braces around complete last names
-          - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
-                transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
-                problem occurs in files generated e.g. by Mendeley); revtex tends to
-                insert a blank after the `\\AA' or `\\o' otherwise.
+
+            Removes the given fields from all entries.  Use the syntax
+            -sRemoveFields=field1,field2,...  where `fieldN` are BibTeX field
+            names of fields to remove from all entries.,
+            e.g. -sRemoveFields=file,issn,note
+
+          - remove_doi_prefix(bool):
+
+            Remove the ‘doi:’ prefix from all DOIs in all ‘doi={...}’ fields, if
+            present.
+
+          - map_annote_to_note(bool):
+
+            Changes the ‘annote={...}’ field to ‘note={...}’. If the ‘note’
+            field already has contents, the contents of the ‘annote’ field is
+            appended to the existing ‘note’ field.
+
+          - auto_urlify(BoolOrFieldList):
+
+            Automatically wrap strings that look like an URL in the ‘note’ field
+            into ‘\url{}’ commands.  Use -dAutoUrlify to enable the default
+            settings or -sAutoUrlify=field1,field2,... to specify a list of
+            fields to act on.  If a comma-separated list of fields is provided,
+            then the auto-urlification is applied only to those given bibtex
+            fields.
+
+          - rename_language(ColonCommaStrDict):
+
+            Change ‘language={...}’ field by applying a set of replacement
+            rules.  E.g., you can change "de" into "Deutsch".  An alias (case
+            insensitive) is replaced by its corresponding language.
+            Replacements are not done recursively.  Use the syntax
+            -sRenameLanguage=alias1:language1,alias2:language2...
+
+          - fix_mendeley_bug_urls(BoolOrFieldList):
+
+            Mendeley's BibTeX output currently is buggy and escapes URLs with
+            signs like $\sim$ etc.  This option enables reverting Mendeley's
+            escape sequences back to URL characters (for known escape Mendeley
+            sequences).  This option is off by default. Use the
+            ‘-sFixMendeleyBugUrls=field1,field2...’ syntax to specify a list of
+            bibtex fields on which to act (but not author nor editor). If the
+            ‘-dFixMendeleyBugUrls’ variant is given, the only the ‘url={...}’
+            bibtex field is processed.
+
+          - protect_capital_letter_after_dot(BoolOrFieldList):
+
+            Place first (capital) letter after a full stop or colon in
+            protective braces (for the the given bibtex fields).  Pass True or
+            False here, or a list of fields on which to act (by default only
+            ‘title’).  See below (Filter Documentation) for additional
+            information.
+
+          - protect_capital_letter_at_begin(BoolOrFieldList):
+
+            Place first (capital) letter of a field in protective braces (for
+            the the given bibtex fields).  Pass True or False here, or a list of
+            fields on which to act (by default only ‘title’).  See below (Filter
+            Documentation) for additional information.
+
+          - convert_dbl_quotes(BoolOrFieldList):
+
+            Detect double-quoted expressions and replace them by a call to a
+            LaTeX macro.  Pass True or False here, or a list of fields on which
+            to act (by default ‘title,abstract,booktitle,series’).  See below
+            (Filter Documentation) for additional information; see also
+            -sDblQuoteMacro.
+
+          - dbl_quote_macro:
+
+            The macro to use for double-quotes when -dConvertDblQuotes is set.
+            See below (Filter Documentation) for additional information
+
+          - convert_sgl_quotes(BoolOrFieldList):
+
+            Detect double-quoted expressions and replace them by a call to a
+            LaTeX macro.  Same as -dConvertDblQuotes but for single quotes.  See
+            below (Filter Documentation) for additional information; see also
+            -dConvertDblQuotes and -sSglQuoteMacro.
+
+          - sgl_quote_macro:
+
+            The macro to use for single-quotes when -dConvertSglQuotes is set.
+            See below (Filter Documentation) for additional information.
+
+          - unprotect_full_last_names(bool):
+
+            If provided, remove curly braces that surround the full last name of
+            people.  (Mendeley protects composite last names like this, which is
+            not always necessary.)
+
+
+          - fix_swedish_a(bool):
+
+            OBSOLETE option, please use ‘-dFixSpaceAfterEscape’ instead.
         """
-        
+        # - fix_swedish_a(bool): (OBSOLETE, use -dFixSpaceAfterEscape instead.) 
+        #       transform `\\AA berg' into `\\AA{}berg' for `\\AA' and `\\o' (this
+        #       problem occurs in files generated e.g. by Mendeley); revtex tends to
+        #       insert a blank after the `\\AA' or `\\o' otherwise.
+
+
         super().__init__()
 
         self.fix_space_after_escape = butils.getbool(fix_space_after_escape)
@@ -296,7 +347,7 @@ class FixesFilter(BibFilter):
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
             raise BibFilterError(self.name(),
-                                 "Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.")
+                                 "Conflicting options: ‘-dEncodeUtf8ToLatex’ and ‘-dEncodeLatexToUtf8’.")
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
 
@@ -495,7 +546,8 @@ class FixesFilter(BibFilter):
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
                 return
-            if ('phd' in re.sub(r'[^a-z]', '', entry.fields['type'].lower())):
+            if re.search(r'\b(ph)\b\W+\bd\b', entry.fields['type'], flags=re.IGNORECASE):
+            #if ('phd' in re.sub(r'[^a-z]', '', entry.fields['type'].lower())):
                 # entry is phd type, so remove explicit type={}
                 del entry.fields['type']
             

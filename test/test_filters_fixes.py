@@ -880,6 +880,12 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "url": "http://digbib.ubka.uni-karlsruhe.de/volltexte/1000005188",
                 "year": "2006"
             },),),
+            ("EdgeCasePhdType", Entry("phdthesis", persons={"author": [Person("Last, First")],}, fields={
+                "school": "University of Somewhere",
+                "title": "Some super-complicated title that the author is proud of",
+                "type": "Morph Degree", # not Ph D but could match a weakly designed regex
+                "year": "2020"
+            },),),
             ("PhdRenner2005_SQKD", Entry("phdthesis", persons={"author": [Person("Renner, Renato")],}, fields={
                 "archivePrefix": "arXiv",
                 "arxivId": "quant-ph/0512258",
@@ -887,7 +893,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "primaryClass": "quant-ph",
                 "school": "ETH Z\\\"{u}rich",
                 "title": "{Security of Quantum Key Distribution}",
-                "type": "Ph-D Thesis",
+                "type": "Ph.---D. Thesis", # detect correctly Ph.D.
                 "url": "http://arxiv.org/abs/quant-ph/0512258",
                 "year": "2005"
             },),),
@@ -1164,6 +1170,12 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "type": "Habilitation",
                 "url": "http://digbib.ubka.uni-karlsruhe.de/volltexte/1000005188",
                 "year": "2006"
+            },),),
+            ("EdgeCasePhdType", Entry("phdthesis", persons={"author": [Person("Last, First")],}, fields={
+                "school": "University of Somewhere",
+                "title": "Some super-complicated title that the author is proud of",
+                "type": "Morph Degree", # type={...} still there
+                "year": "2020"
             },),),
             ("PhdRenner2005_SQKD", Entry("phdthesis", persons={"author": [Person("Renner, Renato")],}, fields={
                 "archivePrefix": "arXiv",
