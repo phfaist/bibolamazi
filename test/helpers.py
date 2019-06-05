@@ -19,7 +19,7 @@ def fmt_dbg_entry(e, linefmt='    {field}: "{value}"'):
     return "\n".join([ linefmt.format(field=f,value=v) for f,v in allfields ])
 
 
-class CustomAssertions(object):
+class CustomAssertions:
 
     def assertEqual(self, a, b, msg=None):
         if isinstance(a, Entry) and isinstance(b, Entry):

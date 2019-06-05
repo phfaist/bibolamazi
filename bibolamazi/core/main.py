@@ -238,7 +238,7 @@ def main(argv=sys.argv[1:]):
         import pdb; pdb.post_mortem()
 
 
-class CmdlSettings(object):
+class CmdlSettings:
     """
     Stores settings for the command-line app.  Read/write json-objects to the
     `config` property of this object.  Config is loaded upon object

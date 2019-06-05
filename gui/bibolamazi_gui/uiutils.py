@@ -30,13 +30,16 @@ from PyQt5.QtWidgets import *
 
 
 
-class ContextAttributeSetter(object):
+class ContextAttributeSetter:
     """
+    Context manager that temporarily sets some attributes and restores them to
+    their original value after the context is finished.
+
     Give a list of pairs of method and value to set.
 
-    For example:
+    For example::
 
-    >>> with ContextAttributeSetter( (object.isEnabled, object.setEnabled, False), ):
+        with ContextAttributeSetter( (object.isEnabled, object.setEnabled, False), ):
             ...
 
     will retreive the current state of if the object is enabled with
@@ -46,9 +49,15 @@ class ContextAttributeSetter(object):
     """
 
     def __init__(self, *args):
-        """Constructor. Does initializations. The \"enter\" statement is done with __enter__().
+        """
+        Constructor. Does initializations. The \"enter\" statement is done with
+        __enter__().
 
-        Note: the argument are a list of 3-tuples `(get_method, set_method, set_to_value)`.
+        The arguments `*args` are one or more 3-tuples `(get_method, set_method,
+        set_to_value)`.  The current state of the property is queried with
+        `get_method()`, the new state is set with `set_method(<value>)`, and
+        `set_to_value` is the value that the property should be set to upon
+        entering the execution context.
         """
         super().__init__()
         self.attribpairs = args
@@ -74,10 +83,11 @@ class ContextAttributeSetter(object):
 
 class BlockedSignals(ContextAttributeSetter):
     """
-    Context manager to temporarily block signals from a Qt object::
+    Context manager that temporarily block signals from Qt objects::
 
         with BlockedSignals(object1, object2, ...):
-            # those Qt objects' signals are temporarily blocked in this "with" statement
+            # The Qt objects object1, object2, ... have their signals
+            # temporarily blocked within this "with" statement
     """
 
     def __init__(self, *args):

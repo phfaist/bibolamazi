@@ -36,7 +36,7 @@ from .qtauto.ui_favoritesoverbtns import Ui_FavoritesOverBtns
 logger = logging.getLogger(__name__)
 
 
-class FavoriteCmd(object):
+class FavoriteCmd:
     def __init__(self, name, cmd, builtin=False):
         self.name = name
         self.cmd = cmd

@@ -83,7 +83,7 @@ def bibolamazi_error_html(errortxt, wrap_pre=True):
 
 
 
-class PreformattedHtml(object):
+class PreformattedHtml:
     def __init__(self, html):
         self.html = str(html)
 
@@ -147,7 +147,7 @@ class LogToHtmlQtSignal(QObject, logging.Handler):
 
 
 
-class LogToGuiContextManager(object):
+class LogToGuiContextManager:
     def __init__(self, logqtsig, bibolamazi_fname, thelogger=logging.getLogger()):
         self.ch = logqtsig
         self.ch.setLevel(logging.NOTSET) # propagate all messages

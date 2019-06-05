@@ -75,7 +75,7 @@ def _read_braced_expr(s, brace_type=None):
                      (close_braces[brace_idx], s_orig))
 
 
-class FmtIfExpr(object):
+class FmtIfExpr:
     def __init__(self, entryfmt):
         self.entryfmt = entryfmt
 

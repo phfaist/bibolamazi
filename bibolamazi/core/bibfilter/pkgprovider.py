@@ -98,7 +98,7 @@ class _FoundInCache(Exception):
         super().__init__('<found: {}>'.format(self.cachedirname))
         
 
-class PackageProviderManager(object):
+class PackageProviderManager:
     def __init__(self, user_cache_dir=None):
         super().__init__()
         if user_cache_dir is None:

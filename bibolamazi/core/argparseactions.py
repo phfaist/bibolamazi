@@ -314,7 +314,7 @@ class opt_action_github_auth(argparse.Action):
             ga.interactive_enter()
 
 
-class GithubAuthSetup(object):
+class GithubAuthSetup:
     def __init__(self, parser):
 
         self.parser = parser

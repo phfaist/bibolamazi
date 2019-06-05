@@ -231,7 +231,7 @@ _default_notestring_fmts = {
     ),
 }
 
-class NoteFmtStrSubFormatter(object):
+class NoteFmtStrSubFormatter:
     def __init__(self, efmt, fmt):
         self.efmt = efmt
         self.fmt = fmt

@@ -62,7 +62,7 @@ from .newbibolamazifiledialog import NewBibolamazifileDialog
 
 
 
-class RecentFile(object):
+class RecentFile:
     def __init__(self, fname, date):
         self.fname = fname
         self.date = date

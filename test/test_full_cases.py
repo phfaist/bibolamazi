@@ -42,7 +42,7 @@ localtmpdir = '_tmpdir' # used if use_mkdtemp=False
 
 
 
-class FullCaseTester(object):
+class FullCaseTester:
     def __init__(self):
         super().__init__()
 

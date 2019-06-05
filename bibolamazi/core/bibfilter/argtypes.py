@@ -335,7 +335,7 @@ def multi_type_class(class_name, typelist,
 
 # meta type for GUI which can be used for any type (like CommaStrList) that is
 # preferrably edited directly as a string.
-class StrEditableArgType(object):
+class StrEditableArgType:
     def __init__(self):
         pass
 
