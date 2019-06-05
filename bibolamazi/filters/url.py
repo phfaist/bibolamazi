@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import re
@@ -102,7 +96,7 @@ class UrlNormalizeFilter(BibFilter):
                          argument.
 
         """
-        super(UrlNormalizeFilter, self).__init__()
+        super().__init__()
 
         self.strip = getbool(Strip)
         self.stripallifdoiorarxiv = getbool(StripAllIfDoiOrArxiv)

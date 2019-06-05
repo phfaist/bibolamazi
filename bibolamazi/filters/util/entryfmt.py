@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import re
 import string
@@ -106,7 +100,7 @@ class FmtIfExpr(object):
 
 class _Store:
     def __init__(self, d):
-        for (k,v) in iteritems(d):
+        for (k,v) in d.items():
             setattr(self, k, v)
 
 class EntryFormatter(string.Formatter):
@@ -154,7 +148,7 @@ class EntryFormatter(string.Formatter):
         if kwargs is None:
             kwargs = self.d
 
-        return super(EntryFormatter, self).get_field(fldname, args, kwargs)
+        return super().get_field(fldname, args, kwargs)
 
     def get_value(self, key, args=None, kwargs=None):
         if args is None:
@@ -163,6 +157,6 @@ class EntryFormatter(string.Formatter):
             kwargs = self.d
 
         try:
-            return super(EntryFormatter, self).get_value(key, args, kwargs)
+            return super().get_value(key, args, kwargs)
         except KeyError:
             raise BibFilterError("<unknown>", "Invalid substitution key: %s"%(key))

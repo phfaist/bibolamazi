@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 import os
 import os.path
@@ -200,8 +193,8 @@ BORING_WORDS = (
 
 
 def normstr(x, lower=True):
-    if not isinstance(x, unicodestr):
-        x = unicodestr(x.decode('utf-8'))
+    if not isinstance(x, str):
+        x = str(x.decode('utf-8'))
 
     x2 = unicodedata.normalize('NFKD', x).strip()
     if lower:
@@ -218,7 +211,7 @@ def normstr(x, lower=True):
 def getlast(pers, lower=True):
     # join last names
     last = normstr(
-        unicodestr( butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1] ),
+        str( butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1] ),
         lower=lower
     )
     initial = re.sub(
@@ -231,8 +224,8 @@ def getlast(pers, lower=True):
     return (last, initial)
 
 def fmtjournal(x):
-    if not isinstance(x, unicodestr):
-        x = unicodestr(x.decode('utf-8'))
+    if not isinstance(x, str):
+        x = str(x.decode('utf-8'))
         
     x2 = normstr(x, lower=False)
 
@@ -353,7 +346,7 @@ aliases, but this will require a little more work from your side.
 
 class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
     def __init__(self, **kwargs):
-        super(DuplicatesEntryInfoCacheAccessor, self).__init__(
+        super().__init__(
             cache_name='duplicates_entryinfo',
             **kwargs
             )
@@ -403,7 +396,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
         cache_a['j_abbrev'] = fmtjournal(a.fields.get('journal', ''))
 
         def cleantitle(title):
-            title = unicodedata.normalize('NFKD', unicodestr(butils.latex_to_text(title).lower()))
+            title = unicodedata.normalize('NFKD', str(butils.latex_to_text(title).lower()))
             # remove any unicode compositions (accents, etc.)
             title = re.sub(b'[^\\x00-\\x7f]', b'', title.encode('utf-8')).decode('utf-8')
             # remove any unusual characters
@@ -486,22 +479,22 @@ rx_keyword_aka = re.compile(r'(aka|previously)--(?P<aliaskey>[^ ,;]+)',
 
 #AliasPair = collections.namedtuple("AliasPair", ('alias', 'origkey', 'is_extra',), )
 # need a mutable version:
-class AliasPair(object):
+class AliasPair:
     def __init__(self, aliaskey, origkey, is_extra=False):
-        super(AliasPair, self).__init__()
+        super().__init__()
         self.aliaskey = aliaskey
         self.origkey = origkey
         self.is_extra = is_extra # CANNOT CHANGE if used in AliasList
     def __repr__(self):
         return "AliasPair(%r,%r,is_extra=%r)"%(self.aliaskey,self.origkey,self.is_extra)
 
-class AliasList(object):
+class AliasList:
     #
     # Idea: store AliasPair() objects and update them as we add more alias
     # objects.
     #
     def __init__(self):
-        super(AliasList, self).__init__()
+        super().__init__()
         # The elements in these containers are AliasPair() objects that are
         # shared among the containers
         self.aliases = []
@@ -626,7 +619,7 @@ class DuplicatesFilter(BibFilter):
                Paths are absolute or relative to bibolamazi file.
         """
 
-        super(DuplicatesFilter, self).__init__()
+        super().__init__()
 
         self.dupfile = dupfile
 
@@ -890,7 +883,7 @@ class DuplicatesFilter(BibFilter):
         _mergefields = ['keywords','note','annote']
         _splitrx = re.compile(r'[;,]\s*') # no capture please!! because we use rx.split(...)
 
-        for (fk, fval) in iteritems(duplentry.fields):
+        for (fk, fval) in duplentry.fields.items():
             # field not in original -- add it
             if fk not in origentry.fields or not origentry.fields[fk].strip():
                 origentry.fields[fk] = fval
@@ -992,7 +985,7 @@ class DuplicatesFilter(BibFilter):
 
         dupl_entryinfo_cache_accessor = self.cacheAccessor(DuplicatesEntryInfoCacheAccessor)
 
-        for (key, entry) in iteritems(bibdata.entries):
+        for (key, entry) in bibdata.entries.items():
             #cache_entries[key] = {}
             dupl_entryinfo_cache_accessor.prepare_entry_cache(key, entry, arxivaccess)
 
@@ -1004,7 +997,7 @@ class DuplicatesFilter(BibFilter):
         def copy_entry(entry):
             #return copy.deepcopy(entry) # too deep ...
             newpers = {}
-            for role, plist in iteritems(entry.persons):
+            for role, plist in entry.persons.items():
                 newpers[role] = [copy.deepcopy(p) for p in plist]
             return Entry(type_=entry.type,
                          fields=entry.fields.items(), # will create own Fielddict
@@ -1115,7 +1108,7 @@ class DuplicatesFilter(BibFilter):
                 #logger.longdebug('inspecting new entry %s ...', key)
                 is_duplicate_of = None
                 duplicate_original_is_unused = False
-                for (nkey, nentry) in iteritems(newbibdata.entries):
+                for (nkey, nentry) in newbibdata.entries.items():
                     same, reason = self.compare_entries(
                         key, nkey, entry, nentry,
                         dupl_entryinfo_cache_accessor
@@ -1126,7 +1119,7 @@ class DuplicatesFilter(BibFilter):
                         is_duplicate_of = nkey
                         break
                     
-                for (nkey, nentry) in iteritems(unused.entries):
+                for (nkey, nentry) in unused.entries.items():
                     same, reason = self.compare_entries(
                         key, nkey, entry, nentry,
                         dupl_entryinfo_cache_accessor
@@ -1274,7 +1267,7 @@ class DuplicatesFilter(BibFilter):
                 #
                 # Instead, update bibolamazifile's bibliographyData() object itself.
                 #
-                bibolamazifile.setEntries(iteritems(newbibdata.entries))
+                bibolamazifile.setEntries(newbibdata.entries.items())
 
             # end if self.merge_duplicates or self.warn
         

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import sys
@@ -71,7 +61,7 @@ from .qtauto.ui_startupwidget import Ui_StartupWidget
 
 class StartupWidget(QWidget):
     def __init__(self, bibapp):
-        super(StartupWidget, self).__init__()
+        super().__init__()
         self.setWindowFlags(self.windowFlags() | Qt.Dialog)
 
         self.bibapp = bibapp
@@ -141,7 +131,7 @@ class StartupWidget(QWidget):
             QTimer.singleShot(100, self.bibapp.quit_app)
             return
 
-        super(StartupWidget, self).closeEvent(event)
+        super().closeEvent(event)
 
 #
 

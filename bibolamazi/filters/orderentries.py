@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import os
@@ -106,11 +100,15 @@ class OrderEntriesFilter(BibFilter):
     def __init__(self, order=None, reverse=False):
         """
         Arguments:
-          - order(OrderMode): The strategy according to which to order all the entries. Possible
-                values: see below.
-          - reverse(bool): Reverse the sorting order. Has no effect with 'raw' order mode.
+
+          - order(OrderMode): The strategy according to which to order all the
+                entries.  Possible values: see below.
+
+          - reverse(bool): Reverse the sorting order. Has no effect with 'raw'
+                order mode.
+
         """
-        super(OrderEntriesFilter, self).__init__()
+        super().__init__()
 
         self.order = OrderMode(order)
         self.reverse = butils.getbool(reverse)
@@ -144,7 +142,7 @@ class OrderEntriesFilter(BibFilter):
             
             bibdata = bibolamazifile.bibliographyData()
 
-            #newentries = sorted(bibdata.entries.iteritems(), key=lambda x: x[0].lower())
+            #newentries = sorted(bibdata.entries.items(), key=lambda x: x[0].lower())
             entries = bibdata.entries
 
             # bibdata.entries is of type pybtex.util.OrderedCaseInsensitiveDict, which has

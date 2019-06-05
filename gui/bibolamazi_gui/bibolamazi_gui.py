@@ -23,13 +23,6 @@
 ################################################################################
 
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 import sys
 import os
 import os.path

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import os
@@ -191,7 +185,7 @@ class CiteKeyFilter(BibFilter):
              applies to all entries.
         """
 
-        super(CiteKeyFilter, self).__init__()
+        super().__init__()
 
         self.fmt = format
         if if_published is None or if_published == '':
@@ -295,7 +289,7 @@ class CiteKeyFilter(BibFilter):
         
         class Jump(Exception): pass
         
-        for (key, entry) in iteritems(bibdata.entries):
+        for (key, entry) in bibdata.entries.items():
 
             keyorig = key
             
@@ -336,7 +330,7 @@ class CiteKeyFilter(BibFilter):
                 # add the entry
                 newbibdata.add_entry(newkey, entry)
 
-        bibolamazifile.setEntries(iteritems(newbibdata.entries))
+        bibolamazifile.setEntries(newbibdata.entries.items())
 
         return
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -23,15 +24,6 @@
 This module provides support for fetching filter packages that are stored on
 remote locations, such as on github.
 """
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
 
 import os
 import os.path
@@ -60,7 +52,7 @@ logger = logging.getLogger(__name__)
 # github:phfaist/bib2enxml/<branch or tag or commit>
 #
 #
-# TODO:
+# TODO: ??
 # githubgist:phfaist/gist_name
 
 
@@ -72,9 +64,9 @@ rx_github_path = re.compile(r'''
 ''', flags=re.VERBOSE)
 
 
-class Fetcher(object):
+class Fetcher:
     def __init__(self, auth_token, username, repo, commit=None):
-        super(Fetcher, self).__init__()
+        super().__init__()
         self.auth_token = auth_token
         self.username = username
         self.repo = repo
@@ -185,9 +177,9 @@ class Fetcher(object):
 
 
 
-class GithubPackageProvider(object):
+class GithubPackageProvider:
     def __init__(self, auth_token=None):
-        super(GithubPackageProvider, self).__init__()
+        super().__init__()
         self.auth_token = auth_token
 
     def setAuthToken(self, token):

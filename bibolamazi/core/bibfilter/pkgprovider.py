@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -24,15 +25,6 @@ This module provides support for fetching filter packages that are stored on
 remote locations, such as on github.
 """
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
-
 import os
 import os.path
 import re
@@ -54,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 class UnknownPackageLocation(BibolamaziError):
     def __init__(self, url):
-        super(UnknownPackageLocation, self).__init__(
+        super().__init__(
             "Unknown package location '{}'".format(url)
         )
 
@@ -103,18 +95,12 @@ def datetime_from_str(s):
 class _FoundInCache(Exception):
     def __init__(self, cachedirname):
         self.cachedirname = cachedirname
-        super(_FoundInCache, self).__init__('<found: {}>'.format(self.cachedirname))
-
-
-# class RemoteFilterPackageInaccessible(Exception):
-#     def __init__(self, msg):
-#         super(RemoteFilterPackageInaccessible, self).__init__(msg)
-
+        super().__init__('<found: {}>'.format(self.cachedirname))
         
 
 class PackageProviderManager(object):
     def __init__(self, user_cache_dir=None):
-        super(PackageProviderManager, self).__init__()
+        super().__init__()
         if user_cache_dir is None:
             user_cache_dir = appdirs.user_cache_dir("bibolamazi")
         self.user_cache_dir = user_cache_dir
@@ -158,7 +144,7 @@ class PackageProviderManager(object):
         # Perform some start-up checks
         #
         pkgs_to_remove = [] # (cachedirname, also-delete-cache-dir)
-        for cachedirname, pkgi in iteritems(self.pkgcacheinfo['pkgcaches']):
+        for cachedirname, pkgi in self.pkgcacheinfo['pkgcaches'].items():
             #
             # check that the cache directory still exists (!!) [Maybe removed by
             # user directly?]
@@ -275,7 +261,7 @@ class PackageProviderManager(object):
 
         # do we have a recently-checked item in the cache already?
         try:
-            for cachedirname, pkgi in iteritems(self.pkgcacheinfo['pkgcaches']):
+            for cachedirname, pkgi in self.pkgcacheinfo['pkgcaches'].items():
                 if pkgi.get('url', None) == url:
                     lastcheck = datetime_from_str(pkgi.get('lastchecked_datetime', None))
                     if (datetime.datetime.now() - lastcheck) < max_norecheck_age:
@@ -299,7 +285,7 @@ class PackageProviderManager(object):
 
         # see if we have this URL in cache already
         try:
-            for cachedirname, pkgi in iteritems(self.pkgcacheinfo['pkgcaches']):
+            for cachedirname, pkgi in self.pkgcacheinfo['pkgcaches'].items():
                 if pkgi.get('url', None) == url:
 
                     try:
@@ -333,7 +319,7 @@ class PackageProviderManager(object):
         # we need to fetch the package using this provider
 
         digest = hashlib.md5(url.encode('utf-8') + b'\n' +
-                             unicodestr(datetime.datetime.now()).encode('ascii')).hexdigest()
+                             str(datetime.datetime.now()).encode('ascii')).hexdigest()
         cachedirname = 'pkg-' + digest[-16:]
 
         logger.longdebug("using cachedirname=%s", cachedirname)

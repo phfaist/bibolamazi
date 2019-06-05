@@ -280,7 +280,7 @@ class FixesFilter(BibFilter):
                 insert a blank after the `\\AA' or `\\o' otherwise.
         """
         
-        super(FixesFilter, self).__init__()
+        super().__init__()
 
         self.fix_space_after_escape = butils.getbool(fix_space_after_escape)
         self.fix_swedish_a = butils.getbool(fix_swedish_a); # OBSOLETE

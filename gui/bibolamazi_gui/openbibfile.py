@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,17 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-import sys
-def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
-def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
-from imp import reload
 
 
 from html import escape as htmlescape
@@ -104,8 +91,6 @@ class PreformattedHtml(object):
         return self.html
 
     def __str__(self):
-        return to_native_str(self.html)
-    def __unicode__(self):
         return self.html
 
 
@@ -118,7 +103,7 @@ class LogToHtmlQtSignal(QObject, logging.Handler):
     #
 
     def __init__(self, parent, threadparent=None):
-        super(LogToHtmlQtSignal, self).__init__(parent)
+        super().__init__(parent)
         logging.Handler.__init__(self)
 
         self.threadparent = threadparent
@@ -205,7 +190,7 @@ class LogToGuiContextManager(object):
 
 class RunBibolamaziThread(QThread):
     def __init__(self, parent):
-        super(RunBibolamaziThread, self).__init__(parent)
+        super().__init__(parent)
         self.setObjectName("run-bibolamazi-thread")
 
         self._orig_except_hook = sys.excepthook
@@ -251,7 +236,7 @@ def global_run_bibolamazi_thread_instance():
 
 class RunBibolamazi(QObject):
     def __init__(self, threadparent):
-        super(RunBibolamazi, self).__init__(None) # important: no parent (for moveToThread())
+        super().__init__(None) # important: no parent (for moveToThread())
 
         self.threadparent = threadparent
 
@@ -348,7 +333,7 @@ class RunBibolamazi(QObject):
                     origpath = sys.path
                     try:
                         sys.path = [pkgpath] + origpath
-                        reload(mod)
+                        importlib.reload(mod)
                     finally:
                         sys.path = origpath
 
@@ -369,7 +354,7 @@ class OpenBibFile(QWidget):
     
 
     def __init__(self):
-        super(OpenBibFile, self).__init__()
+        super().__init__()
 
         self.ui = Ui_OpenBibFile()
         self.ui.setupUi(self)
@@ -529,7 +514,7 @@ class OpenBibFile(QWidget):
 
         QMetaObject.invokeMethod(self, 'fileClosed', Qt.QueuedConnection)
         
-        return super(OpenBibFile, self).closeEvent(closeEvent)
+        return super().closeEvent(closeEvent)
 
 
     @pyqtSlot()

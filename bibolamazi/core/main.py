@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -23,14 +24,6 @@
 This module contains the code that implements Bibolamazi's main functionality. It also
 provides the basic tools for the command-line interface.
 """
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 import os
 import os.path
@@ -115,7 +108,7 @@ def setup_filterpackage_from_argstr(argstr):
     try:
         ok = filterfactory.validate_filter_package(fpname, fpdir, raise_exception=True)
     except filterfactory.NoSuchFilterPackage as e:
-        raise BibolamaziError(unicodestr(e))
+        raise BibolamaziError(str(e))
 
     filterfactory.filterpath[fpname] = fpdir
     
@@ -232,7 +225,7 @@ def main(argv=sys.argv[1:]):
         raise
 
     except BibolamaziError as e:
-        logger.error("\n" + unicodestr(e))
+        logger.error("\n" + str(e))
 
     except:
         
@@ -252,7 +245,7 @@ class CmdlSettings(object):
     creation. Call `saveConfig()` after changing the `config` property.
     """
     def __init__(self, configfname='cmdl_settings.json'):
-        super(CmdlSettings, self).__init__()
+        super().__init__()
         self.configfname = configfname
 
         self.user_config_dir = appdirs.user_config_dir('bibolamazi')
@@ -283,7 +276,7 @@ class CmdlSettings(object):
 # Note: not used by GUI
 class CmdlMainPackageProviderManager(pkgprovider.PackageProviderManager):
     def __init__(self):
-        super(CmdlMainPackageProviderManager, self).__init__()
+        super().__init__()
         settings = CmdlSettings()
         self.prompted_for_remote = settings.config['RemoteFilterPackages'].get('PromptedForRemote', False)
         self.allow_remote = settings.config['RemoteFilterPackages'].get('AllowRemote', False)
@@ -502,7 +495,7 @@ def run_bibolamazi_args(args):
         #
         if logger.isEnabledFor(blogger.LONGDEBUG):
             s = "========== Dumping Bibliography Database ==========\n"
-            for key, entry in iteritems(bibdata.entries):
+            for key, entry in bibdata.entries.items():
                 s += "  %10s: %r\n\n"%(key, entry)
             s += "===================================================\n"
             logger.longdebug(s)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 import re
 import logging
@@ -143,7 +136,7 @@ class MarkAuthorFilter(BibFilter):
 
         self.match_fn = match_fns[self.matchmode.value]
 
-        super(MarkAuthorFilter, self).__init__()
+        super().__init__()
 
 
     def _match_name_exact(self, p):

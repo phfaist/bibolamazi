@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import re
@@ -96,7 +90,7 @@ class NameInitialsFilter(BibFilter):
             names entirely.
 
         """
-        super(NameInitialsFilter, self).__init__()
+        super().__init__()
 
         self.roles = roles
         if not self.roles:
@@ -129,7 +123,7 @@ class NameInitialsFilter(BibFilter):
                 ### NO: this kills any protection, e.g., with braces, etc.
                 #
                 # # de-latex the person first
-                # pstr = unicodestr(p)
+                # pstr = str(p)
                 # # BUG: FIXME: remove space after any macros
                 # pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr) # replace "blah\macro blah" by "blah\macro{}blah"
                 #if (self._names_to_utf8):
@@ -144,7 +138,7 @@ class NameInitialsFilter(BibFilter):
                     protected_detex_fn = lambda x: l2t.latex_to_text(rxmacrospace.sub(r'\1{}', x)).strip()
 
                     # join name again to correctly treat accents like "Fran\c cois" or "\AA berg"
-                    p = Person(protected_detex_fn(unicodestr(p)))
+                    p = Person(protected_detex_fn(str(p)))
 
                     # do_detex = lambda lst: [ protected_detex(x) for x in lst ]
                     # p.first_names = do_detex(p.first_names)

@@ -2,6 +2,9 @@ from setuptools import setup, find_packages
 
 import sys
 
+if sys.version_info < (3, 4):
+    raise RuntimeError("Bibolamazi requires Python >= 3.4")
+
 #import bibolamazi.init # -- don't make the setup.py crash because some packages
 #e.g. pybtex aren't available
 from bibolamazi.core.version import version_str as bibolamaziversion_str

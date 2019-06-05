@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import str as unicodestr
-
 import sys
-PY2 = (sys.version_info[0] == 2)
 import os.path
 import argparse
 import pickle
@@ -42,7 +34,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
     kwargs['f'] = f
     if isinstance(cacheobj, BibUserCacheDic):
         ncount = 0
-        for (key, val) in iteritems(cacheobj.dic):
+        for (key, val) in cacheobj.dic.items():
             if isinstance(key, str):
                 skey = key
             else:
@@ -61,7 +53,7 @@ def dump_bibcacheobj(cacheobj, name=None, f=sys.stdout, indent=0, **kwargs):
             dump_bibcacheobj(val, name='<item>', indent=indent+indent_step, **kwargs)
         return
     # display as string:
-    s = unicodestr(cacheobj)
+    s = str(cacheobj)
     if len(s) < 50:
         f.write(s)
         return
@@ -86,9 +78,6 @@ dump_bibcacheobj(cache['cachedic'], f=f)
 f.write("\n" + "=" * 90 + "\n\n\n")
 
 encoding = locale.getdefaultlocale()[1];
-if PY2:
-    pydoc.pager(f.getvalue().encode(encoding if encoding else 'utf-8'))
-else:
-    pydoc.pager(f.getvalue())
+pydoc.pager(f.getvalue())
 
 sys.exit(0)

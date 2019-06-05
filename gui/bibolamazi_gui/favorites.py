@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 from collections import namedtuple
 import logging
@@ -82,12 +72,12 @@ filter: fixes -dFixSpaceAfterEscape
     FavoriteCmd(name="orderentries (alphabetically by cite key)",
                 cmd="filter: orderentries -sOrder=alphabetical",
                 builtin=True),
-    ];
+    ]
 
 class FavoriteCmdsList(QObject):
     def __init__(self, parent):
-        super(FavoriteCmdsList,self).__init__(parent)
-        self.favlist = [];
+        super().__init__(parent)
+        self.favlist = []
 
     favChanged = pyqtSignal()
 
@@ -156,24 +146,24 @@ ROLE_CMD_IS_BUILTIN = ROLE_CMD + 3
 
 class FavoritesModel(QAbstractTableModel):
     def __init__(self, favcmds, parent):
-        super(FavoritesModel, self).__init__(parent=parent)
-        self._favcmds = favcmds;
+        super().__init__(parent=parent)
+        self._favcmds = favcmds
         self._favcmds.favChanged.connect(self.modelReset)
         self._edit_mode = False
 
     def setEditMode(self, editmodeon):
-        self._edit_mode = editmodeon;
+        self._edit_mode = editmodeon
         self.modelReset.emit()
 
     def rowCount(self, index=QModelIndex()):
         if index.isValid():
-            return 0;
-        return len(self._favcmds.favlist);
+            return 0
+        return len(self._favcmds.favlist)
 
     def columnCount(self, index=QModelIndex()):
         if index.isValid():
-            return 0;
-        return 1;
+            return 0
+        return 1
 
 
     def flags(self, index):
@@ -280,7 +270,7 @@ class FavoritesModel(QAbstractTableModel):
         return Qt.MoveAction
 
     def mimeTypes(self):
-        return [ "application/x-bibolamazi-internalmove-favorites" ];
+        return [ "application/x-bibolamazi-internalmove-favorites" ]
 
     def mimeData(self, indexes):
         logger.longdebug("indexes=%r", indexes)
@@ -308,7 +298,7 @@ class FavoritesModel(QAbstractTableModel):
         oldrow = int(data.data("application/x-bibolamazi-internalmove-favorites"))
         logger.longdebug("oldrow: %r", oldrow)
 
-        self._favcmds.moveFavorite(oldrow, row);
+        self._favcmds.moveFavorite(oldrow, row)
         return True
 
 
@@ -316,7 +306,7 @@ class FavoritesModel(QAbstractTableModel):
 class FavoritesItemDelegate(QStyledItemDelegate):
 
     def __init__(self, parent):
-        super(FavoritesItemDelegate, self).__init__(parent=parent)
+        super().__init__(parent=parent)
 
     def paint(self, painter, option, index):
 
@@ -384,7 +374,7 @@ class FavoritesItemDelegate(QStyledItemDelegate):
 
 class FavoritesOverBtns(OverListButtonWidgetBase):
     def __init__(self, itemview):
-        super(FavoritesOverBtns, self).__init__(itemview=itemview)
+        super().__init__(itemview=itemview)
 
         self.ui = Ui_FavoritesOverBtns()
         self.ui.setupUi(self)

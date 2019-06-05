@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,16 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-import sys
-def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
-def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
-from imp import reload
 
 import logging
 logger = logging.getLogger(__name__)
@@ -42,17 +31,18 @@ from PyQt5.QtWidgets import *
 
 
 class ContextAttributeSetter(object):
-    """Give a list of pairs of method and value to set.
+    """
+    Give a list of pairs of method and value to set.
 
     For example:
 
     >>> with ContextAttributeSetter( (object.isEnabled, object.setEnabled, False), ):
             ...
 
-    will retreive the current state of if the object is enabled with `object.isEnabled()`, then
-    will disable the object with `object.setEnabled(False)`. Upon exiting the with block, the
-    state is restored to its original state with `object.setEnabled(..)`.
-
+    will retreive the current state of if the object is enabled with
+    `object.isEnabled()`, then will disable the object with
+    `object.setEnabled(False)`. Upon exiting the with block, the state is
+    restored to its original state with `object.setEnabled(..)`.
     """
 
     def __init__(self, *args):
@@ -60,7 +50,7 @@ class ContextAttributeSetter(object):
 
         Note: the argument are a list of 3-tuples `(get_method, set_method, set_to_value)`.
         """
-        super(ContextAttributeSetter, self).__init__()
+        super().__init__()
         self.attribpairs = args
         self.initvals = None
 
@@ -84,8 +74,10 @@ class ContextAttributeSetter(object):
 
 class BlockedSignals(ContextAttributeSetter):
     """
-    with BlockedSignals(object1, object2, ...):
-       # those Qt object's signals are temporarily blocked in this with statement.
+    Context manager to temporarily block signals from a Qt object::
+
+        with BlockedSignals(object1, object2, ...):
+            # those Qt objects' signals are temporarily blocked in this "with" statement
     """
 
     def __init__(self, *args):
@@ -93,7 +85,7 @@ class BlockedSignals(ContextAttributeSetter):
             (obj.signalsBlocked, obj.blockSignals, True)
             for obj in args
         ]
-        super(BlockedSignals, self).__init__( *attrlist )
+        super().__init__( *attrlist )
 
 
 
@@ -101,6 +93,12 @@ class BlockedSignals(ContextAttributeSetter):
 
 
 def is_dark_mode(widget):
+    """
+    Return True if the given `widget` appears to be rendered in dark mode.
+
+    Dark mode interface is determined by examining the brightness of the palette
+    background color ("Base").
+    """
     if widget is None:
         return False
     p = widget.palette()

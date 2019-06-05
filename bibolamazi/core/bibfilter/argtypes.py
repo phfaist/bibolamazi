@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import re
@@ -66,7 +60,6 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
     `enumobject.mode`.
     """
 
-    @python_2_unicode_compatible
     class ThisEnumArgClass:
         _values = values
         _values_list = [x[0] for x in _values]
@@ -98,7 +91,7 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
                 return (0 if default_value is None else self._parse_value(default_value))
 
             # value given by key
-            svalue = unicodestr(value)
+            svalue = str(value)
             if (svalue in self._values_dict):
                 return self._values_dict.get(svalue)
             try:
@@ -119,14 +112,14 @@ def enum_class(class_name, values, default_value=0, value_attr_name='value'):
 
         def __str__(self):
             ok = [x for (x,v) in self._values if v == self._value]
-            if (not len(ok)):
+            if not len(ok):
                 # this doesn't correspond to a valid value... return the integer value directly
                 return str(self._value)
             # the corresponding string key for this value
             return ok[0]
 
         def __repr__(self):
-            return "%s('%s')"%(self.__class__.__name__, self.__str__())
+            return "%s(%s)"%(self.__class__.__name__, repr(self.__str__()))
 
         def __hash__(self):
             return hash(self.value)
@@ -247,7 +240,6 @@ def multi_type_class(class_name, typelist,
         raise ValueError("Invalid value: %r" %(value,))
 
 
-    @python_2_unicode_compatible
     class ThisMultiTypeArgClass:
         _typelist = typelist
 
@@ -366,13 +358,12 @@ class StrEditableArgType(object):
 
 #_rx_unescape_lst = re.compile(r'\\(?P<char>.)|\s*(?P<sep>,)\s*')
 
-@python_2_unicode_compatible
 class CommaStrList(list):
     """
     A list of values, specified as a comma-separated string.
     """
     def __init__(self, iterable=[]):
-        # if (isinstance(iterable, basestring)):
+        # if (isinstance(iterable, str)):
         #     fullstr = iterable
         #     lastpos = 0
         #     strlist = []
@@ -395,15 +386,15 @@ class CommaStrList(list):
 
         #     # now we've got our decoded string list.
         #     iterable = strlist
-        if isinstance(iterable, basestring):
+        if isinstance(iterable, str):
             iterable = iterable.split(',')
             
-        super(CommaStrList, self).__init__(iterable)
+        super().__init__(iterable)
 
     type_arg_input = StrEditableArgType()
 
     def __str__(self):
-        return u",".join([unicodestr(x) for x in self])
+        return ",".join([str(x) for x in self])
 
 
 
@@ -418,7 +409,6 @@ class CommaStrList(list):
 # _rx_unescape_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*')
 _rx_keyvalsep = re.compile(r'\s*(?P<sep>:)\s*')
 
-@python_2_unicode_compatible
 class ColonCommaStrDict(dict):
     """
     A dictionary of values, specified as a comma-separated string of pairs
@@ -433,7 +423,7 @@ class ColonCommaStrDict(dict):
         else:
             raise ValueError('ColonCommaStrDict accepts at most one *arg, an iterable')
         
-        if isinstance(iterable, basestring):
+        if isinstance(iterable, str):
             pairlist = CommaStrList(iterable)
             d = {}
             # now, read each key/value pair
@@ -455,17 +445,17 @@ class ColonCommaStrDict(dict):
 
                 d[key] = val
 
-            super(ColonCommaStrDict, self).__init__(d)
+            super().__init__(d)
 
         else:
 
-            super(ColonCommaStrDict, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
     type_arg_input = StrEditableArgType()
 
     def __str__(self):
-        return u",".join([unicodestr(k)+(':'+unicodestr(v) if v is not None else '')
-                          for k,v in iteritems(self)])
+        return ",".join([str(k)+(':'+str(v) if v is not None else '')
+                         for k,v in self.items()])
 
 
 

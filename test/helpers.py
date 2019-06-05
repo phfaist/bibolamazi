@@ -1,5 +1,4 @@
-
-from __future__ import print_function, unicode_literals
+# -*- coding: utf-8 -*-
 
 import logging
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class CustomAssertions(object):
         if isinstance(a, BibliographyData) and isinstance(b, BibliographyData):
             self.assert_keyentrylists_equal(list(a.entries.items()), list(b.entries.items()), msg=msg)
 
-        return super(CustomAssertions, self).assertEqual(a, b, msg=msg)
+        return super().assertEqual(a, b, msg=msg)
 
 
     def assert_entries_equal(self, e1, e2, **kwargs):

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -19,13 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicode
-
 
 import re
 
@@ -38,15 +32,15 @@ from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.blogger import logger
 from bibolamazi.core import butils
 
-HELP_AUTHOR = u"""\
+HELP_AUTHOR = r"""\
 Extra useless test filter by Philippe Faist, (C) 2014, GPL 3+
 """
 
-HELP_DESC = u"""\
+HELP_DESC = r"""\
 Be decorative. And do nothing special.
 """
 
-HELP_TEXT = u"""
+HELP_TEXT = r"""
 No help available for dummy filter :)
 """
 
@@ -65,33 +59,33 @@ class UselessFixesFilter(BibFilter):
         Constructor method for a useless filter.
         """
         
-        BibFilter.__init__(self);
+        BibFilter.__init__(self)
 
-        self.fix_swedish_a = butils.getbool(fix_swedish_a);
+        self.fix_swedish_a = butils.getbool(fix_swedish_a)
 
-        self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex);
-        self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8);
+        self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex)
+        self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8)
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
-            raise FilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.");
+            raise FilterError("Conflicting options: `encode_utf8_to_latex' and `encode_latex_to_utf8'.")
 
-        self.remove_type_from_phd = butils.getbool(remove_type_from_phd);
+        self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
 
         try:
-            self.remove_full_braces = butils.getbool(remove_full_braces);
+            self.remove_full_braces = butils.getbool(remove_full_braces)
             self.remove_full_braces_fieldlist = None; # all fields
         except ValueError:
             # not boolean, we have provided a field list.
-            self.remove_full_braces = True;
-            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ];
+            self.remove_full_braces = True
+            self.remove_full_braces_fieldlist = [ x.strip().lower() for x in remove_full_braces.split(',') ]
 
         if protect_names is not None:
             self.protect_names = dict([ (x.strip(), re.compile(r'\b'+x.strip()+r'\b', re.IGNORECASE))
-                                        for x in protect_names.split(',') ]);
+                                        for x in protect_names.split(',') ])
         else:
-            self.protect_names = None;
+            self.protect_names = None
 
-        self.remove_file_field = butils.getbool(remove_file_field);
+        self.remove_file_field = butils.getbool(remove_file_field)
 
 
         logger.debug('useless test filter: fix_swedish_a=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
@@ -100,14 +94,14 @@ class UselessFixesFilter(BibFilter):
                      % (self.fix_swedish_a, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd,
                         self.remove_full_braces, self.remove_full_braces_fieldlist, self.protect_names,
-                        self.remove_file_field));
+                        self.remove_file_field))
         
 
     def name(self):
         return "extrafilter"
 
     def action(self):
-        return BibFilter.BIB_FILTER_SINGLE_ENTRY;
+        return BibFilter.BIB_FILTER_SINGLE_ENTRY
 
     def filter_bibentry(self, entry):
         #
@@ -118,28 +112,28 @@ class UselessFixesFilter(BibFilter):
 
         def thefilter(x):
             if (self.fix_swedish_a):
-                x = re.sub(r'\\AA\s+', r'\\AA{}', x);
+                x = re.sub(r'\\AA\s+', r'\\AA{}', x)
             if (self.encode_utf8_to_latex):
-                x = latexencode.utf8tolatex(x, non_ascii_only=True);
+                x = latexencode.utf8tolatex(x, non_ascii_only=True)
             if (self.encode_latex_to_utf8):
-                x = latex2text.latex2text(x);
+                x = latex2text.latex2text(x)
             return x
 
         def filter_person(p):
-            return Person(string=thefilter(unicode(p)));
+            return Person(string=thefilter(str(p)))
             # does not work this way because of the way Person() splits at spaces:
             #parts = {}
             #for typ in ['first', 'middle', 'prelast', 'last', 'lineage']:
-            #    parts[typ] = thefilter(u" ".join(p.get_part(typ)));
-            #return Person(**parts);
+            #    parts[typ] = thefilter(u" ".join(p.get_part(typ)))
+            #return Person(**parts)
 
 
-        for (role,perslist) in iteritems(entry.persons):
+        for (role,perslist) in entry.persons.items():
             for k in range(len(perslist)):
-                entry.persons[role][k] = filter_person(perslist[k]);
+                entry.persons[role][k] = filter_person(perslist[k])
         
-        for (k,v) in iteritems(entry.fields):
-            entry.fields[k] = thefilter(v);
+        for (k,v) in entry.fields.items():
+            entry.fields[k] = thefilter(v)
 
 
         # additionally:
@@ -149,45 +143,45 @@ class UselessFixesFilter(BibFilter):
                 return
             if ('phd' in re.sub(r'[^a-z]', '', entry.fields['type'].lower())):
                 # entry is phd type, so remove explicit type={}
-                del entry.fields['type'];
+                del entry.fields['type']
             
         if (self.remove_type_from_phd):
-            filter_entry_remove_type_from_phd(entry);
+            filter_entry_remove_type_from_phd(entry)
 
 
         def filter_entry_remove_full_braces(entry, fieldlist):
-            for k,v in iteritems(entry.fields):
+            for k,v in entry.fields.items():
                 if (fieldlist is None or k in fieldlist):
-                    val = v.strip();
+                    val = v.strip()
                     if (len(val) and val[0] == '{' and val[-1] == '}'):
                         # remove the extra braces.
-                        entry.fields[k] = val[1:-1];
+                        entry.fields[k] = val[1:-1]
 
         if (self.remove_full_braces):
-            filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist);
+            filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist)
 
 
         def filter_protect_names(entry):
-            for key, val in iteritems(entry.fields):
+            for key, val in entry.fields.items():
                 if key in ('url', 'file'):
                     continue
-                newval = val;
-                for n,r in iteritems(self.protect_names):
-                    newval = r.sub('{'+n+'}', newval);
+                newval = val
+                for n,r in self.protect_names.items():
+                    newval = r.sub('{'+n+'}', newval)
                 if (newval != val):
-                    entry.fields[key] = newval;
+                    entry.fields[key] = newval
 
         if (self.protect_names):
-            filter_protect_names(entry);
+            filter_protect_names(entry)
 
 
         if (self.remove_file_field):
             if ('file' in entry.fields):
-                del entry.fields['file'];
+                del entry.fields['file']
 
-        return entry;
+        return entry
     
 
 def bibolamazi_filter_class():
-    return UselessFixesFilter;
+    return UselessFixesFilter
 

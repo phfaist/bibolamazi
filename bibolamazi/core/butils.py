@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -22,14 +23,6 @@
 """
 Various utilities for use within all of the Bibolamazi Project.
 """
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 
 import re
@@ -94,7 +87,7 @@ class BibolamaziError(Exception):
         if (where is not None):
             fullmsg += "\n\t@: "+where
 
-        super(BibolamaziError, self).__init__(fullmsg)
+        super().__init__(fullmsg)
 
 
 # ------------------------------------------------------------------------------
@@ -114,7 +107,7 @@ def getbool(x):
         return (int(x) != 0)
     except (TypeError, ValueError):
         pass
-    if isinstance(x, (str,basestring)):
+    if isinstance(x, str):
         m = re.match(r'^\s*(t(?:rue)?|1|y(?:es)?|on)\s*$', x, re.IGNORECASE)
         if m:
             return True
@@ -207,7 +200,7 @@ def quotearg(x):
 
 def guess_encoding_decode(dat, encoding=None):
 
-    if isinstance(dat, unicodestr):
+    if isinstance(dat, str):
         return dat # already unicode
 
     if encoding:
@@ -346,6 +339,6 @@ _l2t = latex2text.LatexNodes2Text(
 )
 
 def latex_to_text(x):
-    if (not isinstance(x, unicodestr)):
-        x = unicodestr(x.decode('utf-8'))
+    if not isinstance(x, str):
+        x = str(x.decode('utf-8'))
     return _l2t.latex_to_text(x, tolerant_parsing=True)

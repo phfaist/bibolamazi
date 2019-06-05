@@ -20,13 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 import re
 import logging
 from html import escape as htmlescape
@@ -50,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 class GithubAuthenticationDialog(QDialog):
     def __init__(self, parent):
-        super(GithubAuthenticationDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.ui = Ui_GithubAuthenticationDialog()
         self.ui.setupUi(self)

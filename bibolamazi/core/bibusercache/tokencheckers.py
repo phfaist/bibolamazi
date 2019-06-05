@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -48,14 +49,6 @@ class :py:class:`~tokencheckers.TokenChecker`.
 
 """
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
-
 import datetime
 import hashlib
 import logging
@@ -67,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class TokenChecker(object):
+class TokenChecker:
     """
     Base class for a token checker validator.
 
@@ -80,7 +73,7 @@ class TokenChecker(object):
     condition (e.g. as in :py:class:`TokenCheckerDate`).
     """
     def __init__(self, **kwargs):
-        super(TokenChecker, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def new_token(self, key, value, **kwargs):
         """
@@ -144,7 +137,7 @@ class TokenCheckerDate(TokenChecker):
     you should provide a python :py:class:`datetime.time_delta` object.
     """
     def __init__(self, time_valid=datetime.timedelta(days=5), **kwargs):
-        super(TokenCheckerDate, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.time_valid = time_valid
 
     def set_time_valid(self, time_valid):
@@ -186,7 +179,7 @@ class TokenCheckerCombine(TokenChecker):
                 )
             
         """
-        super(TokenCheckerCombine, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.subcheckers = args
 
     def cmp_tokens(self, key, value, oldtoken, **kwargs):
@@ -216,7 +209,7 @@ class TokenCheckerPerEntry(TokenChecker):
     entry only.
     """
     def __init__(self, checkers={}, **kwargs):
-        super(TokenCheckerPerEntry, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.checkers = checkers
 
     def add_entry_check(self, key, checker):
@@ -315,7 +308,7 @@ class EntryFieldsTokenChecker(TokenChecker):
         else:
             self.store_persons = [x for x in store_persons]
 
-        super(EntryFieldsTokenChecker, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def new_token(self, key, value, **kwargs):
         entry = self.bibdata.entries.get(key,Entry('misc'))
@@ -326,7 +319,7 @@ class EntryFieldsTokenChecker(TokenChecker):
             data += b"\n\n" + entry.type.encode('utf-8')
         if self.store_persons:
             data += "".join([
-                ("\n\n"+p+":"+";".join([unicodestr(pers) for pers in entry.persons.get(p, [])]))
+                ("\n\n"+p+":"+";".join([str(pers) for pers in entry.persons.get(p, [])]))
                 for p in self.store_persons
             ]).encode('utf-8')
         
@@ -353,7 +346,7 @@ class VersionTokenChecker(TokenChecker):
         equality operator ``==`` (actually using the original :py:class:`TokenChecker`
         implementation).
         """
-        super(VersionTokenChecker, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.this_version = this_version
 
     def new_token(self, key, value, **kwargs):

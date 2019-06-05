@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import logging
 
@@ -98,7 +92,7 @@ class OnlyUsedFilter(BibFilter):
               with a backslash)
         """
 
-        super(OnlyUsedFilter, self).__init__()
+        super().__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -131,13 +125,13 @@ class OnlyUsedFilter(BibFilter):
         
         newentries = OrderedCaseInsensitiveDict()
 
-        for key,entry in iteritems(bibdata.entries):
+        for key,entry in bibdata.entries.items():
             if key in citations:
                 newentries[key] = entry
 
         logger.longdebug("the new database has entries %r" %(newentries.keys()))
 
-        bibolamazifile.setEntries(iteritems(newentries))
+        bibolamazifile.setEntries(newentries.items())
 
         return
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -19,18 +20,12 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 try:
     from collections.abc import MutableMapping, MutableSequence
 except ImportError:
     from collections import MutableMapping, MutableSequence
+
 
 import inspect
 import pickle
@@ -69,15 +64,16 @@ class BibUserCacheDic(MutableMapping):
     Implements a cache where information may be stored between different runs of
     bibolamazi, and between different filter runs.
 
-    This is a dictionary of key=value pairs, and can be used like a regular python
-    dictionary.
+    This is a dictionary of key=value pairs, and can be used like a regular
+    python dictionary.
 
-    This implements *cache validation*, i.e. making sure that the values stored in the
-    cache are up-to-date. Each entry of the dictionary has a corresponding *token*,
-    i.e. a value (of any python picklable type) which will identify whether the cache is
-    invalid or not. For example, the value could be `datetime` corresponding to the time
-    when the entry was created, and the rule for validating the cache might be to check
-    that the entry is not more than e.g. 3 days old.
+    This implements *cache validation*, i.e. making sure that the values stored
+    in the cache are up-to-date. Each entry of the dictionary has a
+    corresponding *token*, i.e. a value (of any python picklable type) which
+    will identify whether the cache is invalid or not. For example, the value
+    could be `datetime` corresponding to the time when the entry was created,
+    and the rule for validating the cache might be to check that the entry is
+    not more than e.g. 3 days old.
     """
     def __init__(self, *args, **kwargs):
         self._init_empty(on_set_bind_to_key=kwargs.pop('on_set_bind_to_key', None),
@@ -98,19 +94,20 @@ class BibUserCacheDic(MutableMapping):
     def _guess_name_for_dbg(self):
         if not self.parent:
             return "<root>"
-        return next( (key for key, val in iteritems(self.parent)
+        return next( (key for key, val in self.parent.items()
                       if val is self),
                      "<unknown>")
 
     def set_validation(self, tokenchecker, validate=True):
         """
-        Set a function that will calculate the token for a given entry, for cache validation.
-        The `tokenchecker` should be a
-        :py:class:`~core.bibusercache.tokencheckers.TokenChecker` instance. See the
-        documentation for the :py:mod:`tokencheckers` modules for more information about
-        cache validation.
+        Set a function that will calculate the token for a given entry, for cache
+        validation.  The `tokenchecker` should be a
+        :py:class:`~core.bibusercache.tokencheckers.TokenChecker` instance. See
+        the documentation for the :py:mod:`tokencheckers` modules for more
+        information about cache validation.
 
-        If `validate` is `True`, then we immediately validate the contents of the cache.
+        If `validate` is `True`, then we immediately validate the contents of
+        the cache.
         """
 
         if self.tokenchecker is tokenchecker:
@@ -128,7 +125,8 @@ class BibUserCacheDic(MutableMapping):
 
     def validate(self):
         """
-        Validate this whole dictionary, i.e. make sure that each entry is still valid.
+        Validate this whole dictionary, i.e. make sure that each entry is still
+        valid.
 
         This calls `validate_item()` for each item in the dictionary.
         """
@@ -142,8 +140,8 @@ class BibUserCacheDic(MutableMapping):
         """
         Validate an entry of the dictionary manually. Usually not needed.
 
-        If the value is valid, and happens to be a BibUserCacheDic, then that dictionary
-        is also validated.
+        If the value is valid, and happens to be a BibUserCacheDic, then that
+        dictionary is also validated.
 
         Invalid entries are deleted.
 
@@ -198,11 +196,11 @@ class BibUserCacheDic(MutableMapping):
 
     def new_value_set(self, key=None):
         """
-        Informs the dic that the value for `key` has been updated, and a new validation
-        token should be stored.
+        Informs the dic that the value for `key` has been updated, and a new
+        validation token should be stored.
 
-        If `key` is `None`, then this call is meant for the current object, so this call
-        will relay to the parent dictionary.
+        If `key` is `None`, then this call is meant for the current object, so
+        this call will relay to the parent dictionary.
         """
         self._do_pending_bind()
 
@@ -210,7 +208,7 @@ class BibUserCacheDic(MutableMapping):
             if not self.parent:
                 logger.warning("BibUserCacheDic.new_value_set(): No parent set!")
             try:
-                self.parent.new_value_set(next( (k for k,v in iteritems(self.parent)
+                self.parent.new_value_set(next( (k for k,v in self.parent.items()
                                                  if v is self) ))
             except StopIteration:
                 logger.warning("BibUserCacheDic.new_value_set(): Can't find ourselves in parent!")
@@ -240,11 +238,8 @@ class BibUserCacheDic(MutableMapping):
         if self.parent:
             self.parent.child_notify_changed(self)
 
-    def iteritems(self):
-        return iteritems(self.dic)
-
     def items(self):
-        return iteritems(self.dic)
+        return self.dic.items()
 
     def __iter__(self):
         return iter(self.dic)
@@ -259,7 +254,7 @@ class BibUserCacheDic(MutableMapping):
     def child_notify_changed(self, obj):
         # update cache validation tokens for this object
         if self.tokenchecker:
-            for key, val in iteritems(self.dic):
+            for key, val in self.dic.items():
                 if val is obj:
                     self.tokens[key] = self.tokenchecker.new_token(key=key, value=val)
                     # don't break, as it could be that the same object is pointed to by
@@ -347,7 +342,7 @@ class BibUserCacheList(MutableSequence):
 
 
 
-class BibUserCache(object):
+class BibUserCache:
     """
     The basic root cache object.
 
@@ -371,8 +366,8 @@ class BibUserCache(object):
 
     def setDefaultInvalidationTime(self, time_delta):
         """
-        A timedelta object giving the amount of time for which data in cache is consdered
-        valid (by default).
+        A timedelta object giving the amount of time for which data in cache is
+        consdered valid (by default).
         """
         self.expiry_checker.set_time_valid(time_delta)
 
@@ -390,14 +385,16 @@ class BibUserCache(object):
 
     def cacheExpirationTokenChecker(self):
         """
-        Returns a cache expiration token checker validator which is configured with the
-        default cache invalidation time.
+        Returns a cache expiration token checker validator which is configured with
+        the default cache invalidation time.
 
-        This object may be used by subclasses as a token checker for sub-caches that need
-        regular invalidation (typically several days in the default configuration).
+        This object may be used by subclasses as a token checker for sub-caches
+        that need regular invalidation (typically several days in the default
+        configuration).
 
-        Consider using though `installCacheExpirationChecker()`, which simply applies a
-        general validator to your full cache; this is generally what you might want.
+        Consider using though `installCacheExpirationChecker()`, which simply
+        applies a general validator to your full cache; this is generally what
+        you might want.
         """
         return self.expiry_checker
     
@@ -406,29 +403,29 @@ class BibUserCache(object):
         """
         Installs a cache expiration checker on the given cache.
 
-        This is a utility that is at the disposal of the cache accessors to easily set up
-        an expiration validator on their caches. Also, a single instance of an expiry
-        token checker (see `TokenCheckerDate`) is shared between the different sub-caches
-        and handled by this main cache object.
+        This is a utility that is at the disposal of the cache accessors to
+        easily set up an expiration validator on their caches. Also, a single
+        instance of an expiry token checker (see `TokenCheckerDate`) is shared
+        between the different sub-caches and handled by this main cache object.
 
-        The duration of the expiry is typically several days; because the token checker
-        instance is shared this cannot be changed easily nor should it be relied upon. If
-        you have custom needs or need more control over this, create your own token
-        checker.
+        The duration of the expiry is typically several days; because the token
+        checker instance is shared this cannot be changed easily nor should it
+        be relied upon. If you have custom needs or need more control over this,
+        create your own token checker.
 
-        Returns: the cache dictionary. This may have changed to a new empty object if the
-        cache didn't validate!
+        Returns: the cache dictionary. This may have changed to a new empty
+        object if the cache didn't validate!
 
-        WARNING: the cache dictionary may have been altered with the validation of the
-        cache! Use the return value of this function, or call
+        WARNING: the cache dictionary may have been altered with the validation
+        of the cache! Use the return value of this function, or call
         :py:meth:`BibUserCacheAccessor.cacheDic` again!
 
-        Note: this validation will not validate individual items in the cache dictionary,
-        but the dictionary as a whole. Depending on your use case, it might be worth
-        introducing per-entry validation. For that, check out the various token checkers
-        in :py:mod:`.tokencheckers` and call
-        :py:meth:`~core.bibusercache.BibUserCacheDic.set_validation` to install a
-        specific validator instance.
+        Note: this validation will not validate individual items in the cache
+        dictionary, but the dictionary as a whole. Depending on your use case,
+        it might be worth introducing per-entry validation. For that, check out
+        the various token checkers in :py:mod:`.tokencheckers` and call
+        :py:meth:`~core.bibusercache.BibUserCacheDic.set_validation` to install
+        a specific validator instance.
         """
         if not cache_name in self.cachedic:
             raise ValueError("Invalid cache name: %s"%(cache_name))
@@ -445,8 +442,8 @@ class BibUserCache(object):
 
     def hasCache(self):
         """
-        Returns `True` if we have any cache at all. This only returns `False` if there are
-        no cache dictionaries defined.
+        Returns `True` if we have any cache at all. This only returns `False` if
+        there are no cache dictionaries defined.
         """
         return bool(self.cachedic)
 
@@ -454,13 +451,13 @@ class BibUserCache(object):
         """
         Load the cache from a file-like object `cachefobj`.
 
-        This tries to unpickle the data and restore the cache. If the loading fails, e.g. 
-        because of an I/O error, the exception is logged but ignored, and an empty cache
-        is initialized.
+        This tries to unpickle the data and restore the cache. If the loading
+        fails, e.g.  because of an I/O error, the exception is logged but
+        ignored, and an empty cache is initialized.
 
-        Note that at this stage
-        only the basic validation is performed; the cache accessors should then each
-        initialize their own subcaches with possibly their own specialized validators.
+        Note that at this stage only the basic validation is performed; the
+        cache accessors should then each initialize their own subcaches with
+        possibly their own specialized validators.
         """
         try:
             data = pickle.load(cachefobj);
@@ -475,8 +472,8 @@ class BibUserCache(object):
 
     def saveCache(self, cachefobj):
         """
-        Saves the cache to the file-like object `cachefobj`. This dumps a pickle-d version
-        of the cache information into the stream.
+        Saves the cache to the file-like object `cachefobj`. This dumps a pickle-d
+        version of the cache information into the stream.
         """
 
         #
@@ -504,61 +501,67 @@ class BibUserCache(object):
 
 class BibUserCacheError(BibolamaziError):
     """
-    An exception which occurred when handling user caches. Usually, problems in the cache
-    are silently ignored, because the cache can usually be safely regenerated.
+    An exception which occurred when handling user caches. Usually, problems in
+    the cache are silently ignored, because the cache can usually be safely
+    regenerated.
 
-    However, if there is a serious error which prevents the cache from being regenerated,
-    for example, then this error should be raised.
+    However, if there is a serious error which prevents the cache from being
+    regenerated, for example, then this error should be raised.
     """
 
     def __init__(self, cache_name, message):
-        if not isinstance(cache_name, basestring):
+        if not isinstance(cache_name, str):
             cache_name = '<unknown>'
-        super(BibUserCacheError, self).__init__(u"Cache `"+cache_name+u"': "+unicodestr(message))
+        super().__init__("Cache ‘{}’: {}".format(cache_name, str(message)))
         self.cache_name = cache_name
         self.message = message
 
 
 
 
-class BibUserCacheAccessor(object):
+class BibUserCacheAccessor:
     """
     Base class for a cache accessor.
 
-    Filters should access the bibolamazi cache through a *cache accessor*. A cache
-    accessor organizes how the caches are used and maintained. This is needed since
-    several filters may want to access the same cache (e.g. fetched arXiv info from the
-    arxiv.org API), so it is necessary to abstract out the cache object and how it is
-    maintained out of the filter. This also avoids issues such as which filter is
-    responsible for creating/refreshing the cache, etc.
+    Filters should access the bibolamazi cache through a *cache accessor*. A
+    cache accessor organizes how the caches are used and maintained. This is
+    needed since several filters may want to access the same cache (e.g. fetched
+    arXiv info from the arxiv.org API), so it is necessary to abstract out the
+    cache object and how it is maintained out of the filter. This also avoids
+    issues such as which filter is responsible for creating/refreshing the
+    cache, etc.
 
     A unique accessor instance is attached to a particular cache name
-    (e.g. 'arxiv_info'). It is instantiated by the BibolamaziFile. It is instructed to
-    initialize the cache, possibly install token checkers, etc. at the beginning, before
-    running any filters. The accessor is free to handle the cache as it prefers--build it
-    right away, refresh it on demand only, etc.
+    (e.g. 'arxiv_info'). It is instantiated by the BibolamaziFile. It is
+    instructed to initialize the cache, possibly install token checkers, etc. at
+    the beginning, before running any filters. The accessor is free to handle
+    the cache as it prefers--build it right away, refresh it on demand only,
+    etc.
 
-    Filters access the cache by requesting an instance to the accessor. This is done by
-    calling :py:meth:`~core.bibolamazifile.BibolamaziFile.cacheAccessor()` (you can use
-    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile()` to get a pointer to the
-    `bibolamazifile` object.). Filters should declare in advance which caches they would
-    like to have access to by reimplementing the
+    Filters access the cache by requesting an instance to the accessor. This is
+    done by calling
+    :py:meth:`~core.bibolamazifile.BibolamaziFile.cacheAccessor()` (you can use
+    :py:meth:`~core.bibfilter.BibFilter.bibolamaziFile()` to get a pointer to
+    the `bibolamazifile` object.). Filters should declare in advance which
+    caches they would like to have access to by reimplementing the
     :py:meth:`~core.bibfilter.BibFilter.requested_cache_accessors` method.
 
-    Accessors are free to implement their public API how they deem it best. There is no
-    obligation or particular structure to follow. (Although `refreshCache()`,
-    `fetchMissingItems(list)`, or similar function names may be typical.)
+    Accessors are free to implement their public API how they deem it
+    best. There is no obligation or particular structure to follow. (Although
+    `refreshCache()`, `fetchMissingItems(list)`, or similar function names may
+    be typical.)
 
-    Cache accessor objects are instantiated by the bibolamazi file. Their constructors
-    should accept a keyword argument `bibolamazifile` and pass it on to the superclass
-    constructor. Constructors should also accept `**kwargs` for possible compatibility
-    with future additions and pass it on to the parent constructor. The `cache_name`
-    argument of this constructor should be a fixed string passed by the subclass,
-    identifying this cache (e.g. 'arxiv_info').
+    Cache accessor objects are instantiated by the bibolamazi file. Their
+    constructors should accept a keyword argument `bibolamazifile` and pass it
+    on to the superclass constructor. Constructors should also accept `**kwargs`
+    for possible compatibility with future additions and pass it on to the
+    parent constructor. The `cache_name` argument of this constructor should be
+    a fixed string passed by the subclass, identifying this cache
+    (e.g. 'arxiv_info').
     """
     
     def __init__(self, cache_name, bibolamazifile, **kwargs):
-        super(BibUserCacheAccessor, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._cache_name = cache_name
         self._bibolamazifile = bibolamazifile
         self._cache_obj = None

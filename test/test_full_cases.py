@@ -37,7 +37,7 @@ localtmpdir = '_tmpdir' # used if use_mkdtemp=False
 
 class FullCaseTester(object):
     def __init__(self):
-        super(FullCaseTester, self).__init__()
+        super().__init__()
 
 
     def _run_full_case_test(self, name):
@@ -96,7 +96,7 @@ class FullCaseTester(object):
 class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions):
 
     def __init__(self, *args, **kwargs):
-        super(TestFullCases, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.maxDiff = None
 

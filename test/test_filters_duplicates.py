@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-from __future__ import print_function, unicode_literals
 
 import unittest
 import logging
@@ -20,7 +18,7 @@ logger = logging.getLogger(__name__)
 class TestWorks(unittest.TestCase, CustomAssertions):
 
     def __init__(self, *args, **kwargs):
-        super(TestWorks, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.maxDiff = None
 

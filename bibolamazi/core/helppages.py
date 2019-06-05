@@ -26,15 +26,6 @@ bibolamazi. You're most probably not interested in this API. (Not mentioning tha
 change if I feel the need for it.)
 """
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-import sys
-PY2 = (sys.version_info[0] == 2)
-
 import re
 import os
 import sys
@@ -74,14 +65,7 @@ def run_pager(text):
     """
     Call `pydoc.pager()` in a unicode-safe way.
     """
-    if PY2:
-        import locale
-        encoding = locale.getpreferredencoding()
-        if not encoding:
-            encoding = "utf-8"
-        return pydoc.pager(text.encode(encoding, 'ignore'))
-    else:
-        return pydoc.pager(text)
+    return pydoc.pager(text)
 
 
 # helper for wrapping long lines -- used in other files
@@ -100,7 +84,7 @@ def forcewrap_long_lines(x, w=120):
 
 class HelpPageError(Exception):
     def __init__(self, msg):
-        super(HelpPageError, self).__init__()
+        super().__init__()
         self.msg = msg
 
     def logError(self):
@@ -116,7 +100,7 @@ class HelpPageError(Exception):
 # help pages system
 # ------------------------------------------------------------------------------
 
-class HelpTopicPage(object):
+class HelpTopicPage:
     def __init__(self, content_dict, title=None, desc=None, canonpath=None):
         """
         A help page about a given topic.
@@ -353,7 +337,7 @@ def _get_help_page_filter(pathitems, kwargs):
     try:
         filtinfo = filters_factory.FilterInfo(filtname, filterpath=filterpath)
     except Exception as e:
-        raise HelpPageError(unicodestr(e))
+        raise HelpPageError(str(e))
 
     canonpath = ('/' + '/'.join(kwargs['basepathitems']) + '/' + filtinfo.filtername + '?'
                  + urlencode([('filterpackage', filtinfo.filterpackagespec)]))
@@ -575,7 +559,7 @@ def _get_help_page_filters(pathitems, kwargs):
 
     filterpath = filters_factory.filterpath
 
-    for (fp,fplist) in iteritems(filters_factory.detect_filter_package_listings(filterpath=filterpath)):
+    for (fp,fplist) in filters_factory.detect_filter_package_listings(filterpath=filterpath).items():
         fdata.append({
             'fp': fp,
             'filterinfolist': sorted(fplist, key=lambda x: x.filtername)
@@ -666,7 +650,7 @@ def cmdl_show_help(path, **kwargs):
     try:
         page = get_help_page(path, **kwargs)
     except Exception as e:
-        logger.error('%s', unicodestr(e))
+        logger.error('%s', str(e))
         return
 
     fmt = os.environ.get('BIBOLAMAZI_HELP_FORMAT', 'txt')

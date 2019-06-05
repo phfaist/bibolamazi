@@ -21,12 +21,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import re
 from collections import namedtuple
@@ -54,7 +48,7 @@ rxstring2 = re.compile(_rx_not_odd_num_backslashes+r"(?P<str>\'[^']*\')", re.MUL
 
 class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
-        super(BibolamaziConfigSyntaxHighlighter, self).__init__(parent)
+        super().__init__(parent)
 
         self.fmt_src = QTextCharFormat()
         self.fmt_src.setFontWeight(QFont.Bold)

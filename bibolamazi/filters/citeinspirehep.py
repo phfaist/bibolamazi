@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import re
 import os
@@ -62,7 +56,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
     Inspire-HEP API.
     """
     def __init__(self, **kwargs):
-        super(InspireHEPFetchedAPIInfoCacheAccessor, self).__init__(
+        super().__init__(
             cache_name='inspirehep_fetched_api_info',
             **kwargs
             )
@@ -353,7 +347,7 @@ class CiteInspireHEPFilter(BibFilter):
               e.g. 'path/to/dir1,path/to/dir2'
         """
 
-        super(CiteInspireHEPFilter, self).__init__()
+        super().__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -432,7 +426,7 @@ class CiteInspireHEPFilter(BibFilter):
             # parse bibtex
             parser = inputbibtex.Parser()
             new_bib_data = None
-            with io.StringIO(unicodestr(dat['bibtex'])) as stream:
+            with io.StringIO(str(dat['bibtex'])) as stream:
                 new_bib_data = parser.parse_stream(stream)
             
             # and add them to the main list

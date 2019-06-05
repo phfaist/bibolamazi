@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import re
@@ -250,7 +244,7 @@ class NoteFmtStrSubFormatter(object):
 def _add_dflt_notestrfmt_keywords(efmt):
     efmt.addKeywords(dict([
         (k, NoteFmtStrSubFormatter(efmt, f))
-        for k, f in iteritems(_default_notestring_fmts)
+        for k, f in _default_notestring_fmts.items()
         ]))
 
 
@@ -318,7 +312,7 @@ class ArxivNormalizeFilter(BibFilter):
                    -sNoteString and -sNoteStringFmt.
         """
         
-        super(ArxivNormalizeFilter, self).__init__()
+        super().__init__()
 
         self.mode = Mode(mode)
         self.unpublished_mode = (Mode(unpublished_mode) if unpublished_mode is not None
@@ -455,11 +449,11 @@ class ArxivNormalizeFilter(BibFilter):
                 entry.fields['primaryclass'] = arxivinfo['primaryclass']
 
 
-        origentryfields = CaseInsensitiveDict(iteritems(entry.fields))
+        origentryfields = CaseInsensitiveDict(entry.fields.items())
 
         def add_note(entry, arxivinfo):
             if (self.note_string):
-                d = CaseInsensitiveDict(iteritems(origentryfields))
+                d = CaseInsensitiveDict(origentryfields.items())
                 d.update(arxivinfo)
                 note = self.note_string % TolerantReplacer(d)
             elif (self.note_string_fmt):
@@ -470,7 +464,7 @@ class ArxivNormalizeFilter(BibFilter):
                     note = efmt.format(self.note_string_fmt)
                 except ValueError as e:
                     logger.debug("Got ValueError while trying to format entry, most probably wrong format: %s",
-                                 unicodestr(e))
+                                 str(e))
                     raise BibFilterError('arXiv', "Invalid format for -sNoteStringFmt: %s"%(self.note_string_fmt))
 
             if ('note' in entry.fields and entry.fields['note'].strip()):

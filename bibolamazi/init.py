@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -33,50 +34,18 @@ about importing it first.
 
 
 import sys
-
-if sys.hexversion < 0x02070000:
-    sys.stderr.write("FATAL ERROR: Python 2.7 or later is required to run bibolamazi.\n")
-    sys.exit(254);
-
 import re
-import os.path
-#import importlib
 
 
-# subfolders of 3rdparty/ which we add to sys.path
+if sys.version_info < (3, 4):
+    raise RuntimeError("FATAL ERROR: Bibolamazi requires Python >= 3.4")
+
+
 #
-# ### We no longer ship the 3rd party libs. They are all available in pip!
-#
-#third_party = [
-#    'pybtex',
-#    'arxiv2bib',
-#    'pylatexenc',
-#]
-
-# This base dir of bibolamazi
-base_dir = os.path.dirname(__file__)
-
-
-
-
 # add the LONGDEBUG level, and set our custom logger class
-# --------------------------------------------------------
+#
 from .core import blogger as _blogger
 
-
-
-
-# # setup python path correctly.
-# # ----------------------------
-# for mod in third_party:
-#     # this should be done in the 'bibolamazi' script only, as last resort.
-#     #try:
-#     importlib.import_module(mod)
-#     #    continue
-#     #except ImportError:
-#     #    # no such package--attempt to use pre-packaged version
-#     #    sys.path += [os.path.abspath(os.path.join(base_dir, '..', '3rdparty', mod))]
-#     #    importlib.import_module(mod)
 
 
 #
@@ -132,8 +101,8 @@ _pybtex_database_output_bibtex.Writer._encode = lambda self, text: text # do not
 
 
 #
-# Patch for pybtex. Add __delitem__ to a OrderedCaseInsensitiveDict so that we can erase
-# fields in entry.fields
+# Patch for pybtex. Add __delitem__ to a OrderedCaseInsensitiveDict so that we
+# can erase fields in entry.fields
 #
 import pybtex.utils as _pybtex_utils
 def _OrderedCaseInsensitiveDict_delitem(self, key):

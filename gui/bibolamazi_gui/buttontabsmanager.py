@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,17 +20,7 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 import sys
-def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
-def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
-from imp import reload
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -44,7 +33,7 @@ from .uiutils import ContextAttributeSetter
 
 class ButtonTabsManager(QObject):
     def __init__(self, container, parent=None):
-        super(ButtonTabsManager, self).__init__()
+        super().__init__()
     
         self.container = container
         self.buttons = []

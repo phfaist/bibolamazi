@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import re
 import os
@@ -71,7 +62,7 @@ def sanitize_bib_rel_path(fname, ref_dir=None):
 
 class SourceListEditor(QWidget):
     def __init__(self, parent):
-        super(SourceListEditor, self).__init__(parent)
+        super().__init__(parent)
 
         self.ui = Ui_SourceListEditor()
         self.ui.setupUi(self)

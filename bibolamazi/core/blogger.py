@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -33,17 +34,9 @@ This allows for the user to be rather specific about which type of messages
 she/he would like to see.
 """
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
 from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen
 from urllib.error import HTTPError
-def tounicodeutf8(x): return x if isinstance(x, unicodestr) else x.decode('utf-8')
 
 
 import os
@@ -54,10 +47,9 @@ import logging
 # NOTE: This file is imported from bibolamazi.init! DO NOT IMPORT ANY OTHER
 # BIBOLAMAZI MODULES!
 #
-# IMPORTANT: DO NOT IMPORT ANY PYBTEX MODULES! They still need to be monkey-patched.
+# IMPORTANT: DO NOT IMPORT ANY PYBTEX MODULES! They still need to be patched.
 #
 #import bibolamazi.init
-
 
 
 # ------------------------------------------------------------------------------
@@ -66,7 +58,7 @@ import logging
 
 # note: DEBUG=10, INFO=20, WARNING=30 etc.
 LONGDEBUG = 5
-logging.addLevelName(LONGDEBUG, "LONGDEBUG");
+logging.addLevelName(LONGDEBUG, "LONGDEBUG")
 
 
 
@@ -129,7 +121,7 @@ class BibolamaziConsoleFormatter(logging.Formatter):
     def __init__(self, ttycolors=False, show_pos_info_level=None, **kwargs):
         self.ttycolors = ttycolors
         self.show_pos_info_level = show_pos_info_level
-        return logging.Formatter.__init__(self, **kwargs)
+        return super().__init__(**kwargs)
 
     def setShowPosInfoLevel(self, level):
         self.show_pos_info_level = level
@@ -247,15 +239,15 @@ class ConditionalFormatter(logging.Formatter):
     """
     
     def __init__(self, defaultfmt=None, datefmt=None, **kwargs):
-        self.default_format = defaultfmt;
-        self.special_formats = kwargs;
-        return logging.Formatter.__init__(self, defaultfmt, datefmt);
+        self.default_format = defaultfmt
+        self.special_formats = kwargs
+        return logging.Formatter.__init__(self, defaultfmt, datefmt)
 
 
     def format(self, record):
         if (record.levelname in self.special_formats):
-            return self.do_format(record, self.special_formats[record.levelname]);
-        return self.do_format(record, self.default_format);
+            return self.do_format(record, self.special_formats[record.levelname])
+        return self.do_format(record, self.default_format)
     
     def do_format(self, record, fmt):
         #
@@ -265,7 +257,7 @@ class ConditionalFormatter(logging.Formatter):
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
 
-        u = dict([(k,v) for k,v in iteritems(record.__dict__)])
+        u = dict([(k,v) for k,v in record.__dict__.items()])
         msg = record.message
         if callable(fmt):
             u['message'] = msg
@@ -286,17 +278,7 @@ class ConditionalFormatter(logging.Formatter):
         if record.exc_text:
             if s[-1:] != "\n":
                 s = s + "\n"
-            try:
-                s = s + record.exc_text
-            except UnicodeError:
-                # Sometimes filenames have non-ASCII chars, which can lead
-                # to errors when s is Unicode and record.exc_text is str
-                # See issue 8924.
-                # We also use replace for when there are multiple
-                # encodings, e.g. UTF-8 for the filesystem and latin-1
-                # for a script. See issue 13232.
-                s = s + record.exc_text.decode(sys.getfilesystemencoding(),
-                                               'replace')
+            s = s + record.exc_text
         return s
 
 
@@ -305,7 +287,7 @@ class ConditionalFormatter(logging.Formatter):
 
 # DEBUG/LOGGING
 # create logger
-logger = logging.getLogger('bibolamazi.old_logger');
+logger = logging.getLogger('bibolamazi.old_logger')
 """
 (OBSOLETE) The main logger object. This is a :py:class:`logging.Logger` object.
 

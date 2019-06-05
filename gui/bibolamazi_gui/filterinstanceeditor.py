@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -20,15 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
 
 import os
 import os.path
@@ -155,7 +145,7 @@ class RegisteredArgInputType:
 
 class DefaultFilterOptionsModel(QAbstractTableModel):
     def __init__(self, filterpathobj, parent=None):
-        super(DefaultFilterOptionsModel, self).__init__(parent)
+        super().__init__(parent)
         self._filterpathobj = filterpathobj
         self._filtername = None
         self._finfo = None
@@ -243,7 +233,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
                            "filter options for this filter")
             return None
 
-        optionstring = str(optionstring);
+        optionstring = str(optionstring)
 
         # don't reset source list if it's the same. In particular, don't emit the changed signal.
         if (not force and optionstring == self._optionstring and self._optionstring_error is None):
@@ -578,17 +568,17 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
 class DefaultFilterOptionsDelegate(QStyledItemDelegate):
     def __init__(self, parentView=None):
-        super(DefaultFilterOptionsDelegate, self).__init__(parentView)
+        super().__init__(parentView)
         self._view = parentView
 
 
     def sizeHint(self, option, index):
         # add vertical spacing
-        return super(DefaultFilterOptionsDelegate, self).sizeHint(option, index) + QSize(0,6)
+        return super().sizeHint(option, index) + QSize(0,6)
 
     def createEditor(self, parent, option, index):
         if (index.column() != 1):
-            return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
+            return super().createEditor(parent, option, index)
         
         data = index.data(Qt.EditRole)
         if (isinstance(data, RegisteredArgInputType)):
@@ -598,7 +588,7 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
             w.setProperty('_RegisteredArgInputType', data)
             return w
         
-        return super(DefaultFilterOptionsDelegate, self).createEditor(parent, option, index)
+        return super().createEditor(parent, option, index)
     
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
@@ -606,14 +596,14 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
     def setEditorData(self, editor, index):
         rr = editor.property('_RegisteredArgInputType')
         if rr is None:
-            return super(DefaultFilterOptionsDelegate, self).setEditorData(editor, index)
+            return super().setEditorData(editor, index)
         
         rr.setEditorData(editor) # the value is already contained in the rr object
 
     def setModelData(self, editor, model, index):
         rr = editor.property('_RegisteredArgInputType')
         if rr is None:
-            return super(DefaultFilterOptionsDelegate, self).setModelData(editor, model, index)
+            return super().setModelData(editor, model, index)
         
         val = rr.valueOf(editor)
 
@@ -630,7 +620,7 @@ class DefaultFilterOptionsDelegate(QStyledItemDelegate):
 
 class FilterInstanceEditor(QWidget):
     def __init__(self, parent):
-        super(FilterInstanceEditor, self).__init__(parent)
+        super().__init__(parent)
 
         self._is_updating = True
 
@@ -790,7 +780,7 @@ class FilterInstanceEditor(QWidget):
 
         self.ui.lstOptions.setColumnWidth(0, self.ui.lstOptions.width()/3)
 
-        return super(FilterInstanceEditor, self).showEvent(event)
+        return super().showEvent(event)
 
     
     @pyqtSlot('QModelIndex', 'QModelIndex')

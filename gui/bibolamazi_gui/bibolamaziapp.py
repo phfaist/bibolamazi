@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
 
 ################################################################################
@@ -21,14 +22,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 
 import sys
@@ -80,7 +73,7 @@ DEFAULT_MAX_RECENT_FILES = 10
 
 class RecentFilesList(QObject):
     def __init__(self, parent):
-        super(RecentFilesList,self).__init__(parent)
+        super().__init__(parent)
         self.max_recent_files = DEFAULT_MAX_RECENT_FILES
         self.files = []
 
@@ -145,7 +138,7 @@ class RecentFilesList(QObject):
 
 class BibolamaziApplication(QApplication):
     def __init__(self, argv):
-        super(BibolamaziApplication, self).__init__(argv)
+        super().__init__(argv)
         
         self.setWindowIcon(QIcon(':/pic/bibolamazi_icon.png'))
         self.setApplicationName('Bibolamazi')
@@ -432,7 +425,7 @@ class BibolamaziApplication(QApplication):
             event.ignore()
             return True
             
-        return super(BibolamaziApplication, self).event(event)
+        return super().event(event)
 
 
 
@@ -490,7 +483,7 @@ class BibolamaziApplication(QApplication):
 #
 class AppPackageProviderManager(pkgprovider.PackageProviderManager):
     def __init__(self):
-        super(AppPackageProviderManager, self).__init__()
+        super().__init__()
         settings = QSettings()
         settings.beginGroup('RemoteFilterPackages')
         self.prompted_for_remote = settings.value('PromptedForRemote', False)

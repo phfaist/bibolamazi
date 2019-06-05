@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -22,13 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 import logging
 
 from PyQt5.QtCore import *
@@ -45,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class SearchWidget(QWidget):
     def __init__(self, parent):
-        super(SearchWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.u = Ui_SearchWidget()
         self.u.setupUi(self)
@@ -80,7 +71,7 @@ class SearchWidget(QWidget):
                     self.findPrev.emit()
                     return True
 
-        return super(SearchWidget, self).eventFilter(object, event)
+        return super().eventFilter(object, event)
         
 
 
@@ -126,7 +117,7 @@ class SearchWidget(QWidget):
 
 class SearchTextEditManager(QObject):
     def __init__(self, searchwidget, textedit):
-        super(SearchTextEditManager, self).__init__()
+        super().__init__()
 
         self.textedit = textedit
         self.textedit.installEventFilter(self)
@@ -177,7 +168,7 @@ class SearchTextEditManager(QObject):
                     self.findPrev()
                     return True
 
-        return super(SearchTextEditManager, self).eventFilter(object, event)
+        return super().eventFilter(object, event)
 
     @pyqtSlot()
     @pyqtSlot(str)

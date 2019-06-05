@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -24,5 +25,3 @@
 # don't allow the use of "from filters import *" -- it's time consuming to detect all filters; so
 # detect the filters only when needed, when calling `detect_filters()`
 __all__ = []
-
-

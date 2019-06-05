@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -22,13 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -49,7 +40,7 @@ ROLE_ARGNAME = Qt.UserRole + 138
 
 class OverListButtonWidgetBase(QWidget):
     def __init__(self, itemview):
-        super(OverListButtonWidgetBase, self).__init__(itemview.viewport())
+        super().__init__(itemview.viewport())
         self.hide()
 
         self._view = itemview
@@ -76,7 +67,7 @@ class OverListButtonWidgetBase(QWidget):
             if (event.type() == QEvent.Leave):
                 self.updateDisplay(False)
 
-        return super(OverListButtonWidgetBase, self).eventFilter(obj, event)
+        return super().eventFilter(obj, event)
 
     @pyqtSlot()
     def updateDisplay(self, pos=None):
@@ -123,7 +114,7 @@ class OverListButtonWidgetBase(QWidget):
 
 class OverListButtonWidget(OverListButtonWidgetBase):
     def __init__(self, itemview):
-        super(OverListButtonWidget, self).__init__(itemview)
+        super().__init__(itemview)
 
         self.ui = Ui_OverListButtonWidget()
         self.ui.setupUi(self)

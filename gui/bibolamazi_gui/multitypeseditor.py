@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,15 +20,7 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 import logging
-
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -40,11 +31,9 @@ from PyQt5.QtWidgets import *
 logger = logging.getLogger(__name__)
 
 
-
-
 class MultiTypesEditorWidget(QWidget):
     def __init__(self, multitypesargtype, parent):
-        super(MultiTypesEditorWidget, self).__init__(parent)
+        super().__init__(parent)
 
         from .filterinstanceeditor import RegisteredArgInputType
 

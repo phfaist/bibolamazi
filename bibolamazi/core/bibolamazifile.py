@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -24,30 +25,19 @@ The Main bibolamazifile module: this contains the :py:class:`BibolamaziFile` cla
 definition.
 """
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
-from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen
-from urllib.error import HTTPError
-def tounicodeutf8(x): return x if isinstance(x, unicodestr) else x.decode('utf-8')
 
 import re
 import io
 import sys
 import os
 import os.path
+from datetime import datetime
 import codecs
 import shlex
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-from datetime import datetime
+from urllib.parse import urlparse, urlencode
+from urllib.request import urlopen
+from urllib.error import HTTPError
+import pickle
 import logging
 
 import bibolamazi.init
@@ -74,7 +64,7 @@ class BibolamaziFileParseError(BibolamaziError):
             if (lineno is not None):
                 where += ", line %d" %(lineno)
                 
-        super(BibolamaziFileParseError, self).__init__(msg, where=where)
+        super().__init__(msg, where=where)
 
 
 class NotBibolamaziFileError(BibolamaziFileParseError):
@@ -83,11 +73,11 @@ class NotBibolamaziFileError(BibolamaziFileParseError):
     file---most probably, it does not contain a valid configuration section.
     """
     def __init__(self, msg, fname=None, lineno=None):
-        super(NotBibolamaziFileError, self).__init__(msg=msg, fname=fname, lineno=lineno)
+        super().__init__(msg=msg, fname=fname, lineno=lineno)
 
 class BibolamaziBibtexSourceError(BibolamaziError):
     def __init__(self, msg, fname=None):
-        super(BibolamaziBibtexSourceError, self).__init__(msg, where=fname)
+        super().__init__(msg, where=fname)
 
 
 class BibFilterInternalError(BibolamaziError):
@@ -95,12 +85,12 @@ class BibFilterInternalError(BibolamaziError):
         self.filtername = filtername
         self.filter_exc = filter_exc
         self.tbmsg = tbmsg
-        msg = "Internal filter error in `%s': %s\n\n%s" % (filtername, unicodestr(filter_exc), tbmsg)
-        super(BibFilterInternalError, self).__init__(msg)
+        msg = "Internal filter error in `%s': %s\n\n%s" % (filtername, str(filter_exc), tbmsg)
+        super().__init__(msg)
 
         
 def _repl(s, dic):
-    for (k,v) in iteritems(dic):
+    for (k,v) in dic.items():
         s = re.sub(k, v, s)
     return s
 
@@ -145,6 +135,7 @@ class BibolamaziFileCmd:
         self.lineno = lineno
         self.linenoend = linenoend
         self.info = info
+        super().__init__()
 
     def __repr__(self):
         return ("%s(" %(self.__class__.__name__)   +
@@ -222,7 +213,7 @@ BIBOLAMAZIFILE_COMMANDS = ['src', 'package', 'filter']
 
 
 
-class BibolamaziFile(object):
+class BibolamaziFile:
     """
     Represents a Bibolamazi file.
 
@@ -379,7 +370,7 @@ class BibolamaziFile(object):
                     logger.longdebug("File "+repr(self._fname)+" opened.")
                     self._read_config_stream(f, self._fname)
             except IOError as e:
-                raise BibolamaziError("Can't open file `%s': %s"%(self._fname, unicodestr(e)))
+                raise BibolamaziError("Can't open file `%s': %s"%(self._fname, str(e)))
 
         if (to_state >= BIBOLAMAZIFILE_PARSED  and  self._load_state < BIBOLAMAZIFILE_PARSED):
             self._parse_config()
@@ -654,7 +645,7 @@ class BibolamaziFile(object):
         directly calls :py:meth:`setRawConfig()`.
         """
         # prefix every line by a percent sign.
-        config_block = re.sub(r'^', u'% ', unicodestr(configdata), flags=re.MULTILINE)
+        config_block = re.sub(r'^', u'% ', str(configdata), flags=re.MULTILINE)
 
         # force ending in '\n' (but don't duplicate existing '\n')
         if (not len(config_block) or config_block[-1] != u'\n'):
@@ -683,7 +674,7 @@ class BibolamaziFile(object):
         if (self._load_state < BIBOLAMAZIFILE_READ):
             raise BibolamaziError("Can only setConfigSection() if we have read a file already!")
 
-        configblock = unicodestr(configblock)
+        configblock = str(configblock)
         self._config = configblock
         self._config_data = self._config_data_from_block(configblock)
         # in case we were in a more advanced state, reset to READ state, because config has changed.
@@ -754,7 +745,7 @@ class BibolamaziFile(object):
 
         data_lines = []
         
-        sio = io.StringIO(unicodestr(inputconfigdata))
+        sio = io.StringIO(str(inputconfigdata))
         is_first = True
         for line in sio:
             if (is_first):
@@ -792,7 +783,7 @@ class BibolamaziFile(object):
 
         for line in stream:
             lineno += 1
-            line = unicodestr(line)
+            line = str(line)
             
             if (state == ST_HEADER and line.startswith(CONFIG_BEGIN_TAG)):
                 state = ST_CONFIG
@@ -846,7 +837,7 @@ class BibolamaziFile(object):
     def _parse_config(self):
         # now, parse the configuration.
         self._config_data = self._config_data_from_block(self._config)
-        configstream = io.StringIO(unicodestr(self._config_data))
+        configstream = io.StringIO(str(self._config_data))
         cmds = []
         emptycmd = BibolamaziFileCmd(cmd=None, text="", lineno=-1, linenoend=-1, info={})
         latestcmd = emptycmd
@@ -926,7 +917,7 @@ class BibolamaziFile(object):
                 try:
                     thesrc_list = shlex.split(cmd.text)
                 except ValueError as e:
-                    self._raise_parse_error("Syntax error in source list: %s"%(unicodestr(e)),
+                    self._raise_parse_error("Syntax error in source list: %s"%(str(e)),
                                             lineno=cmd.linenoend)
                 self._source_lists.append(thesrc_list)
                 self._sources.append('') # this will be set later to which source in the
@@ -958,13 +949,13 @@ class BibolamaziFile(object):
                     filterinstance = self.instantiateFilter(filname, filoptions, filterpath=full_filter_path)
                     self._filters.append(filterinstance)
                 except factory.NoSuchFilter as e:
-                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
+                    self._raise_parse_error(str(e), lineno=cmd.lineno)
                 except factory.NoSuchFilterPackage as e:
-                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
+                    self._raise_parse_error(str(e), lineno=cmd.lineno)
                 except factory.FilterError as e:
                     import traceback
-                    logger.debug("FilterError:\n" + tounicodeutf8(traceback.format_exc()))
-                    self._raise_parse_error(unicodestr(e), lineno=cmd.lineno)
+                    logger.debug("FilterError:\n" + traceback.format_exc())
+                    self._raise_parse_error(str(e), lineno=cmd.lineno)
 
                 self.registerFilterInstance(filterinstance)
                         
@@ -1016,7 +1007,7 @@ class BibolamaziFile(object):
                     raise BibolamaziError(
                         (u"Error in cache %s: Exception while instantiating the class:\n"
                          u"%s: %s")
-                        %( req_cache.__name__, e.__class__.__name__, unicodestr(e) )
+                        %( req_cache.__name__, e.__class__.__name__, str(e) )
                         )
 
         # if we are already in a LOADED state, then make sure that any new cache
@@ -1140,7 +1131,7 @@ class BibolamaziFile(object):
                 except Exception as e:
                     # We don't skip to next source, because we've encountered an error in the
                     # BibTeX data itself: the file itself was properly found. So raise an error.
-                    raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
+                    raise BibolamaziBibtexSourceError(str(e), fname=src)
 
             if (self._bibliographydata is None):
                 # initialize bibliography data
@@ -1148,7 +1139,7 @@ class BibolamaziFile(object):
 
             numconflictingkeys = 0
 
-            for key, entry in iteritems(bib_data.entries):
+            for key, entry in bib_data.entries.items():
                 if (key in self._bibliographydata.entries):
                     oldkey = key
                     n = 0
@@ -1165,7 +1156,7 @@ class BibolamaziFile(object):
         except pybtex.database.BibliographyDataError as e:
             # We don't skip to next source, because we've encountered an error in the
             # BibTeX data itself: the file itself was properly found. So raise an error.
-            raise BibolamaziBibtexSourceError(unicodestr(e), fname=src)
+            raise BibolamaziBibtexSourceError(str(e), fname=src)
 
         return (True, numconflictingkeys)
 
@@ -1178,7 +1169,7 @@ class BibolamaziFile(object):
         state.
         """
 
-        for (cacheaccessor, cacheaccessorinstance) in iteritems(self._cache_accessors):
+        for (cacheaccessor, cacheaccessorinstance) in self._cache_accessors.items():
             if hasattr(cacheaccessorinstance, '_bibolamazifile__initialized'):
                 continue
             #
@@ -1276,10 +1267,11 @@ class BibolamaziFile(object):
 
                 bibdata = self.bibliographyData()
 
-                for (k, entry) in iteritems(bibdata.entries):
+                for (k, entry) in bibdata.entries.items():
                     filter_instance.filter_bibentry(entry)
 
-                logger.debug('filter '+filter_instance.name()+' filtered each of the the bibentries one by one.');
+                logger.debug('filter '+filter_instance.name()+' filtered each of the the '
+                             'bibentries one by one.')
                 return
 
             raise ValueError("Bad value for BibFilter.action(): "+repr(action))
@@ -1386,7 +1378,7 @@ class BibolamaziFile(object):
                 #
                 # So if any filters changed entry.type, reflect that in
                 # entry.original_type.
-                for key, entry in iteritems(self._bibliographydata.entries):
+                for key, entry in self._bibliographydata.entries.items():
                     entry.original_type = entry.type
 
                 #

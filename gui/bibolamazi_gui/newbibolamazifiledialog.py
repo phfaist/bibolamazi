@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -21,13 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
 
 import sys
 import os
@@ -58,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 class NewBibolamazifileDialog(QDialog):
     def __init__(self, parent=None):
-        super(NewBibolamazifileDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.ui = Ui_NewBibolamazifileDialog()
         self.ui.setupUi(self)

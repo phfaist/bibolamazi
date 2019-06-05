@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,19 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
-import sys
-def to_native_str(x): return x.encode('utf-8') if sys.version_info[0] <= 2 else x
-def from_native_str(x): return x.decode('utf-8') if sys.version_info[0] <= 2 else x
-
 
 import sys
 import importlib
@@ -80,8 +68,8 @@ class NoSuchFilter(Exception):
     :py:class:`FilterInfo`.
     """
     def __init__(self, fname, errorstr=None):
-        super(NoSuchFilter, self).__init__("No such filter or import error: "+fname+
-                                           (": "+errorstr if errorstr else ""))
+        super().__init__("No such filter or import error: "+fname+
+                         (": "+errorstr if errorstr else ""))
 
 class ModuleNotAValidFilter(NoSuchFilter):
     """
@@ -89,7 +77,7 @@ class ModuleNotAValidFilter(NoSuchFilter):
     See also :py:class:`FilterInfo`.
     """
     def __init__(self, fname, errorstr=None):
-        super(ModuleNotAValidFilter, self).__init__(fname, errorstr)
+        super().__init__(fname, errorstr)
 
 class NoSuchFilterPackage(Exception):
     """
@@ -97,12 +85,11 @@ class NoSuchFilterPackage(Exception):
     :py:class:`FilterInfo`.
     """
     def __init__(self, fpname, errorstr="No such filter package", fpdir=None):
-        super(NoSuchFilterPackage, self).__init__("No such filter package or import error: `"+ fpname + "'"
-                                                  + (" (dir=`%s')"%(fpdir) if fpdir is not None else "")
-                                                  + (": "+errorstr if errorstr else ""))
+        super().__init__("No such filter package or import error: ‘"+ fpname + "’"
+                         + (" (dir=‘%s’)"%(fpdir) if fpdir is not None else "")
+                         + (": "+errorstr if errorstr else ""))
         
 
-@python_2_unicode_compatible
 class FilterError(Exception):
     """
     Signifies that there was some error in creating or instanciating the filter, or that
@@ -117,7 +104,7 @@ class FilterError(Exception):
     def __init__(self, errorstr, name=None):
         self.name = name
         self.errorstr = errorstr
-        super(FilterError, self).__init__(unicodestr(self))
+        super().__init__(str(self))
 
     def setName(self, name):
         self.name = name
@@ -126,7 +113,7 @@ class FilterError(Exception):
         return "Filter %s: %s" %(name, self.errorstr)
 
     def __str__(self):
-        name = ( "`%s'" %(self.name) if self.name else "<unknown>" )
+        name = ( "‘%s’" %(self.name) if self.name else "<unknown>" )
         return self.fmt(name)
     
 
@@ -144,7 +131,7 @@ class FilterOptionsParseErrorHintSInstead(FilterOptionsParseError):
     instead of ``-dOption=Value``.
     """
     def fmt(self, name):
-        return (super(FilterOptionsParseErrorHintSInstead, self).fmt(name)
+        return (super().fmt(name)
                 + " (was -sKEY=VAL meant instead of -dKEY=VAL?)")
 
 
@@ -177,7 +164,7 @@ class PrependOrderedDict(OrderedDict):
     """
     def __init__(self, *args, **kwargs):
         self.isupdating = False
-        super(PrependOrderedDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         
     def __setitem__(self, key, value):
         if self.isupdating:
@@ -280,7 +267,7 @@ instance and storing it here.
 """
 
 
-class FilterPackageSpec(object):
+class FilterPackageSpec:
     """
     Stores a filter package specification, and provides a convenient API to
     download remote packages.
@@ -307,7 +294,7 @@ class FilterPackageSpec(object):
        Added FilterPackageSpec class.
     """
     def __init__(self, a, b=None):
-        super(FilterPackageSpec, self).__init__()
+        super().__init__()
         
         if not a:
             raise BibolamaziError("Invalid filter package: No filter package specified")
@@ -468,12 +455,12 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
                 # warning. This is really useful for filter developers.
                 logger.warning("Failed to import module `%s' from package %s%s:\n ! %s: %s%s\n",
                                name, fpn, dirstradd(fpd), e.__class__.__name__,
-                               unicodestr(e), fmt_exc)
+                               str(e), fmt_exc)
             # and log the error for if, at the end, filter loading failed everywhere:
             # useful as additional information for debugging.
             import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
                                  %(name, fpn, dirstradd(fpd), exctypestr,
-                                   unicodestr(e)))
+                                   str(e)))
             
         # first, search the actual module.
         oldsyspath = sys.path
@@ -488,8 +475,8 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
         #     exc_type, exc_value, tb_root = sys.exc_info()
         #
         #     logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-        #                  name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
-        #                  unicodestr(exc_value))
+        #                  name, fpn, dirstradd(fpd), str(exc_type.__name__),
+        #                  str(exc_value))
         #     logger.debug("sys.path was: %r", sys.path)
         #
         #     deal_with_import_error(import_errors=import_errors, name=name, fpn=fpn,
@@ -501,8 +488,8 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             exc_type, exc_value, tb_root = sys.exc_info()
 
             logger.debug("Failed to import module `%s' from package %s%s: %s: %s",
-                         name, fpn, dirstradd(fpd), unicodestr(exc_type.__name__),
-                         unicodestr(exc_value))
+                         name, fpn, dirstradd(fpd), str(exc_type.__name__),
+                         str(exc_value))
             logger.debug("sys.path was: %r", sys.path)
 
             caused_by_module = True
@@ -559,7 +546,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
             raise NoSuchFilterPackage(fpkgname, fpdir=None)
 
         # already open? Note: only look in those packages in our filterpath
-        for fpkgd in (fd for fn,fd in iteritems(filterpath) if fn == fpkgname):
+        for fpkgd in (fd for fn,fd in filterpath.items() if fn == fpkgname):
             if (fpkgname,fpkgd) in _filter_modules and name in _filter_modules[(fpkgname,fpkgd)]:
                 return _filter_modules[(fpkgname,fpkgd)][name]
 
@@ -583,7 +570,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
     # load the filter from any filter package, or from cache.
 
     # already open? Note: only look in those packages in our filterpath
-    for fpkgn,fpkgd in iteritems(filterpath):
+    for fpkgn,fpkgd in filterpath.items():
         if (fpkgn,fpkgd) in _filter_modules and name in _filter_modules[(fpkgn,fpkgd)]:
             return _filter_modules[(fpkgn,fpkgd)][name]
 
@@ -687,7 +674,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
     if not _filter_package_listings or force_redetect:
         _filter_package_listings = OrderedDict()
 
-    for (fpkgname, fpkgdir) in iteritems(filterpath):
+    for (fpkgname, fpkgdir) in filterpath.items():
 
         if (fpkgname,fpkgdir) in _filter_package_listings:
             # don't need to re-detect. (If force_redetect was set, then we have
@@ -701,7 +688,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
             try:
                 fpkgmod = importlib.import_module(fpkgname)
             except ImportError as e:
-                logger.warning("Can't import package %s for detecting filters: %s", fpkgname, unicodestr(e))
+                logger.warning("Can't import package %s for detecting filters: %s", fpkgname, str(e))
                 continue
 
             if fpkgmod is not None:
@@ -715,7 +702,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
                 _filter_package_listings[(fpkgname,None)] = []
 
             logger.longdebug("Loading precompiled filters from package %s...", fpkgname)
-            for (fname,fmod) in iteritems(_filter_precompiled_cache[fpkgname]):
+            for (fname,fmod) in _filter_precompiled_cache[fpkgname].items():
                 logger.longdebug("\tfname=%s, fmod=%r", fname, fmod)
                 try:
                     finfo = FilterInfo.initFromModuleObject(fname, fmod, fpkgname=fpkgname, fpkgdir=None)
@@ -731,7 +718,7 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
     # now, return a nicer OrderedDict with filter names instead of full fpkgspec
     # keys, keeping only those packages that are accessible in filterpath.
     listing = OrderedDict()
-    for (fpkgname, fpkgdir) in iteritems(filterpath):
+    for (fpkgname, fpkgdir) in filterpath.items():
         if (fpkgname, fpkgdir) not in _filter_package_listings:
             continue
         if fpkgname not in listing:
@@ -752,7 +739,7 @@ def detect_filters(force_redetect=False, filterpath=filterpath):
 
     # now collect filter names
     filter_list = []
-    for (fpkgname, fpkgdir) in iteritems(filterpath):
+    for (fpkgname, fpkgdir) in filterpath.items():
 
         if (fpkgname, fpkgdir) not in _filter_package_listings:
             continue
@@ -786,7 +773,7 @@ class simplefilter_{filtername}(BibFilter):
     def __init__(self, {init_signature}):
         {init_fields_doc_str}
         
-        super(simplefilter_{filtername}, self).__init__()
+        super().__init__()
 
         self.kwargs = dict({init_kwargs_set_dict})
 
@@ -935,8 +922,7 @@ def _get_filter_class(name, fmodule=None):
 
 
 
-@python_2_unicode_compatible
-class FilterInfo(object):
+class FilterInfo:
     """
     Information about a given filter.
 
@@ -1060,12 +1046,12 @@ class FilterInfo(object):
 
         return finfo
 
-    def __str__(self):
+    def __repr__(self):
         return "FilterInfo(filtername=%r, fpkgname=%r, fpkgdir=%r)"%(
             self.filtername, self.filterpackagename, self.filterpackagedir
         )
-    def __repr__(self):
-        return str(self)
+    def __str__(self):
+        return self.__repr__()
         
     def parseOptionStringArgs(self, optionstring):
 
@@ -1100,7 +1086,7 @@ class FilterInfo(object):
             inspect.getcallargs(self.fclass.__init__, *pargs2, **kwargs)
         except Exception as e:
             logger.debug("Filter exception:\n" + traceback.format_exc())
-            raise FilterCreateArgumentError(unicodestr(e), self.name)
+            raise FilterCreateArgumentError(str(e), self.name)
     
 
     def defaultFilterOptions(self):
@@ -1148,14 +1134,14 @@ class FilterInfo(object):
 
         # and finally, instantiate the filter.
         logger.debug(self.name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
-                     ','.join([repr(k)+'='+repr(v) for k,v in iteritems(kwargs)]) + ')')
+                     ','.join([repr(k)+'='+repr(v) for k,v in kwargs.items()]) + ')')
 
         # exceptions caught here are those thrown from the filter constructor itself.
         try:
             return self.fclass(*pargs, **kwargs)
         except Exception as e:
             logger.debug("Filter exception:\n" + traceback.format_exc())
-            msg = unicodestr(e)
+            msg = str(e)
             if (not isinstance(e, FilterError) and e.__class__ != Exception):
                 # e.g. TypeError or SyntaxError or NameError or KeyError or whatever...
                 msg = e.__class__.__name__ + ": " + msg
@@ -1182,7 +1168,7 @@ _ArgDoc = namedtuple('_ArgDoc', ('argname', 'argtypename', 'doc',))
 
 class FilterArgumentParser(argparse.ArgumentParser):
     def __init__(self, filtername, **kwargs):
-        super(FilterArgumentParser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._filtername = filtername
 
     def error(self, message):
@@ -1281,7 +1267,7 @@ _add_epilog="""
 Have a lot of fun!
 """
 
-class DefaultFilterOptions(object):
+class DefaultFilterOptions:
     def __init__(self, filtername=None, filterpath=filterpath, finfo=None):
         """
         Instantiate this class as::
@@ -1580,10 +1566,10 @@ class DefaultFilterOptions(object):
             # shlex.split() doesn't work on unicode objects directly, need to encode it in
             # 8-bit e.g. using 'utf-8'.
             #
-            parts = [ from_native_str(x) for x in shlex.split(to_native_str(optionstring)) ]
+            parts = list(shlex.split(optionstring))
         except ValueError as e:
             raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s"
-                                          %(unicodestr(e), optionstring.strip()),
+                                          %(str(e), optionstring.strip()),
                                           self._filtername)
         
         try:
@@ -1611,7 +1597,7 @@ class DefaultFilterOptions(object):
                 if (argspec.argtypename is not None):
                     typ = butils.resolve_type(argspec.argtypename, self._fmodule)
                 else:
-                    typ = unicodestr
+                    typ = str
                 kwargs[argname] = typ(argval)
             else:
                 kwargs[argname] = argval # raw type if we can't figure one out (could be
@@ -1623,12 +1609,12 @@ class DefaultFilterOptions(object):
             except Exception as e:
                 raise FilterOptionsParseError(
                     "Error parsing key option value: %s -> %s (%s)\n\t%s"
-                    %(unicodestr(arg), unicodestr(argval),
-                      unicodestr(e), optionstring.strip()),
+                    %(str(arg), str(argval),
+                      str(e), optionstring.strip()),
                     self._filtername)
 
 
-        for (arg, argval) in iteritems(dargs):
+        for (arg, argval) in dargs.items():
             if (varargs and arg == '_args'):
                 optspec['_args'] = argval
                 continue

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -19,17 +20,9 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
-
 
 import re
-from urllib.error import URLError, HTTPError # see above, patched to work on Py2
+from urllib.error import URLError, HTTPError
 import textwrap
 import time
 import math
@@ -45,7 +38,7 @@ from bibolamazi.core import butils
 
 class BibArxivApiFetchError(BibUserCacheError):
     def __init__(self, msg):
-        super(BibArxivApiFetchError).__init__('arxiv_fetched_api_info', msg)
+        super().__init__('arxiv_fetched_api_info', msg)
 
 
 #
@@ -298,7 +291,7 @@ def detectEntryArXivInfo(entry):
         logger.warning("Couldn't find the year in arXiv ID %r", d['arxivid'])
     else:
         # 91->1991, 89->2089 (arXiv started in 1991)
-        d['year'] = unicodestr(1990 + (int(m.group('year')) - 90) % 100)
+        d['year'] = str(1990 + (int(m.group('year')) - 90) % 100)
         
     logger.longdebug("finished detection -> d = %r", d)
 
@@ -336,7 +329,7 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
     from the arXiv API.
     """
     def __init__(self, **kwargs):
-        super(ArxivFetchedAPIInfoCacheAccessor, self).__init__(
+        super().__init__(
             cache_name='arxiv_fetched_api_info',
             **kwargs
             )
@@ -495,12 +488,12 @@ class ArxivFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         logger.longdebug('got entries %r: %r' %(arxivdict.keys(), arxivdict))
 
-        for (k,ref) in iteritems(arxivdict):
+        for (k,ref) in arxivdict.items():
             logger.longdebug("Got reference object for id %s: %r" %(k, ref.__dict__))
             cache_entrydic[k]['reference'] = ref
 
             if ref is None or isinstance(ref, arxiv2bib.ReferenceErrorInfo):
-                errorstr = '<UNKNOWN ERROR>' if ref is None else unicodestr(ref)
+                errorstr = '<UNKNOWN ERROR>' if ref is None else str(ref)
                 self.error_arxivids[k] = errorstr
                 cache_entrydic[k]['error'] = errorstr
                 cache_entrydic[k]['bibtex'] = ''
@@ -550,7 +543,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
     Cache accessor for detected arXiv information about bibliography entries.
     """
     def __init__(self, **kwargs):
-        super(ArxivInfoCacheAccessor, self).__init__(
+        super().__init__(
             cache_name='arxiv_info',
             **kwargs
             )
@@ -606,7 +599,7 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         # information using only what we have (to figure out the arxiv
         # ID!). We'll do a query to the arXiv API in a second step below.
         #
-        for k,v in iteritems(bibdata.entries):
+        for k,v in bibdata.entries.items():
             # arxiv info is in cache and updated with info fetched from the arXiv API
             if (k in entrydic and entrydic[k] is not None  and
                 (entrydic[k].get('updated_with_api_info', False) or k in self.failed_keys)):

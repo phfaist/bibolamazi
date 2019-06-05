@@ -16,7 +16,7 @@ from bibolamazi.filters.fixes import FixesFilter
 class TestWorks(unittest.TestCase, CustomAssertions):
 
     def __init__(self, *args, **kwargs):
-        super(TestWorks, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.maxDiff = None
 

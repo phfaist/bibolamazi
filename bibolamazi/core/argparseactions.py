@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -20,19 +21,10 @@
 ################################################################################
 
 """
-This module defines callbacks and actions for parsing the command-line arguments for
-bibolamazi. You're most probably not interested in this API. (Not mentioning that it might
-change if I feel the need for it.)
+This module defines callbacks and actions for parsing the command-line
+arguments for bibolamazi. You're most probably not interested in this API. (Not
+mentioning that it might change if I feel the need for it.)
 """
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range, input
-from builtins import str as unicodestr
-import sys
-PY2 = (sys.version_info[0] == 2)
 
 import re
 import os
@@ -66,7 +58,7 @@ class store_or_count(argparse.Action):
         if ('type' in kwargs):
             raise TypeError("Can't enforce a type on a store_or_count option!")
         
-        super(store_or_count, self).__init__(option_strings, dest, nargs=nargs, const=None, **kwargs)
+        super().__init__(option_strings, dest, nargs=nargs, const=None, **kwargs)
 
 
     def __call__(self, parser, namespace, values, option_string):
@@ -77,7 +69,7 @@ class store_or_count(argparse.Action):
             val = 0
 
         # count -vv as -v -v
-        if (isinstance(values, basestring) and not option_string.startswith('--') and len(option_string) > 1):
+        if (isinstance(values, str) and not option_string.startswith('--') and len(option_string) > 1):
             optstr = option_string[1:]
             while values.startswith(optstr):
                 # add an additional count for each additional specification of the option.
@@ -92,7 +84,7 @@ class store_or_count(argparse.Action):
 
 
         # get the argument of -v (e.g.,  -v2  or  --verbose 2  or  --verbose=2 )
-        if (isinstance(values, basestring)):
+        if (isinstance(values, str)):
             try:
                 values = int(values)
             except ValueError:
@@ -123,7 +115,7 @@ class store_key_val(argparse.Action):
 
         self.exception = exception
 
-        super(store_key_val, self).__init__(
+        super().__init__(
             option_strings=option_strings,
             dest=dest,
             nargs=nargs,
@@ -167,7 +159,7 @@ class store_key_bool(argparse.Action):
 
         self.exception = exception
 
-        super(store_key_bool, self).__init__(
+        super().__init__(
             option_strings=option_strings,
             dest=dest,
             nargs=nargs,
@@ -187,7 +179,7 @@ class store_key_bool(argparse.Action):
                 storeval = getbool(key[eqindex+1:])
                 key = key[:eqindex]
             except ValueError as e:
-                exc = self.exception(unicodestr(e))
+                exc = self.exception(str(e))
                 exc.opt_dest = self.dest
                 raise exc
 
@@ -214,7 +206,7 @@ class store_key_const(argparse.Action):
         if nargs != 1:
             raise ValueError('nargs for store_key_const actions must be == 1')
 
-        super(store_key_const, self).__init__(
+        super().__init__(
             option_strings=option_strings,
             dest=dest,
             nargs=nargs,
@@ -270,7 +262,7 @@ class opt_list_filters(argparse.Action):
     def __init__(self, nargs=0, **kwargs):
         if nargs != 0:
             raise ValueError('nargs for opt_list_filters must be == 0')
-        super(opt_list_filters, self).__init__(nargs=0, **kwargs)
+        super().__init__(nargs=0, **kwargs)
         
     def __call__(self, parser, namespace, values, option_string):
         helppages.cmdl_show_help('/filters')
@@ -444,7 +436,7 @@ Please visit this URL in your browser and follow the instructions below:
 
         except ValueError as e:
 
-            logger.error(unicodestr(e))
+            logger.error(str(e))
             self.parser.exit(13)
 
         self.parser.exit()

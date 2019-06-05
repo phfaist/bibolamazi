@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,16 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
-
 
 import re
 import os
@@ -116,7 +107,7 @@ class CiteArxivFilter(BibFilter):
               '\cite{prefix:id}' (default: no prefix)
         """
 
-        super(CiteArxivFilter, self).__init__()
+        super().__init__()
 
         self.jobname = jobname
         self.search_dirs = CommaStrList(search_dirs)
@@ -209,7 +200,7 @@ class CiteArxivFilter(BibFilter):
             # parse bibtex
             parser = inputbibtex.Parser()
             new_bib_data = None
-            with io.StringIO(unicodestr(dat['bibtex'])) as stream:
+            with io.StringIO(str(dat['bibtex'])) as stream:
                 new_bib_data = parser.parse_stream(stream)
             
             # and add them to the main list

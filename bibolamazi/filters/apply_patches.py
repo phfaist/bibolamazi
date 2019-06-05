@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 import re
 import logging
@@ -194,7 +187,7 @@ class ApplyPatchesFilter(BibFilter):
           entries are left unchanged, and the bibliography database is cleared
           of these patch entries.
         """
-        super(ApplyPatchesFilter, self).__init__()
+        super().__init__()
 
         self.patch_series = patch_series
         self.add_value_separator = add_value_separator
@@ -238,7 +231,7 @@ class ApplyPatchesFilter(BibFilter):
 
         patch_entry_key_list = []
 
-        for (key, entry) in iteritems(bibdata.entries):
+        for (key, entry) in bibdata.entries.items():
             if key.endswith(suffix):
                 origkey = key[:-lensuffix]
                 if not origkey in bibdata.entries:
@@ -269,7 +262,7 @@ class ApplyPatchesFilter(BibFilter):
 
         rxfld = re.compile('^(?P<op>[!+-]?)(?P<fld>.*)$')
 
-        for f, val in iteritems(patchentry.fields):
+        for f, val in patchentry.fields.items():
             m = rxfld.match(f)
             op = m.group('op')
             fld = m.group('fld')

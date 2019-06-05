@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -22,14 +20,6 @@
 #                                                                              #
 ################################################################################
 
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-from future.standard_library import install_aliases
-install_aliases()
 
 import re
 import sys
@@ -204,7 +194,7 @@ def wrapInHtmlContentContainer(htmlcontent, dark_mode=False, width=None):
 
 class HelpTopicPageWidget(QWidget):
     def __init__(self, helptopicpage, helpbrowser, parent):
-        super(HelpTopicPageWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.lyt = QVBoxLayout(self)
         self.lyt.setContentsMargins(0,0,0,0)
@@ -245,7 +235,7 @@ class HelpTopicPageWidget(QWidget):
 
 class TabAlreadyOpen(Exception):
     def __init__(self, widget):
-        super(TabAlreadyOpen, self).__init__()
+        super().__init__()
         self.widget = widget
 
 
@@ -258,7 +248,7 @@ _rx_scheme_frag = re.compile(
 
 class HelpBrowser(QWidget):
     def __init__(self):
-        super(HelpBrowser, self).__init__()
+        super().__init__()
 
         self.ui = Ui_HelpBrowser()
         self.ui.setupUi(self)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -30,7 +31,7 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError;
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 
 
 rx_bibolamazibib_suffix = re.compile(r'(\.bibolamazi)?\.bib$', flags=re.IGNORECASE)
