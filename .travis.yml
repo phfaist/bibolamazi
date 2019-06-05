@@ -4,6 +4,10 @@
 
 language: python
 
+env:
+  global:
+    - BIBOLAMAZI_TESTS_SKIP_GITHUB_ACCESS=1
+
 python:
   - "3.4"
   - "3.6"

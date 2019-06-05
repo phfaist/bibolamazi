@@ -1,9 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import os
 import logging
+import unittest
 logger = logging.getLogger(__name__)
 
+from bibolamazi.core import butils
+
 from pybtex.database import Entry, Person, BibliographyData
+
+
+# some set-up
+def test_requires_github_access():
+    do_skip = butils.getbool(os.environ.get("BIBOLAMAZI_TESTS_SKIP_GITHUB_ACCESS", False))
+    return unittest.skipIf(
+        do_skip,
+        "Environment variable BIBOLAMAZI_TESTS_SKIP_GITHUB_ACCESS is set"
+    )
+
 
 
 
