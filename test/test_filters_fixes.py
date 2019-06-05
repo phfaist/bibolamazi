@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, unicode_literals
 
-if __name__ == '__main__':
-    # install custom logger, especially .longdebug()
-    from bibolamazi.core import blogger
-    blogger.setup_simple_console_logging(level=1)
-
+import logging
 import unittest
 
 import bibolamazi.init
+from bibolamazi.core import blogger
 
 from helpers import CustomAssertions
 from pybtex.database import Entry, Person
@@ -968,6 +965,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "number": "5",
                 "pages": "4247--4247",
                 "title": "Reply to ``Comment on `Optical coherence: A convenient fiction'''",
+                "extrafield": "Reply to “Comment on ‘Optical coherence: A convenient fiction’”",
                 "url": "http://link.aps.org/doi/10.1103/PhysRevA.58.4247",
                 "volume": "58",
                 "year": "1998"
@@ -989,7 +987,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                  protect_capital_letter_after_dot=['title','annote'],
                  protect_capital_letter_at_begin=['publisher'],
                  convert_dbl_quotes=True,
-                 convert_sgl_quotes=True,
+                 convert_sgl_quotes=['title','abstract','booktitle','series','extrafield'],
                  dbl_quote_macro=r'\enquote',
                  sgl_quote_macro=r'\enquote*')
 
@@ -1242,6 +1240,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "number": "5",
                 "pages": "4247--4247",
                 "title": "Reply to \\enquote{Comment on \\enquote*{Optical coherence: {A} convenient fiction}}",
+                "extrafield": "Reply to “Comment on \\enquote*{Optical coherence: A convenient fiction}”",
                 "url": "http://link.aps.org/doi/10.1103/PhysRevA.58.4247",
                 "volume": "58",
                 "year": "1998"
@@ -1444,4 +1443,5 @@ class TestWorks(unittest.TestCase, CustomAssertions):
 
 
 if __name__ == '__main__':
+    blogger.setup_simple_console_logging(level=logging.INFO)#logging.DEBUG)
     unittest.main()

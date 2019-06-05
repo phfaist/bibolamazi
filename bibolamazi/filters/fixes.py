@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
@@ -18,14 +19,6 @@
 #   along with Bibolamazi.  If not, see <http://www.gnu.org/licenses/>.        #
 #                                                                              #
 ################################################################################
-
-# Py2/Py3 support
-from __future__ import unicode_literals, print_function
-from past.builtins import basestring
-from future.utils import python_2_unicode_compatible, iteritems
-from builtins import range
-from builtins import str as unicodestr
-
 
 import re
 import unicodedata
@@ -132,8 +125,8 @@ For now, the implemented fixes are:
 
   -dAutoUrlify
   -sAutoUrlify=field1,field2...
-    Automatically wrap strings that look like an URL in the `note' field into
-    `\url{}' commands. If a list of fields is provided, then the
+    Automatically wrap strings that look like an URL in the 'note' field into
+    '\url{}' commands. If a list of fields is provided, then the
     auto-urlification is applied to those given bibtex fields.
 
   -sRenameLanguage=alias1:language1,alias2:language2...
@@ -365,7 +358,7 @@ class FixesFilter(BibFilter):
 
         # make sure key (language alias) is made lower-case
         self.rename_language = dict([ (k.lower(), v)
-                                      for k, v in iteritems(ColonCommaStrDict(rename_language)) ])
+                                      for k, v in ColonCommaStrDict(rename_language).items() ])
         self.rename_language_rx = None
         if self.rename_language:
             # e.g. with rename_language={'en':'english','de':'deutsch',
@@ -469,7 +462,7 @@ class FixesFilter(BibFilter):
             return x
 
         def filter_person(p):
-            oldpstr = unicodestr(p)
+            oldpstr = str(p)
             #print(oldpstr)
             newpstr = thefilter(oldpstr)
             #print(newpstr)
@@ -481,11 +474,11 @@ class FixesFilter(BibFilter):
             #return Person(**parts)
 
 
-        for (role,perslist) in iteritems(entry.persons):
+        for (role,perslist) in entry.persons.items():
             for k in range(len(perslist)):
                 entry.persons[role][k] = filter_person(perslist[k])
         
-        for (k,v) in iteritems(entry.fields):
+        for (k,v) in entry.fields.items():
             entry.fields[k] = thefilter(v)
 
         logger.longdebug("entry %s passed basic filter: %r", entry.key, entry)
@@ -493,7 +486,7 @@ class FixesFilter(BibFilter):
         # additionally:
 
         if self.unprotect_full_last_names:
-            for (role,perslist) in iteritems(entry.persons):
+            for (role,perslist) in entry.persons.items():
                 for p in perslist:
                     if len(p.last_names) == 1:
                         lname = remove_full_braces(p.last_names[0])
@@ -530,7 +523,7 @@ class FixesFilter(BibFilter):
 
 
         def filter_entry_remove_full_braces(entry, fieldlist):
-            for k,v in iteritems(entry.fields):
+            for k,v in entry.fields.items():
                 if fieldlist is None or k in fieldlist:
                     entry.fields[k] = remove_full_braces(v)
 
@@ -582,7 +575,7 @@ class FixesFilter(BibFilter):
                     
                 return newx
 
-            for key, val in iteritems(entry.fields):
+            for key, val in entry.fields.items():
                 if key in ('doi', 'url', 'file'):
                     continue
                 newval = val
@@ -622,6 +615,9 @@ class FixesFilter(BibFilter):
             # this pattern must be tested first, because otherwise we leave stray braces
             re.compile(r'\{\\textquotedblleft\}(?P<contents>.*?)\{\\textquotedblright\}'),
             re.compile(r'\\textquotedblleft(?P<contents>.*?)\\textquotedblright'),
+            # unicode quotes
+            re.compile('\N{LEFT DOUBLE QUOTATION MARK}'+r"(?P<contents>.*?)"+
+                       '\N{RIGHT DOUBLE QUOTATION MARK}'),
         ]
         _rx_sgl_quotes = [
             # try to match correct quote in " `My dad's dog' is a nice book ".
@@ -629,6 +625,9 @@ class FixesFilter(BibFilter):
             # this pattern must be tested first, because otherwise we leave stray braces
             re.compile(r'\{\\textquoteleft\}(?P<contents>.*?)\{\\textquoteright\}'),
             re.compile(r'\\textquoteleft(?P<contents>.*?)\\textquoteright'),
+            # unicode quotes
+            re.compile('\N{LEFT SINGLE QUOTATION MARK}'+r"(?P<contents>.*?)"+
+                       '\N{RIGHT SINGLE QUOTATION MARK}'),
         ]
         if (self.convert_dbl_quotes):
             for fld in self.convert_dbl_quotes:
@@ -696,7 +695,7 @@ def custom_utf8tolatex(s, substitute_bad_chars=False):
     See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
     """
 
-    s = unicodestr(s) # make sure s is unicode
+    s = str(s) # make sure s is unicode
     s = unicodedata.normalize('NFC', s)
 
     if not s:
@@ -758,7 +757,8 @@ def do_fix_space_after_escape(x):
     def deal_with_escape(x, m): # helper
         macroname = m.group('macroname')
         if macroname not in macro_dict:
-            logger.longdebug("fixes filter: Unknown macro \\%s for -dFixSpaceAfterEscape, assuming no arguments.",
+            logger.longdebug("fixes filter: Unknown macro \\%s for -dFixSpaceAfterEscape, "
+                             "assuming no arguments.",
                              macroname)
             replacexstr = '\\' + macroname + "{}"
             return (x[:m.start()] + replacexstr + x[m.end():], m.start() + len(replacexstr))
@@ -791,10 +791,10 @@ def do_fix_space_after_escape(x):
             ns.args += do_fix_space_after_escape(argstr)
             ns.pos = npos+nlen
 
-        if (macrodef.optarg):
+        if macrodef.optarg:
             addoptarg()
 
-        if (isinstance(macrodef.numargs, basestring)):
+        if isinstance(macrodef.numargs, str):
             # specific argument specification
             for arg in macrodef.numargs:
                 if (arg == '{'):
