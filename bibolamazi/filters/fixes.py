@@ -58,23 +58,29 @@ related information.
 
   -dRemoveFullBraces
   -sRemoveFullBraces=title,journal
+
     Removes the extra protective braces around the field value. For example,
+
       @article{...
         title = {{Irreversibility and Heat Generation in the Computing Process}},
         ...
       }
+
     will cause the title to be typeset with the given casing. The present option
     causes the field to be output as
+
       @article{...
         title = {Irreversibility and Heat Generation in the Computing Process},
         ...
       }
+
     so that the bibtex style can adapt the casing to any bibliography standard.
     If -dRemoveFullBraces is given, then this is applied to all fields except
     people (author and editors), otherwise this is applied only to the specified
     (comma-separated) fields of the bibtex entries.
 
   -sRemoveFullBracesNotLang=German
+
     Useful only if `RemoveFullBraces' is set. This option inhibits the removal of
     the extra braces if the language of the entry (as given by a bibtex
     language={...} field) is in the given list. This is useful, for example, to
@@ -258,7 +264,7 @@ class FixesFilter(BibFilter):
           - rename_language(ColonCommaStrDict):
 
             Change ‘language={...}’ field by applying a set of replacement
-            rules.  E.g., you can change "de" into "Deutsch".  An alias (case
+            rules.  E.g., you can change "de" into "German".  An alias (case
             insensitive) is replaced by its corresponding language.
             Replacements are not done recursively.  Use the syntax
             -sRenameLanguage=alias1:language1,alias2:language2...

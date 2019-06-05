@@ -134,6 +134,9 @@ class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions)
     def zzztest(self):
         self._run_full_case_test('zzztest')
 
+    def test_github_remote(self):
+        self._run_full_case_test('test_github_remote')
+
 
 
 if __name__ == '__main__':

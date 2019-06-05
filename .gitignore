@@ -12,3 +12,6 @@ gui/dist
 bibolamazi.egg-info
 .cache
 test/_tmpdir
+BUILD_PIP_UPLOAD.txt
+bibolamazi_dup_aliases.tex
+x*test.bibolamazi.bib
