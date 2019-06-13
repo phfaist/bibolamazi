@@ -15,6 +15,8 @@ See :ref:`introduction-to-bibolamazi`.
 
 Quick links:
 
+* :ref:`What is bibolamazi? <introduction-to-bibolamazi>`
+
 * `Download latest release <https://github.com/phfaist/bibolamazi/releases>`_
 
 * :ref:`Download & installation instructions <download-and-install>`
