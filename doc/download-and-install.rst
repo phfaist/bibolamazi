@@ -1,3 +1,4 @@
+.. _download-and-install:
 
 Downloading and Installing Bibolamazi
 -------------------------------------
