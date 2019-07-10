@@ -172,6 +172,7 @@ class FixesFilter(BibFilter):
                  dbl_quote_macro=r'\qq',
                  sgl_quote_macro=r'\q',
                  unprotect_full_last_names=False,
+                 unprotect_zotero_title_case=False,
                  # obsolete:
                  fix_swedish_a=False):
         r"""
@@ -322,10 +323,18 @@ class FixesFilter(BibFilter):
 
           - unprotect_full_last_names(bool):
 
-            If provided, remove curly braces that surround the full last name of
-            people.  (Mendeley protects composite last names like this, which is
-            not always necessary.)
+            If this option is set, remove curly braces that surround the full
+            last name of people.  (It looks like Mendeley protects composite
+            last names like this, which is not always necessary.)
 
+          - unprotect_zotero_title_case(bool):
+
+            Zotero's better bibtex exports tend to be overzealous in protecting
+            every word in the title that starts with an uppercase letter.  We
+            try to revert this behavior to allow bibtex styles to change the
+            casing of the title (lowercase or title-case).  We try to be careful
+            and keep protected those words that look like acronyms (anything
+            more complicated than a word that starts with an uppercase).
 
           - fix_swedish_a(bool):
 
@@ -463,9 +472,11 @@ class FixesFilter(BibFilter):
             # just passed a bool, e.g. 'True'
             self.convert_sgl_quotes = ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
         
-        self.unprotect_full_last_names = unprotect_full_last_names
+        self.unprotect_full_last_names = butils.getbool(unprotect_full_last_names)
+        self.unprotect_zotero_title_case = butils.getbool(unprotect_zotero_title_case)
 
-        logger.debug(('fixes filter: fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
+        logger.debug(('fixes filter: '
+                      'fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
                       'remove_pages_from_book=%r; '
                       'remove_full_braces=%r [fieldlist=%r, not lang=%r], '
@@ -475,7 +486,7 @@ class FixesFilter(BibFilter):
                       'fix_mendeley_bug_urls=%r,'
                       'protect_capital_letter_after_dot=%r,protect_capital_letter_at_begin=%r,'
                       'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r,'
-                      'unprotect_full_last_names=%r')
+                      'unprotect_full_last_names=%r, unprotect_zotero_title_case=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd, self.remove_pages_from_book,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -489,8 +500,10 @@ class FixesFilter(BibFilter):
                         (self.rename_language_rx.pattern if self.rename_language_rx else None),
                         self.fix_mendeley_bug_urls,
                         self.protect_capital_letter_after_dot, self.protect_capital_letter_at_begin,
-                        self.convert_dbl_quotes,self.dbl_quote_macro,self.convert_sgl_quotes,self.sgl_quote_macro,
-                        self.unprotect_full_last_names
+                        self.convert_dbl_quotes,self.dbl_quote_macro,
+                        self.convert_sgl_quotes,self.sgl_quote_macro,
+                        self.unprotect_full_last_names,
+                        self.unprotect_zotero_title_case,
                         ))
         
 
@@ -548,6 +561,56 @@ class FixesFilter(BibFilter):
                     if len(p.last_names) == 1:
                         lname = remove_full_braces(p.last_names[0])
                         p.last_names = split_tex_string(lname)
+
+        def cleanup_zotero_overprotected_title(title):
+
+            def needs_protection(s):
+                # what doesn't need protection is a sequence of words for which
+                # only the first letter of each word might be capitalized
+                # ... except if the braces are there to protect something in
+                # math mode, in which case we keep the protection
+                return ( not all(ws == '' or ws.islower()
+                                 for ws in (w.strip()[1:] for w in s.split()))
+                         or (s.startswith('$') or s.startswith(r'\(')) )
+
+            lw = latexwalker.LatexWalker(title)
+            l2t = latex2text.LatexNodes2Text(keep_inline_math=True)
+            newtitle = ''
+            oldi = 0
+            while True:
+                i = title.find('{{', oldi)
+                if i == -1: # not found
+                    break
+                (n, pos, len_) = lw.get_latex_expression(i+1, strict_braces=False)
+                if title[i+len_:i+len_+1] != '}':
+                    # expression must be closed by '}}', i.e. we used
+                    # get_latex_expression to get the inner {...} braced group,
+                    # but the outer group must be closed immediately after the
+                    # expression we read. Otherwise it's not Zotero-protected
+                    # and we skip this group.
+                    continue
+                # we got a very-probably-Zotero-protected "{{...}}" group
+                newtitle += title[oldi:i]
+                newi = i+1 + len_ + 1 # +1 for additional '}' to close outer {..} group
+                protected_expression = title[i+2:newi-2]
+                if needs_protection(l2t.nodelist_to_text([n])):
+                    newtitle += '{{' + protected_expression + '}}'
+                    oldi = newi
+                else:
+                    newtitle += protected_expression
+                    oldi = newi
+            # last remaining part of the title
+            newtitle += title[oldi:]
+            return newtitle
+
+
+        # make sure we run this before protect_names
+        if self.unprotect_zotero_title_case:
+            # clean up Zotero-overprotected titles
+            do_fields = ['title', 'booktitle', 'shorttitle']
+            for fld in do_fields:
+                if fld in entry.fields:
+                    entry.fields[fld] = cleanup_zotero_overprotected_title(entry.fields[fld])
 
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
@@ -775,10 +838,17 @@ def custom_utf8tolatex(s, substitute_bad_chars=False):
     }
 
     result = u""
-    for ch in s:
+    for j, ch in enumerate(s):
         #logger.longdebug("Encoding char %r", ch)
         if (ord(ch) < 127):
-            result += ascii_custom_dic.get(ord(ch), ch)
+            # FIXME: This is an ugly kludge. Doesn't handle cases like "\\&"
+            # correctly, where we'd probably want to escape the '&' (but I can't
+            # think of a situation where this would be relevant).
+            if ord(ch) not in ascii_custom_dic or (j > 0 and s[j-1] == '\\'):
+                result += ch
+            else:
+                # escape, unless already escaped
+                result += ascii_custom_dic[ord(ch)]
         else:
             lch = latexencode.utf82latex.get(ord(ch), None)
             if (lch is not None):
@@ -791,7 +861,8 @@ def custom_utf8tolatex(s, substitute_bad_chars=False):
                 result += ch
             else:
                 # non-ascii char
-                logger.warning(u"Character cannot be encoded into LaTeX: U+%04X - `%s'" % (ord(ch), ch))
+                logger.warning("Character cannot be encoded into LaTeX: U+%04X - '%s'",
+                               ord(ch), ch)
                 if (substitute_bad_chars):
                     result += r'{\bfseries ?}'
                 else:

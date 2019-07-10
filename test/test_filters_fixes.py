@@ -1263,6 +1263,213 @@ class TestWorks(unittest.TestCase, CustomAssertions):
 
 
 
+    def test_unprotect_zotero_title_case(self):
+
+        filt = FixesFilter(unprotect_zotero_title_case=True)
+
+        entries = [
+            ('Test1',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "{Thermodynamics of Spacetime: The Einstein Equation of State}",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test2',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "{{Thermodynamics of Spacetime}}: the {{Einstein Equation of State}}",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test3',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of Spacetime: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test4',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{$*$}}: the {{Einstein}} Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test5',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{SPace-TIme}}: the {{Einstein}} Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test6',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics {{of space-TIme}}: the {{Einstein}} Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test7',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics {{of {spacetime}}}: the {{Einstein}} Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test8',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{\c{S}pacetime}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test9',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{Spacetime I}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+        ]
+        
+        for k,e in entries:
+            e.key = k
+            filt.filter_bibentry(e)
+
+        entries_ok = [
+            ('Test1',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "{Thermodynamics of Spacetime: The Einstein Equation of State}",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test2',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of Spacetime: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test3',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of Spacetime: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test4',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{$*$}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test5',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{SPace-TIme}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test6',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics {{of space-TIme}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test7',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {spacetime}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test8',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of \c{S}pacetime: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test9',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of Spacetime I: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+        ]
+
+        self.assert_keyentrylists_equal(entries, entries_ok)
+                
+
+
+
+
+
+    ################################################################################
+
+
+
+
+
 
 
     def get_std_test_entries(self, only_keys=[], except_keys=[]):
@@ -1455,5 +1662,5 @@ class TestWorks(unittest.TestCase, CustomAssertions):
 
 
 if __name__ == '__main__':
-    blogger.setup_simple_console_logging(level=logging.INFO)#logging.DEBUG)
+    blogger.setup_simple_console_logging(level=logging.INFO)
     unittest.main()
