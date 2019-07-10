@@ -562,47 +562,6 @@ class FixesFilter(BibFilter):
                         lname = remove_full_braces(p.last_names[0])
                         p.last_names = split_tex_string(lname)
 
-        def cleanup_zotero_overprotected_title(title):
-
-            def needs_protection(s):
-                # what doesn't need protection is a sequence of words for which
-                # only the first letter of each word might be capitalized
-                # ... except if the braces are there to protect something in
-                # math mode, in which case we keep the protection
-                return ( not all(ws == '' or ws.islower()
-                                 for ws in (w.strip()[1:] for w in s.split()))
-                         or (s.startswith('$') or s.startswith(r'\(')) )
-
-            lw = latexwalker.LatexWalker(title)
-            l2t = latex2text.LatexNodes2Text(keep_inline_math=True)
-            newtitle = ''
-            oldi = 0
-            while True:
-                i = title.find('{{', oldi)
-                if i == -1: # not found
-                    break
-                (n, pos, len_) = lw.get_latex_expression(i+1, strict_braces=False)
-                if title[i+len_:i+len_+1] != '}':
-                    # expression must be closed by '}}', i.e. we used
-                    # get_latex_expression to get the inner {...} braced group,
-                    # but the outer group must be closed immediately after the
-                    # expression we read. Otherwise it's not Zotero-protected
-                    # and we skip this group.
-                    continue
-                # we got a very-probably-Zotero-protected "{{...}}" group
-                newtitle += title[oldi:i]
-                newi = i+1 + len_ + 1 # +1 for additional '}' to close outer {..} group
-                protected_expression = title[i+2:newi-2]
-                if needs_protection(l2t.nodelist_to_text([n])):
-                    newtitle += '{{' + protected_expression + '}}'
-                    oldi = newi
-                else:
-                    newtitle += protected_expression
-                    oldi = newi
-            # last remaining part of the title
-            newtitle += title[oldi:]
-            return newtitle
-
 
         # make sure we run this before protect_names
         if self.unprotect_zotero_title_case:
@@ -610,7 +569,7 @@ class FixesFilter(BibFilter):
             do_fields = ['title', 'booktitle', 'shorttitle']
             for fld in do_fields:
                 if fld in entry.fields:
-                    entry.fields[fld] = cleanup_zotero_overprotected_title(entry.fields[fld])
+                    entry.fields[fld] = zotero_title_protection_cleanup(entry.fields[fld])
 
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
@@ -872,6 +831,175 @@ def custom_utf8tolatex(s, substitute_bad_chars=False):
     return result
 
 
+# patched version of latexwalker.nodelist_to_latex
+# FIXME:: fix pylatexenc's version directly!
+def nodelist_to_latex(nodelist):
+
+    from pylatexenc.latexwalker import LatexCharsNode, LatexMacroNode, LatexCommentNode, \
+        LatexGroupNode, LatexEnvironmentNode, put_in_braces, default_macro_dict
+
+    latex = ''
+    for n in nodelist:
+        if n is None:
+            continue
+
+        if n.isNodeType(LatexCharsNode):
+            latex += n.chars
+            continue
+
+        if n.isNodeType(LatexMacroNode):
+            latex += r'\%s%s' %(n.macroname, n.macro_post_space)
+
+            mac = None
+            if (n.macroname in default_macro_dict):
+                mac = default_macro_dict[n.macroname]
+            
+            if (n.nodeoptarg is not None):
+                latex += '[%s]' %(nodelist_to_latex([n.nodeoptarg]))
+
+            if mac is not None:
+                macbraces = (mac.numargs if isinstance(mac.numargs, str) else '{'*mac.numargs)
+            else:
+                macbraces = '{'*len(n.nodeargs)
+                
+            if len(n.nodeargs) != len(macbraces):
+                raise LatexWalkerError("Error: number of arguments (%d) provided to macro `\\%s' does not "
+                                       "match its specification of `%s'"
+                                       %(len(n.nodeargs), n.macroname, macbraces))
+            for i in range(len(n.nodeargs)):
+                nodearg = n.nodeargs[i]
+                if nodearg is not None:
+                    if nodearg.isNodeType(LatexGroupNode):
+                        latex += nodelist_to_latex([nodearg])
+                    else:
+                        latex += put_in_braces(macbraces[i], nodelist_to_latex([nodearg]))
+
+            continue
+        
+        if n.isNodeType(LatexCommentNode):
+            latex += '%'+n.comment+n.comment_post_space
+            continue
+        
+        if n.isNodeType(LatexGroupNode):
+            latex += put_in_braces('{', nodelist_to_latex(n.nodelist))
+            continue
+        
+        if n.isNodeType(LatexEnvironmentNode):
+            latex += r'\begin{%s}' %(n.envname)
+            for optarg in n.optargs:
+                latex += put_in_braces('[', nodelist_to_latex([optarg]))
+            for arg in n.args:
+                latex += put_in_braces('{', nodelist_to_latex([arg]))
+            latex += nodelist_to_latex(n.nodelist)
+            latex += r'\end{%s}' %(n.envname)
+            continue
+        
+        latex += '<[UNKNOWN LATEX NODE: `%s\']>' %(n.nodeType().__name__)
+
+    return latex
+
+
+
+# helper function
+def zotero_title_protection_cleanup(title):
+
+    logger.longdebug("zotero_title_protection_cleanup(%r)", title)
+
+    def needs_protection(s):
+        # what doesn't need protection is a sequence of words for which
+        # only the first letter of each word might be capitalized
+        # ... except if the braces are there to protect something in
+        # math mode, in which case we keep the protection
+        return ( not all(ws == '' or ws.islower()
+                         for ws in (w.strip()[1:] for w in s.split()))
+                 or (s.startswith(r'$') or s.startswith(r'\(')) )
+
+    def iterate_over_words_in_nodelist(nodelist):
+        # first, split the root-level char nodes at spaces and keep the rest.
+        split_nodelist = []
+        for n in nodelist:
+            if n.isNodeType(latexwalker.LatexCharsNode):
+                # split at whitespace
+                chunks = re.compile(r'(\s+)').split(n.chars)
+                for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
+                    split_nodelist += [(latexwalker.LatexCharsNode(chunk), sep)]
+            else:
+                split_nodelist += [(n, '')]
+
+        # now, combine them smarly into words.
+        cur_nodelist = []
+        need_protection_hint = False
+        for n, sep in split_nodelist:
+            logger.longdebug("node to consider for chunk: %r, sep=%r", n, sep)
+            if sep: # has separator
+                cur_nodelist += [n]
+                # flush what we've accumulated so far
+                yield cur_nodelist, sep, need_protection_hint
+                cur_nodelist = []
+                need_protection_hint = False
+            else:
+                # if there is anything else than a chars, macro or group node
+                # (group node for e.g., {\'e}), then this chunk will require
+                # protection (e.g. inline math)
+                if not n.isNodeType(latexwalker.LatexCharsNode) and \
+                   not n.isNodeType(latexwalker.LatexMacroNode) and \
+                   not n.isNodeType(latexwalker.LatexGroupNode):
+                    need_protection_hint = True
+                # add this node to the current chunk
+                cur_nodelist += [n]
+        # flush last nodes
+        yield cur_nodelist, '', need_protection_hint
+
+    def process_protection_for_expression(nodelist, l2t):
+        new_expression = ''
+        for nl, sep, need_protection_hint in iterate_over_words_in_nodelist(nodelist):
+            #logger.longdebug("chunk: nl=%r, sep=%r, need_protection_hint=%r, text-version=%r",
+            #                 nl, sep, need_protection_hint, l2t.nodelist_to_text(nl))
+            if need_protection_hint:
+                #logger.longdebug("protecting chunk due to hint flag")
+                new_expression += '{{' + latexwalker.nodelist_to_latex(nl) + '}}' + sep
+            elif needs_protection(l2t.nodelist_to_text(nl)):
+                #logger.longdebug("protecting chunk by inspection of text representation")
+                new_expression += '{{' + latexwalker.nodelist_to_latex(nl) + '}}' + sep
+            else:
+                new_expression += nodelist_to_latex(nl) + sep
+        return new_expression
+
+    lw = latexwalker.LatexWalker(title)
+    l2t = latex2text.LatexNodes2Text(keep_inline_math=True)
+    newtitle = ''
+    oldi = 0
+    while True:
+        i = title.find('{{', oldi)
+        if i == -1: # not found
+            break
+        (n, pos, len_) = lw.get_latex_expression(i+1, strict_braces=False)
+        if title[i+len_:i+len_+1] != '}':
+            # expression must be closed by '}}', i.e. we used
+            # get_latex_expression to get the inner {...} braced group,
+            # but the outer group must be closed immediately after the
+            # expression we read. Otherwise it's not Zotero-protected
+            # and we skip this group.
+            continue
+        # we got a very-probably-Zotero-protected "{{...}}" group
+        newtitle += title[oldi:i]
+        newi = i+1 + len_ + 1 # +1 for additional '}' to close outer {..} group
+        protected_expression = title[i+2:newi-2]
+        # go through each top-level node in the protected content and
+        # see individually if it requires protection.  Split char nodes
+        # at spaces.
+        new_expression = process_protection_for_expression(n.nodelist, l2t)
+        #logger.longdebug("Zotero protect block: protected_expression=%r, new_expression=%r",
+        #                 protected_expression, new_expression)
+        newtitle += new_expression
+        oldi = newi
+
+    # last remaining part of the title
+    newtitle += title[oldi:]
+    return newtitle
+
+
+
 
 # helper function
 def do_fix_space_after_escape(x):
@@ -1007,6 +1135,5 @@ def do_fix_mendeley_bug_urls(x):
 
 def bibolamazi_filter_class():
     return FixesFilter
-
 
 

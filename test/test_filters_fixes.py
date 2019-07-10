@@ -1334,7 +1334,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "month": "August",
                      "number": "7",
                      "pages": "1260--1263",
-                     "title": "Thermodynamics {{of {spacetime}}}: the {{Einstein}} Equation of State",
+                     "title": "Thermodynamics {{of {spacetime}}}: the {{Einstein {{\'e}Q}uation}} Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
@@ -1355,6 +1355,16 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "number": "7",
                      "pages": "1260--1263",
                      "title": "Thermodynamics of {{Spacetime I}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test10',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{XYZ Spacetime AAb}}: the Einstein Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
@@ -1421,7 +1431,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "month": "August",
                      "number": "7",
                      "pages": "1260--1263",
-                     "title": "Thermodynamics {{of space-TIme}}: the Einstein Equation of State",
+                     "title": "Thermodynamics of {{space-TIme}}: the Einstein Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
@@ -1431,7 +1441,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "month": "August",
                      "number": "7",
                      "pages": "1260--1263",
-                     "title": "Thermodynamics of {spacetime}: the Einstein Equation of State",
+                     "title": "Thermodynamics of {spacetime}: the Einstein {{{{\'e}Q}uation}} Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
@@ -1452,6 +1462,16 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "number": "7",
                      "pages": "1260--1263",
                      "title": "Thermodynamics of Spacetime I: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test10',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "Thermodynamics of {{XYZ}} Spacetime {{AAb}}: the Einstein Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
