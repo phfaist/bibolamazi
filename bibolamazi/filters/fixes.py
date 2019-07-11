@@ -861,11 +861,13 @@ def nodelist_to_latex(nodelist):
                 macbraces = (mac.numargs if isinstance(mac.numargs, str) else '{'*mac.numargs)
             else:
                 macbraces = '{'*len(n.nodeargs)
-                
+            
             if len(n.nodeargs) != len(macbraces):
-                raise LatexWalkerError("Error: number of arguments (%d) provided to macro `\\%s' does not "
-                                       "match its specification of `%s'"
-                                       %(len(n.nodeargs), n.macroname, macbraces))
+                raise LatexWalkerError(
+                    "Error: number of arguments (%d) provided to macro '\\%s' does not "
+                    "match its specification of '%s'"
+                    %(len(n.nodeargs), n.macroname, macbraces)
+                )
             for i in range(len(n.nodeargs)):
                 nodearg = n.nodeargs[i]
                 if nodearg is not None:
@@ -894,7 +896,7 @@ def nodelist_to_latex(nodelist):
             latex += r'\end{%s}' %(n.envname)
             continue
         
-        latex += '<[UNKNOWN LATEX NODE: `%s\']>' %(n.nodeType().__name__)
+        latex += "<[UNKNOWN LATEX NODE: '%s']>" %(n.nodeType().__name__)
 
     return latex
 
@@ -973,22 +975,27 @@ def zotero_title_protection_cleanup(title):
         i = title.find('{{', oldi)
         if i == -1: # not found
             break
-        (n, pos, len_) = lw.get_latex_expression(i+1, strict_braces=False)
-        if title[i+len_:i+len_+1] != '}':
+        (n, pos, len_) = lw.get_latex_expression(i, strict_braces=False)
+        assert pos == i
+        newi = i + len_
+        if title[newi-2:newi] != '}}':
             # expression must be closed by '}}', i.e. we used
             # get_latex_expression to get the inner {...} braced group,
             # but the outer group must be closed immediately after the
             # expression we read. Otherwise it's not Zotero-protected
             # and we skip this group.
+            newtitle += title[oldi:newi]
+            oldi = newi
             continue
         # we got a very-probably-Zotero-protected "{{...}}" group
         newtitle += title[oldi:i]
-        newi = i+1 + len_ + 1 # +1 for additional '}' to close outer {..} group
         protected_expression = title[i+2:newi-2]
         # go through each top-level node in the protected content and
         # see individually if it requires protection.  Split char nodes
         # at spaces.
-        new_expression = process_protection_for_expression(n.nodelist, l2t)
+        assert len(n.nodelist) == 1 and n.nodelist[0].isNodeType(latexwalker.LatexGroupNode)
+        nodelist = n.nodelist[0].nodelist
+        new_expression = process_protection_for_expression(nodelist, l2t)
         #logger.longdebug("Zotero protect block: protected_expression=%r, new_expression=%r",
         #                 protected_expression, new_expression)
         newtitle += new_expression

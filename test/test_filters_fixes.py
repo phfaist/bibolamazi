@@ -1368,8 +1368,18 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "volume": "75",
                      "year": "1995"
                  },),),
+            ('Test11',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "{{\"{U}}ber die Entropieverminderung in einem thermodynamischen System bei Eingriffen intelligenter Wesen}",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
         ]
-        
+
         for k,e in entries:
             e.key = k
             filt.filter_bibentry(e)
@@ -1472,6 +1482,16 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "number": "7",
                      "pages": "1260--1263",
                      "title": "Thermodynamics of {{XYZ}} Spacetime {{AAb}}: the Einstein Equation of State",
+                     "volume": "75",
+                     "year": "1995"
+                 },),),
+            ('Test11',
+                 Entry("article", persons={"author": [Person("Last, First")]}, fields={
+                     "journal": "Physical Review Letters",
+                     "month": "August",
+                     "number": "7",
+                     "pages": "1260--1263",
+                     "title": "{{\"{U}}ber die Entropieverminderung in einem thermodynamischen System bei Eingriffen intelligenter Wesen}",
                      "volume": "75",
                      "year": "1995"
                  },),),
