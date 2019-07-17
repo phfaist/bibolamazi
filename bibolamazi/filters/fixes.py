@@ -383,7 +383,7 @@ class FixesFilter(BibFilter):
                 self.remove_full_braces_not_lang = [
                     x.lower()
                     for x in CommaStrList(remove_full_braces_not_lang)
-                    ]
+                ]
         else:
             self.remove_full_braces_not_lang = None
 
@@ -445,13 +445,15 @@ class FixesFilter(BibFilter):
 
         protect_capital_letter_after_dot = BoolOrFieldList(protect_capital_letter_after_dot)
         if protect_capital_letter_after_dot.valuetype is bool:
-            self.protect_capital_letter_after_dot = ['title'] if protect_capital_letter_after_dot.value else []
+            self.protect_capital_letter_after_dot =  \
+                ['title'] if protect_capital_letter_after_dot.value else []
         else:
             self.protect_capital_letter_after_dot = protect_capital_letter_after_dot.value
 
         protect_capital_letter_at_begin = BoolOrFieldList(protect_capital_letter_at_begin)
         if protect_capital_letter_at_begin.valuetype is bool:
-            self.protect_capital_letter_at_begin = ['title'] if protect_capital_letter_at_begin.value else []
+            self.protect_capital_letter_at_begin =  \
+                ['title'] if protect_capital_letter_at_begin.value else []
         else:
             self.protect_capital_letter_at_begin = protect_capital_letter_at_begin.value
 
@@ -463,14 +465,16 @@ class FixesFilter(BibFilter):
             self.convert_dbl_quotes = convert_dbl_quotes.value
         else:
             # just passed a bool, e.g. 'True'
-            self.convert_dbl_quotes = ['title','abstract','booktitle','series'] if convert_dbl_quotes.value else []
+            self.convert_dbl_quotes =  \
+                ['title','abstract','booktitle','series'] if convert_dbl_quotes.value else []
             
         convert_sgl_quotes = BoolOrFieldList(convert_sgl_quotes)
         if convert_sgl_quotes.valuetype is CommaStrList:
             self.convert_sgl_quotes = convert_sgl_quotes.value
         else:
             # just passed a bool, e.g. 'True'
-            self.convert_sgl_quotes = ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
+            self.convert_sgl_quotes =  \
+                ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
         
         self.unprotect_full_last_names = butils.getbool(unprotect_full_last_names)
         self.unprotect_zotero_title_case = butils.getbool(unprotect_zotero_title_case)
@@ -551,7 +555,7 @@ class FixesFilter(BibFilter):
         for (k,v) in entry.fields.items():
             entry.fields[k] = thefilter(v)
 
-        logger.longdebug("entry %s passed basic filter: %r", entry.key, entry)
+        logger.longdebug("fixes filter: entry %s after first basic fixes: %r", entry.key, entry)
 
         # additionally:
 
@@ -562,14 +566,13 @@ class FixesFilter(BibFilter):
                         lname = remove_full_braces(p.last_names[0])
                         p.last_names = split_tex_string(lname)
 
-
         # make sure we run this before protect_names
         if self.unprotect_zotero_title_case:
             # clean up Zotero-overprotected titles
             do_fields = ['title', 'booktitle', 'shorttitle']
             for fld in do_fields:
                 if fld in entry.fields:
-                    entry.fields[fld] = zotero_title_protection_cleanup(entry.fields[fld])
+                    entry.fields[fld] = zotero_title_protection_cleanup(entry.fields[fld], self)
 
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
@@ -612,7 +615,7 @@ class FixesFilter(BibFilter):
                 filter_entry_remove_full_braces(entry, self.remove_full_braces_fieldlist)
 
 
-        if (self.map_annote_to_note):
+        if self.map_annote_to_note:
             if 'annote' in entry.fields:
                 thenote = ''
                 if len(entry.fields.get('note', '')):
@@ -620,7 +623,7 @@ class FixesFilter(BibFilter):
                 entry.fields['note'] = thenote + entry.fields['annote']
                 del entry.fields['annote']
                 
-        if (self.auto_urlify):
+        if self.auto_urlify:
             for fld in self.auto_urlify:
                 if fld in entry.fields:
                     entry.fields[fld] = do_auto_urlify(entry.fields[fld])
@@ -664,7 +667,7 @@ class FixesFilter(BibFilter):
                 if (newval != val):
                     entry.fields[key] = newval
 
-        if (self.protect_names):
+        if self.protect_names:
             filter_protect_names(entry)
 
         # include stuff like:
@@ -672,20 +675,20 @@ class FixesFilter(BibFilter):
         # title = "{\textquotedblleft}Relative State{\textquotedblright} Formulation of Quantum Mechanics"
         #
         _rx_prcap_lead = r'([^\w\{]|\\[A-Za-z]+|\{\\[A-Za-z]+\})*'
-        if (self.protect_capital_letter_after_dot):
+        if self.protect_capital_letter_after_dot:
             for fld in self.protect_capital_letter_after_dot:
                 if fld in entry.fields:
                     entry.fields[fld] = re.sub(r'(?P<dotlead>[.:]'+_rx_prcap_lead+r')(?P<ucletter>[A-Z])',
                                                lambda m: m.group('dotlead')+u'{'+m.group('ucletter')+u'}',
                                                entry.fields[fld])
-        if (self.protect_capital_letter_at_begin):
+        if self.protect_capital_letter_at_begin:
             for fld in self.protect_capital_letter_at_begin:
                 if fld in entry.fields:
                     entry.fields[fld] = re.sub(r'^(?P<lead>'+_rx_prcap_lead+r')(?P<ucletter>[A-Z])',
                                                lambda m: m.group('lead')+u'{'+m.group('ucletter')+u'}',
                                                entry.fields[fld])
 
-        if (self.fix_mendeley_bug_urls):
+        if self.fix_mendeley_bug_urls:
             for fld in self.fix_mendeley_bug_urls:
                 if fld in entry.fields:
                     entry.fields[fld] = do_fix_mendeley_bug_urls(entry.fields[fld])
@@ -709,32 +712,37 @@ class FixesFilter(BibFilter):
             re.compile('\N{LEFT SINGLE QUOTATION MARK}'+r"(?P<contents>.*?)"+
                        '\N{RIGHT SINGLE QUOTATION MARK}'),
         ]
-        if (self.convert_dbl_quotes):
+        if self.convert_dbl_quotes:
             for fld in self.convert_dbl_quotes:
                 if fld in entry.fields:
                     for rx in _rx_dbl_quotes:
-                        entry.fields[fld] = re.sub(rx,
-                                                   lambda m: self.dbl_quote_macro+u"{"+m.group('contents')+u"}",
-                                                   entry.fields[fld])
-        if (self.convert_sgl_quotes):
+                        entry.fields[fld] = re.sub(
+                            rx,
+                            lambda m: self.dbl_quote_macro+u"{"+m.group('contents')+u"}",
+                            entry.fields[fld]
+                        )
+        if self.convert_sgl_quotes:
             for fld in self.convert_sgl_quotes:
                 if fld in entry.fields:
                     for rx in _rx_sgl_quotes:
-                        entry.fields[fld] = re.sub(rx,
-                                                   lambda m: self.sgl_quote_macro+u"{"+m.group('contents')+u"}",
-                                                   entry.fields[fld])
+                        entry.fields[fld] = re.sub(
+                            rx,
+                            lambda m: self.sgl_quote_macro+u"{"+m.group('contents')+u"}",
+                            entry.fields[fld]
+                        )
                     
-        if (self.remove_file_field):
+        if self.remove_file_field:
             if ('file' in entry.fields):
                 del entry.fields['file']
 
-        if (self.remove_fields):
+        if self.remove_fields:
             for fld in self.remove_fields:
                 entry.fields.pop(fld,None)
 
-        if (self.remove_doi_prefix):
+        if self.remove_doi_prefix:
             if 'doi' in entry.fields:
-                entry.fields['doi'] = re.sub(r'^\s*doi[ :]\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
+                entry.fields['doi'] =  \
+                    re.sub(r'^\s*doi[ :]\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
         logger.longdebug("fixes filter, result: %s -> Authors=%r, fields=%r",
                          entry.key, entry.persons.get('author', None),
@@ -757,7 +765,8 @@ def remove_full_braces(val):
         # leave the invalid LaTeX string "Maxwell}'s demon versus
         # {Szilard"
         try:
-            (nodes,pos,length) = latexwalker.LatexWalker(val, tolerant_parsing=True).get_latex_braced_group(0)
+            (nodes,pos,length) =  \
+                latexwalker.LatexWalker(val, tolerant_parsing=True).get_latex_braced_group(0)
             if pos + length == len(val):
                 # yes, all fine: the braces are one block for the field
                 return val[1:-1]
@@ -771,7 +780,7 @@ def remove_full_braces(val):
 
 # custom utf8_to_latex
 def custom_utf8tolatex(s, substitute_bad_chars=False):
-    u"""
+    """
     See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
     """
 
@@ -831,79 +840,9 @@ def custom_utf8tolatex(s, substitute_bad_chars=False):
     return result
 
 
-# patched version of latexwalker.nodelist_to_latex
-# FIXME:: fix pylatexenc's version directly!
-def nodelist_to_latex(nodelist):
-
-    from pylatexenc.latexwalker import LatexCharsNode, LatexMacroNode, LatexCommentNode, \
-        LatexGroupNode, LatexEnvironmentNode, put_in_braces, default_macro_dict
-
-    latex = ''
-    for n in nodelist:
-        if n is None:
-            continue
-
-        if n.isNodeType(LatexCharsNode):
-            latex += n.chars
-            continue
-
-        if n.isNodeType(LatexMacroNode):
-            latex += r'\%s%s' %(n.macroname, n.macro_post_space)
-
-            mac = None
-            if (n.macroname in default_macro_dict):
-                mac = default_macro_dict[n.macroname]
-            
-            if (n.nodeoptarg is not None):
-                latex += '[%s]' %(nodelist_to_latex([n.nodeoptarg]))
-
-            if mac is not None:
-                macbraces = (mac.numargs if isinstance(mac.numargs, str) else '{'*mac.numargs)
-            else:
-                macbraces = '{'*len(n.nodeargs)
-            
-            if len(n.nodeargs) != len(macbraces):
-                raise LatexWalkerError(
-                    "Error: number of arguments (%d) provided to macro '\\%s' does not "
-                    "match its specification of '%s'"
-                    %(len(n.nodeargs), n.macroname, macbraces)
-                )
-            for i in range(len(n.nodeargs)):
-                nodearg = n.nodeargs[i]
-                if nodearg is not None:
-                    if nodearg.isNodeType(LatexGroupNode):
-                        latex += nodelist_to_latex([nodearg])
-                    else:
-                        latex += put_in_braces(macbraces[i], nodelist_to_latex([nodearg]))
-
-            continue
-        
-        if n.isNodeType(LatexCommentNode):
-            latex += '%'+n.comment+n.comment_post_space
-            continue
-        
-        if n.isNodeType(LatexGroupNode):
-            latex += put_in_braces('{', nodelist_to_latex(n.nodelist))
-            continue
-        
-        if n.isNodeType(LatexEnvironmentNode):
-            latex += r'\begin{%s}' %(n.envname)
-            for optarg in n.optargs:
-                latex += put_in_braces('[', nodelist_to_latex([optarg]))
-            for arg in n.args:
-                latex += put_in_braces('{', nodelist_to_latex([arg]))
-            latex += nodelist_to_latex(n.nodelist)
-            latex += r'\end{%s}' %(n.envname)
-            continue
-        
-        latex += "<[UNKNOWN LATEX NODE: '%s']>" %(n.nodeType().__name__)
-
-    return latex
-
-
 
 # helper function
-def zotero_title_protection_cleanup(title):
+def zotero_title_protection_cleanup(title, fixesfilterinstance):
 
     logger.longdebug("zotero_title_protection_cleanup(%r)", title)
 
@@ -923,8 +862,14 @@ def zotero_title_protection_cleanup(title):
             if n.isNodeType(latexwalker.LatexCharsNode):
                 # split at whitespace
                 chunks = re.compile(r'(\s+)').split(n.chars)
+                plen = 0
                 for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
-                    split_nodelist += [(latexwalker.LatexCharsNode(chunk), sep)]
+                    split_nodelist += [
+                        (latexwalker.LatexCharsNode(parsed_context=n.parsed_context,
+                                                    chars=chunk,
+                                                    pos=n.pos+plen, len=len(chunk)), sep)
+                    ]
+                    plen += len(chunk)+len(sep)
             else:
                 split_nodelist += [(n, '')]
 
@@ -964,11 +909,12 @@ def zotero_title_protection_cleanup(title):
                 #logger.longdebug("protecting chunk by inspection of text representation")
                 new_expression += '{{' + latexwalker.nodelist_to_latex(nl) + '}}' + sep
             else:
-                new_expression += nodelist_to_latex(nl) + sep
+                new_expression += latexwalker.nodelist_to_latex(nl) + sep
         return new_expression
 
     lw = latexwalker.LatexWalker(title)
-    l2t = latex2text.LatexNodes2Text(keep_inline_math=True)
+    l2t = latex2text.LatexNodes2Text(math_mode='with-delimiters',
+                                     latex_context=butils.latex2text_latex_context)
     newtitle = ''
     oldi = 0
     while True:
@@ -1011,74 +957,43 @@ def zotero_title_protection_cleanup(title):
 # helper function
 def do_fix_space_after_escape(x):
 
-    logger.longdebug("fixes filter: do_fix_space_after_escape(`%s')", x)
-
-    if hasattr(latexwalker, 'default_macro_dict'): # pylatexenc version >= 1.0
-        macro_dict = latexwalker.default_macro_dict
-    else:
-        macro_dict = latexwalker.macro_dict # old pylatexenc versions
+    logger.longdebug("fixes filter: do_fix_space_after_escape('%s')", x)
 
     def deal_with_escape(x, m): # helper
-        macroname = m.group('macroname')
-        if macroname not in macro_dict:
-            logger.longdebug("fixes filter: Unknown macro \\%s for -dFixSpaceAfterEscape, "
-                             "assuming no arguments.",
-                             macroname)
-            replacexstr = '\\' + macroname + "{}"
-            return (x[:m.start()] + replacexstr + x[m.end():], m.start() + len(replacexstr))
 
-        macrodef = macro_dict[macroname]
+        # make sure we create a new lw instance each time, because the string
+        # changes between calls to deal_with_escape()!
+        lw = latexwalker.LatexWalker(x, tolerant_parsing=True)
 
-        ns = _Namespace()
-        ns.pos = m.end()
-        ns.args = ""
-        # now, ns.pos and ns.args can be seen and modified from the following inner nested
-        # functions. (see https://www.python.org/dev/peps/pep-3104/)
-
-        def addoptarg():
-            optarginfotuple = latexwalker.get_latex_maybe_optional_arg(x, ns.pos,
-                                                                       strict_braces=False,
-                                                                       tolerant_parsing=True)
-            if (optarginfotuple is not None):
-                # recursively fix the arguments, in case they themselves have escapes with spaces
-                ns.args += do_fix_space_after_escape(ns.x[optargpos : optargpos+optarglen])
-                ns.pos = optargpos+optarglen
-
-        def addarg():
-            (nodearg, npos, nlen) = latexwalker.get_latex_expression(x, ns.pos, strict_braces=False,
-                                                                     tolerant_parsing=True)
-            argstr = x[npos : npos+nlen]
-            if not (argstr[:1] == '{' and argstr[-1:] == '}'):
-                argstr = "{" + argstr + "}"
-
-            # recursively fix the arguments, in case they themselves have escapes with spaces
-            ns.args += do_fix_space_after_escape(argstr)
-            ns.pos = npos+nlen
-
-        if macrodef.optarg:
-            addoptarg()
-
-        if isinstance(macrodef.numargs, str):
-            # specific argument specification
-            for arg in macrodef.numargs:
-                if (arg == '{'):
-                    addarg()
-                elif (arg == '['):
-                    addoptarg()
-                else:
-                    logger.debug("Unknown macro argument kind for macro %s: %s"
-                                 % (macrodef.macname, arg))
-        else:
-            for n in range(macrodef.numargs):
-                addarg()
+        # read and parse macro invocation, including all known macro arguments
+        (nodelist, pos, len_) = lw.get_latex_nodes(pos=m.start(), read_max_nodes=1)
 
         # now that we got all the args as a string, replace that in the string
+        assert nodelist[0].isNodeType(latexwalker.LatexMacroNode)
+        macronode = nodelist[0]
+        replacexstr = '\\'+macronode.macroname
+        if len(macronode.nodeargd.argnlist) == 0:
+            replacexstr += '{}'
+        elif len(macronode.nodeargd.argspec):
+            # there is an argspec, looks like a standard macro args structure
+            #
+            # re-convert args to strings, making sure we have braces around each
+            # mandatory argument
+            for n in macronode.nodeargd.argnlist:
+                if n.isNodeType(latexwalker.LatexCharsNode) and n.chars != '*':
+                    # mandatory argument not enclosed in braces, force braces
+                    replacexstr += '{' + n.latex_verbatim() + '}'
+                else:
+                    replacexstr += n.latex_verbatim()
+        else:
+            # unknown situation. keep macro as it is... might be a custom args
+            # parser at work
+            replacexstr += macronode.latex_verbatim() # macro + arguments as they were
 
-        replacexstr = '\\'+macrodef.macname + ns.args
-        finalx = x[:m.start()] + replacexstr + x[ns.pos:]
-        logger.longdebug("fix_space_after_escape: Replaced `%s' by `%s', remaining=`%s'",
-                         m.group(), replacexstr, x[ns.pos:])
-        return (finalx, m.start() + len(replacexstr))
+        finalx = x[:pos] + replacexstr + x[pos+len_:]
+        logger.longdebug("fix_space_after_escape: Replaced ‘%s’ by ‘%s’, remaining=‘%s’",
+                         x[pos:pos+len_], replacexstr, x[pos+len_:])
+        return (finalx, pos + len(replacexstr))
 
     #
     # do_fix_space_after_escape function body:

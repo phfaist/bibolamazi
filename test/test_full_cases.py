@@ -149,5 +149,5 @@ class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions)
 
 
 if __name__ == '__main__':
-    blogger.setup_simple_console_logging(level=logging.INFO)
+    blogger.setup_simple_console_logging(level=1)
     unittest.main()

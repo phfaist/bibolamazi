@@ -333,12 +333,30 @@ def warn_deprecated(classname, oldname, newname, modulename=None, explanation=No
 #     # in names perhaps unescaped, like in "Taylor & Francis"
 # )
 
-_l2t = latex2text.LatexNodes2Text(
-    #text_replacements=_latex2text_default_text_replacements,
-    strict_latex_spaces=True
+latex2text_latex_context = latex2text.get_default_latex_context_db()
+# in most instances when converting to text, keep ``, '',  --, ---, etc. as they are
+latex2text_latex_context.add_context_category(
+    'override-nonascii-specials',
+    prepend=True,
+    macros=[],
+    environments=[],
+    specials=[
+        latex2text.SpecialsTextSpec('~', u" "),
+        latex2text.SpecialsTextSpec('``', u"\""),
+        latex2text.SpecialsTextSpec("''", u"\""),
+        latex2text.SpecialsTextSpec("--", u"--"),
+        latex2text.SpecialsTextSpec("---", u"---"),
+        latex2text.SpecialsTextSpec("!`", u"!`"),
+        latex2text.SpecialsTextSpec("?`", u"?`"),
+    ]
 )
 
+_l2t = latex2text.LatexNodes2Text(
+    strict_latex_spaces=True,
+    latex_context=latex2text_latex_context,
+)
+
+
 def latex_to_text(x):
-    if not isinstance(x, str):
-        x = str(x.decode('utf-8'))
+
     return _l2t.latex_to_text(x, tolerant_parsing=True)

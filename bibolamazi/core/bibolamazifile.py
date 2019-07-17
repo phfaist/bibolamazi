@@ -1256,7 +1256,7 @@ class BibolamaziFile:
             if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
                 filter_instance.filter_bibolamazifile(self)
 
-                logger.debug('filter '+filter_instance.name()+' filtered the full bibolamazifile.')
+                logger.debug('filter %s filtered the full bibolamazifile.', filter_instance.name())
                 return
 
             #
@@ -1270,8 +1270,8 @@ class BibolamaziFile:
                 for (k, entry) in bibdata.entries.items():
                     filter_instance.filter_bibentry(entry)
 
-                logger.debug('filter '+filter_instance.name()+' filtered each of the the '
-                             'bibentries one by one.')
+                logger.debug('filter %s filtered each of the the bibentries one by one.',
+                             filter_instance.name())
                 return
 
             raise ValueError("Bad value for BibFilter.action(): "+repr(action))
