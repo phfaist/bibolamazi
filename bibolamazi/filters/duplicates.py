@@ -867,6 +867,28 @@ class DuplicatesFilter(BibFilter):
 
         #logger.longdebug("Entries %s and %s match.", a.key, b.key)
 
+        # make sure we don't report duplicates for entries that have basically
+        # no fields (e.g. .PATCH entries).  Calculate a simple score that
+        # specifies "how much information" the entry provides based on which we
+        # could detect a duplicate, and set a simple threshold.
+        def dupl_relevant_fields_score(c):
+            def f(x):
+                return 1 if c[x] else 0
+            return (
+                0
+                + 10*f('pers')
+                +  5*f('j_abbrev')
+                +  5*f('year')
+                +  5*f('title_clean')
+                +  2*f('volume')
+                +  2*f('number')
+                +  5*f('note_cleaned')
+            )
+        threshold = 6
+        if not (dupl_relevant_fields_score(cache_a) >= threshold and
+                dupl_relevant_fields_score(cache_b) >= threshold):
+            return False, "Insufficient information to determine if entries are duplicates"
+
         # well at this point the publications are pretty much duplicates
         pos_match()
         return True, "Entries do not differ on the relevant fields"
