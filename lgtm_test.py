@@ -3,6 +3,9 @@
 # do we get py/modification-of-default-value ?
 
 def with_default_value(x, y=['a', 'b']):
+    if isinstance(y, str):
+        y = y.split()
+
     if x:
         y = y[1:]
 
@@ -10,6 +13,8 @@ def with_default_value(x, y=['a', 'b']):
 
 with_default_value(False)
 with_default_value(True)
+with_default_value(False)
+with_default_value(False, 'x y z')
 with_default_value(False)
 
 # output looks good:
