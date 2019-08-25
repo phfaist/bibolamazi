@@ -29,18 +29,15 @@ import os
 import os.path
 import re
 import logging
-import subprocess
 import datetime
 
 logger = logging.getLogger(__name__)
 
 import bibolamazi.init
 
-from bibolamazi.core import bibolamazifile
 from bibolamazi.core import main
 from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
-from bibolamazi.core.bibfilter import argtypes
 from bibolamazi.core.bibfilter import pkgprovider, pkgfetcher_github
 from bibolamazi.core import version as bibolamaziversion
 
@@ -590,7 +587,6 @@ def run_app(argv):
         QMessageBox.warning(None, "Filter packages error",
                             "An error was detected in the filter packages configuration. "
                             "Please edit your settings.")
-        pass
 
 
     args = app.arguments()

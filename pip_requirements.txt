@@ -12,7 +12,7 @@ arxiv2bib >= 1.0.2
 #
 # My own pylatexenc.
 #
-pylatexenc >= 1.4
+pylatexenc >= 2.0
 
 #
 # `future` for both python2 & python3 support

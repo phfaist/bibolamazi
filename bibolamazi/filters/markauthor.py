@@ -20,7 +20,7 @@
 #                                                                              #
 ################################################################################
 
-import re
+#import re
 import logging
 
 #
@@ -28,7 +28,7 @@ import logging
 # specified string or LaTeX command
 #
 
-from pybtex.database import Entry, Person
+from pybtex.database import Person #, Entry
 from pybtex.utils import OrderedCaseInsensitiveDict
 
 from bibolamazi.core.bibfilter import BibFilter

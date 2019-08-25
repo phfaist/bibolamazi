@@ -21,13 +21,12 @@
 ################################################################################
 
 
-import re
+#import re
 import logging
 logger = logging.getLogger(__name__)
 
 from pybtex.utils import CaseInsensitiveDict
 
-from bibolamazi.core import bibfilter
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList, enum_class
 from bibolamazi.core import butils
@@ -336,10 +335,14 @@ class ArxivNormalizeFilter(BibFilter):
 
         if self.unpublished_mode == MODE_EPRINT and 'journal' in self.strip_unpublished_fields:
             if self.arxiv_journal_name and self.arxiv_journal_name != _default_arxiv_journal_name:
-                raise ValueError("Cannot specify both -sStripUnpublishedFields=\"...,journal,...\" and -sArxivJournalName=...")
+                raise ValueError(
+                    "Cannot specify both -sStripUnpublishedFields=\"...,journal,...\" "
+                    "and -sArxivJournalName=..."
+                )
             self.arxiv_journal_name = "" # unset journal name
 
-        logger.debug("arxiv filter constructor: mode=%s; unpublished_mode=%s", self.mode, self.unpublished_mode)
+        logger.debug("arxiv filter constructor: mode=%s; unpublished_mode=%s",
+                     self.mode, self.unpublished_mode)
 
 
     def action(self):

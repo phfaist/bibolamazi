@@ -27,16 +27,13 @@ import codecs
 import unicodedata
 import string
 import textwrap
-import copy
-import collections
-import hashlib
+#import collections
+#import hashlib
 import logging
 
-from pybtex.database import BibliographyData, Entry
-from pybtex.utils import OrderedCaseInsensitiveDict
+from pybtex.database import BibliographyData #, Entry
+#from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.textutils
-
-from pylatexenc import latex2text
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
@@ -402,7 +399,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
             # remove any unusual characters
             title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
             # remove any inline math
-            title = re.sub(r'$[^$]+$', '', title)
+            title = re.sub(r'\$[^$]+\$', '', title)
+            title = re.sub(r'\\\(.+?\\\)', '', title)
             # clean up whitespace
             title = re.sub(r'\s+', ' ', title)
             return title.strip()
@@ -867,6 +865,28 @@ class DuplicatesFilter(BibFilter):
 
         #logger.longdebug("Entries %s and %s match.", a.key, b.key)
 
+        # make sure we don't report duplicates for entries that have basically
+        # no fields (e.g. .PATCH entries).  Calculate a simple score that
+        # specifies "how much information" the entry provides based on which we
+        # could detect a duplicate, and set a simple threshold.
+        def dupl_relevant_fields_score(c):
+            def f(x):
+                return 1 if c[x] else 0
+            return (
+                0
+                + 10*f('pers')
+                +  5*f('j_abbrev')
+                +  5*f('year')
+                +  5*f('title_clean')
+                +  2*f('volume')
+                +  2*f('number')
+                +  5*f('note_cleaned')
+            )
+        threshold = 6
+        if not (dupl_relevant_fields_score(cache_a) >= threshold and
+                dupl_relevant_fields_score(cache_b) >= threshold):
+            return False, "Insufficient information to determine if entries are duplicates"
+
         # well at this point the publications are pretty much duplicates
         pos_match()
         return True, "Entries do not differ on the relevant fields"
@@ -994,16 +1014,17 @@ class DuplicatesFilter(BibFilter):
         unused = BibliographyData()
         #unused_respawned = set() # because del unused.entries[key] is not implemented ... :(
 
-        def copy_entry(entry):
-            #return copy.deepcopy(entry) # too deep ...
-            newpers = {}
-            for role, plist in entry.persons.items():
-                newpers[role] = [copy.deepcopy(p) for p in plist]
-            return Entry(type_=entry.type,
-                         fields=entry.fields.items(), # will create own Fielddict
-                         persons=newpers,
-                         collection=entry.collection
-                         )
+        # def copy_entry(entry):
+        #     #return copy.deepcopy(entry) # too deep ...
+        #     newpers = {}
+        #     for role, plist in entry.persons.items():
+        #         newpers[role] = [copy.deepcopy(p) for p in plist]
+        #     return Entry(type_=entry.type,
+        #                  fields=entry.fields.items(), # will create own Fielddict
+        #                  persons=newpers,
+        #                  collection=entry.collection
+        #                  )
+
 
         # Strategy: go through the list of entries, and each time keeping it if it is new,
         # or updating the original and registering the alias if it is a duplicate.
@@ -1182,6 +1203,21 @@ class DuplicatesFilter(BibFilter):
                     newbibdata.add_entry(alias.origkey, unused.entries[alias.origkey])
                     del unused.entries[alias.origkey]
 
+            #
+            # check if we are discarding any entries of the form XXX.PATCH, and
+            # warn the user
+            #
+            rx_patch = re.compile('[.]PATCH([.].*)?$')
+            for e in unused.entries.keys():
+                if rx_patch.search(e):
+                    logger.warning(
+                        "Entry ‘%s’ is being discarded because it's not used, but it looks like "
+                        "a patch for another entry.  If this is the case you should apply "
+                        "patches (\"filter: apply_patches\") before running the "
+                        "duplicates filter.",
+                        e
+                    )
+            
 
             # output aliases to the duplicates file
 

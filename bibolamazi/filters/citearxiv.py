@@ -20,18 +20,18 @@
 #                                                                              #
 ################################################################################
 
-import re
-import os
-import os.path
+#import re
+#import os
+#import os.path
 import io
-from urllib.error import HTTPError
+#from urllib.error import HTTPError
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import BibliographyData
+#from pybtex.database import BibliographyData
 import pybtex.database.input.bibtex as inputbibtex
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core.butils import getbool
 

@@ -26,7 +26,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from bibolamazi.core.butils import getbool
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 
 # for the arxiv info parser tool
 from .util import arxivutil

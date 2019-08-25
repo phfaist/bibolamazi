@@ -23,13 +23,13 @@
 import re
 import logging
 
-from pybtex.database import BibliographyData, Entry
-from pybtex.utils import OrderedCaseInsensitiveDict
+#from pybtex.database import BibliographyData, Entry
+#from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.bibtex.utils
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
-from bibolamazi.core.bibfilter.argtypes import CommaStrList
-from bibolamazi.core import butils
+from bibolamazi.core.bibfilter import BibFilter # BibFilterError
+#from bibolamazi.core.bibfilter.argtypes import CommaStrList
+#from bibolamazi.core import butils
 
 logger = logging.getLogger(__name__)
 

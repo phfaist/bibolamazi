@@ -21,24 +21,23 @@
 ################################################################################
 
 import re
-import sys
-import os
-import os.path
+#import sys
+#import os
+#import os.path
 import io
-from urllib.error import HTTPError
 import warnings
 import logging
 logger = logging.getLogger(__name__)
 
 import requests
 
-from pybtex.database import BibliographyData
+#from pybtex.database import BibliographyData
 import pybtex.database.input.bibtex as inputbibtex
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core.bibusercache import BibUserCacheAccessor
-from bibolamazi.core.butils import getbool
+#from bibolamazi.core.butils import getbool
 
 from .util import auxfile
 
@@ -290,7 +289,7 @@ class CiteDoiFilter(BibFilter):
                 citekey = citekey[len(self.prefix)+1:]
 
             # strip "--comment" from the user's citekey
-            key = re.sub(r'--.*$', '', citekey)
+            citekey = re.sub(r'--.*$', '', citekey)
 
             if not rx_doi.match(citekey):
                 # this is not a DOI

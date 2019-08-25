@@ -31,7 +31,7 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilterError #, BibFilter
 
 
 rx_bibolamazibib_suffix = re.compile(r'(\.bibolamazi)?\.bib$', flags=re.IGNORECASE)

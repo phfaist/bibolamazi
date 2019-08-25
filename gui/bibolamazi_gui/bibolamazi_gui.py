@@ -26,10 +26,7 @@
 import sys
 import os
 import os.path
-import re
 import logging
-import subprocess
-import datetime
 
 #if sys.platform.startswith("win"):
 #    # why do we need this??!??!?!
@@ -40,12 +37,8 @@ import bibolamazi.init
 # set up basic logging
 from bibolamazi.core import blogger
 
-from bibolamazi.core import bibolamazifile
-#from bibolamazi.core import main as bibolamazi_main
-from bibolamazi.core.butils import BibolamaziError
 from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core.bibfilter import argtypes
-from bibolamazi.core import version as bibolamaziversion
 
 # Important: Do not import Qt5 yet
 #

@@ -29,11 +29,11 @@ import os
 import os.path
 import re
 import logging
-import datetime
-import shutil
-from urllib.parse import urlparse, urlencode
-import json
-import collections
+#import datetime
+#import shutil
+from urllib.parse import urlparse
+#import json
+#import collections
 import zipfile
 
 import github
@@ -41,7 +41,6 @@ import requests
 
 import bibolamazi.init
 from bibolamazi.core.butils import BibolamaziError
-from . import pkgprovider
 
 logger = logging.getLogger(__name__)
 

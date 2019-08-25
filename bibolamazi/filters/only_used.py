@@ -22,12 +22,12 @@
 
 import logging
 
-import os
-import re
+#import os
+#import re
 
 from pybtex.utils import OrderedCaseInsensitiveDict
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
 
 from .util import auxfile

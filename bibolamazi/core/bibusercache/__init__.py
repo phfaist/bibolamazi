@@ -466,7 +466,6 @@ class BibUserCache:
             logger.longdebug("EXCEPTION IN pickle.load():\n%s", traceback.format_exc())
             logger.debug("IGNORING EXCEPTION IN pickle.load(): %s.", e)
             self.cachedic = BibUserCacheDic({})
-            pass
         
         self.cachedic.set_validation(self.comb_validation_checker)
 
@@ -587,9 +586,9 @@ class BibUserCacheAccessor:
         `cache_obj.installCacheExpirationChecker()`, then the cache dictionary object may
         have changed! (To be sure, call :py:meth:`cacheDic` again.)
 
-        The default implementation raises a `NotImplemented` exception.
+        The default implementation raises a `NotImplementedError` exception.
         """
-        raise NotImplemented("Subclasses of BibUserCacheAccess must reimplement initialize()")
+        raise NotImplementedError("Subclasses of BibUserCacheAccess must reimplement initialize()")
 
 
     def cacheName(self):

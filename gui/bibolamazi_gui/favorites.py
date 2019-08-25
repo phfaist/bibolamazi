@@ -20,7 +20,6 @@
 #                                                                              #
 ################################################################################
 
-from collections import namedtuple
 import logging
 
 from PyQt5.QtCore import *
@@ -184,7 +183,7 @@ class FavoritesModel(QAbstractTableModel):
         if not index.isValid():
             return None
         
-        col = index.column()
+        #col = index.column()
         row = index.row()
 
         if (row < 0 or row >= len(self._favcmds.favlist)):
@@ -198,8 +197,6 @@ class FavoritesModel(QAbstractTableModel):
                     return QBrush(QColor(255,230,230, 80))
                 else:
                     return QBrush(QColor(235,255,255, 80))
-
-            return None
 
         if (role == ROLE_FAV_EDITABLE):
             return self._edit_mode
@@ -231,7 +228,7 @@ class FavoritesModel(QAbstractTableModel):
         if not index.isValid():
             return False
         
-        col = index.column()
+        #col = index.column()
         row = index.row()
 
         if (row < 0 or row >= len(self._favcmds.favlist)):

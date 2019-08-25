@@ -31,7 +31,7 @@ import re
 import logging
 import datetime
 import shutil
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlparse
 import json
 import hashlib
 
@@ -191,7 +191,6 @@ class PackageProviderManager:
                     self.pkgcacheinfo = json.load(f)
             except (OSError,json.JSONDecodeError):
                 logger.debug("Couldn't read pkg cache info JSON file, ignoring it...")
-                pass
 
     def _save_pkgcacheinfo(self):
         pkgcacheinfofile = self._pkgcacheinfofile()

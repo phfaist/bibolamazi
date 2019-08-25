@@ -34,10 +34,10 @@ import os.path
 from datetime import datetime
 import codecs
 import shlex
-from urllib.parse import urlparse, urlencode
+#from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen
-from urllib.error import HTTPError
-import pickle
+#from urllib.error import HTTPError
+#import pickle
 import logging
 
 import bibolamazi.init
@@ -49,7 +49,7 @@ from pybtex.utils import OrderedCaseInsensitiveDict
 
 from . import butils
 from .butils import BibolamaziError
-from .bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
+from .bibusercache import BibUserCache
 from .bibfilter import BibFilter, BibFilterError, factory
 from .bibfilter.factory import PrependOrderedDict
 
@@ -1052,7 +1052,7 @@ class BibolamaziFile:
                     self._user_cache.loadCache(f)
             except (IOError, EOFError,):
                 logger.debug("Cache file `%s' nonexisting or not readable.", cachefname)
-                pass
+
         else:
             logger.debug("As requested, I have not attempted to load any existing cache file.")
 
@@ -1256,7 +1256,7 @@ class BibolamaziFile:
             if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
                 filter_instance.filter_bibolamazifile(self)
 
-                logger.debug('filter '+filter_instance.name()+' filtered the full bibolamazifile.')
+                logger.debug('filter %s filtered the full bibolamazifile.', filter_instance.name())
                 return
 
             #
@@ -1270,8 +1270,8 @@ class BibolamaziFile:
                 for (k, entry) in bibdata.entries.items():
                     filter_instance.filter_bibentry(entry)
 
-                logger.debug('filter '+filter_instance.name()+' filtered each of the the '
-                             'bibentries one by one.')
+                logger.debug('filter %s filtered each of the the bibentries one by one.',
+                             filter_instance.name())
                 return
 
             raise ValueError("Bad value for BibFilter.action(): "+repr(action))
@@ -1402,7 +1402,6 @@ class BibolamaziFile:
                     self._user_cache.saveCache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file '%s'.", cachefname)
-                pass
 
         
 

@@ -21,14 +21,14 @@
 ################################################################################
 
 
-import re
+#import re
 import logging
 logger = logging.getLogger(__name__)
 
 from bibolamazi.core.butils import getbool
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import enum_class
-from bibolamazi.core.main import verbosity_logger_level
+#from bibolamazi.core.main import verbosity_logger_level
 
 from bibolamazi.core.bibfilter.argtypes import LogLevel
 

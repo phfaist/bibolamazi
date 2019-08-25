@@ -20,8 +20,6 @@
 #                                                                              #
 ################################################################################
 
-import os
-import os.path
 import re
 import logging
 import textwrap
@@ -31,10 +29,10 @@ from urllib.parse import quote_plus as urlquoteplus
 
 import bibolamazi.init
 from bibolamazi.core.bibfilter import factory as filters_factory
-from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
+#from bibolamazi.core.bibfilter.factory import NoSuchFilter, NoSuchFilterPackage, FilterError
 from bibolamazi.core import butils
 from bibolamazi.core.bibfilter.argtypes import EnumArgType, MultiTypeArgType, \
-    CommaStrList, ColonCommaStrDict, StrEditableArgType
+    StrEditableArgType #CommaStrList, ColonCommaStrDict
 from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
@@ -439,7 +437,7 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
     def flags(self, index):
         col = index.column()
-        row = index.row()
+        #row = index.row()
 
         if (self._fopts is None):
             return Qt.NoItemFlags
@@ -481,9 +479,9 @@ class DefaultFilterOptionsModel(QAbstractTableModel):
 
         # validate type
         typ = None
-        if (arg.argtypename is not None):
+        if arg.argtypename is not None:
             typ = butils.resolve_type(arg.argtypename, self._finfo.fmodule)
-        if (typ == None):
+        if typ is None:
             typ = str
             
         value = typ(value)

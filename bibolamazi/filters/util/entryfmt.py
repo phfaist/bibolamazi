@@ -20,11 +20,11 @@
 #                                                                              #
 ################################################################################
 
-import re
+#import re
 import string
 
-import bibolamazi.core.bibolamazifile
-from pybtex.database import BibliographyData, Entry, Person
+#import bibolamazi.core.bibolamazifile
+#from pybtex.database import BibliographyData, Entry, Person
 
 from bibolamazi.filters.util.arxivutil import ArxivInfoCacheAccessor
 from bibolamazi.core.bibfilter import BibFilterError
@@ -126,7 +126,11 @@ class EntryFormatter(string.Formatter):
         
         self.d.update({
             'p': _Store({
-                'firstauthor': self.entry.persons['author'][0] if len(self.entry.persons['author']) else '',
+                'firstauthor': (
+                    self.entry.persons['author'][0]
+                    if len(self.entry.persons['author'])
+                    else ''
+                ),
                 'authors': self.entry.persons.get('author',{}),
                 'editors': self.entry.persons.get('editor',{}),
                 'persons': self.entry.persons,

@@ -24,29 +24,18 @@
 import re
 import sys
 import logging
-import os.path
-from collections import OrderedDict
 
 from urllib.parse import urlsplit
 
-import markdown2
-
 import bibolamazi.init
-from bibolamazi.core import main as bibolamazimain
-from bibolamazi.core import blogger
 from bibolamazi.core.blogger import logger
-from bibolamazi.core import butils
-from bibolamazi.core import argparseactions
-from bibolamazi.core.bibfilter import factory as filters_factory
 from bibolamazi.core import helppages
-from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from . import uiutils
-from . import settingswidget
 from . import searchwidget
 
 from .qtauto.ui_helpbrowser import Ui_HelpBrowser

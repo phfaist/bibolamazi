@@ -25,7 +25,6 @@ import re
 from urllib.error import URLError, HTTPError
 import textwrap
 import time
-import math
 import logging
 logger = logging.getLogger(__name__)
 
@@ -235,7 +234,7 @@ def detectEntryArXivInfo(entry):
                     except IndexError as e:
                         logger.longdebug("indexerror while getting arxivid in note=%r, m=%r: %s",
                                          notefield, m, e)
-                        pass
+
                 if (not d['primaryclass']):
                     primaryclass = None
                     try:
@@ -643,7 +642,6 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 doi = ref._field_text('doi', namespace=arxiv2bib.ARXIV)
             except:
                 logger.debug("Couldn't get DOI field for %s from %r", aid, ref)
-                pass
             
             if (primaryclass and entrydic[k]['primaryclass'] and
                 # compare overlap only, so that 'cond-mat' and

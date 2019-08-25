@@ -22,9 +22,9 @@
 
 import re
 import logging
-from html import escape as htmlescape
+#from html import escape as htmlescape
 
-import github
+#import github
 
 import bibolamazi.init
 
@@ -32,7 +32,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from .uiutils import ContextAttributeSetter, BlockedSignals
+from .uiutils import BlockedSignals #, ContextAttributeSetter
 from .qtauto.ui_githubauthenticationdialog import Ui_GithubAuthenticationDialog
 
 logger = logging.getLogger(__name__)

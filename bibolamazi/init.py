@@ -44,7 +44,7 @@ if sys.version_info < (3, 4):
 #
 # add the LONGDEBUG level, and set our custom logger class
 #
-from .core import blogger as _blogger
+from .core import blogger as _blogger # lgtm
 
 
 
@@ -62,7 +62,7 @@ def _split_tex_string(string, sep=None, strip=True, filter_empty=False):
     name_start = 0
     result = []
     string_len = len(string)
-    pos = 0
+    #pos = 0
     for pos, char in enumerate(string):
         if char == '{':
             brace_level += 1

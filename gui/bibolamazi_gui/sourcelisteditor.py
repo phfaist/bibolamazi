@@ -32,7 +32,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import bibolamazi.init
-from bibolamazi.core.helppages import htmlescape, forcewrap_long_lines
+from bibolamazi.core.helppages import htmlescape #, forcewrap_long_lines
 
 from .qtauto.ui_sourcelisteditor import Ui_SourceListEditor
 
@@ -186,7 +186,7 @@ class SourceListEditor(QWidget):
             logger.warning("Invalid action link: %r", link)
             return
         action = m.group('action')
-        i = int(m.group('num'))
+        #i = int(m.group('num'))
         if action == 'change':
             self.ui.lblLinkInfo.setText("Select a new file to replace the current one.")
         elif action == 'remove':

@@ -20,7 +20,6 @@
 #                                                                              #
 ################################################################################
 
-import re
 import logging
 from html import escape as htmlescape
 
@@ -32,7 +31,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from .uiutils import ContextAttributeSetter, BlockedSignals
+from .uiutils import BlockedSignals #, ContextAttributeSetter
 from .qtauto.ui_githubreposelector import Ui_GithubRepoSelector
 
 logger = logging.getLogger(__name__)
@@ -104,7 +103,7 @@ class GithubRepoSelector(QDialog):
             except Exception as e:
                 logger.debug("Ignoring exception ... %r", e)
                 logger.exception("Ignoring exception")
-                pass
+
             self.ui.btnBack.setVisible(True)
             self.ui.btnNext.setVisible(False)
             self.ui.btnOk.setVisible(True)

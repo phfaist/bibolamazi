@@ -137,7 +137,7 @@ class MyOrderedDictModel(QAbstractTableModel):
 
     def flags(self, index):
         col = index.column()
-        row = index.row()
+        #row = index.row()
 
         if col in (0,1,):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
@@ -405,7 +405,6 @@ class SettingsWidget(QDialog):
             except Exception as e:
                 logger.warning("Can't generate access token: %s: %s", e.__class__.__name__, e)
                 logger.exception("Exception")
-                pass
 
         self._update_githubauth_guistate()
 

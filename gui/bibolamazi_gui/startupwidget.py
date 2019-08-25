@@ -22,39 +22,21 @@
 
 
 import sys
-import os
-import os.path
 import re
 import logging
 import subprocess
-import datetime
 
 logger = logging.getLogger(__name__)
 
 import bibolamazi.init
-
-from bibolamazi.core import bibolamazifile
-from bibolamazi.core import main
-from bibolamazi.core.butils import BibolamaziError
-from bibolamazi.core.bibfilter import factory as filters_factory
-from bibolamazi.core.bibfilter import argtypes
-from bibolamazi.core import version as bibolamaziversion
-
 
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-#print("loaded Qt. executable=", sys.executable, ' meipass=', sys._MEIPASS)
 
 from . import uiutils
-from . import openbibfile
-from . import helpbrowser
-from . import settingswidget
-
-from .favorites import FavoriteCmdsList
-from .newbibolamazifiledialog import NewBibolamazifileDialog
 
 from .qtauto.ui_startupwidget import Ui_StartupWidget
 
@@ -74,7 +56,7 @@ class StartupWidget(QWidget):
             # use high-res SVG for retina displays
             retinaresolution = find_retina_resolution()
             if retinaresolution is not None:
-                mydesktop = QApplication.desktop()
+                #mydesktop = QApplication.desktop()
                 # seems that myratio is not reliable (I get 1.77777..), so just use 2x
                 #myratio = float(retinaresolution[0]) / mydesktop.width()
                 myratio = 2

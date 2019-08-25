@@ -28,26 +28,27 @@ import os.path
 import shlex
 import argparse
 import textwrap
-import types
 import pkgutil
 from collections import namedtuple, OrderedDict
 import logging
 import traceback
 
 import bibolamazi.init
-from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
+from bibolamazi.core.argparseactions import store_key_val, store_key_bool
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
-from bibolamazi.core.bibfilter import BibFilter
-from . import pkgprovider
-
+# Bibfilter is used in custom-built eval'ed code
+from bibolamazi.core.bibfilter import BibFilter # lgtm [py/unused-import]
 
 
 logger = logging.getLogger(__name__)
 
 
 import inspect
-inspect_getargspec = inspect.getargspec if sys.version_info[0] <= 2 else lambda f: inspect.getfullargspec(f)[:4]
+if sys.version_info[0] <= 2:
+    inspect_getargspec = inspect.getargspec
+else:
+    inspect_getargspec = lambda f: inspect.getfullargspec(f)[:4]
 
 
 
@@ -156,22 +157,21 @@ class FilterCreateArgumentError(FilterError):
 
 
 
-
 class PrependOrderedDict(OrderedDict):
     """
     An ordered dict that stores the items in the order where the first item is the one
     that was added/modified last.
     """
     def __init__(self, *args, **kwargs):
-        self.isupdating = False
+        self._isupdating = False
         super().__init__(*args, **kwargs)
         
     def __setitem__(self, key, value):
-        if self.isupdating:
+        if self._isupdating:
             OrderedDict.__setitem__(self, key, value)
             return
         
-        self.isupdating = True
+        self._isupdating = True
         try:
             if key in self:
                 del self[key]
@@ -180,24 +180,24 @@ class PrependOrderedDict(OrderedDict):
             self.update({key: value})
             self.update(ourself)
         finally:
-            self.isupdating = False
+            self._isupdating = False
 
     def set_items(self, items):
-        self.isupdating = True
+        self._isupdating = True
         try:
             self.clear()
             self.update(items)
         finally:
-            self.isupdating = False
+            self._isupdating = False
 
     def set_at(self, idx, key, value):
-        self.isupdating = True
+        self._isupdating = True
         try:
             items = list(self.items())
             self.clear()
             self.update(items[:idx] + [ (key, value) ] + items[idx+1:])
         finally:
-            self.isupdating = False
+            self._isupdating = False
 
     def item_at(self, idx):
         return list(self.items())[idx]
@@ -458,7 +458,7 @@ def _get_filter_module(name, fpkgname=None, filterpath=filterpath):
                                str(e), fmt_exc)
             # and log the error for if, at the end, filter loading failed everywhere:
             # useful as additional information for debugging.
-            import_errors.append(u"Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
+            import_errors.append("Attempt failed to import module `%s' in package `%s'%s.\n ! %s: %s"
                                  %(name, fpn, dirstradd(fpd), exctypestr,
                                    str(e)))
             
@@ -625,7 +625,6 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
 
         def ignore(x):
             logger.debug("Ignoring import error of %s", x)
-            pass
 
         filterpackprefix = fpkgname+'.'
 
@@ -636,7 +635,8 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
                              fpkgname, modname, ispkg)
 
             if not modname.startswith(filterpackprefix):
-                logger.debug("found module '%s' which doesn't begin with '%s' -- seems to happen e.g. for packages...",
+                logger.debug("found module '%s' which doesn't begin with '%s' -- seems to "
+                             "happen e.g. for packages...",
                              modname, filterpackprefix)
                 filtername = None
             else:
@@ -653,15 +653,16 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
 
             # is a filter module? -- re-load with get_module() for proper handling of import errors
             try:
-                finfo = FilterInfo.initFromModuleObject(filtername, module_obj, fpkgname=fpkgname, fpkgdir=fpkgdir)
+                finfo = FilterInfo.initFromModuleObject(filtername, module_obj,
+                                                        fpkgname=fpkgname, fpkgdir=fpkgdir)
+            except ModuleNotAValidFilter:
+                logger.debug("Module %s does not define a valid bibolamazi filter", modname)
+                continue
             except NoSuchFilter:
                 logger.debug("Module %s: failed to load", modname)
                 continue
             except NoSuchFilterPackage:
                 logger.debug("Module %s: invalid filter package %s (!?!?)", modname, fpkgname)
-                continue
-            except ModuleNotAValidFilter:
-                logger.debug("Module %s does not define a valid bibolamazi filter", modname)
                 continue
 
             # yes, _is_ a filter module.
@@ -669,7 +670,8 @@ def detect_filter_package_listings(force_redetect=False, filterpath=filterpath):
 
     # ----
     
-    logger.debug("detect_filter_package_listings(force_redetect=%r, filterpath=%r)", force_redetect, filterpath)
+    logger.debug("detect_filter_package_listings(force_redetect=%r, filterpath=%r)",
+                 force_redetect, filterpath)
 
     if not _filter_package_listings or force_redetect:
         _filter_package_listings = OrderedDict()
@@ -826,7 +828,7 @@ def _get_filter_class(name, fmodule=None):
             simple_filter_action_type = 'BibFilter.BIB_FILTER_BIBOLAMAZIFILE'
             simple_filter_fn = fmodule.bib_filter_bibolamazifile
         else:
-            raise RuntimeError("Shouldn't be here")
+            raise RuntimeError("Shouldn't be here") # lgtm [py/unreachable-statement]
 
         # inspect the fn's signature and declare arguments for documentation
         argspec = inspect_getargspec(simple_filter_fn)
@@ -1133,7 +1135,7 @@ class FilterInfo:
         self.validateOptionStringArgs(pargs, kwargs)
 
         # and finally, instantiate the filter.
-        logger.debug(self.name + u': calling fclass('+','.join([repr(x) for x in pargs])+', '+
+        logger.debug(self.name + ': calling fclass('+','.join([repr(x) for x in pargs])+', '+
                      ','.join([repr(k)+'='+repr(v) for k,v in kwargs.items()]) + ')')
 
         # exceptions caught here are those thrown from the filter constructor itself.
@@ -1302,21 +1304,21 @@ class DefaultFilterOptions:
             logger.debug("filter "+self._filtername+": will not automatically adjust option letter case.")
             self._use_auto_case = False
 
-        if (defaults is None):
-            defaults = []
-        def fmtarg(k, fargs, defaults):
-            s = fargs[k]
-            off = len(fargs)-len(defaults)
-            if (k-off >= 0):
-                s += "="+repr(defaults[k-off])
-            return s
-        fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
-            (", ".join([fmtarg(k, fargs, defaults)
-                        for k in range(len(fargs))
-                        if fargs[k] != "self"])),
-            ("[...]" if varargs else ""),
-            ("[..=...]" if keywords else ""),
-            ] if xpart]) + ")")
+        # if (defaults is None):
+        #     defaults = []
+        # def fmtarg(k, fargs, defaults):
+        #     s = fargs[k]
+        #     off = len(fargs)-len(defaults)
+        #     if (k-off >= 0):
+        #         s += "="+repr(defaults[k-off])
+        #     return s
+        # fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
+        #     (", ".join([fmtarg(k, fargs, defaults)
+        #                 for k in range(len(fargs))
+        #                 if fargs[k] != "self"])),
+        #     ("[...]" if varargs else ""),
+        #     ("[..=...]" if keywords else ""),
+        #     ] if xpart]) + ")")
 
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,
@@ -1349,9 +1351,9 @@ class DefaultFilterOptions:
             argdoc = argdocs.get(farg, _ArgDoc(farg,None,None))
             if argdoc.doc is not None:
                 argdocdoc = argdoc.doc.replace('%', '%%')
-                argdocdoc = textwrap.TextWrapper(width=80, replace_whitespace=True, drop_whitespace=True).fill(
-                    argdocdoc
-                    )
+                argdocdoc = textwrap.TextWrapper(
+                    width=80, replace_whitespace=True, drop_whitespace=True
+                ).fill(argdocdoc)
             else:
                 argdocdoc = None
             optkwargs = {
@@ -1395,12 +1397,15 @@ class DefaultFilterOptions:
                 argdocs_left.remove(farg)
             self._filteroptions.append(argdoc)
 
-        # in case user specified more docs than declared arguments, they document additional arguments that
-        # can be given as **kwargs
+        # in case user specified more docs than declared arguments, they
+        # document additional arguments that can be given as **kwargs
         if (not keywords and argdocs_left):
-            raise FilterError("Filter's argument documentation provides additional documentation for "
-                              "non-arguments %r. (Did you forget a **kwargs?)"
-                              %(argdocs_left), name=filtername)
+            raise FilterError(
+                "Filter's argument documentation provides additional documentation for "
+                "non-arguments %r. (Did you forget a **kwargs?)"
+                %(argdocs_left),
+                name=filtername
+            )
         for farg in argdocs_left:
             argdoc = make_filter_option(farg)
             self._filtervaroptions.append(argdoc)
@@ -1408,25 +1413,30 @@ class DefaultFilterOptions:
         group_general = p.add_argument_group('Alternative Option Syntax')
 
         # a la ghostscript: -sOutputFile=blahblah -sKey=Value
-        group_general.add_argument('-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
-                                   exception=FilterOptionsParseError,
-                                   help="-sKey=Value sets parameter values")
-        group_general.add_argument('-d', action=store_key_bool, const=True, dest='_d_args',
-                                   metavar='Switch[=<value>]', exception=FilterOptionsParseErrorHintSInstead,
-                                   help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default "
-                                   "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off")
+        group_general.add_argument(
+            '-s', action=store_key_val, dest='_s_args', metavar='Key=Value',
+            exception=FilterOptionsParseError,
+            help="-sKey=Value sets parameter values"
+        )
+        group_general.add_argument(
+            '-d', action=store_key_bool, const=True, dest='_d_args',
+            metavar='Switch[=<value>]', exception=FilterOptionsParseErrorHintSInstead,
+            help="-dSwitch[=<value>] sets flag `Switch' to given boolean value, by default "
+            "True. Valid boolean values are 1/T[rue]/Y[es]/On and 0/F[alse]/N[o]/Off"
+        )
 
         # allow also to give arguments without the keywords.
         if varargs:
             group_general.add_argument('_args', nargs='*', metavar='<arg>',
-                                       help="Additional arguments will be passed as is to the filter--see "
-                                       "documentation below")
+                                       help="Additional arguments will be passed as is to the "
+                                       "filter--see documentation below")
 
-        #p.add_argument_group(u"Python filter syntax",
-        #                     textwrap.fill(fclasssyntaxdesc, width=80, subsequent_indent='        '))
+        #p.add_argument_group("Python filter syntax",
+        #                     textwrap.fill(fclasssyntaxdesc, width=80,
+        #                     subsequent_indent='        '))
 
         filter_options_syntax_help = textwrap.dedent(
-            u"""\
+            """\
             For passing option values, you may use either the `--key value' syntax, or the
             (ghostscript-like) `-sKey=Value' syntax. For boolean switches, use -dSwitch to
             set the given option to True. When using the -s or -d syntax, the option names
@@ -1435,7 +1445,7 @@ class DefaultFilterOptions:
             as `-dPreserveIds' or `-dPreserveIds=yes'.""")
 
         if ns.has_a_boolean_arg:
-            filter_options_syntax_help += textwrap.dedent(u"""
+            filter_options_syntax_help += textwrap.dedent("""
 
             The argument to options which accept a <BOOLEAN ARG> may be omitted. <BOOL
             ARG> may be one of ("t", "true", "y", "yes", "1", "on") to activate the
@@ -1458,14 +1468,14 @@ class DefaultFilterOptions:
             filter_options_syntax_help += "\n\n" + docstr
 
         if varargs:
-            filter_options_syntax_help += textwrap.dedent(u"""
+            filter_options_syntax_help += textwrap.dedent("""
 
             This filter accepts additional positional arguments. See the documentation
             below for more information.""")
 
-        p.add_argument_group(u'Note on Filter Options Syntax', filter_options_syntax_help)
+        p.add_argument_group('Note on Filter Options Syntax', filter_options_syntax_help)
 
-        p.add_argument_group(u'FILTER DESCRIPTION', "\n" + self._fclass.getHelpText())
+        p.add_argument_group('FILTER DESCRIPTION', "\n" + self._fclass.getHelpText())
 
 
         self._parser = p
@@ -1568,7 +1578,7 @@ class DefaultFilterOptions:
             #
             parts = list(shlex.split(optionstring))
         except ValueError as e:
-            raise FilterOptionsParseError(u"Error parsing option string: %s\n\t%s"
+            raise FilterOptionsParseError("Error parsing option string: %s\n\t%s"
                                           %(str(e), optionstring.strip()),
                                           self._filtername)
         
@@ -1693,10 +1703,13 @@ class DefaultFilterOptions:
                 # add explicit default argument for this farg, if any, or report error
                 # if no value given.
                 if n < n_deflts_offset:
-                    raise FilterOptionsParseError("No value provided for mandatory option `%s'"%(farg),
-                                                  self._filtername)
+                    raise FilterOptionsParseError(
+                        "No value provided for mandatory option `%s'"%(farg),
+                        self._filtername
+                    )
                 defaultval = defaults[n - n_deflts_offset]
-                logger.longdebug("filter %s: adding argument #%d with default value %s=%r", self._filtername,
+                logger.longdebug("filter %s: adding argument #%d with default value %s=%r",
+                                 self._filtername,
                                  n, farg, defaultval)
                 fdeclpargs.append(defaultval)
         # ensure that all filter-declared arguments have values, then add all remaining args for *args.
