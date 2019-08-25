@@ -27,12 +27,11 @@ import codecs
 import unicodedata
 import string
 import textwrap
-import copy
 #import collections
 #import hashlib
 import logging
 
-from pybtex.database import BibliographyData, Entry
+from pybtex.database import BibliographyData #, Entry
 #from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.textutils
 
