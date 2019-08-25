@@ -1204,6 +1204,21 @@ class DuplicatesFilter(BibFilter):
                     newbibdata.add_entry(alias.origkey, unused.entries[alias.origkey])
                     del unused.entries[alias.origkey]
 
+            #
+            # check if we are discarding any entries of the form XXX.PATCH, and
+            # warn the user
+            #
+            rx_patch = re.compile('[.]PATCH([.].*)?$')
+            for e in unused.entries.keys():
+                if rx_patch.search(e):
+                    logger.warning(
+                        "Entry ‘%s’ is being discarded because it's not used, but it looks like "
+                        "a patch for another entry.  If this is the case you should apply "
+                        "patches (\"filter: apply_patches\") before running the "
+                        "duplicates filter.",
+                        e
+                    )
+            
 
             # output aliases to the duplicates file
 
