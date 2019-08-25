@@ -590,7 +590,6 @@ def run_app(argv):
         QMessageBox.warning(None, "Filter packages error",
                             "An error was detected in the filter packages configuration. "
                             "Please edit your settings.")
-        pass
 
 
     args = app.arguments()

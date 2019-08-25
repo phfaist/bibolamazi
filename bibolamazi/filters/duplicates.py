@@ -402,7 +402,8 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
             # remove any unusual characters
             title = re.sub(r'[^a-zA-Z0-9 ]', '', title)
             # remove any inline math
-            title = re.sub(r'$[^$]+$', '', title)
+            title = re.sub(r'\$[^$]+\$', '', title)
+            title = re.sub(r'\\\(.+?\\\)', '', title)
             # clean up whitespace
             title = re.sub(r'\s+', ' ', title)
             return title.strip()

@@ -199,8 +199,6 @@ class FavoritesModel(QAbstractTableModel):
                 else:
                     return QBrush(QColor(235,255,255, 80))
 
-            return None
-
         if (role == ROLE_FAV_EDITABLE):
             return self._edit_mode
 

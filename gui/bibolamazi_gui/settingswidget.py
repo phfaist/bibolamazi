@@ -405,7 +405,6 @@ class SettingsWidget(QDialog):
             except Exception as e:
                 logger.warning("Can't generate access token: %s: %s", e.__class__.__name__, e)
                 logger.exception("Exception")
-                pass
 
         self._update_githubauth_guistate()
 

@@ -1016,7 +1016,9 @@ def do_fix_space_after_escape(x):
 
 
 # see http://stackoverflow.com/a/1547940
-_rx_url = re.compile(r"(https?|ftp)://[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+(/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=-]*)?")
+_rx_url = re.compile(
+    r"(https?|ftp)://[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+(/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=-]*)?"
+)
 _rx_urlcmd = re.compile(r"((\\url\s*\{|\\href\s*\{)\s*)")
 
 def do_auto_urlify(x):
@@ -1035,7 +1037,8 @@ def do_auto_urlify(x):
         # safe to wrap this URL into \url{...}
         x = x[:m.start()] + u"\\url{" + m.group() + u"}" + x[m.end():]
         pos = m.end()
-    return x
+
+    # The value x is returned within the block above. Code here is unreachable.
 
 
 _mendeley_bug_urls_escapes = {

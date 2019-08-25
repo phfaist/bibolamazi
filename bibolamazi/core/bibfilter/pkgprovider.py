@@ -191,7 +191,6 @@ class PackageProviderManager:
                     self.pkgcacheinfo = json.load(f)
             except (OSError,json.JSONDecodeError):
                 logger.debug("Couldn't read pkg cache info JSON file, ignoring it...")
-                pass
 
     def _save_pkgcacheinfo(self):
         pkgcacheinfofile = self._pkgcacheinfofile()

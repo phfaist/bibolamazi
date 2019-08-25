@@ -1052,7 +1052,7 @@ class BibolamaziFile:
                     self._user_cache.loadCache(f)
             except (IOError, EOFError,):
                 logger.debug("Cache file `%s' nonexisting or not readable.", cachefname)
-                pass
+
         else:
             logger.debug("As requested, I have not attempted to load any existing cache file.")
 
@@ -1402,7 +1402,6 @@ class BibolamaziFile:
                     self._user_cache.saveCache(f)
             except IOError as e:
                 logger.debug("Couldn't save cache to file '%s'.", cachefname)
-                pass
 
         
 

@@ -104,7 +104,7 @@ class GithubRepoSelector(QDialog):
             except Exception as e:
                 logger.debug("Ignoring exception ... %r", e)
                 logger.exception("Ignoring exception")
-                pass
+
             self.ui.btnBack.setVisible(True)
             self.ui.btnNext.setVisible(False)
             self.ui.btnOk.setVisible(True)
