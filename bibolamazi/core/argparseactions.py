@@ -241,10 +241,14 @@ class opt_action_help(argparse.Action):
         helppages.cmdl_show_help('/filter/'+thefilter, parser=parser)
         parser.exit()
 
+class opt_action_helpwelcome(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string):
+        helppages.cmdl_show_help('/general/welcome', parser=parser)
+        parser.exit()
+
 
 class opt_action_version(argparse.Action):
     def __call__(self, parser, namespace, values, option_string):
-        # no pager for version
         p = helppages.get_help_page('/general/cmdlversion')
         sys.stdout.write(p.contentAsTxt())
         parser.exit()

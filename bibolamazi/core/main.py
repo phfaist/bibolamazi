@@ -127,79 +127,123 @@ def get_args_parser():
     parser = argparse.ArgumentParser(
         description='Prepare consistent BibTeX files for your LaTeX documents',
         prog='bibolamazi',
-        epilog="Log messages will be produced in color by default if outputting to a TTY. To override "
-        "the use of TTY colors, set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' or 'auto'.",
+        epilog="Log messages will be produced in color by default "
+        "if outputting to a TTY. To override the use of TTY colors, "
+        "set environment variable BIBOLAMAZI_TTY_COLORS to 'yes', 'no' "
+        "or 'auto'.",
         add_help=False)
 
-    parser.add_argument('-o', '--output', action='store', dest='output', metavar="FILE", nargs='?',
-                        help="Do not overwrite the original bibolamazi file, and write "
-                        "instead bibolamazi output to FILE. (Note: the cache is still "
-                        "saved using the old file name with extension \".bibolamazicache\" "
-                        "for future use.)")
+    group = parser.add_argument_group("Bibolamazi file")
+    group.add_argument(
+        '-o', '--output', action='store', dest='output', metavar="FILE", nargs='?',
+        help="Do not overwrite the original bibolamazi file, and write "
+        "instead bibolamazi output to FILE. (Note: the cache is still "
+        "saved using the old file name with extension \".bibolamazicache\" "
+        "for future use.)"
+    )
 
-    parser.add_argument('-N', '--new', action=argparseactions.opt_init_empty_template, nargs=1,
-                        metavar="NEW_FILENAME",
-                        help="Create a new bibolamazi file with a template configuration.")
-    parser.add_argument('-F', '--list-filters', action=argparseactions.opt_list_filters, dest='list_filters',
-                        help="Show a list of available filters along with their description, and exit.")
-    parser.add_argument('-C', '--no-cache', action='store_false', dest='use_cache', default=True,
-                        help="Bypass and ignore any existing cache file, and regenerate the cache. If "
-                        "the cache file exists, it will be overwritten.")
-    parser.add_argument('-z', '--cache-timeout', dest='cache_timeout', type=butils.parse_timedelta,
-                        default=None,
-                        help="The default timeout after which to consider items in cache to be invalid. "
-                        "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s")
+    group.add_argument(
+        '-N', '--new', action=argparseactions.opt_init_empty_template, nargs=1,
+        metavar="NEW_FILENAME",
+        help="Create a new bibolamazi file with a template configuration."
+    )
 
-    parser.add_argument('--help', '-h', action=argparseactions.opt_action_help, nargs='?',
-                        metavar='filter',
-                        help='Show this help message and exit. If filter is given, show information and '
-                        'help text for that filter. See --list-filters for a list of available filters.')
-    parser.add_argument('--version', action=argparseactions.opt_action_version, nargs=0,
-                        help='Show bibolamazi version number and exit.')
+    group = parser.add_argument_group("Cache control")
+    group.add_argument(
+        '-C', '--no-cache', action='store_false', dest='use_cache', default=True,
+        help="Do not read any existing cache file and regenerate the cache. If "
+        "the cache file exists, it will be overwritten."
+    )
+    group.add_argument(
+        '-z', '--cache-timeout', dest='cache_timeout', type=butils.parse_timedelta,
+        default=None,
+        help="The default timeout after which to consider items in cache to be invalid. "
+        "Not all cache items honor this. Format: '<N><unit>' with unit=w/d/m/s"
+    )
 
-    parser.add_argument('--filterpackage', action=AddFilterPackageAction,
-                        help="Add a package name in which to search for filters. You may specify this "
-                        "option multiple times; last specified filter packages are searched first. Valid "
-                        "values for this option are either (1) a simple python package name (if it is in the "
-                        "PYTHONPATH); (2) a string 'pkgname=/some/location' where pkgname is the python "
-                        "package name which will be loaded with the given path prepended to sys.path; or "
-                        "(3) a full path to a package directory '/some/location/to/pkgname' which has the "
-                        "same effect as the value 'pkgname=/some/location/to'.")
+    group = parser.add_argument_group("Filter packages")
+    group.add_argument(
+        '--filterpackage', action=AddFilterPackageAction,
+        help="Add a package name in which to search for filters. You may specify this "
+        "option multiple times; last specified filter packages are searched first. Valid "
+        "values for this option are either (1) a simple python package name (if it is in the "
+        "PYTHONPATH); (2) a string 'pkgname=/some/location' where pkgname is the python "
+        "package name which will be loaded with the given path prepended to sys.path; or "
+        "(3) a full path to a package directory '/some/location/to/pkgname' which has the "
+        "same effect as the value 'pkgname=/some/location/to'."
+    )
 
-    parser.add_argument('--github-auth', action=argparseactions.opt_action_github_auth, nargs='?',
-                        help="Store authentication information for accessing filter packages specified "
-                        "directly as github repositories.  Use this option without argument for an "
-                        "interactive setup, or if you know what you're doing, directly specify the "
-                        "access token as argument to this option or specify '-' as argument to reset "
-                        "the stored authentication.")
+    group.add_argument(
+        '--github-auth', action=argparseactions.opt_action_github_auth, nargs='?',
+        help="Store authentication information for accessing filter packages specified "
+        "directly as github repositories.  Use this option without argument for an "
+        "interactive setup, or if you know what you're doing, directly specify the "
+        "access token as argument to this option or specify '-' as argument to reset "
+        "the stored authentication."
+    )
 
-    parser.add_argument('--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
-                        help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug).")
-    parser.add_argument('-q', '-v0', '--quiet', action=argparseactions.opt_set_verbosity, nargs=0, const=0,
-                        help="Don't display any messages (same as --verbosity=0)")
-    parser.add_argument('-v1', action=argparseactions.opt_set_verbosity, nargs=0, const=1,
-                        help='Set normal verbosity mode (same as --verbosity=1)')
-    parser.add_argument('-v', '-v2', '--verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=2,
-                        help='Set verbose mode (same as --verbosity=2)')
-    parser.add_argument('-vv', '-v3', '--long-verbose', action=argparseactions.opt_set_verbosity,
-                        nargs=0, const=3,
-                        help='Set very verbose mode, with long debug messages (same as --verbosity=3)')
-    parser.add_argument('--fine-log-levels', action=argparseactions.opt_set_fine_log_levels,
-                        help=textwrap.dedent('''\
-                        Fine-grained logger control: useful for debugging filters or
-                        bibolamazi itself. This is a comma-separated list of modules and
-                        corresponding log levels to set, e.g.
-                        "core=INFO,filters=DEBUG,filters.arxiv=LONGDEBUG", where if in an
-                        item no module is given (but just a level or number), then the
-                        root logger is addressed. Possible levels are (%s)
-                        ''')%(
-                            ", ".join( (x[0] for x in LogLevel.levelnos) )
-                        ))
+    group = parser.add_argument_group("Logging verbosity")
+    group.add_argument(
+        '--verbosity', action=argparseactions.opt_set_verbosity, nargs=1,
+        help="Set verbosity level (0=quiet, 1=info (default), 2=verbose, 3=long debug)."
+    )
+    group.add_argument(
+        '-q', '-v0', '--quiet', action=argparseactions.opt_set_verbosity, nargs=0, const=0,
+        help="Don't display any messages (same as --verbosity=0)"
+    )
+    group.add_argument(
+        '-v1', action=argparseactions.opt_set_verbosity, nargs=0, const=1,
+        help='Set normal verbosity mode (same as --verbosity=1)'
+    )
+    group.add_argument(
+        '-v', '-v2', '--verbose', action=argparseactions.opt_set_verbosity, nargs=0, const=2,
+        help='Set verbose mode (same as --verbosity=2)'
+    )
+    group.add_argument(
+        '-vv', '-v3', '--long-verbose', action=argparseactions.opt_set_verbosity,
+        nargs=0, const=3,
+        help='Set very verbose mode, with long debug messages (same as --verbosity=3)'
+    )
+    group.add_argument(
+        '--fine-log-levels', action=argparseactions.opt_set_fine_log_levels,
+        help=textwrap.dedent('''\
+        Fine-grained logger control: useful for debugging filters or
+        bibolamazi itself. This is a comma-separated list of modules and
+        corresponding log levels to set, e.g.
+        "core=INFO,filters=DEBUG,filters.arxiv=LONGDEBUG", where if in an
+        item no module is given (but just a level or number), then the
+        root logger is addressed. Possible levels are (%s)
+        ''')%(
+            ", ".join( (x[0] for x in LogLevel.levelnos) )
+        )
+    )
 
-    parser.add_argument('bibolamazifile',
-                        # note the %'s are parsed as formatting:
-                        help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
-                        'configuration tags.')
+    group = parser.add_argument_group("Help pages")
+    group.add_argument(
+        '--help', '-h', action=argparseactions.opt_action_help, nargs='?',
+        metavar='filter',
+        help='Show this help message and exit. If filter is given, show information and '
+        'help text for that filter. See --list-filters for a list of available filters.'
+    )
+    group.add_argument(
+        '--help-welcome', action=argparseactions.opt_action_helpwelcome, nargs=0,
+        help='Show a brief introduction to bibolamazi and how to use it.'
+    )
+    group.add_argument(
+        '-F', '--list-filters', action=argparseactions.opt_list_filters, dest='list_filters',
+        help="Show a list of available filters along with their description, and exit."
+    )
+    group.add_argument(
+        '--version', action=argparseactions.opt_action_version, nargs=0,
+        help='Show bibolamazi version number and exit.'
+    )
+
+    parser.add_argument(
+        'bibolamazifile',
+        # note the %'s are parsed as formatting:
+        help='The .bibolamazi.bib file to update, i.e. that contains the %%%%%%-BIB-OLA-MAZI '
+        'configuration tags.'
+    )
 
     return parser
 
