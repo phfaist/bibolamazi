@@ -31,16 +31,9 @@ import os
 import sys
 import os.path
 import argparse
-import locale
 import logging
 
-# pydoc.pager(text) will open a pager for text (e.g. less), or pipe it out, and do everything as
-# it should automatically.
-import pydoc
-
 import bibolamazi.init
-from . import butils
-from . import blogger
 from .butils import getbool
 from . import helppages
 

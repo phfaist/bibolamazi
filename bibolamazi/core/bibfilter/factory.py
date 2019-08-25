@@ -28,19 +28,17 @@ import os.path
 import shlex
 import argparse
 import textwrap
-import types
 import pkgutil
 from collections import namedtuple, OrderedDict
 import logging
 import traceback
 
 import bibolamazi.init
-from bibolamazi.core.argparseactions import store_key_val, store_key_const, store_key_bool
+from bibolamazi.core.argparseactions import store_key_val, store_key_bool
 from bibolamazi.core import butils
 from bibolamazi.core.butils import BibolamaziError
-from bibolamazi.core.bibfilter import BibFilter
-from . import pkgprovider
-
+# Bibfilter is used in custom-built eval'ed code
+from bibolamazi.core.bibfilter import BibFilter # lgtm [py/unused-import]
 
 
 logger = logging.getLogger(__name__)
@@ -1312,13 +1310,13 @@ class DefaultFilterOptions:
             if (k-off >= 0):
                 s += "="+repr(defaults[k-off])
             return s
-        fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
-            (", ".join([fmtarg(k, fargs, defaults)
-                        for k in range(len(fargs))
-                        if fargs[k] != "self"])),
-            ("[...]" if varargs else ""),
-            ("[..=...]" if keywords else ""),
-            ] if xpart]) + ")")
+        # fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
+        #     (", ".join([fmtarg(k, fargs, defaults)
+        #                 for k in range(len(fargs))
+        #                 if fargs[k] != "self"])),
+        #     ("[...]" if varargs else ""),
+        #     ("[..=...]" if keywords else ""),
+        #     ] if xpart]) + ")")
 
         p = FilterArgumentParser(filtername=self._filtername,
                                  prog=self._filtername,

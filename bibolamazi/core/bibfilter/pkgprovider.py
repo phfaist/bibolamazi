@@ -31,7 +31,7 @@ import re
 import logging
 import datetime
 import shutil
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlparse
 import json
 import hashlib
 

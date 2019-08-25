@@ -26,18 +26,18 @@ bibolamazi. You're most probably not interested in this API. (Not mentioning tha
 change if I feel the need for it.)
 """
 
-import re
+#import re
 import os
-import sys
+#import sys
 import os.path
-import argparse
 import textwrap
 import logging
 from collections import OrderedDict
 
 # don't change this, allow the construct 'from .helppages import htmlescape'
 from html import escape as htmlescape
-from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
+
+from urllib.parse import urlencode, parse_qs
 from urllib.parse import quote_plus as urlquoteplus
 
 
@@ -47,8 +47,6 @@ import pydoc
 
 import bibolamazi.init
 from . import butils
-from . import blogger
-from .butils import getbool
 
 logger = logging.getLogger(__name__)
 

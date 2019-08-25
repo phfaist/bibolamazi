@@ -34,9 +34,9 @@ This allows for the user to be rather specific about which type of messages
 she/he would like to see.
 """
 
-from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen
-from urllib.error import HTTPError
+#from urllib.parse import urlparse, urlencode
+#from urllib.request import urlopen
+#from urllib.error import HTTPError
 
 
 import os

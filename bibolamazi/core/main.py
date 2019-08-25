@@ -31,7 +31,6 @@ import re
 import sys
 import argparse
 import textwrap
-import types
 from collections import namedtuple
 import json
 import logging
@@ -46,7 +45,6 @@ import bibolamazi.init
 from . import blogger
 from . import version
 from .bibolamazifile import BibolamaziFile
-from .bibfilter import BibFilter
 from . import argparseactions
 from . import butils
 from .butils import BibolamaziError
@@ -227,7 +225,7 @@ def main(argv=sys.argv[1:]):
     except BibolamaziError as e:
         logger.error("\n" + str(e))
 
-    except:
+    except: # lgtm [py/catch-base-exception]
         
         print()
         print(" -- EXCEPTION --")

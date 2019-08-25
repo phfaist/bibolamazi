@@ -34,10 +34,10 @@ import os.path
 from datetime import datetime
 import codecs
 import shlex
-from urllib.parse import urlparse, urlencode
+#from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen
-from urllib.error import HTTPError
-import pickle
+#from urllib.error import HTTPError
+#import pickle
 import logging
 
 import bibolamazi.init
@@ -49,7 +49,7 @@ from pybtex.utils import OrderedCaseInsensitiveDict
 
 from . import butils
 from .butils import BibolamaziError
-from .bibusercache import BibUserCache, BibUserCacheDic, BibUserCacheList
+from .bibusercache import BibUserCache
 from .bibfilter import BibFilter, BibFilterError, factory
 from .bibfilter.factory import PrependOrderedDict
 
