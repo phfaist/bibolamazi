@@ -782,20 +782,38 @@ def remove_full_braces(val):
 
 
 # override default rules to keep some characters unescaped
+_rx_macro = re.compile(r'\\(?P<macroname>([a-zA-Z]+)|.)')
+def _keep_latex_macros(s, pos):
+    m =  _rx_macro.match(s, pos)
+    if m is None:
+        return None
+    # latex macro -- leave it as it is.  Recall we need to return a tuple
+    # `(consumed-length, replacement-text)`
+    return (m.end()-m.start(), m.group())
+def _apply_protection(repl):
+    k = repl.rfind('\\')
+    if k >= 0 and repl[k+1:].isalpha():
+        # has dangling named macro, apply protection.
+        return '{' + repl + '}'
+    return repl
 _our_uni2latex_map = {
-    k: v
+    k: _apply_protection(v)
     for k,v in latexencode.get_builtin_uni2latex_dict().items()
     if chr(k) not in r""" $ " \ _ { } ~ < > """
 }
 _our_unicode_to_latex = latexencode.UnicodeToLatexEncoder(
     conversion_rules=[
         latexencode.UnicodeToLatexConversionRule(
+            latexencode.RULE_CALLABLE,
+            _keep_latex_macros
+        ),
+        latexencode.UnicodeToLatexConversionRule(
             latexencode.RULE_DICT,
             _our_uni2latex_map
         ),
     ],
-    # # don't change too much from earlier versions:
-    # replacement_latex_protection='braces-almost-all'
+    # protection is done manually:
+    replacement_latex_protection='none'
 )
 def custom_uni_to_latex(s):
     return _our_unicode_to_latex.unicode_to_latex(s)

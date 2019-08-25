@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 from pybtex.database import BibliographyData #, Entry
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
-#from bibolamazi.core.bibfilter.argtypes import CommaStrList
+from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core import butils
 
 from .util import arxivutil
@@ -187,7 +187,10 @@ class CiteKeyFilter(BibFilter):
         else:
             self.if_published = butils.getbool(if_published)
 
-        self.if_type = None if (if_type is None or if_type ==  '') else [x.strip() for x in if_type]
+        if if_type is None or if_type ==  '':
+            self.if_type = None
+        else:
+            self.if_type = [x.strip() for x in CommaStrList(if_type)]
 
         logger.debug('citekey: fmt=%r', self.fmt)
 
