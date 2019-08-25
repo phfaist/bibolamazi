@@ -530,7 +530,7 @@ class FixesFilter(BibFilter):
                 x = re.sub(r'\\o\s+', r'\\o{}', x)
             if self.encode_utf8_to_latex:
                 # use custom encoder
-                x = custom_utf8tolatex(x)
+                x = custom_uni_to_latex(x)
             if self.encode_latex_to_utf8:
                 x = butils.latex_to_text(x)
             return x
@@ -779,65 +779,86 @@ def remove_full_braces(val):
 
 
 # custom utf8_to_latex
-def custom_utf8tolatex(s, substitute_bad_chars=False):
-    """
-    See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
-    """
 
-    s = str(s) # make sure s is unicode
-    s = unicodedata.normalize('NFC', s)
 
-    if not s:
-        return ""
+# override default rules to keep some characters unescaped
+_our_uni2latex_map = {
+    k: v
+    for k,v in latexencode.get_builtin_uni2latex_dict().items()
+    if chr(k) not in r""" $ " \ _ { } ~ < > """
+}
+_our_unicode_to_latex = latexencode.UnicodeToLatexEncoder(
+    conversion_rules=[
+        latexencode.UnicodeToLatexConversionRule(
+            latexencode.RULE_DICT,
+            _our_uni2latex_map
+        ),
+    ],
+    # # don't change too much from earlier versions:
+    # replacement_latex_protection='braces-almost-all'
+)
+def custom_uni_to_latex(s):
+    return _our_unicode_to_latex.unicode_to_latex(s)
 
-    # assume there is already some LaTeX in, which we DON'T want to overwrite.
-    # Just substitute the weird chars which might not be protected...
-    ascii_custom_dic = {
-        #NO-- 34:"''", 		# character "
-        35:'\\#', 		# character #
-        #NO--36:'\\$', 		# character $
-        37:'\\%', 		# character %
-        38:'\\&', 		# character &
-        #NO-- 92:'\\textbackslash',	# the \ character itself
-        #NO-- 95:'\\_', 		# character _
-        #NO-- 123:'\\{', 	# character {
-        #NO-- 125:'\\}', 	# character }
-        #NO-- 126:'\\textasciitilde', # character ~
-    }
-
-    result = u""
-    for j, ch in enumerate(s):
-        #logger.longdebug("Encoding char %r", ch)
-        if (ord(ch) < 127):
-            # FIXME: This is an ugly kludge. Doesn't handle cases like "\\&"
-            # correctly, where we'd probably want to escape the '&' (but I can't
-            # think of a situation where this would be relevant).
-            if ord(ch) not in ascii_custom_dic or (j > 0 and s[j-1] == '\\'):
-                result += ch
-            else:
-                # escape, unless already escaped
-                result += ascii_custom_dic[ord(ch)]
-        else:
-            lch = latexencode.utf82latex.get(ord(ch), None)
-            if (lch is not None):
-                # add brackets if needed, i.e. if we have a substituting macro.
-                # note: in condition, beware, that lch might be of zero length.
-                result += (  '{'+lch+'}' if lch[0:1] == '\\' else lch  )
-            elif ((ord(ch) >= 32 and ord(ch) <= 127) or
-                  (ch in "\n\r\t")):
-                # ordinary printable ascii char, just add it
-                result += ch
-            else:
-                # non-ascii char
-                logger.warning("Character cannot be encoded into LaTeX: U+%04X - '%s'",
-                               ord(ch), ch)
-                if (substitute_bad_chars):
-                    result += r'{\bfseries ?}'
-                else:
-                    # keep unescaped char
-                    result += ch
-
-    return result
+# def custom_utf8tolatex(s, substitute_bad_chars=False):
+#     """
+#     See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
+#     """
+#
+#     s = str(s) # make sure s is unicode
+#     s = unicodedata.normalize('NFC', s)
+#
+#     if not s:
+#         return ""
+#
+#     # assume there is already some LaTeX in, which we DON'T want to overwrite.
+#     # Just substitute the weird chars which might not be protected...
+#     ascii_custom_dic = {
+#         #NO-- 34:"''", 		# character "
+#         35:'\\#', 		# character #
+#         #NO--36:'\\$', 		# character $
+#         37:'\\%', 		# character %
+#         38:'\\&', 		# character &
+#         #NO-- 92:'\\textbackslash',	# the \ character itself
+#         #NO-- 95:'\\_', 		# character _
+#         #NO-- 123:'\\{', 	# character {
+#         #NO-- 125:'\\}', 	# character }
+#         #NO-- 126:'\\textasciitilde', # character ~
+#     }
+#
+#     result = u""
+#     for j, ch in enumerate(s):
+#         #logger.longdebug("Encoding char %r", ch)
+#         if (ord(ch) < 127):
+#             # FIXME: This is an ugly kludge. Doesn't handle cases like "\\&"
+#             # correctly, where we'd probably want to escape the '&' (but I can't
+#             # think of a situation where this would be relevant).
+#             if ord(ch) not in ascii_custom_dic or (j > 0 and s[j-1] == '\\'):
+#                 result += ch
+#             else:
+#                 # escape, unless already escaped
+#                 result += ascii_custom_dic[ord(ch)]
+#         else:
+#             lch = latexencode.utf82latex.get(ord(ch), None)
+#             if (lch is not None):
+#                 # add brackets if needed, i.e. if we have a substituting macro.
+#                 # note: in condition, beware, that lch might be of zero length.
+#                 result += (  '{'+lch+'}' if lch[0:1] == '\\' else lch  )
+#             elif ((ord(ch) >= 32 and ord(ch) <= 127) or
+#                   (ch in "\n\r\t")):
+#                 # ordinary printable ascii char, just add it
+#                 result += ch
+#             else:
+#                 # non-ascii char
+#                 logger.warning("Character cannot be encoded into LaTeX: U+%04X - '%s'",
+#                                ord(ch), ch)
+#                 if (substitute_bad_chars):
+#                     result += r'{\bfseries ?}'
+#                 else:
+#                     # keep unescaped char
+#                     result += ch
+#
+#     return result
 
 
 
@@ -865,7 +886,7 @@ def zotero_title_protection_cleanup(title, fixesfilterinstance):
                 plen = 0
                 for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
                     split_nodelist += [
-                        (latexwalker.LatexCharsNode(parsed_context=n.parsed_context,
+                        (latexwalker.LatexCharsNode(parsing_state=n.parsing_state,
                                                     chars=chunk,
                                                     pos=n.pos+plen, len=len(chunk)), sep)
                     ]
@@ -902,14 +923,15 @@ def zotero_title_protection_cleanup(title, fixesfilterinstance):
         for nl, sep, need_protection_hint in iterate_over_words_in_nodelist(nodelist):
             #logger.longdebug("chunk: nl=%r, sep=%r, need_protection_hint=%r, text-version=%r",
             #                 nl, sep, need_protection_hint, l2t.nodelist_to_text(nl))
+            nl_to_latex = "".join(nnn.latex_verbatim() for nnn in nl)
             if need_protection_hint:
                 #logger.longdebug("protecting chunk due to hint flag")
-                new_expression += '{{' + latexwalker.nodelist_to_latex(nl) + '}}' + sep
+                new_expression += '{{' + nl_to_latex + '}}' + sep
             elif needs_protection(l2t.nodelist_to_text(nl)):
                 #logger.longdebug("protecting chunk by inspection of text representation")
-                new_expression += '{{' + latexwalker.nodelist_to_latex(nl) + '}}' + sep
+                new_expression += '{{' + nl_to_latex + '}}' + sep
             else:
-                new_expression += latexwalker.nodelist_to_latex(nl) + sep
+                new_expression += nl_to_latex + sep
         return new_expression
 
     lw = latexwalker.LatexWalker(title)

@@ -257,7 +257,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "volume": "75",
                 "year": "1995"
             },),),
-            ("Bennett1993PRL_Teleportation", Entry("article", persons={"author": [Person("Bennett, Charles H."),Person("Brassard, Gilles"),Person("Cr{\\'e}peau, Claude"),Person("Jozsa, Richard"),Person("Peres, Asher"),Person("Wootters, William K.")],}, fields={
+            ("Bennett1993PRL_Teleportation", Entry("article", persons={"author": [Person("Bennett, Charles H."),Person("Brassard, Gilles"),Person("Cr\\'epeau, Claude"),Person("Jozsa, Richard"),Person("Peres, Asher"),Person("Wootters, William K.")],}, fields={
                 "doi": "10.1103/PhysRevLett.70.1895",
                 "issn": "0031-9007",
                 "journal": "Physical Review Letters",
@@ -396,7 +396,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 'pages': '12',
                 'url': 'http://arxiv.org/abs/1111.3882',
             },),),
-            ("PerezGarcia2006", Entry("article", persons={"author": [Person("P{\\'e}rez-Garc{\\'\\i}a, David"),Person("Wolf, Michael M."),Person("Petz, Denes"),Person("Ruskai, Mary Beth")],}, fields={
+            ("PerezGarcia2006", Entry("article", persons={"author": [Person("P\\'erez-Garc{\\'\\i}a, David"),Person("Wolf, Michael M."),Person("Petz, Denes"),Person("Ruskai, Mary Beth")],}, fields={
                 "doi": "10.1063/1.2218675",
                 "language": "en",
                 "title": "{Contractivity of positive and trace preserving maps under $L_p$ norms}",
@@ -408,11 +408,11 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "month": "August",
                 "volume": "47",
                 "pages": "083506",
-                "file": ":home/.............../P{\\'e}rez-Garc{\\'\\i}a et al. - 2006 - Contractivity of positive and trace preserving maps under $L_p$ norms.pdf:pdf",
+                "file": ":home/.............../P\\'erez-Garc{\\'\\i}a et al. - 2006 - Contractivity of positive and trace preserving maps under $L_p$ norms.pdf:pdf",
                 "year": "2006",
                 "keywords": "Hermitian matrices,majorization,thermo"
             },),),
-            ("TestTestTest3", Entry("article", persons={"author": [Person("H{\\'e}l{\\`a}, Xavier"),
+            ("TestTestTest3", Entry("article", persons={"author": [Person("H\\'el\\`a, Xavier"),
                                                                    Person("Abc, Xyz")],}, fields={
                 "language": "en",
                 "title": "{Contractivity of stuff \\& more things}",
@@ -1344,7 +1344,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "month": "August",
                      "number": "7",
                      "pages": "1260--1263",
-                     "title": "Thermodynamics of {{\c{S}pacetime}}: the Einstein Equation of State",
+                     "title": r"Thermodynamics of {{\c{S}pacetime}}: the Einstein Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
@@ -1461,7 +1461,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                      "month": "August",
                      "number": "7",
                      "pages": "1260--1263",
-                     "title": "Thermodynamics of \c{S}pacetime: the Einstein Equation of State",
+                     "title": r"Thermodynamics of \c{S}pacetime: the Einstein Equation of State",
                      "volume": "75",
                      "year": "1995"
                  },),),
