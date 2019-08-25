@@ -240,6 +240,12 @@ def get_help_page(path, **kwargs):
 
 
 def _get_help_canonpath_check(canonpath, kwargs):
+    #
+    # canonpath_check_fn= is an option that can be specified to get_help_page()
+    # with a callable that is called when we identify the canonical path to a
+    # page.  This is used in the GUI to see if a corresponding tab is already
+    # open.
+    #
     if kwargs.get('canonpath_check_fn', None) is not None:
         kwargs['canonpath_check_fn'](canonpath)
 
@@ -283,7 +289,8 @@ def _get_help_page_general(pathitems, kwargs):
         _get_help_canonpath_check(canonpath, kwargs)
 
         return  HelpTopicPage.makeMarkdownPage(
-            htmlescape("\n\n".join(helptext_prolog_lines())),
+            htmlescape("\n\n".join(
+                helptext_prolog_lines())),
             title="Version",
             canonpath=canonpath
         )

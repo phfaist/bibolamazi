@@ -24,6 +24,7 @@
 import re
 import sys
 import logging
+from html import escape as htmlescape
 
 from urllib.parse import urlsplit
 
@@ -34,6 +35,7 @@ from bibolamazi.core import helppages
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from PyQt5.Qt import QT_VERSION_STR
 
 from . import uiutils
 from . import searchwidget
@@ -392,7 +394,7 @@ def _get_help_page_home(pathitems, kwargs):
                  + " \N{EM DASH} " +
                  big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
                  + " \N{EM DASH} " +
-                 big_html_link("Bibolamazi version information", "help:/general/version")
+                 big_html_link("Bibolamazi version information", "help:/guiversion")
                  + " \N{EM DASH} " +
                  big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
                  + "</p>\n\n")
@@ -410,8 +412,30 @@ def _get_help_page_home(pathitems, kwargs):
 
     return helppages.HelpTopicPage.makeHtmlFragmentPage(home_src, title="Home", canonpath='/home')
 
+#
+def _get_help_page_guiversion(pathitems, kwargs):
+
+    if len(pathitems) != 0:
+        raise ValueError("Invalid help path: {}".format('/'.join(kwargs['basepathitems']+pathitems)))
+
+    canonpath = '/guiversion'
+    kwargs.get('canonpath_check_fn', lambda x: None)(canonpath)
+
+    version_lines = [
+        "<br/>".join(htmlescape(x) for x in helppages.helptext_prolog_lines()),
+        """Using Python {}""".format(htmlescape(sys.version).replace('\n', '<br/>')),
+        """Using Qt {} (via PyQt5)""".format(htmlescape(QT_VERSION_STR))
+    ]
+
+    return  helppages.HelpTopicPage.makeMarkdownPage(
+        "\n\n".join( version_lines ),
+        title="Version",
+        canonpath=canonpath
+    )
+
 
 #
-# register help page dispatcher for /home
+# register help page dispatcher for /home and /guiversion
 #
 helppages.help_page_dispatchers['home'] = _get_help_page_home
+helppages.help_page_dispatchers['guiversion'] = _get_help_page_guiversion
