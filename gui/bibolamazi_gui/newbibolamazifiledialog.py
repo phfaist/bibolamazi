@@ -23,9 +23,7 @@
 import sys
 import os
 import os.path
-import re
 import logging
-import textwrap
 import codecs
 from html import escape as htmlescape
 

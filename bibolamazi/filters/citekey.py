@@ -21,23 +21,17 @@
 ################################################################################
 
 
-import os
-import os.path
+#import os
+#import os.path
 import re
-import codecs
-import unicodedata
-import string
-import textwrap
 import logging
 logger = logging.getLogger(__name__)
 
 
-from pybtex.database import BibliographyData, Entry
-
-from pylatexenc import latex2text
+from pybtex.database import BibliographyData #, Entry
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
-from bibolamazi.core.bibfilter.argtypes import CommaStrList
+#from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core import butils
 
 from .util import arxivutil

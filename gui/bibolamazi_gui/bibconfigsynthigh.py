@@ -23,7 +23,6 @@
 
 
 import re
-from collections import namedtuple
 
 import bibolamazi.init
 # bibolamazi filters
@@ -79,7 +78,7 @@ class BibolamaziConfigSyntaxHighlighter(QSyntaxHighlighter):
 
         #pcache = BibConfigParsingCache()
         
-        blockno = self.currentBlock().blockNumber()
+        #blockno = self.currentBlock().blockNumber()
 
         for m in rxsrc.finditer(text):
             self.setFormat(m.start('src'), len(m.group('src')), self.fmt_src)

@@ -137,7 +137,7 @@ class MyOrderedDictModel(QAbstractTableModel):
 
     def flags(self, index):
         col = index.column()
-        row = index.row()
+        #row = index.row()
 
         if col in (0,1,):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable

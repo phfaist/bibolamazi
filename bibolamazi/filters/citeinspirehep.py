@@ -21,26 +21,26 @@
 ################################################################################
 
 import re
-import os
-import os.path
+#import os
+#import os.path
 import io
 import logging
 logger = logging.getLogger(__name__)
 
 # make sure html.parser is imported (and detected by pyinstaller)
-import html.parser
+import html.parser # lgtm [py/unused-import]
 
 import requests
 from bs4 import BeautifulSoup
 
-from pybtex.database import BibliographyData
+#from pybtex.database import BibliographyData
 import pybtex.database.input.bibtex as inputbibtex
 import arxiv2bib # arxiv id regex'es
 
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
 from bibolamazi.core.bibusercache import BibUserCacheAccessor
-from bibolamazi.core.butils import getbool
+#from bibolamazi.core.butils import getbool
 
 from .util import auxfile
 

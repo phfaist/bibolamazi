@@ -25,7 +25,6 @@ import re
 from urllib.error import URLError, HTTPError
 import textwrap
 import time
-import math
 import logging
 logger = logging.getLogger(__name__)
 

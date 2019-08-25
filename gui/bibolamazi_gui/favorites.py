@@ -20,7 +20,6 @@
 #                                                                              #
 ################################################################################
 
-from collections import namedtuple
 import logging
 
 from PyQt5.QtCore import *
@@ -184,7 +183,7 @@ class FavoritesModel(QAbstractTableModel):
         if not index.isValid():
             return None
         
-        col = index.column()
+        #col = index.column()
         row = index.row()
 
         if (row < 0 or row >= len(self._favcmds.favlist)):
@@ -229,7 +228,7 @@ class FavoritesModel(QAbstractTableModel):
         if not index.isValid():
             return False
         
-        col = index.column()
+        #col = index.column()
         row = index.row()
 
         if (row < 0 or row >= len(self._favcmds.favlist)):

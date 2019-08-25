@@ -21,19 +21,17 @@
 ################################################################################
 
 
-import os
-import os.path
+#import os
+#import os.path
 import re
-import codecs
 import datetime
 import calendar
 import logging
 logger = logging.getLogger(__name__)
 
-from pybtex.database import BibliographyData
+#from pybtex.database import BibliographyData
 
 
-from bibolamazi.core import bibfilter
 from bibolamazi.core import butils
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import enum_class

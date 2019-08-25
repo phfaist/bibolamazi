@@ -22,21 +22,7 @@
 ################################################################################
 
 
-import os
-import os.path
-import sys
-import logging
-
-try:
-    import bibolamazi.init
-except ImportError:
-    # realpath() needed for resolving executable symlink
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')))
-    import bibolamazi_3rdparty
-    import bibolamazi.init
-
-
-from bibolamazi.core.butils import BibolamaziError
+import bibolamazi.init
 
 
 if __name__ == "__main__":

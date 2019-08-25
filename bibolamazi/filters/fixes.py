@@ -21,7 +21,7 @@
 ################################################################################
 
 import re
-import unicodedata
+#import unicodedata
 import logging
 logger = logging.getLogger(__name__)
 
@@ -957,7 +957,7 @@ def zotero_title_protection_cleanup(title, fixesfilterinstance):
             continue
         # we got a very-probably-Zotero-protected "{{...}}" group
         newtitle += title[oldi:i]
-        protected_expression = title[i+2:newi-2]
+        #protected_expression = title[i+2:newi-2]
         # go through each top-level node in the protected content and
         # see individually if it requires protection.  Split char nodes
         # at spaces.

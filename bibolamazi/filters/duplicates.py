@@ -28,15 +28,13 @@ import unicodedata
 import string
 import textwrap
 import copy
-import collections
-import hashlib
+#import collections
+#import hashlib
 import logging
 
 from pybtex.database import BibliographyData, Entry
-from pybtex.utils import OrderedCaseInsensitiveDict
+#from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.textutils
-
-from pylatexenc import latex2text
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList
@@ -1017,16 +1015,17 @@ class DuplicatesFilter(BibFilter):
         unused = BibliographyData()
         #unused_respawned = set() # because del unused.entries[key] is not implemented ... :(
 
-        def copy_entry(entry):
-            #return copy.deepcopy(entry) # too deep ...
-            newpers = {}
-            for role, plist in entry.persons.items():
-                newpers[role] = [copy.deepcopy(p) for p in plist]
-            return Entry(type_=entry.type,
-                         fields=entry.fields.items(), # will create own Fielddict
-                         persons=newpers,
-                         collection=entry.collection
-                         )
+        # def copy_entry(entry):
+        #     #return copy.deepcopy(entry) # too deep ...
+        #     newpers = {}
+        #     for role, plist in entry.persons.items():
+        #         newpers[role] = [copy.deepcopy(p) for p in plist]
+        #     return Entry(type_=entry.type,
+        #                  fields=entry.fields.items(), # will create own Fielddict
+        #                  persons=newpers,
+        #                  collection=entry.collection
+        #                  )
+
 
         # Strategy: go through the list of entries, and each time keeping it if it is new,
         # or updating the original and registering the alias if it is a duplicate.

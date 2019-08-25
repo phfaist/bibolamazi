@@ -45,7 +45,10 @@ logger = logging.getLogger(__name__)
 
 
 import inspect
-inspect_getargspec = inspect.getargspec if sys.version_info[0] <= 2 else lambda f: inspect.getfullargspec(f)[:4]
+if sys.version_info[0] <= 2:
+    inspect_getargspec = inspect.getargspec
+else:
+    inspect_getargspec = lambda f: inspect.getfullargspec(f)[:4]
 
 
 
@@ -151,7 +154,6 @@ class FilterCreateArgumentError(FilterError):
     """
     def fmt(self, name):
         return "Bad arguments provided to filter %s: %s" %(name, self.errorstr)
-
 
 
 
@@ -1302,14 +1304,14 @@ class DefaultFilterOptions:
             logger.debug("filter "+self._filtername+": will not automatically adjust option letter case.")
             self._use_auto_case = False
 
-        if (defaults is None):
-            defaults = []
-        def fmtarg(k, fargs, defaults):
-            s = fargs[k]
-            off = len(fargs)-len(defaults)
-            if (k-off >= 0):
-                s += "="+repr(defaults[k-off])
-            return s
+        # if (defaults is None):
+        #     defaults = []
+        # def fmtarg(k, fargs, defaults):
+        #     s = fargs[k]
+        #     off = len(fargs)-len(defaults)
+        #     if (k-off >= 0):
+        #         s += "="+repr(defaults[k-off])
+        #     return s
         # fclasssyntaxdesc = self._fclass.__name__+("(" + " ".join([xpart for xpart in [
         #     (", ".join([fmtarg(k, fargs, defaults)
         #                 for k in range(len(fargs))
@@ -1701,10 +1703,13 @@ class DefaultFilterOptions:
                 # add explicit default argument for this farg, if any, or report error
                 # if no value given.
                 if n < n_deflts_offset:
-                    raise FilterOptionsParseError("No value provided for mandatory option `%s'"%(farg),
-                                                  self._filtername)
+                    raise FilterOptionsParseError(
+                        "No value provided for mandatory option `%s'"%(farg),
+                        self._filtername
+                    )
                 defaultval = defaults[n - n_deflts_offset]
-                logger.longdebug("filter %s: adding argument #%d with default value %s=%r", self._filtername,
+                logger.longdebug("filter %s: adding argument #%d with default value %s=%r",
+                                 self._filtername,
                                  n, farg, defaultval)
                 fdeclpargs.append(defaultval)
         # ensure that all filter-declared arguments have values, then add all remaining args for *args.

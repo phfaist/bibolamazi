@@ -21,11 +21,7 @@
 ################################################################################
 
 
-import os
-import os.path
-import re
 import logging
-import textwrap
 from html import escape as htmlescape
 
 import bibolamazi.init

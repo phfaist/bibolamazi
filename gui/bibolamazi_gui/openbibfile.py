@@ -50,7 +50,6 @@ from . import buttontabsmanager
 from .bibconfigsynthigh import BibolamaziConfigSyntaxHighlighter
 from .favorites import FavoriteCmd, FavoritesModel, FavoritesItemDelegate, FavoritesOverBtns
 from . import filterinstanceeditor
-from . import filterpackagepatheditor
 from . import settingswidget
 from . import helpbrowser
 from . import searchwidget
@@ -1071,7 +1070,7 @@ class OpenBibFile(QWidget):
 
         cur = self.ui.txtConfig.textCursor()
         block = cur.block()
-        thisline = cur.block().blockNumber()+1
+        thisline = block.blockNumber()+1
 
         thisline = self.bibolamaziFile.fileLineNo(thisline)
 
@@ -1098,7 +1097,7 @@ class OpenBibFile(QWidget):
 
         cur = self.ui.txtConfig.textCursor()
         block = cur.block()
-        thisline = cur.block().blockNumber()+1
+        thisline = block.blockNumber()+1
         thisline = self.bibolamaziFile.fileLineNo(thisline)
 
         if cur.hasSelection():

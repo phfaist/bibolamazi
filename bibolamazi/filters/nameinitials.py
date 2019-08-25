@@ -27,13 +27,12 @@ logger = logging.getLogger(__name__)
 
 from pybtex.database import Person
 from pybtex.textutils import abbreviate
-from pybtex.bibtex.utils import split_tex_string
+#from pybtex.bibtex.utils import split_tex_string
 
-from pylatexenc import latexwalker
 from pylatexenc.latex2text import LatexNodes2Text
 
 from bibolamazi.core.butils import getbool
-from bibolamazi.core.bibfilter import BibFilter, BibFilterError
+from bibolamazi.core.bibfilter import BibFilter #, BibFilterError
 
 
 HELP_AUTHOR = r"""
@@ -125,19 +124,23 @@ class NameInitialsFilter(BibFilter):
                 # # de-latex the person first
                 # pstr = str(p)
                 # # BUG: FIXME: remove space after any macros
-                # pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr) # replace "blah\macro blah" by "blah\macro{}blah"
+                # # replace "blah\macro blah" by "blah\macro{}blah"
+                # pstr = re.sub(r'(\\[a-zA-Z]+)\s+', r'\1{}', pstr)
                 #if (self._names_to_utf8):
                 #    pstr = latex2text.latex2text(pstr)
                 #
                 #p = Person(pstr)
 
                 if self._names_to_utf8:
-                    # delatex everything to UTF-8, but honor names protected by braces and keep those
+                    # delatex everything to UTF-8, but honor names protected by
+                    # braces and keep those
                     rxmacrospace = re.compile(r'(\\[a-zA-Z]+)\s+')
                     l2t = LatexNodes2Text(keep_braced_groups=True, strict_latex_spaces=True)
-                    protected_detex_fn = lambda x: l2t.latex_to_text(rxmacrospace.sub(r'\1{}', x)).strip()
+                    protected_detex_fn = \
+                        lambda x: l2t.latex_to_text(rxmacrospace.sub(r'\1{}', x)).strip()
 
-                    # join name again to correctly treat accents like "Fran\c cois" or "\AA berg"
+                    # join name again to correctly treat accents like
+                    # "Fran\c cois" or "\AA berg"
                     p = Person(protected_detex_fn(str(p)))
 
                     # do_detex = lambda lst: [ protected_detex(x) for x in lst ]
