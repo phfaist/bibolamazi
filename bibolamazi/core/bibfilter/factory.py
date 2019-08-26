@@ -157,7 +157,7 @@ class FilterCreateArgumentError(FilterError):
 
 
 
-class PrependOrderedDict(OrderedDict):
+class PrependOrderedDict(OrderedDict): # lgtm [py/missing-equals]
     """
     An ordered dict that stores the items in the order where the first item is the one
     that was added/modified last.
