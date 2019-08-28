@@ -791,11 +791,18 @@ def _keep_latex_macros(s, pos):
     # `(consumed-length, replacement-text)`
     return (m.end()-m.start(), m.group())
 def _apply_protection(repl):
-    k = repl.rfind('\\')
-    if k >= 0 and repl[k+1:].isalpha():
-        # has dangling named macro, apply protection.
-        return '{' + repl + '}'
-    return repl
+    # apply aggressive brackets for some bibtex styles.  E.g. revtex style does
+    # not abbreviate names correctly if they start with an accented char that is
+    # not fully protected by braces like "\v{C}adz Zykzyz"
+    if '\\' not in repl and '{' not in repl:
+        # no macros/groups, keep like this
+        return repl
+    return '{' + repl + '}'
+    # k = repl.rfind('\\')
+    # if k >= 0 and repl[k+1:].isalpha():
+    #     # has dangling named macro, apply protection.
+    #     return '{' + repl + '}'
+    # return repl
 _our_uni2latex_map = {
     k: _apply_protection(v)
     for k,v in latexencode.get_builtin_uni2latex_dict().items()
