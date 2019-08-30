@@ -696,8 +696,8 @@ class FixesFilter(BibFilter):
         _rx_dbl_quotes = [
             re.compile(r"``(?P<contents>.*?)''"),
             # this pattern must be tested first, because otherwise we leave stray braces
-            re.compile(r'\{\\textquotedblleft\}(?P<contents>.*?)\{\\textquotedblright\}'),
-            re.compile(r'\\textquotedblleft(?P<contents>.*?)\\textquotedblright'),
+            re.compile(r'\{\\(textquotedblleft|ldq)\}(?P<contents>.*?)\{\\(textquotedblright|rdq)\}'),
+            re.compile(r'\\(textquotedblleft|ldq)(?P<contents>.*?)\\(textquotedblright|rdq)'),
             # unicode quotes
             re.compile('\N{LEFT DOUBLE QUOTATION MARK}'+r"(?P<contents>.*?)"+
                        '\N{RIGHT DOUBLE QUOTATION MARK}'),
@@ -706,8 +706,8 @@ class FixesFilter(BibFilter):
             # try to match correct quote in " `My dad's dog' is a nice book ".
             re.compile(r"`(?P<contents>.*?)'(?=\W|$)"),
             # this pattern must be tested first, because otherwise we leave stray braces
-            re.compile(r'\{\\textquoteleft\}(?P<contents>.*?)\{\\textquoteright\}'),
-            re.compile(r'\\textquoteleft(?P<contents>.*?)\\textquoteright'),
+            re.compile(r'\{\\(textquoteleft|lq)\}(?P<contents>.*?)\{\\(textquoteright|rq)\}'),
+            re.compile(r'\\(textquoteleft|lq)(?P<contents>.*?)\\(textquoteright|rq)'),
             # unicode quotes
             re.compile('\N{LEFT SINGLE QUOTATION MARK}'+r"(?P<contents>.*?)"+
                        '\N{RIGHT SINGLE QUOTATION MARK}'),
@@ -791,9 +791,9 @@ def _keep_latex_macros(s, pos):
     # `(consumed-length, replacement-text)`
     return (m.end()-m.start(), m.group())
 def _apply_protection(repl):
-    # apply aggressive brackets for some bibtex styles.  E.g. revtex style does
-    # not abbreviate names correctly if they start with an accented char that is
-    # not fully protected by braces like "\v{C}adz Zykzyz"
+    # apply brackets aggressively, for some bibtex styles.  E.g. revtex style
+    # does not abbreviate names correctly if they start with an accented char
+    # that is not fully protected by braces like "\v{C}adz Zykzyz"
     if '\\' not in repl and '{' not in repl:
         # no macros/groups, keep like this
         return repl
