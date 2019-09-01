@@ -73,9 +73,7 @@ and
       ...
       journal = {ArXiv e-prints},
       ...
-      arxivid = {XXXX.YYYY}
-          OR
-      eprint = {XXXX.YYYY}
+      arxivid = {XXXX.YYYYY}  [ OR  eprint = {...} ]
     }
 
 And of course, each bibtex style handles maybe one but not the other, and then
@@ -83,16 +81,16 @@ they appear differently, and so on. In addition, if you want to add an arXiv ID
 to published articles, it may also appear either in the note={} or in the
 eprint={} tag.
 
-THIS FILTER will detect the various ways of declaring arXiv information and
-extract it for each entry. Then this information is reproduced in each entry
-using a single of the above conventions, depending on the provided
-options. Entries with no arxiv information are left untouched. Different
-behaviors can be set independently for published articles and unpublished with
-arxiv IDs, specified as operating modes.
+This filter unifies all bibtex entries into using a single convention for
+unpublished articles, and possibly a different convention for published entries.
+There are different "operating modes", which specify which convention to use to
+include the arXiv information in the bibtex entry:
 
 MODES:
 
-    "none"    -- don't do anything--a no-op. Useful to act e.g. only on
+    "none"    -- don't do anything--a no-op. Useful if you would like the filter
+                 to act to act only on one set of articles. E.g., specify this as
+                 mode for published articles to act nontrivially only on
                  unpublished articles.
 
     "strip"   -- remove the arxiv information completely. Note that arXiv URLs
@@ -103,7 +101,7 @@ MODES:
                  journal field is stripped.
 
     "unpublished-note-notitle"  -- Same as "unpublished-note", but additionally,
-                 strip the `title' field (useful for revtex styles)
+                 strip the `title' field (useful for revtex bib styles)
 
     "note"    -- just add or append to the note={} the string
                  "arXiv:XXXX.YYYY". Don't change the entry type. This mode is
@@ -125,9 +123,7 @@ type "unpublished", or if it has no journal name, or if the journal name
 contains "arxiv".
 
 Missing information, if an arXiv ID was detected, is queried on the arxiv.org
-database using the arxiv.org API (via the arxiv2bib module, Copyright (c) 2012,
-Nathan Grigg, New BSD License.  See the original copyright in the folder
-'3rdparty/arxiv2bib/' of this project)
+database using the arxiv.org API (via a call to the `arxiv2bib` python module).
 
 
 NOTE FIELD FORMATTING (-sNoteStringFmt):

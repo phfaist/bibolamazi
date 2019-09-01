@@ -2,7 +2,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2013 by Philippe Faist                                       #
+#   Copyright (C) 2019 by Philippe Faist                                       #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -40,7 +40,7 @@ from bibolamazi.core import butils
 
 
 HELP_AUTHOR = r"""
-Philippe Faist, (C) 2013, GPL 3+
+Philippe Faist, (C) 2019, GPL 3+
 """
 
 HELP_DESC = r"""
@@ -183,8 +183,8 @@ class FixesFilter(BibFilter):
           - fix_space_after_escape(bool): 
 
             Removes any space after a LaTeX escape and replaces it by a pair of
-            braces.  (Some bibtex styles wrongfully split a word into two halves
-            in such cases.) For example, "\AA berg" is replaced by "\AA{}berg".
+            braces.  (Some bibtex styles wrongfully split a word in such cases.)
+            For example, "\AA berg" is replaced by "\AA{}berg".
 
           - encode_utf8_to_latex(bool):
 

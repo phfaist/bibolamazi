@@ -194,6 +194,8 @@ class BibolamaziApplication(QApplication):
         self.myactions['help'] = QAction("Open Help && Reference Browser", self)
         self.myactions['help'].triggered.connect(self.openHelpBrowser)
         self.myactions['help'].setShortcut(QKeySequence("Ctrl+R"))
+        self.myactions['about'] = QAction("About Bibolamazi", self)
+        self.myactions['about'].triggered.connect(lambda : self.openHelpTopic('/guiabout'))
         self.myactions['quit'] = QAction("Quit", self)
         self.myactions['quit'].triggered.connect(self.quit_app)
         self.myactions['quit'].setShortcut(QKeySequence("Ctrl+Q"))
@@ -215,6 +217,7 @@ class BibolamaziApplication(QApplication):
             filemenu.addAction(self.myactions['startupwindow'])
             helpmenu = self.menubar.addMenu("Help")
             helpmenu.addAction(self.myactions['help'])
+            helpmenu.addAction(self.myactions['about'])
 
         # create & setup startup widget
         self.startup_widget = startupwidget.StartupWidget(bibapp=self)

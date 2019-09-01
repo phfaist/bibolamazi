@@ -394,7 +394,7 @@ def _get_help_page_home(pathitems, kwargs):
                  + " \N{EM DASH} " +
                  big_html_link("Bibolamazi online docs", "https://bibolamazi.readthedocs.org/")
                  + " \N{EM DASH} " +
-                 big_html_link("Bibolamazi version information", "help:/guiversion")
+                 big_html_link("Bibolamazi version information", "help:/guiabout")
                  + " \N{EM DASH} " +
                  big_html_link("Bibolamazi command-line help", "help:/general/cmdline")
                  + "</p>\n\n")
@@ -413,16 +413,17 @@ def _get_help_page_home(pathitems, kwargs):
     return helppages.HelpTopicPage.makeHtmlFragmentPage(home_src, title="Home", canonpath='/home')
 
 #
-def _get_help_page_guiversion(pathitems, kwargs):
+def _get_help_page_guiabout(pathitems, kwargs):
 
     if len(pathitems) != 0:
         raise ValueError("Invalid help path: {}".format('/'.join(kwargs['basepathitems']+pathitems)))
 
-    canonpath = '/guiversion'
+    canonpath = '/guiabout'
     kwargs.get('canonpath_check_fn', lambda x: None)(canonpath)
 
     version_lines = [
         "<br/>".join(htmlescape(x) for x in helppages.helptext_prolog_lines()),
+        """Hosted on [github.com/phfaist/bibolamazi](https://github.com/phfaist/bibolamazi)""",
         """Using Python {}""".format(htmlescape(sys.version).replace('\n', '<br/>')),
         """Using Qt {} (via PyQt5)""".format(htmlescape(QT_VERSION_STR))
     ]
@@ -435,7 +436,7 @@ def _get_help_page_guiversion(pathitems, kwargs):
 
 
 #
-# register help page dispatcher for /home and /guiversion
+# register help page dispatcher for /home and /guiabout
 #
 helppages.help_page_dispatchers['home'] = _get_help_page_home
-helppages.help_page_dispatchers['guiversion'] = _get_help_page_guiversion
+helppages.help_page_dispatchers['guiabout'] = _get_help_page_guiabout

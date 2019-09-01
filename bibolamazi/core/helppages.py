@@ -381,8 +381,11 @@ def _get_help_page_filter(pathitems, kwargs):
 
             for arg in fopt.filterOptions():
                 sopt_arg_name = fopt.getSOptNameFromArg(arg.argname)
-                html_opt += "<tr><th><a name=\"a-filter-option-{}\"></a>".format(urlquoteplus(arg.argname)) \
+                html_opt += (
+                    "<tr><th><a name=\"a-filter-option-{}\"></a>"
+                    .format(urlquoteplus(arg.argname))
                     + htmlescape(sopt_arg_name) + "</th></tr>"
+                )
                 html_opt += "<tr><td class=\"indent\" width=\""+table_width_px_str+"\">"
                 html_opt += "<p class=\"inner\">" + htmlescape(arg.doc if arg.doc else '') + "</p>"
 
@@ -396,44 +399,52 @@ def _get_help_page_filter(pathitems, kwargs):
                     elif hasattr(typ, '__doc__') and typ.__doc__: # e.g., is not None
                         docstr = typ.__doc__.strip()
                         if len(docstr):
-                            html_opt += ("<p class=\"inner shadow\">Expects argument type " +
-                                     "<code>" + htmlescape(arg.argtypename) + "</code>: "
-                                     + docstr + "</p>")
+                            html_opt += (
+                                "<p class=\"inner shadow\">Expects argument type " +
+                                "<code>" + htmlescape(arg.argtypename) + "</code>: "
+                                # avoid line breaks at hyphens, use NON-BREAKING HYPHEN
+                                + htmlescape(docstr).replace('-','&#8209;') + "</p>"
+                            )
 
                 html_opt += "</td></tr>\n"
 
             if fopt.filterAcceptsVarArgs():
                 html_opt += "<tr><th>(...)</th></tr>"
-                html_opt += ("<tr><td class=\"indent\" width=\""+table_width_px_str+"\">This filter accepts "
-                         "additional positional arguments (see doc below)</td></tr>")
+                html_opt += (
+                    "<tr><td class=\"indent\" width=\""+table_width_px_str+"\">This filter accepts "
+                    "additional positional arguments (see doc below)</td></tr>"
+                )
             if fopt.filterAcceptsVarKwargs():
                 html_opt += "<tr><th>(...=...)</th></tr>"
-                html_opt += ("<tr><td class=\"indent\" width=\""+table_width_px_str+"\">This filter accepts "
-                         "additional named/keyword arguments (see doc below)</td></tr>")
+                html_opt += (
+                    "<tr><td class=\"indent\" width=\""+table_width_px_str+"\">This filter accepts "
+                    "additional named/keyword arguments (see doc below)</td></tr>"
+                )
 
             html_opt += "</table>"
 
             html_opt += """
+<h2><a name=\"a-option-syntax\"></a>Option Syntax:</h2>
 
-<p>Pass options with the syntax <code>-s</code><span
+<p>Options can be specified as <code>&#8209;s</code><span
 class="code-meta">OptionName</span><code>="</code><span class="code-meta">option
-value</span><code>"</code> or <code>-d</code><span
+value</span><code>"</code> or <code>&#8209;d</code><span
 class="code-meta">OptionName[</span><code>=True</code><span
 class="code-meta">|</span><code>False</code><span class="code-meta">]</span>.
-The form <code>-sXXX</code> is for passing strings (which must be quoted if
-comprising spaces or special characters), and the form <code>-dXXX</code> is for
-specifying boolean ON/OFF switches.</p>
-
+For options that require specific argument types, use <code>&#8209;sXXX</code>
+or <code>&#8209;dXXX</code> as appropriate.</p>
 """
 
             html_doc += "<h2><a name=\"a-filter-doc\"></a>Filter Documentation:</h2>\n\n"
 
-            html_doc += ("<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fclass.getHelpText())
+            html_doc += ("<div style=\"white-space: pre-wrap\">"
+                         + htmlescape(filtinfo.fclass.getHelpText())
                          + "</div>\n\n")
 
         elif hasattr(filtinfo.fmodule, 'format_help'):
 
-            html_doc += ("<div style=\"white-space: pre-wrap\">" + htmlescape(filtinfo.fmodule.format_help())
+            html_doc += ("<div style=\"white-space: pre-wrap\">"
+                         + htmlescape(filtinfo.fmodule.format_help())
                          + "</div>\n\n")
 
         else:
@@ -442,9 +453,14 @@ specifying boolean ON/OFF switches.</p>
             #html += "<p style=\"font-style\">(no additional help available)</p>"
 
         if html_opt and html_doc:
-            html += '<p><b>Contents:</b></p>'
-            html += '<ul><li><a href="#a-filter-opt">Filter Options</a></li>'
-            html += '<li><a href="#a-filter-doc">Filter Documentation</li></ul>\n'
+            html += """
+<p><b>Contents:</b></p>
+<ul>
+  <li><a href="#a-filter-opt">Filter Options</a></li>
+  <li><a href="#a-option-syntax">Option Syntax</a></li>
+  <li><a href="#a-filter-doc">Filter Documentation</li>
+</ul>
+"""
 
         html += html_opt
         html += html_doc
@@ -466,7 +482,7 @@ specifying boolean ON/OFF switches.</p>
 
         w = textwrap.TextWrapper(initial_indent=' '*2, subsequent_indent=' '*2, width=80)
         wi = textwrap.TextWrapper(initial_indent=' '*8, subsequent_indent=' '*8, width=80)
-        wi0 = textwrap.TextWrapper(initial_indent='', subsequent_indent=' '*8, width=80)
+        wity = textwrap.TextWrapper(initial_indent=' '*2, subsequent_indent=' '*4, width=80)
 
         fopt = filtinfo.defaultFilterOptions()
         if fopt:
@@ -501,19 +517,25 @@ specifying boolean ON/OFF switches.</p>
 
             if fopt.filterAcceptsVarArgs():
                 txt += "  * (...)\n\n"
-                txt += wi.fill("This filter accepts additional positional arguments (see doc below)") \
+                txt += \
+                    wi.fill("This filter accepts additional positional arguments (see doc below)") \
                     + "\n\n"
             if fopt.filterAcceptsVarKwargs():
                 txt += "  * (...=...)\n\n"
-                txt += wi.fill("This filter accepts additional named/keyword arguments (see doc below)") \
+                txt += \
+                    wi.fill("This filter accepts additional named/keyword arguments (see doc below)") \
                     + "\n\n"
 
+            txt += "\nOPTION SYNTAX:\n\n"
 
-            txt += "  Option argument types:\n\n"
-            txt += w.fill("Pass options with the syntax -sOptionName=\"option-value\" or -dOptionName[=True|False]. The form <code>-sXXX</code> is for passing strings (which must be quoted if comprising spaces or special characters), and the form <code>-dXXX</code> is for specifying boolean ON/OFF switches.") + "\n\n"
+            txt += w.fill("Options can be specified as -sOptionName=\"option-value\" "
+                          "or -dOptionName[=True|False]. For specific argument types, "
+                          "use -sXXX or -dXXX as appropriate:") + "\n\n"
             if typ_docs:
-                txt += "\n\n".join([ wi0.fill('  Type {typ}: {docstr}'.format(typ=t, docstr=typ_docs[t]))
-                                   for t in sorted(list(typ_docs.keys())) ]) + "\n\n"
+                txt += "\n\n".join([
+                    wity.fill('Type {typ}: {docstr}'.format(typ=t, docstr=typ_docs[t]))
+                    for t in sorted(list(typ_docs.keys()))
+                ]) + "\n\n"
 
             txt += "\nFILTER DOCUMENTATION:\n\n"
 
@@ -533,8 +555,6 @@ specifying boolean ON/OFF switches.</p>
 
         # not great ---
         #return filtinfo.formatFilterHelp()
-
-
 
     return HelpTopicPage(
         {'htmlfragment': gen_htmlfragment,
