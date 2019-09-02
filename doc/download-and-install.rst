@@ -69,14 +69,13 @@ executables in your PATH::
 
 You may, alternatively, download and compile the packages from source.
 
-- First, clone this repository on your computer (don't download the prepackaged
-  ZIP/Tarball proposed by github, because there will be missing submodules)::
+- First, clone this repository on your computer::
 
-    > cd somewhere/where/Ill-keep-bibolamazi/
+    > cd somewhere/where/I/want/to/keep/bibolamazi/
     ...> git clone https://github.com/phfaist/bibolamazi
 
 - Then, run the setup script to install the package and script (see `Installing
-  Python Modules <https://docs.python.org/2/install/>`_)::
+  Python Modules <https://docs.python.org/3/install/>`_)::
 
     > python setup.py install
 
