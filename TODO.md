@@ -2,10 +2,31 @@
 TODO LIST & THOUGHTS
 ====================
 
+Rough order by priority, top is highest priority.
+
+- [ ] Remove Python2 support & 2-compat-3 code.  Several reasons to do so:
+
+      1) Avoid tons of unicode string bugs
+      
+      2) Remove past/future dependency
+      
+      3) Avoid problems like \u being interpolated in raw strings (!!!) [see
+      https://stackoverflow.com/a/7602511/1694896]
+      
+      4) Less maintenance effort
+      
+      5) Python2 will no longer be supported soon
+      
+      ### Fixed in v4.3 ???
 
 - [ ] BUG: arXiv access persists on re-trying to fetch info from arXiv for
       invalid entry ids, even if a previous attempt returned an
       "not-found/invalid identifier" error from the server.
+
+      ### Fixed in v4.3 ???
+
+- [ ] More aggressive caching in duplicates.  If the entry list collected from
+      the sources hasn't changed, don't re-process duplicates...
 
 - [ ] Centralize duplicate detection mechanism, like the arXiv accessor, so that several
       filters can use the functionality if required.
@@ -14,10 +35,13 @@ TODO LIST & THOUGHTS
       
 - [ ] Integration and tests with other bibliography managers? Zotero? What do
       people use?
+      
 
 
 Graveyard
 =========
+
+Order chonologically, top is last.
 
 - [-] Think about directly accessing Mendeley library (via API)? Is this possible?
 
@@ -50,7 +74,23 @@ Graveyard
 Completed Tasks
 ===============
 
+Order chonologically, top is last.
 
+- [x] Git/github filter packages? E.g., specify
+
+        package: git@github.com:phfaist/myfilterpackage.git
+      
+      to automatically download & use the given filter package?
+      
+      [PROBLEM: Need git integration for that. I'm not sure I want to package
+      all of that together into the bibolamazi app.] -- no git needed, download
+      archives directly from github.
+      
+      [HTTPS filter packages? e.g., use raw access?] -- only github repos.
+
+      [IDEA: fetch git ZIP/TAR.GZ package of the whole repository.  Only
+      re-download if a newer version is available.] -- yes.
+      
 - [x] What to do for repeated key names in different sources?
 
       * Idea: detect duplicates silently, but report error if entries are different. 

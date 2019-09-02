@@ -1,0 +1,12 @@
+
+- duplicates filter: "previously--XYZ" or "aka--XYZ" in keywords (note
+  double-hyphen)
+
+- revamps & bug fixes in the graphical user interface, "save" button also save
+  entries, better help windows, etc.
+
+- revamped help system in cmd line.
+
+- markauthor filter
+
+- remote filter packages as github repositories

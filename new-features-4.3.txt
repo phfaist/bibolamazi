@@ -1,0 +1,9 @@
+
+- Undo Zotero title case protection (fixes filter)
+
+- new citedoi filter
+
+- support for pylatexenc 2.x
+
+- bug fixes & minor enhancements
+
