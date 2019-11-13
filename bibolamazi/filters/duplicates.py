@@ -310,6 +310,10 @@ normally happen, but again there's no guarantee. Also, if two entries refer to
 different versions of a paper where one is on the arXiv and the other is
 published, they are NOT considered as duplicates.
 
+You can inhibit specific entries from being matched as duplicates by including
+'x-no-duplicate' as a keyword (in the keywords={...} field).  If this keyword is
+included in an entry, it will never match as a duplicate with any other entry.
+
 If you set -dKeepOnlyUsed, then while sorting out the duplicates, we only keep
 those entries that are referred to from within the document. For this to work,
 you need to have called latex/pdflatex on your document first. The document is
@@ -473,6 +477,7 @@ class DuplicatesEntryInfoCacheAccessor(bibusercache.BibUserCacheAccessor):
 rx_conflictkey = re.compile(r'^(?P<origkey>.*)\.conflictkey\.\d+$', flags=re.IGNORECASE)
 rx_keyword_aka = re.compile(r'(aka|previously)--(?P<aliaskey>[^ ,;]+)',
                             flags=re.IGNORECASE)
+rx_keyword_nodup = re.compile(r'\bx-no-duplicate\b', flags=re.IGNORECASE)
 
 
 #AliasPair = collections.namedtuple("AliasPair", ('alias', 'origkey', 'is_extra',), )
@@ -687,6 +692,7 @@ class DuplicatesFilter(BibFilter):
                 'eprint', 'arxivid', 'archiveprefix',
             ]
 
+        # ### PhF: Is this used at all or is this leftover code ???
         self.cache_entries_validator = None
 
         #if (not self.dupfile and not self.warn):
@@ -748,6 +754,17 @@ class DuplicatesFilter(BibFilter):
 
         apers = cache_a['pers']
         bpers = cache_b['pers']
+
+        # see if either entry has keyword 'x-no-duplicate' preventing it from
+        # matching as a duplicate
+        m1 = rx_keyword_nodup.search(a.fields.get('keywords', ''))
+        m2 = rx_keyword_nodup.search(b.fields.get('keywords', ''))
+        if m1 is not None or m2 is not None:
+            return (False,
+                    ("Entry ‘%s’ is explicitly marked as non-duplicate "
+                     "('x-no-duplicate' keyword)") %(
+                        a.key if m1 else b.key
+                    ))
 
         pending_pos_match_warning = []
         def pos_match():
@@ -1321,7 +1338,7 @@ def bibolamazi_filter_class():
 #
 # used to detect small differences in names which can result from either typos, or
 # alternative spellings (e.g. 'Konig' vs 'Koenig')
-def levenshtein(a,b):
+def levenshtein(a, b):
     "Calculates the Levenshtein distance between a and b."
     n, m = len(a), len(b)
     if n > m:

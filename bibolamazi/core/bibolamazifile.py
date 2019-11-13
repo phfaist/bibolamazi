@@ -1234,9 +1234,9 @@ class BibolamaziFile:
 
     def runFilter(self, filter_instance):
         #
-        # See how the filter acts. It can act on the full bibolamazifile object, it can act on the
-        # full list of entries (possibly adding/deleting entries etc.), or it can act on a single
-        # entry.
+        # See how the filter acts. It can act on the full bibolamazifile object,
+        # it can act on the full list of entries (possibly adding/deleting
+        # entries etc.), or it can act on a single entry.
         #
 
         filtername = ''
@@ -1256,7 +1256,8 @@ class BibolamaziFile:
             if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
                 filter_instance.filter_bibolamazifile(self)
 
-                logger.debug('filter %s filtered the full bibolamazifile.', filter_instance.name())
+                logger.debug('filter %s filtered the full bibolamazifile.',
+                             filter_instance.name())
                 return
 
             #
