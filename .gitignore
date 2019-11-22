@@ -9,7 +9,7 @@ gui/_tmp_genfiles
 gui/build
 gui/dist
 *.bibolamazicache
-bibolamazi.egg-info
+*.egg-info
 .cache
 test/_tmpdir
 BUILD_PIP_UPLOAD.txt
