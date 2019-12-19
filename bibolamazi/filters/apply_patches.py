@@ -26,10 +26,14 @@ import logging
 #from pybtex.database import BibliographyData, Entry
 #from pybtex.utils import OrderedCaseInsensitiveDict
 import pybtex.bibtex.utils
+# needed to import bibtex file:
+import pybtex.database.input.bibtex as inputbibtex
 
 from bibolamazi.core.bibfilter import BibFilter # BibFilterError
 #from bibolamazi.core.bibfilter.argtypes import CommaStrList
 #from bibolamazi.core import butils
+from bibolamazi.core.bibolamazifile import BibolamaziBibtexSourceError
+
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +172,8 @@ class ApplyPatchesFilter(BibFilter):
     helptext = HELP_TEXT
 
 
-    def __init__(self, patch_series="", add_value_separator=", ", discard=False, *args):
+    def __init__(self, patch_series="", from_file=None, add_value_separator=", ",
+                 discard=False):
         r"""
         Arguments:
         
@@ -177,6 +182,11 @@ class ApplyPatchesFilter(BibFilter):
           "<OriginalBibtexKey>.PATCH.<PatchSeriesName>".  If no patch series is
           specified, the patches are those entries with keys of the form
           "<OriginalBibtexKey>.PATCH".
+
+        - from_file: Look for the "xxx.PATCH[.SSS]" entries in a separate bibtex
+          file specified here, instead of them coexisting in the same bibtex
+          sources as the other entries.  This is useful if you want to avoid
+          your patches being processed by other earlier filters.
 
         - add_value_separator: Separator to use when concatenating values.  This
           happens when the original entry already has a given field value, and a
@@ -190,6 +200,7 @@ class ApplyPatchesFilter(BibFilter):
         super().__init__()
 
         self.patch_series = patch_series
+        self.from_file = from_file if from_file else None
         self.add_value_separator = add_value_separator
         self.discard = discard
 
@@ -203,7 +214,11 @@ class ApplyPatchesFilter(BibFilter):
         actionmsg = "Applying"
         if self.discard:
             actionmsg = "Discarding"
-        return "{} entry patches{}".format(actionmsg, seriesmsg)
+        frommsg = ""
+        if self.from_file:
+            frommsg = " [from {}]".format(self.from_file)
+
+        return "{} entry patches{}{}".format(actionmsg, seriesmsg, frommsg)
 
 
     def action(self):
@@ -216,13 +231,34 @@ class ApplyPatchesFilter(BibFilter):
         #
         # bibdata is a pybtex.database.BibliographyData object
         #
-        bibdata = bibolamazifile.bibliographyData()
+        target_bibdata = bibolamazifile.bibliographyData()
 
         suffix = ".PATCH"
         if self.patch_series:
             suffix += "." + self.patch_series
 
         lensuffix = len(suffix)
+
+        # see if we need to look for .PATCH entries in separate bibtex file
+        if self.from_file:
+
+            patch_source_fname = bibolamazifile.resolveSourcePath(self.from_file)
+
+            parser = inputbibtex.Parser()
+            patchsrc_bibdata = None
+            with open(patch_source_fname) as f:
+                try:
+                    patchsrc_bibdata = parser.parse_stream(f)
+                except Exception as e:
+                    raise BibolamaziBibtexSourceError(str(e), fname=patch_source_fname)
+            
+            remove_patches_from_source = False
+
+        else:
+
+            patchsrc_bibdata = target_bibdata
+            remove_patches_from_source = True
+                
 
         #
         # Iterate the bibliography data.  If an entry is found that is called
@@ -231,10 +267,10 @@ class ApplyPatchesFilter(BibFilter):
 
         patch_entry_key_list = []
 
-        for (key, entry) in bibdata.entries.items():
+        for (key, entry) in patchsrc_bibdata.entries.items():
             if key.endswith(suffix):
                 origkey = key[:-lensuffix]
-                if not origkey in bibdata.entries:
+                if not origkey in target_bibdata.entries:
                     logger.warning("Can't apply patch %s, entry %s is nonexistent",
                                    key, origkey)
                     continue
@@ -249,12 +285,14 @@ class ApplyPatchesFilter(BibFilter):
                     continue
 
                 # apply patch to original entry
-                origentry = bibdata.entries[origkey]
+                origentry = target_bibdata.entries[origkey]
                 self.apply_patch(entry, origentry)
 
 
-        for key in patch_entry_key_list:
-            del bibdata.entries[key]
+        if remove_patches_from_source:
+            # got the patch entries directly from the bibolamazi bibdata
+            for key in patch_entry_key_list:
+                del bibdata.entries[key]
 
         return
 
