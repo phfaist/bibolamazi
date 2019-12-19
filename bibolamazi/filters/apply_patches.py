@@ -225,6 +225,16 @@ class ApplyPatchesFilter(BibFilter):
         return BibFilter.BIB_FILTER_BIBOLAMAZIFILE
 
 
+    def _read_patches_from_file(self, patch_source_fname):
+        # this functionality is in a separate method so that we can test this
+        # class more easily by monkey-patching this method
+        parser = inputbibtex.Parser()
+        patchsrc_bibdata = None
+        with open(patch_source_fname) as f:
+            try:
+                return parser.parse_stream(f)
+            except Exception as e:
+                raise BibolamaziBibtexSourceError(str(e), fname=patch_source_fname)
 
     def filter_bibolamazifile(self, bibolamazifile):
 
@@ -244,14 +254,8 @@ class ApplyPatchesFilter(BibFilter):
 
             patch_source_fname = bibolamazifile.resolveSourcePath(self.from_file)
 
-            parser = inputbibtex.Parser()
-            patchsrc_bibdata = None
-            with open(patch_source_fname) as f:
-                try:
-                    patchsrc_bibdata = parser.parse_stream(f)
-                except Exception as e:
-                    raise BibolamaziBibtexSourceError(str(e), fname=patch_source_fname)
-            
+            patchsrc_bibdata = self._read_patches_from_file(patch_source_fname)
+
             remove_patches_from_source = False
 
         else:
@@ -292,7 +296,7 @@ class ApplyPatchesFilter(BibFilter):
         if remove_patches_from_source:
             # got the patch entries directly from the bibolamazi bibdata
             for key in patch_entry_key_list:
-                del bibdata.entries[key]
+                del patchsrc_bibdata.entries[key]
 
         return
 
