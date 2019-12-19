@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Bibolamazi
+Comment=Prepare consistent BibTeX files for your LaTeX documents
+Exec=bibolamazi_gui %F
+Icon=bibolamazigui.png
+Categories=Office;Science;

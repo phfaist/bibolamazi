@@ -1,6 +1,7 @@
 from setuptools import setup
 
 import sys
+import os # os.listdir
 import os.path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirname(__file__)), '..')))
 
@@ -9,19 +10,40 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.realpath(os.path.dirnam
 #from bibolamazi.core import version as bibolamaziversion
 from bibolamazi_gui import version as bibolamaziversion
 
-sys.stderr.write("""
-NOTE: You'll have to make sure that `PyQt5` is installed in order to use
-`bibolamazi_gui`. We unfortunately can't install this requirement automatically
-when you run `pip install` because of technical issues.
-
-""") # "technical issues" == https://stackoverflow.com/a/4628806/1694896
-
+# sys.stderr.write("""
+# NOTE: You'll have to make sure that `PyQt5` is installed in order to use
+# `bibolamazi_gui`. We unfortunately can't install this requirement automatically
+# when you run `pip install` because of technical issues.
+#
+# """) # "technical issues" == https://stackoverflow.com/a/4628806/1694896
 
 try:
     import PyQt5
 except ImportError:
     sys.stderr.write("Please install PyQt5, for instance by running:\n\n    pip install pyqt5\n\n")
     raise RuntimeError("PyQt5 required")
+
+
+def gen_icon_data_files():
+    iconthmdir = 'hicolor'
+    localbase = 'data/icons'
+    destbase = 'share/icons'
+    for res in os.listdir(os.path.join(localbase, iconthmdir)):
+        resdir = os.path.join(iconthmdir, res)
+        for cat in os.listdir(os.path.join(localbase, resdir)):
+            catdir = os.path.join(resdir, cat)
+            yield (os.path.join(destbase, catdir),
+                   [ os.path.join(localbase, catdir, x)
+                     for x in os.listdir(os.path.join(localbase, catdir)) ])
+
+# https://stackoverflow.com/a/44462146/1694896
+if sys.platform.startswith('win') or sys.platform.startswith('darwin'):
+    data_files = []
+else:
+    data_files = [
+        ('share/applications', ['data/bibolamazigui.desktop']),
+    ] + list(gen_icon_data_files())
+    print("Data files = ", data_files)
 
 
 setup(
@@ -72,5 +94,6 @@ setup(
         #'hello': ['*.msg'],
     },
 
+    data_files = data_files,
     
 )

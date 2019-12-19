@@ -1,0 +1,7 @@
+include README.txt
+recursive-include data *
+include bibolamazi_gui.spec
+include bibolamazi_gui.icns
+include bibolamazi_gui.ico
+include MANIFEST.in
+include bin/bibolamazi_gui
