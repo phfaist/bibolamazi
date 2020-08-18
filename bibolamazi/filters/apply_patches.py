@@ -229,7 +229,6 @@ class ApplyPatchesFilter(BibFilter):
         # this functionality is in a separate method so that we can test this
         # class more easily by monkey-patching this method
         parser = inputbibtex.Parser()
-        patchsrc_bibdata = None
         with open(patch_source_fname) as f:
             try:
                 return parser.parse_stream(f)
