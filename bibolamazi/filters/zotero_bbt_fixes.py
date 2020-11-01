@@ -111,7 +111,7 @@ class ZoteroBbtFixesFilter(BibFilter):
         # entry is a pybtex.database.Entry object
         #
 
-        if self.unprotect_zotero_title_case:
+        if self.unprotect_title_case:
             # clean up Zotero-overprotected titles
             do_fields = ['title', 'booktitle', 'shorttitle']
             for fld in do_fields:
