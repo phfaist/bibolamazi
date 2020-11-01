@@ -24,6 +24,7 @@ import re
 #import os
 #import os.path
 import io
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 import html.parser # lgtm [py/unused-import]
 
 import requests
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
 #from pybtex.database import BibliographyData
 import pybtex.database.input.bibtex as inputbibtex
@@ -88,16 +89,6 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
         This does not store any information in the actual cache, just for this session.
         """
 
-        def invenio_query(term, value):
-            return term + ":" + value
-
-        def remember_key(userkey, key, p):
-            self.user_keys_parsed[key] = {
-                'key': key,
-                'userkey': userkey,
-                'p_query': p,
-                }
-
         # strip "--comment" from the user's citekey
         key = re.sub(r'--.*$', '', userkey)
 
@@ -109,7 +100,8 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
                 # Report error rather than removing the spaces and special characters,
                 # otherwise the user might spend hours figuring out why "PhysRev 47 777"
                 # doesn't work (because it would have been collapsed to "PhysRev47777")
-                logger.warning("Key `%s' may not contain any characters other than `%s'", key, allowedchars)
+                logger.warning("Key `%s' may not contain any characters other than `%s'",
+                               key, allowedchars)
                 return None
             ref_type = None
             queryval = key
@@ -150,7 +142,15 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
             # be different from the queryval.
 
             # all keys can be saved in the same way using INSPIRE
-            remember_key(userkey, key=key, p=invenio_query(ref_type, queryval))
+
+            self.user_keys_parsed[key] = {
+                'key': key,
+                'userkey': userkey,
+                'p_query_term': ref_type,
+                'p_query_value': queryval,
+                'p_query': ref_type + ':' + queryval
+                }
+
             return key
 
         return None
@@ -183,55 +183,70 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
         # use a Session() so that we keep the connection alive and reuse it multiple times
         # for the different requests
-        reqsession = requests.Session()
+        with requests.Session() as reqsession:
 
-        logger.longdebug('fetching missing id list %r' %(missing_keys))
-        for key in missing_keys:
-            pk = self.user_keys_parsed[key]
-            qs = { 'p': pk['p_query'],
-                   'em': 'B', # no surrounding HTML
-                   'of': 'hx', # BibTeX output
-                   'action_search': 'search',
-                   }
-            # perform individual request
-            logger.longdebug("fetching for key=%s: %r", key, qs)
-            for tries in range(5):
-                try:
-                    exc = None
-                    r = reqsession.get('https://inspirehep.net/search', params=qs)
-                except Exception as e:
-                    # meant to catch SSLError -- we can't rely on
-                    #    ``from requests.packages.urllib3.exceptions import SSLError``
-                    # because that doesn't always exist, depending on the `requests`
-                    # version/edition/installation
-                    logger.debug("Got exception in requests(), tries=%d: %s", tries, e)
-                    exc = e
-                    continue
-                break
-            if exc is not None:
-                raise exc
-            if r.status_code != 200:
-                logger.warning("Could not fetch reference information for key `%s' (HTTP %d):\n\t%s",
-                               key, r.status_code, r.text)
-                continue
+            # once we get a 429 code from inspire.net (rate limiting), automatically
+            # pause a bit after each request.
+            pre_request_wait = False
+            wait_dt = 0.51
 
-            soup = BeautifulSoup(r.text, "html.parser")
-            quicknotes = soup.find_all(class_='quicknote')
-            if (quicknotes):
-                logger.warning("Could not fetch reference for key `%s':\n\t%s", key,
-                               "\n".join([x.get_text() for x in quicknotes]))
-                continue
+            logger.longdebug('fetching missing id list %r' %(missing_keys))
+            for key in missing_keys:
+                pk = self.user_keys_parsed[key]
+                qs = { 'q': pk['p_query'],
+                       'format': 'bibtex'
+                       }
+                # perform individual request
+                logger.longdebug("fetching for key=%s: %r", key, qs)
+                for tries in range(5):
+                    try:
+                        if pre_request_wait:
+                            time.sleep(wait_dt)
 
-            # extract bibtex
-            bibtex = "\n".join([x.get_text() for x in soup.find_all('pre')])
-            if not bibtex:
-                logger.warning("Could not fetch reference for key `%s': no content returned", key)
-                continue
-            
-            cache_entrydic[key]['bibtex'] = bibtex
+                        exc = None
+                        r = reqsession.get('https://inspirehep.net/api/literature', params=qs)
 
-        logger.longdebug("inspirehep API info: Got all references. cacheDic() is now:  %r", self.cacheDic())
-        logger.longdebug("... and cacheObject().cachedic is now:  %r", self.cacheObject().cachedic)
+                        response_body = r.text
+
+                        logger.longdebug("Got response for key=%s: %s", key, response_body)
+
+                        if r.status_code == 200:
+                            # success
+                            cache_entrydic[key]['bibtex'] = response_body
+                            break
+
+                        if r.status_code == 429:
+                            # rate limiting, see
+                            # https://github.com/inspirehep/rest-api-doc#rate-limiting
+                            logger.debug("citeinspirehep: Got rate limiting instruction "
+                                         " from inspire.net, waiting...")
+                            pre_request_wait = True
+                            continue
+
+                        logger.warning(
+                            "Could not fetch reference information for key `%s' (HTTP %d):\n\t%s",
+                            key, r.status_code, r.text
+                        )
+                        break
+
+                    except Exception as e:
+                        # meant to catch SSLError -- we can't rely on
+                        #    ``from requests.packages.urllib3.exceptions import SSLError``
+                        # because that doesn't always exist, depending on the `requests`
+                        # version/edition/installation
+                        logger.debug("Got exception in requests(), tries=%d: %s", tries, e)
+                        exc = e
+                        continue
+
+                if exc is not None:
+                    raise exc
+
+
+
+        logger.longdebug("inspirehep API info: Got all references. cacheDic() is now:  %r",
+                         self.cacheDic())
+        logger.longdebug("... and cacheObject().cachedic is now:  %r",
+                         self.cacheObject().cachedic)
 
         return True
 
@@ -257,7 +272,7 @@ class InspireHEPFetchedAPIInfoCacheAccessor(BibUserCacheAccessor):
 
 
 
-HELP_AUTHOR = r"""
+HELP_AUTHOR = """
 Philippe Faist & Romain M\u00FCller, (C) 2015, GPL 3+
 """
 
@@ -431,8 +446,10 @@ class CiteInspireHEPFilter(BibFilter):
             
             # and add them to the main list
             if len(new_bib_data.entries.keys()) != 1:
-                logger.warning("Got either none or more than one bibtex entry when retreiving `%s'!",
-                               userkey)
+                logger.warning(
+                    "Got %d entries when retreiving `%s', expected exactly one bibtex entry.",
+                    len(new_bib_data.entries.keys()), userkey
+                )
 
             for vk in new_bib_data.entries:
                 thebibdata.add_entry(userkey, new_bib_data.entries[vk])

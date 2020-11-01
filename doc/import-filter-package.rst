@@ -132,3 +132,18 @@ authentication data, use ``bibolamazi --github-auth=-``.
                   Remote github repositories can be specified and automatically
                   accessed since Bibolamazi 4.2
 
+
+Local Caches for Remote Packages
+--------------------------------
+
+The code for remote filter packages (github package specifications) is
+downloaded and stored in a local cache dir (for instance, this path is
+``~/Library/Caches/bibolamazi`` on Mac OS X).  Github repos are checked for
+updates when the package is requested, unless a check has been performed
+recently already (currently, this timeout is set to 10 minutes).
+
+If you'd like to force a refresh and re-download a package, you can clear
+bibolamazi's local package cache by simply removing the entire bibolamazi cache
+directory (of course, this will also clear the cache for other downloaded
+packages and they will be refreshed, too).
+

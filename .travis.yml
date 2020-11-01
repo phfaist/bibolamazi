@@ -9,8 +9,10 @@ env:
     - BIBOLAMAZI_TESTS_SKIP_GITHUB_ACCESS=1
 
 python:
-  - "3.4"
   - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
 
 install:
   - pip install -r pip_requirements.txt

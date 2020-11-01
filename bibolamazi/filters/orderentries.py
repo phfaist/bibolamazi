@@ -198,7 +198,7 @@ class OrderEntriesFilter(BibFilter):
                     mon_s = re.sub('[^a-z]', '', fields['month'].lower())
                     month = next( (1+k for k in range(len(_month_regexps))
                                    if (_month_regexps[k].match(mon_s)) ), None )
-                    logger.longdebug("Got month: %r", month)
+                    logger.longdebug("%s: Got month = %r", key, month)
                 if month is None:
                     month = 12
 

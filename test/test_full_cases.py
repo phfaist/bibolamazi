@@ -133,8 +133,9 @@ class TestFullCases(unittest.TestCase, FullCaseTester, helpers.CustomAssertions)
     def test_7(self):
         self._run_full_case_test('test7')
 
-    def test_8(self):
-        self._run_full_case_test('test8')
+    # test8 used to be inspirehep -- see now test_filters_citeinspirehep.py
+    #def test_8(self):
+    #    self._run_full_case_test('test8')
 
     def test_9(self):
         self._run_full_case_test('test9')

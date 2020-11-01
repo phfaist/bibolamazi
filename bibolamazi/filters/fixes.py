@@ -28,9 +28,7 @@ logger = logging.getLogger(__name__)
 from pybtex.database import Person
 from pybtex.bibtex.utils import split_tex_string
 
-from pylatexenc import latexencode
-from pylatexenc import latexwalker
-from pylatexenc import latex2text
+from pylatexenc import latexencode, latexwalker, latex2text
 
 from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 from bibolamazi.core.bibfilter.argtypes import CommaStrList, ColonCommaStrDict, multi_type_class
@@ -329,12 +327,7 @@ class FixesFilter(BibFilter):
 
           - unprotect_zotero_title_case(bool):
 
-            Zotero's better bibtex exports tend to be overzealous in protecting
-            every word in the title that starts with an uppercase letter.  We
-            try to revert this behavior to allow bibtex styles to change the
-            casing of the title (lowercase or title-case).  We try to be careful
-            and keep protected those words that look like acronyms (anything
-            more complicated than a word that starts with an uppercase).
+            OBSOLETE option, use 'zotero_bbt_fixes' filter instead.
 
           - fix_swedish_a(bool):
 
@@ -352,17 +345,21 @@ class FixesFilter(BibFilter):
         self.fix_swedish_a = butils.getbool(fix_swedish_a); # OBSOLETE
 
         if (self.fix_swedish_a):
-            logger.warning("Fixes Filter: option -dFixSwedishA is now obsolete, in favor of the more"
-                           " general and better option -dFixSpaceAfterEscape. The old option will"
-                           " still work for backwards compatibility, but please consider changing to"
-                           " the new option.")
+            logger.warning(
+                "Fixes Filter: option -dFixSwedishA is now obsolete, in favor of the more"
+                " general and better option -dFixSpaceAfterEscape. The old option will"
+                " still work for backwards compatibility, but please consider changing to"
+                " the new option."
+            )
 
         self.encode_utf8_to_latex = butils.getbool(encode_utf8_to_latex)
         self.encode_latex_to_utf8 = butils.getbool(encode_latex_to_utf8)
 
         if (self.encode_utf8_to_latex and self.encode_latex_to_utf8):
-            raise BibFilterError(self.name(),
-                                 "Conflicting options: ‘-dEncodeUtf8ToLatex’ and ‘-dEncodeLatexToUtf8’.")
+            raise BibFilterError(
+                self.name(),
+                "Conflicting options: ‘-dEncodeUtf8ToLatex’ and ‘-dEncodeLatexToUtf8’."
+            )
 
         self.remove_type_from_phd = butils.getbool(remove_type_from_phd)
 
@@ -479,6 +476,12 @@ class FixesFilter(BibFilter):
         self.unprotect_full_last_names = butils.getbool(unprotect_full_last_names)
         self.unprotect_zotero_title_case = butils.getbool(unprotect_zotero_title_case)
 
+        if self.unprotect_zotero_title_case:
+            logger.warning(
+                "You shouldn't use fixes' -dUnprotectZoteroTitleCase option any longer; "
+                "use instead the corresponding option in the zotero_bbt_fixes filter."
+            )
+
         logger.debug(('fixes filter: '
                       'fix_space_after_escape=%r; encode_utf8_to_latex=%r; encode_latex_to_utf8=%r; '
                       'remove_type_from_phd=%r; '
@@ -572,7 +575,7 @@ class FixesFilter(BibFilter):
             do_fields = ['title', 'booktitle', 'shorttitle']
             for fld in do_fields:
                 if fld in entry.fields:
-                    entry.fields[fld] = zotero_title_protection_cleanup(entry.fields[fld], self)
+                    entry.fields[fld] = _zotero_title_protection_cleanup(entry.fields[fld])
 
         def filter_entry_remove_type_from_phd(entry):
             if (entry.type != 'phdthesis' or 'type' not in entry.fields):
@@ -825,178 +828,14 @@ _our_unicode_to_latex = latexencode.UnicodeToLatexEncoder(
 def custom_uni_to_latex(s):
     return _our_unicode_to_latex.unicode_to_latex(s)
 
-# def custom_utf8tolatex(s, substitute_bad_chars=False):
-#     """
-#     See pylatexenc.latexencode.utf8tolatex; customized for some selected characters...
-#     """
-#
-#     s = str(s) # make sure s is unicode
-#     s = unicodedata.normalize('NFC', s)
-#
-#     if not s:
-#         return ""
-#
-#     # assume there is already some LaTeX in, which we DON'T want to overwrite.
-#     # Just substitute the weird chars which might not be protected...
-#     ascii_custom_dic = {
-#         #NO-- 34:"''", 		# character "
-#         35:'\\#', 		# character #
-#         #NO--36:'\\$', 		# character $
-#         37:'\\%', 		# character %
-#         38:'\\&', 		# character &
-#         #NO-- 92:'\\textbackslash',	# the \ character itself
-#         #NO-- 95:'\\_', 		# character _
-#         #NO-- 123:'\\{', 	# character {
-#         #NO-- 125:'\\}', 	# character }
-#         #NO-- 126:'\\textasciitilde', # character ~
-#     }
-#
-#     result = u""
-#     for j, ch in enumerate(s):
-#         #logger.longdebug("Encoding char %r", ch)
-#         if (ord(ch) < 127):
-#             # FIXME: This is an ugly kludge. Doesn't handle cases like "\\&"
-#             # correctly, where we'd probably want to escape the '&' (but I can't
-#             # think of a situation where this would be relevant).
-#             if ord(ch) not in ascii_custom_dic or (j > 0 and s[j-1] == '\\'):
-#                 result += ch
-#             else:
-#                 # escape, unless already escaped
-#                 result += ascii_custom_dic[ord(ch)]
-#         else:
-#             lch = latexencode.utf82latex.get(ord(ch), None)
-#             if (lch is not None):
-#                 # add brackets if needed, i.e. if we have a substituting macro.
-#                 # note: in condition, beware, that lch might be of zero length.
-#                 result += (  '{'+lch+'}' if lch[0:1] == '\\' else lch  )
-#             elif ((ord(ch) >= 32 and ord(ch) <= 127) or
-#                   (ch in "\n\r\t")):
-#                 # ordinary printable ascii char, just add it
-#                 result += ch
-#             else:
-#                 # non-ascii char
-#                 logger.warning("Character cannot be encoded into LaTeX: U+%04X - '%s'",
-#                                ord(ch), ch)
-#                 if (substitute_bad_chars):
-#                     result += r'{\bfseries ?}'
-#                 else:
-#                     # keep unescaped char
-#                     result += ch
-#
-#     return result
-
 
 
 # helper function
-def zotero_title_protection_cleanup(title, fixesfilterinstance):
+def _zotero_title_protection_cleanup(title):
 
-    logger.longdebug("zotero_title_protection_cleanup(%r)", title)
+    from .zotero_bbt_fixes import zotero_title_protection_cleanup
 
-    def needs_protection(s):
-        # what doesn't need protection is a sequence of words for which
-        # only the first letter of each word might be capitalized
-        # ... except if the braces are there to protect something in
-        # math mode, in which case we keep the protection
-        return ( not all(ws == '' or ws.islower()
-                         for ws in (w.strip()[1:] for w in s.split()))
-                 or (s.startswith(r'$') or s.startswith(r'\(')) )
-
-    def iterate_over_words_in_nodelist(nodelist):
-        # first, split the root-level char nodes at spaces and keep the rest.
-        split_nodelist = []
-        for n in nodelist:
-            if n.isNodeType(latexwalker.LatexCharsNode):
-                # split at whitespace
-                chunks = re.compile(r'(\s+)').split(n.chars)
-                plen = 0
-                for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
-                    split_nodelist += [
-                        (latexwalker.LatexCharsNode(parsing_state=n.parsing_state,
-                                                    chars=chunk,
-                                                    pos=n.pos+plen, len=len(chunk)), sep)
-                    ]
-                    plen += len(chunk)+len(sep)
-            else:
-                split_nodelist += [(n, '')]
-
-        # now, combine them smarly into words.
-        cur_nodelist = []
-        need_protection_hint = False
-        for n, sep in split_nodelist:
-            logger.longdebug("node to consider for chunk: %r, sep=%r", n, sep)
-            if sep: # has separator
-                cur_nodelist += [n]
-                # flush what we've accumulated so far
-                yield cur_nodelist, sep, need_protection_hint
-                cur_nodelist = []
-                need_protection_hint = False
-            else:
-                # if there is anything else than a chars, macro or group node
-                # (group node for e.g., {\'e}), then this chunk will require
-                # protection (e.g. inline math)
-                if not n.isNodeType(latexwalker.LatexCharsNode) and \
-                   not n.isNodeType(latexwalker.LatexMacroNode) and \
-                   not n.isNodeType(latexwalker.LatexGroupNode):
-                    need_protection_hint = True
-                # add this node to the current chunk
-                cur_nodelist += [n]
-        # flush last nodes
-        yield cur_nodelist, '', need_protection_hint
-
-    def process_protection_for_expression(nodelist, l2t):
-        new_expression = ''
-        for nl, sep, need_protection_hint in iterate_over_words_in_nodelist(nodelist):
-            #logger.longdebug("chunk: nl=%r, sep=%r, need_protection_hint=%r, text-version=%r",
-            #                 nl, sep, need_protection_hint, l2t.nodelist_to_text(nl))
-            nl_to_latex = "".join(nnn.latex_verbatim() for nnn in nl)
-            if need_protection_hint:
-                #logger.longdebug("protecting chunk due to hint flag")
-                new_expression += '{{' + nl_to_latex + '}}' + sep
-            elif needs_protection(l2t.nodelist_to_text(nl)):
-                #logger.longdebug("protecting chunk by inspection of text representation")
-                new_expression += '{{' + nl_to_latex + '}}' + sep
-            else:
-                new_expression += nl_to_latex + sep
-        return new_expression
-
-    lw = latexwalker.LatexWalker(title)
-    l2t = latex2text.LatexNodes2Text(math_mode='with-delimiters',
-                                     latex_context=butils.latex2text_latex_context)
-    newtitle = ''
-    oldi = 0
-    while True:
-        i = title.find('{{', oldi)
-        if i == -1: # not found
-            break
-        (n, pos, len_) = lw.get_latex_expression(i, strict_braces=False)
-        assert pos == i
-        newi = i + len_
-        if title[newi-2:newi] != '}}':
-            # expression must be closed by '}}', i.e. we used
-            # get_latex_expression to get the inner {...} braced group,
-            # but the outer group must be closed immediately after the
-            # expression we read. Otherwise it's not Zotero-protected
-            # and we skip this group.
-            newtitle += title[oldi:newi]
-            oldi = newi
-            continue
-        # we got a very-probably-Zotero-protected "{{...}}" group
-        newtitle += title[oldi:i]
-        #protected_expression = title[i+2:newi-2]
-        # go through each top-level node in the protected content and
-        # see individually if it requires protection.  Split char nodes
-        # at spaces.
-        assert len(n.nodelist) == 1 and n.nodelist[0].isNodeType(latexwalker.LatexGroupNode)
-        nodelist = n.nodelist[0].nodelist
-        new_expression = process_protection_for_expression(nodelist, l2t)
-        #logger.longdebug("Zotero protect block: protected_expression=%r, new_expression=%r",
-        #                 protected_expression, new_expression)
-        newtitle += new_expression
-        oldi = newi
-
-    # last remaining part of the title
-    newtitle += title[oldi:]
-    return newtitle
+    return zotero_title_protection_cleanup(title)
 
 
 
