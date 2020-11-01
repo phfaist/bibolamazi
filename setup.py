@@ -16,11 +16,6 @@ utility. For the graphical interface, use the `setup.py` script located in the
 `gui/` directory, or download a precompiled version from
 `https://github.com/phfaist/bibolamazi/releases/`.
 
-NOTE: the `citeinspirehep` filter requires two additional packages, `requests`
-and `beautifulsoup4`. Make sure you have installed these packages if you wish to
-use this filter. (These packages are not listed as a requirement in the
-`setup.py` because the rest of bibolamazi runs fine without.)
-
 """)
 
 
