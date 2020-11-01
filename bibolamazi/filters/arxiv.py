@@ -329,6 +329,9 @@ class ArxivNormalizeFilter(BibFilter):
 
         self.warn_journal_ref = butils.getbool(warn_journal_ref)
 
+        self.summary_info_mismatch = None
+        self.summary_published = None
+
         if self.unpublished_mode == MODE_EPRINT and 'journal' in self.strip_unpublished_fields:
             if self.arxiv_journal_name and self.arxiv_journal_name != _default_arxiv_journal_name:
                 raise ValueError(
@@ -364,6 +367,39 @@ class ArxivNormalizeFilter(BibFilter):
         logger.debug("arxiv prerun(): re-validating arxiv info cache")
         bibolamazifile.cacheAccessor(arxivutil.ArxivInfoCacheAccessor).revalidate(bibolamazifile)
 
+        # initialize "summary" messages
+        #
+        # summary_info_mismatch --- entries for which info fetched from
+        # arXiv.org don't match the provided bibtex entry
+        self.summary_info_mismatch = []
+        # summary_published --- entries that refer to the arXiv but
+        # which are in fact published in some other venue
+        self.summary_published = []
+
+
+    def postrun(self, bibolamazifile):
+        # Save the cache to disk immediately. This action is useful in case
+        # there is an exception in a later filter, which would cause the cache
+        # not to be saved in a future run.
+        bibolamazifile.saveCache()
+
+        # present any "summaries":
+
+        # -- for published entries
+        logger.warning(
+            "The following arXiv-only bibliographic {entryname} have been published in "
+            "other {venuename}:\n"
+            .format(entryname='entry' if len(self.summary_published) == 1 else 'entries',
+                    venuename='venue' if len(self.summary_published) == 1 else 'venues')
+            + "\n".join(
+                "- {key} ({arxivid})  → {doiurl}".format(
+                    key='‘'+key+'’',
+                    arxivid=arxivinfo['arxivid'],
+                    doiurl='https://doi.org/'+arxivinfo['doi'],
+                )
+                for key, arxivinfo in self.summary_published
+            )
+        )
 
     def filter_bibentry(self, entry):
         #
@@ -399,8 +435,13 @@ class ArxivNormalizeFilter(BibFilter):
         if (self.warn_journal_ref and not we_are_published and arxivinfo['doi']):
             # we think we are not published but we actually are, as reported by arXiv.org API. This
             # could be because the authors published their paper in the meantime.
-            logger.warning("arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
-                           entry.key, arxivinfo['doi'])
+            #logger.warning(
+            #    "arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
+            #    entry.key, arxivinfo['doi']
+            #)
+            self.summary_published.append(
+                (entry.key, arxivinfo,)
+            )
 
         logger.longdebug("arXiv: entry %s: published=%r, mode=%r", entry.key, we_are_published, mode)
 

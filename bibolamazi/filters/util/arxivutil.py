@@ -593,6 +593,8 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
         # with info from the arXiv API.
         needs_to_be_completed = []
 
+        summary_info_mismatch = []
+
         #
         # Do a first scan through all the bibdata entries, and detect the API
         # information using only what we have (to figure out the arxiv
@@ -649,16 +651,22 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 entrydic[k]['primaryclass'][:len(primaryclass)] !=
                 primaryclass[:len(entrydic[k]['primaryclass'])]):
                 #
-                logger.warning("Conflicting primaryclass values for entry %s (%s): "
-                               "%s (given in bibtex) != %s (retrieved from the arxiv)",
-                               k, aid, entrydic[k]['primaryclass'], primaryclass)
+                summary_info_mismatch.append(
+                    (k, aid, 'primaryclass', entrydic[k]['primaryclass'], primaryclass)
+                )
+                # logger.warning("Conflicting primaryclass values for entry %s (%s): "
+                #                "%s (given in bibtex) != %s (retrieved from the arxiv)",
+                #                k, aid, entrydic[k]['primaryclass'], primaryclass)
             else:
                 entrydic[k]['primaryclass'] = primaryclass
 
             if (doi and entrydic[k]['doi'] and entrydic[k]['doi'].lower() != doi.lower()):
-                logger.warning("Conflicting doi values for entry %s (%s): "
-                               "%s (given in bibtex) != %s (retrieved from the arxiv)",
-                               k, aid, entrydic[k]['doi'], doi)
+                summary_info_mismatch.append(
+                    (k, aid, 'doi', entrydic[k]['doi'], doi)
+                )
+                # logger.warning("Conflicting doi values for entry %s (%s): "
+                #                "%s (given in bibtex) != %s (retrieved from the arxiv)",
+                #                k, aid, entrydic[k]['doi'], doi)
             else:
                 entrydic[k]['doi'] = doi
                 
@@ -668,6 +676,25 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
             joined = ", ".join(fail_aids if len(fail_aids) <= 8 else fail_aids[:7]+['...'])
             logger.warning("Failed to fetch information from the arXiv for %d entries: %s",
                            len(fail_aids), joined)
+
+        # warning for info mismatch
+        if summary_info_mismatch:
+            logger.warning(
+                "Mismatch: info in bibtex ≠ info from arxiv.org\n" +
+                "\n".join(
+                    "- ‘{key}’ ({arxivid}) [{field}]:\n"
+                    "    {value_from_bibtex}  ≠  {value_from_arxivorg}"
+                    .format(key=key,
+                            arxivid=arxivid,
+                            field=field,
+                            value_from_bibtex='“'+value_from_bibtex+'”',
+                            value_from_arxivorg='“'+value_from_arxivorg+'”',)
+                    for key, arxivid, field, value_from_bibtex, value_from_arxivorg
+                    in summary_info_mismatch
+                )
+            )
+                
+
 
 
     def getArXivInfo(self, entrykey):

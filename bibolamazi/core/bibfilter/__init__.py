@@ -170,6 +170,27 @@ class BibFilter:
         The default implementation does nothing.
         """
         return
+
+    def postrun(self, bibolamazifile):
+        """
+        This function gets called immediately after the filter is run, before any
+        further filters are executed.
+
+        It is not very useful if the :py:meth:`action()` is
+        :py:const:`BibFilter.BIB_FILTER_BIBOLAMAZIFILE`, but it can prove useful
+        for filters with action :py:const:`BibFilter.BIB_FILTER_SINGLE_ENTRY`,
+        if any sort of global post-processing task should be done immediately
+        after the actual filtering of the data.
+
+        You can use this function, e.g., to produce an aggregated warning or
+        report message.
+
+        This method is not called if the filter raised an exception, whether
+        internal or not.
+
+        The default implementation does nothing.
+        """
+        return
     
 
     def filter_bibentry(self, x):

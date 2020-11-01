@@ -547,7 +547,8 @@ class BibolamaziFile:
 
         See also filterPath().
         """
-        return PrependOrderedDict(list(self._filterpath.items()) + list(factory.filterpath.items()))
+        return PrependOrderedDict(list(self._filterpath.items())
+                                  + list(factory.filterpath.items()))
 
     def filters(self):
         """
@@ -579,7 +580,8 @@ class BibolamaziFile:
         .. deprecated:: 2.0
            Use `bibliographyData()` instead!
         """
-        butils.warn_deprecated("BibolamaziFile", "bibliographydata()", "bibliographyData()", __name__)
+        butils.warn_deprecated("BibolamaziFile", "bibliographydata()",
+                               "bibliographyData()", __name__)
         return self.bibliographyData()
 
     def cacheFileName(self):
@@ -1026,8 +1028,13 @@ class BibolamaziFile:
         self._bibliographydata = None
 
         if (not len(self._source_lists)):
-            logger.warning("File `%s': No source files specified. You need source files to provide bib entries!",
-                           self._fname)
+            logger.warning(
+                "File ‘%s’: No source files specified. You need source files to provide "
+                "bibliographic entries!",
+                self._fname
+            )
+
+        logger.info('{:+^80s}'.format(' collecting sources '))
 
         # now, populate all bibliographydata.
         num_conflicting_keys = 0
@@ -1040,6 +1047,7 @@ class BibolamaziFile:
         if num_conflicting_keys:
             logger.info(CONFLICT_KEY_INFO)
 
+        logger.info('{:+^80s}\n'.format(''))
 
         # Now, try to load the cache
         # --------------------------
@@ -1119,7 +1127,7 @@ class BibolamaziFile:
                 # ignore source, will have to try next in list
                 return (False,0)
 
-        logger.info("Found Source: %s", src)
+        logger.info("→ %s", src)
 
         try:
             # parse bibtex
@@ -1149,7 +1157,8 @@ class BibolamaziFile:
                         key = oldkey + u".conflictkey." + str(n)
 
                     entry.key = key
-                    logger.debug("Key conflict in source file %s: renamed %s -> %s", src, oldkey, key)
+                    logger.debug("Key conflict in source file %s: renamed %s -> %s",
+                                 src, oldkey, key)
 
                 self._bibliographydata.add_entry(key, entry)
 
@@ -1239,24 +1248,43 @@ class BibolamaziFile:
         # entries etc.), or it can act on a single entry.
         #
 
-        filtername = ''
+        class _WrapFilterAction:
+            def __init__(self, bibolamazifile, logger, filtername, filter_instance):
+                super().__init__()
+                self.bibolamazifile = bibolamazifile
+                self.logger = logger
+                self.filtername = filtername
+                self.filter_instance = filter_instance
+
+            def __enter__(self):
+                self.logger.info('{:-^80s}'.format(' filter ‘{}’ '.format(self.filtername)))
+                msg = self.filter_instance.getRunningMessage()
+                if msg != self.filtername:
+                    self.logger.info(msg)
+            
+                self.filter_instance.prerun(self.bibolamazifile)
+
+            def __exit__(self, exc_type, exc_value, exc_traceback):
+                if exc_type is None:
+                    # success
+                    self.filter_instance.postrun(self.bibolamazifile)
+                    self.logger.info('{:-^79s}\n'.format(' filter ✅ '))
 
         try:
             filtername = filter_instance.name()
             action = filter_instance.action()
-
-            logger.info("=== Filter: %s", filter_instance.getRunningMessage())
-
-            filter_instance.prerun(self)
 
             #
             # pass the whole bibolamazifile to the filter. the filter can actually do
             # whatever it wants with it (!!)
             #
             if (action == BibFilter.BIB_FILTER_BIBOLAMAZIFILE):
-                filter_instance.filter_bibolamazifile(self)
 
-                logger.debug('filter %s filtered the full bibolamazifile.',
+                with _WrapFilterAction(self, logger, filtername, filter_instance):
+
+                    filter_instance.filter_bibolamazifile(self)
+
+                logger.debug('filter ‘%s’ processed the full bibolamazifile.',
                              filter_instance.name())
                 return
 
@@ -1266,12 +1294,13 @@ class BibolamaziFile:
             #
             if (action == BibFilter.BIB_FILTER_SINGLE_ENTRY):
 
-                bibdata = self.bibliographyData()
+                with _WrapFilterAction(self, logger, filtername, filter_instance):
 
-                for (k, entry) in bibdata.entries.items():
-                    filter_instance.filter_bibentry(entry)
+                    bibdata = self.bibliographyData()
+                    for (k, entry) in bibdata.entries.items():
+                        filter_instance.filter_bibentry(entry)
 
-                logger.debug('filter %s filtered each of the the bibentries one by one.',
+                logger.debug('filter %s processed all the bibliographic entries.',
                              filter_instance.name())
                 return
 
@@ -1321,8 +1350,6 @@ class BibolamaziFile:
             logger.info("Saved file '%s'", fname)
 
 
-        
-
     def saveToFile(self, fname=None, cachefname=None):
         """
         Save the current bibolamazi file object to disk.
@@ -1354,16 +1381,9 @@ class BibolamaziFile:
                     always silently overwritten (so be careful). The same
                     applies to the cache file.
         """
-        if fname is None:
-            fname = self._fname
 
-        if cachefname is None or (isinstance(cachefname, bool) and cachefname):
-            cachefname = self.cacheFileName()
-        elif isinstance(cachefname, bool) and not cachefname:
-            cachefname = ''
-        else:
-            pass # cachefname has a specific file name
-            
+        fname, cachefname = self._get_fname_and_cachefname(fname, cachefname)
+
         with codecs.open(fname, 'w', BIBOLAMAZI_FILE_ENCODING) as f:
             f.write(self._header)
             f.write(self._config)
@@ -1385,26 +1405,52 @@ class BibolamaziFile:
                 #
                 # Write to bibtex output
                 #
-                #w = outputbibtex.Writer()
-                #w.write_stream(self._bibliographydata, f)
-                #
-                #f.write(self._bibliographydata.to_string('bibtex'))
-                #
                 w = outputbibtex.Writer()
                 f.write(w.to_string(self._bibliographydata))
             
-            logger.info("Updated output file '%s'", fname)
+            logger.info("✨ Updated output file '%s'", fname)
 
-        # if we have cache to save, save it
+        self.saveCache(cachefname=cachefname)
+
+    def _get_fname_and_cachefname(self, fname, cachefname):
+        if fname is None:
+            fname = self._fname
+
+        if cachefname is None or (isinstance(cachefname, bool) and cachefname):
+            cachefname = self.cacheFileName()
+        elif isinstance(cachefname, bool) and not cachefname:
+            cachefname = ''
+        else:
+            pass # cachefname has a specific file name
+            
+        return fname, cachefname
+
+    def saveCache(self, cachefname=None):
+        r"""
+        Save the cache.  If `cachefname` is None, the cache file name is deduced
+        from the current file name (see :py:meth:`fname()`).
+
+        The argument `cachefname` is parsed exactly as in the method
+        :py:meth:`saveToFile()`.
+
+        .. note:: If you call :py:meth:`saveToFile()`, then the cache is
+                  automatically saved and a separate call to `saveCache()` is
+                  not necessary.
+
+        Warning: This method will silently overwrite any existing file of the
+        same name.
+        """
+        
+        _, cachefname = self._get_fname_and_cachefname(None, cachefname)
+
         if (cachefname and self._user_cache and self._user_cache.hasCache()):
             try:
                 with open(cachefname, 'wb') as f:
-                    logger.debug("Writing cache to file %s", cachefname)
+                    logger.debug("Writing cache to file ‘%s’", cachefname)
                     self._user_cache.saveCache(f)
             except IOError as e:
-                logger.debug("Couldn't save cache to file '%s'.", cachefname)
+                logger.debug("Error saving cache to file ‘%s’: %s", cachefname, e)
 
-        
 
 
 
