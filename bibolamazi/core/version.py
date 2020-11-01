@@ -2,7 +2,7 @@
 ################################################################################
 #                                                                              #
 #   This file is part of the Bibolamazi Project.                               #
-#   Copyright (C) 2019 by Philippe Faist                                       #
+#   Copyright (C) 2020 by Philippe Faist                                       #
 #   philippe.faist@bluewin.ch                                                  #
 #                                                                              #
 #   Bibolamazi is free software: you can redistribute it and/or modify         #
@@ -24,13 +24,13 @@
 # This is the current BIBOLAMAZI version.
 # Bump the number here for different version numbers.
 
-version_str = "4.4b1"
+version_str = "4.4"
 """
 The version string. This is increased upon each release.
 """
 
 
-copyright_year = "2019"
+copyright_year = "2020"
 """
 Year of copyright.
 """
