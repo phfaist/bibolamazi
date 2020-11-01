@@ -104,19 +104,19 @@ _pybtex_database_output_bibtex.Writer._encode = lambda self, text: text # do not
 # Patch for pybtex. Add __delitem__ to a OrderedCaseInsensitiveDict so that we
 # can erase fields in entry.fields
 #
-import pybtex.utils as _pybtex_utils
-def _OrderedCaseInsensitiveDict_delitem(self, key):
-    # find item
-    key_match = [k for k in self.order if k.lower() == key.lower()]
-    if len(key_match) == 0:
-        raise KeyError(key)
-    assert (len(key_match) == 1), "Multiple instances of same key in dictionary: %s"%(key)
-    # now we have the key with the right case
-    key_ok = key_match[0]
-    self.order.remove(key_ok)
-    super(_pybtex_utils.OrderedCaseInsensitiveDict, self).__delitem__(key_ok)
+# import pybtex.utils as _pybtex_utils
+# def _OrderedCaseInsensitiveDict_delitem(self, key):
+#     # find item
+#     key_match = [k for k in self.order if k.lower() == key.lower()]
+#     if len(key_match) == 0:
+#         raise KeyError(key)
+#     assert (len(key_match) == 1), "Multiple instances of same key in dictionary: %s"%(key)
+#     # now we have the key with the right case
+#     key_ok = key_match[0]
+#     self.order.remove(key_ok)
+#     super(_pybtex_utils.OrderedCaseInsensitiveDict, self).__delitem__(key_ok)
     
-_pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem
+# _pybtex_utils.OrderedCaseInsensitiveDict.__delitem__ = _OrderedCaseInsensitiveDict_delitem
 
 
 

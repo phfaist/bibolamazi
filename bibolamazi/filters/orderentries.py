@@ -140,16 +140,7 @@ class OrderEntriesFilter(BibFilter):
             
             bibdata = bibolamazifile.bibliographyData()
 
-            #newentries = sorted(bibdata.entries.items(), key=lambda x: x[0].lower())
-            entries = bibdata.entries
-
-            # bibdata.entries is of type pybtex.util.OrderedCaseInsensitiveDict, which has
-            # an attribute `order`, which is a list of keys in the relevant order. So use
-            # list.sort(), which is slightly more efficient.
-            bibdata.entries.order.sort(reverse=self.reverse)
-
-            #newbibdata = BibliographyData(entries=newentries)
-            #bibolamazifile.setBibliographyData(newbibdata)
+            sort_entries(bibdata.entries, reverse=self.reverse)
 
         elif (self.order == ORDER_DATE):
 
@@ -172,8 +163,10 @@ class OrderEntriesFilter(BibFilter):
                 if arxivinfo is not None and not arxivinfo['published']:
                     # use arxiv ID information only if entry is not published--otherwise,
                     # try to get actual publication date.
-                    m = re.match(r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(?P<articleid>\d{3}|\.\d{4,})$',
-                                 arxivinfo['arxivid'])
+                    m = re.match(
+                        r'^([\w_.-]/)?(?P<year>\d\d)(?P<month>\d\d)(?P<articleid>\d{3}|\.\d{4,})$',
+                        arxivinfo['arxivid']
+                    )
                     if m is not None:
                         try:
                             year =  ( int(m.group('year')) - 1990 ) % 100  +  1990
@@ -223,14 +216,19 @@ class OrderEntriesFilter(BibFilter):
                 # often if only month/year detected)
                 return (getpubdate(key), key)
 
-            # see above. Note the "not reverse" because the date key will sort
-            # increasingly, whereas we want the default sort order to be newest first.
-            bibdata.entries.order.sort(key=getentrysortkey, reverse=(not self.reverse))
+            # Note the "not reverse" because the date key will sort
+            # increasingly, whereas we want the default sort order to be newest
+            # first.
+            sort_entries(bibdata.entries, key=getentrysortkey, reverse=(not self.reverse))
+
 
         elif (self.order == ORDER_RAW):
+
             # natural order mode. don't do anything.
             pass
+
         else:
+
             raise BibFilterError(self.name(), "Bad order mode: %r !" %(self.order))
             
         logger.debug("ordered entries as wished.")
@@ -252,6 +250,14 @@ _month_regexps = (
     re.compile('^nov'),
     re.compile('^dec'),
     )
+
+
+
+def sort_entries(bibdata_entries, key=lambda x: x, reverse=False):
+     new_dic = sorted(bibdata_entries.items(), key=lambda x: key(x[0]), reverse=reverse)
+     bibdata_entries.clear()
+     bibdata_entries.update(new_dic)
+
 
 
 

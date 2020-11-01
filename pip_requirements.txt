@@ -1,8 +1,9 @@
 
+# 
+# pybtex >= 0.23 for new pybtex.utils.OrderedCaseInsensitiveDict implementation
+# with __delitem__
 #
-# pybtex.
-#
-pybtex >= 0.19
+pybtex >= 0.23
 
 #
 # arxiv2bib.
@@ -29,9 +30,3 @@ appdirs
 #
 PyGithub
 requests[security]
-
-#
-# `bs4` and `requests` for citeinspirehep filter
-#
-bs4
-#requests
