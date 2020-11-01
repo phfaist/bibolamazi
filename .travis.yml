@@ -9,14 +9,12 @@ env:
     - BIBOLAMAZI_TESTS_SKIP_GITHUB_ACCESS=1
 
 python:
-  - "3.4" # windows builds still use 3.4 (yes, I know...)
   - "3.6"
+  - "3.7"
+  - "3.8"
   - "3.9"
 
 install:
-  # On Python 3.4, we need to install pyyaml==3.13 because newer PyYaml dropped py3.4 support
-  - if [ "`python -c 'import sys; print(\"%d.%d\"%sys.version_info[0:2])'`" == "3.4" ]; then  pip install pyyaml==3.13; fi
-
   - pip install -r pip_requirements.txt
 
 # command to run tests
