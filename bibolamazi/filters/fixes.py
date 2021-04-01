@@ -141,6 +141,16 @@ BoolOrFieldList = multi_type_class('BoolOrFieldList',
 
 
 
+
+_rx_pages_ranges = re.compile(r'^\s*(?P<a>\w+)\s*\{\s*?'
+                              r'(?P<hyphen>[-'
+                                '\u2010\u2011\u2012\u2013\u2014\u2015\u2E3A\u2E3B\uFE58\uFE63'
+                              r']+)'
+                              r'\s*\}?\s*(?P<b>\w+)\s*$')
+
+
+
+
 class FixesFilter(BibFilter):
     
     helpauthor = HELP_AUTHOR
@@ -170,8 +180,11 @@ class FixesFilter(BibFilter):
                  dbl_quote_macro=r'\qq',
                  sgl_quote_macro=r'\q',
                  unprotect_full_last_names=False,
-                 unprotect_zotero_title_case=False,
+                 fix_pages_range=False,
+                 fix_pages_range_hyphen='--',
+                 #
                  # obsolete:
+                 unprotect_zotero_title_case=False,
                  fix_swedish_a=False):
         r"""
         Constructor method for FixesFilter
@@ -325,6 +338,16 @@ class FixesFilter(BibFilter):
             last name of people.  (It looks like Mendeley protects composite
             last names like this, which is not always necessary.)
 
+          - fix_pages_range(bool):
+
+            If set to true, then then we attempt to parse fields `pages={...}`
+            and use the LaTeX double-hyphen en-dash to format page ranges.
+        
+          - fix_pages_range_hyphen:
+        
+            You can set this option to override which hyphen character to use
+            when `fix_pages_range` is set.
+
           - unprotect_zotero_title_case(bool):
 
             OBSOLETE option, use 'zotero_bbt_fixes' filter instead.
@@ -473,6 +496,9 @@ class FixesFilter(BibFilter):
             self.convert_sgl_quotes =  \
                 ['title','abstract','booktitle','series'] if convert_sgl_quotes.value else []
         
+        self.fix_pages_range = butils.getbool(fix_pages_range)
+        self.fix_pages_range_hyphen = fix_pages_range_hyphen
+
         self.unprotect_full_last_names = butils.getbool(unprotect_full_last_names)
         self.unprotect_zotero_title_case = butils.getbool(unprotect_zotero_title_case)
 
@@ -493,7 +519,9 @@ class FixesFilter(BibFilter):
                       'fix_mendeley_bug_urls=%r,'
                       'protect_capital_letter_after_dot=%r,protect_capital_letter_at_begin=%r,'
                       'convert_dbl_quotes=%r,dbl_quote_macro=%r,convert_sgl_quotes=%r,sgl_quote_macro=%r,'
-                      'unprotect_full_last_names=%r, unprotect_zotero_title_case=%r')
+                      'unprotect_full_last_names=%r, '
+                      'fix_pages_range=%r,fix_pages_range_hyphen=%r, '
+                      'unprotect_zotero_title_case=%r')
                      % (self.fix_space_after_escape, self.encode_utf8_to_latex, self.encode_latex_to_utf8,
                         self.remove_type_from_phd, self.remove_pages_from_book,
                         self.remove_full_braces, self.remove_full_braces_fieldlist,
@@ -510,6 +538,7 @@ class FixesFilter(BibFilter):
                         self.convert_dbl_quotes,self.dbl_quote_macro,
                         self.convert_sgl_quotes,self.sgl_quote_macro,
                         self.unprotect_full_last_names,
+                        self.fix_pages_range, self.fix_pages_range_hyphen,
                         self.unprotect_zotero_title_case,
                         ))
         
@@ -747,12 +776,20 @@ class FixesFilter(BibFilter):
                 entry.fields['doi'] =  \
                     re.sub(r'^\s*doi[ :]\s*', '', entry.fields['doi'], flags=re.IGNORECASE)
 
+        if self.fix_pages_range:
+            if 'pages' in entry.fields:
+                m = _rx_pages_ranges.match(entry.fields['pages'])
+                if m is not None:
+                    entry.fields['pages'] = \
+                        m.group('a') + self.fix_pages_range_hyphen + m.group('b')
+
         logger.longdebug("fixes filter, result: %s -> Authors=%r, fields=%r",
                          entry.key, entry.persons.get('author', None),
                          entry.fields)
 
         return
     
+
 
 # used to store variables in a way we can access from inner functions
 class _Namespace:
