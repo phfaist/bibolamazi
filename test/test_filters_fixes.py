@@ -924,7 +924,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
             ("Uhlmann1973_EdDMII", Entry("article", persons={"author": [Person("Uhlmann, Armin")],}, fields={
                 "file": ":path/to/Mendeley/Uhlmann - 1973 - Endlich-dimensionale Dichtematrizen II.pdf:pdf",
                 "journal": "Wiss. Z. Karl-Marx-Univ. Leipzig, Math.-Naturwiss.",
-                "pages": "139--177",
+                "pages": "139-177",
                 "title": "{Endlich-dimensionale Dichtematrizen II}",
                 "url": "http://www.physik.uni-leipzig.de/$\\sim$uhlmann/papers.html",
                 "volume": "22",
@@ -939,7 +939,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "mendeley-tags": "thermo",
                 "month": "November",
                 "number": "11-12",
-                "pages": "840--856",
+                "pages": "840{–}856",
                 "publisher": "Springer Berlin / Heidelberg",
                 "title": "{\\\"{U}ber die Entropieverminderung in einem thermodynamischen System bei Eingriffen intelligenter Wesen}",
                 "url": "http://www.springerlink.com/index/10.1007/BF01341281",
@@ -979,7 +979,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "mendeley-tags": "thermo",
                 "month": "March",
                 "number": "1",
-                "pages": "1--40",
+                "pages": r"1{\textendash}40",
                 "title": "Exorcist XIV: The Wrath of Maxwell\u2019s Demon. Part II. From Szilard to Landauer and Beyond",
                 "url": "http://linkinghub.elsevier.com/retrieve/pii/S1355219898000264",
                 "volume": "30",
@@ -993,7 +993,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "journal": "Physical Review A",
                 "month": "nov",
                 "number": "5",
-                "pages": "4247--4247",
+                "pages": "4247-x-4247",
                 "title": "Reply to ``Comment on `Optical coherence: A convenient fiction'''",
                 "extrafield": "Reply to “Comment on ‘Optical coherence: A convenient fiction’”",
                 "url": "http://link.aps.org/doi/10.1103/PhysRevA.58.4247",
@@ -1019,7 +1019,9 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                  convert_dbl_quotes=True,
                  convert_sgl_quotes=['title','abstract','booktitle','series','extrafield'],
                  dbl_quote_macro=r'\enquote',
-                 sgl_quote_macro=r'\enquote*')
+                 sgl_quote_macro=r'\enquote*',
+                 fix_pages_range=True,
+        )
 
         for k,e in entries:
             e.key = k
@@ -1274,7 +1276,7 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "journal": "Physical Review A",
                 "month": "nov",
                 "number": "5",
-                "pages": "4247--4247",
+                "pages": "4247-x-4247", # didn't match page range, should leave it alone
                 "title": "Reply to \\enquote{Comment on \\enquote*{Optical coherence: {A} convenient fiction}}",
                 "extrafield": "Reply to “Comment on \\enquote*{Optical coherence: A convenient fiction}”",
                 "url": "http://link.aps.org/doi/10.1103/PhysRevA.58.4247",

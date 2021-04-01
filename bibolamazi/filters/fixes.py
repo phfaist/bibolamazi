@@ -142,11 +142,11 @@ BoolOrFieldList = multi_type_class('BoolOrFieldList',
 
 
 
-_rx_pages_ranges = re.compile(r'^\s*(?P<a>\w+)\s*\{\s*?'
-                              r'(?P<hyphen>[-'
+_rx_pages_ranges = re.compile(r'^\s*(?P<a>[0-9A-Za-z./]+)\s*\{?\s*'
+                              r'(?P<hyphen>(?:[-'
                                 '\u2010\u2011\u2012\u2013\u2014\u2015\u2E3A\u2E3B\uFE58\uFE63'
-                              r']+)'
-                              r'\s*\}?\s*(?P<b>\w+)\s*$')
+                              r']|\\(?:textendash|textemdash)\b)+)'
+                              r'\s*\}?\s*(?P<b>[0-9A-Za-z./]+)\s*$')
 
 
 
