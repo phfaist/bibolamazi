@@ -1,4 +1,3 @@
-
 # 
 # pybtex >= 0.23 for new pybtex.utils.OrderedCaseInsensitiveDict implementation
 # with __delitem__
@@ -13,7 +12,7 @@ arxiv2bib >= 1.0.2
 #
 # My own pylatexenc.
 #
-pylatexenc >= 2.0
+pylatexenc >= 2.10b
 
 #
 # `future` for both python2 & python3 support

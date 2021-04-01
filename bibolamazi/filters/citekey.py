@@ -27,6 +27,9 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
+import hashlib
+import base64
+
 
 from pybtex.database import BibliographyData #, Entry
 
@@ -124,6 +127,9 @@ placeholders, of the form `%(<field name>)s`. Possible field names are:
 
   - `primaryclass`: the arXiv primary category, if available.
 
+  - `hash`: a MD5 hash of the original bibtex key encoded using a base64-based
+    encoding and truncated according to use_hash_length
+
 If a field is given in the key but does not exist in the entry (e.g. `doi`,
 `arxivid`) then the placeholder silently expands to an empty string.
 
@@ -165,7 +171,8 @@ class CiteKeyFilter(BibFilter):
 
 
     def __init__(self, format="%(author)s%(year)s%(journal_abb)s_%(title_word)s",
-                 if_published=None, if_type=None):
+                 if_published=None, if_type=None, add_aka_keyword=False,
+                 use_hash_length=24):
         """
         CiteKeyFilter Constructor.
 
@@ -177,6 +184,10 @@ class CiteKeyFilter(BibFilter):
          - if_type(CommaStrList): You may specify a list of entry types to restrict the
              application of this filter to. By default, or if the list is empty, the filter
              applies to all entries.
+         - add_aka_keyword(bool): If set, then we include a keyword in the
+             bibtex entry's ‘keyword’ field of the form 'aka--<OLD-KEY>', for use with the
+             ‘duplicates’ filter to create alias rules for keys.
+         - use_hash_length: Length of encoded hash to use for '%(hash)s' key
         """
 
         super().__init__()
@@ -191,6 +202,9 @@ class CiteKeyFilter(BibFilter):
             self.if_type = None
         else:
             self.if_type = [x.strip() for x in CommaStrList(if_type)]
+
+        self.add_aka_keyword = butils.getbool(add_aka_keyword)
+        self.use_hash_length = use_hash_length
 
         logger.debug('citekey: fmt=%r', self.fmt)
 
@@ -220,7 +234,8 @@ class CiteKeyFilter(BibFilter):
 
         # first, find required fields and apply possible "filters"
 
-        _rx_short_journal_known = re.compile(r'\b(?P<word>' + r'|'.join(KNOWN_ABBREV.keys()) + r')\b',
+        _rx_short_journal_known = re.compile(r'\b(?P<word>'
+                                             + r'|'.join(KNOWN_ABBREV.keys()) + r')\b',
                                              re.IGNORECASE)
         def abbreviate(x):
             if x.lower() in NO_ABBREV:
@@ -231,7 +246,8 @@ class CiteKeyFilter(BibFilter):
             if x.strip().lower() in KNOWN_JOURNALS:
                 return KNOWN_JOURNALS[x.strip().lower()]
             x = _rx_short_journal_known.sub(lambda m: KNOWN_ABBREV[m.group('word').lower()], x)
-            x = re.sub(r'\b(' + r'|'.join(BORING_WORDS) + r')\b(?!\s*($|[-:;\.]))', '', x, flags=re.IGNORECASE)
+            x = re.sub(r'\b(' + r'|'.join(BORING_WORDS) + r')\b(?!\s*($|[-:;\.]))', '',
+                       x, flags=re.IGNORECASE)
             x = re.sub(r'\b(?P<word>\w+)\b([^\.]|$)',
                        lambda m: abbreviate(m.group('word')), x)
             x = re.sub(r'[^\w.]+', '', x)
@@ -257,24 +273,35 @@ class CiteKeyFilter(BibFilter):
                 return ""
             return getlast(get_authors(entry)[0], lower=False)[0]
 
+        def get_hash(entry):
+            digest = hashlib.md5(entry.key.encode('utf-8')).digest()
+            hashstr = base64.urlsafe_b64encode(digest).decode('utf-8')
+            return hashstr[:self.use_hash_length]
+
         fld_fn = {
             'author': lambda entry: get_first_author(entry),
-            'authors': lambda entry: "".join([getlast(a, lower=False)[0] for a in get_authors(entry)])[0:25],
+            'authors': lambda entry: "".join([getlast(a, lower=False)[0]
+                                              for a in get_authors(entry)])[0:25],
             'year': lambda entry: entry.fields.get('year', ''),
             'year2': lambda entry: '%02d' % (int(entry.fields.get('year', '')) % 100),
             'journal_abb': lambda entry: fmtjournal(entry.fields.get('journal', '')),
-            'journal': lambda entry: short_journal(normstr(butils.latex_to_text(entry.fields.get('journal', '')),lower=False)),
+            'journal': lambda entry: short_journal(normstr(
+                butils.latex_to_text(entry.fields.get('journal', '')),lower=False)),
             'title_word': lambda entry: next(
-                (word for word in re.sub(r'[^\w\s]', '', butils.latex_to_text(entry.fields.get('title', ''))).split()
+                (word
+                 for word in re.sub(r'[^\w\s]', '',
+                                    butils.latex_to_text(entry.fields.get('title', ''))).split()
                  if word.lower() not in BORING_TITLE_WORDS),
                 ''
                  ),
             'doi': lambda entry: entry.fields.get('doi', ''),
             'arxivid': lambda entry: arxivInfo(entry, 'arxivid'),
             'primaryclass': lambda entry: arxivInfo(entry, 'primaryclass'),
+            'hash': get_hash,
             }
         # used fields
-        fld = set([m.group('field') for m in re.finditer(r'(^|[^%])(%%)*%\((?P<field>\w+)\)', self.fmt)])
+        fld = set([m.group('field')
+                   for m in re.finditer(r'(^|[^%])(%%)*%\((?P<field>\w+)\)', self.fmt)])
         # check all valid fields
         for f in fld:
             if f not in fld_fn:
@@ -294,10 +321,12 @@ class CiteKeyFilter(BibFilter):
                 ainfo = arxivaccess.getArXivInfo(key)
                 if (self.if_published is not None):
                     if (not self.if_published and (ainfo is None or ainfo['published'])):
-                        logger.longdebug('Skipping published entry %s (filter: unpublished)', key)
+                        logger.longdebug('Skipping published entry %s (filter: unpublished)',
+                                         key)
                         raise Jump
                     if (self.if_published and (ainfo is not None and not ainfo['published'])):
-                        logger.longdebug('Skipping unpublished entry %s (filter: published)', key)
+                        logger.longdebug('Skipping unpublished entry %s (filter: published)',
+                                         key)
                         raise Jump
                 if self.if_type is not None:
                     if entry.type not in self.if_type:
@@ -324,6 +353,13 @@ class CiteKeyFilter(BibFilter):
                 if count:
                     logger.warning("`%s': Citation key `%s' already used: using `%s' instead.",
                                    keyorig, key, newkey)
+
+                if self.add_aka_keyword:
+                    if entry.fields.get('keywords', ''):
+                        entry.fields['keywords'] += ',aka--'+keyorig
+                    else:
+                        entry.fields['keywords'] = 'aka--'+keyorig
+
                 # add the entry
                 newbibdata.add_entry(newkey, entry)
 

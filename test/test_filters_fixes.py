@@ -224,6 +224,18 @@ class TestWorks(unittest.TestCase, CustomAssertions):
         entries = self.get_std_test_entries()
 
         entries += [
+            ("Bothwell2019Met_JILASrI", Entry("article", persons={"author": [Person("Bothwell, Tobias"),Person("Kedar, Dhruv"),Person("Oelker, Eric"),Person("Robinson, John M."),Person("Bromley, Sarah L."),Person("Tew, Weston L."),Person("Ye, Jun"),Person("Kennedy, Colin J.")],}, fields={
+                "title": "{JILA SrI} optical lattice clock with uncertainty of $2.0 \times 10^{-18}$",
+                "year": "2019",
+                "month": "October",
+                "volume": "56",
+                "pages": "065004",
+                "doi": "10.1088/1681-7575/ab4089",
+                "abstract": "We report on an improved systematic evaluation of the JILA SrI optical lattice clock, achieving a nearly identical uncertainty compared to the previous strontium record set by the JILA SrII optical lattice clock at $2.1×10^{−18}$. This improves upon the previous evaluation of the JILA SrI optical lattice clock in 2013, and we achieve a more than twenty-fold reduction in systematic uncertainty to . A seven-fold improvement in clock stability, reaching for an averaging time in seconds, allows the clock to average to its systematic uncertainty in under 10 min. We improve the systematic uncertainty budget in several important ways. This includes a novel scheme for taming blackbody radiation-induced frequency shifts through active stabilization and characterization of the thermal environment, inclusion of higher-order terms in the lattice light shift, and updated atomic coefficients. Along with careful control of other systematic effects, we achieve low temporal drift of systematic offsets and high uptime of the clock. We additionally present an improved evaluation of the second order Zeeman coefficient that is applicable to all Sr optical lattice clocks. These improvements in performance have enabled several important studies including frequency ratio measurements through the boulder area clock optical network (BACON), a high precision comparison with the JILA 3D lattice clock, a demonstration of a new all-optical time scale combining SrI and a cryogenic silicon cavity, and a high sensitivity search for ultralight scalar dark matter.",
+                "eprint": "1906.06004",
+                "journal": "Metrologia",
+                "number": "6",
+            })),
             ("TestTestTest3", Entry("article", persons={"author": [Person("H\u00e9l\u00e0, Xavier"),
                                                                    Person("Abc, Xyz")],}, fields={
                 "language": "en",
@@ -412,6 +424,18 @@ class TestWorks(unittest.TestCase, CustomAssertions):
                 "year": "2006",
                 "keywords": "Hermitian matrices,majorization,thermo"
             },),),
+            ("Bothwell2019Met_JILASrI", Entry("article", persons={"author": [Person("Bothwell, Tobias"),Person("Kedar, Dhruv"),Person("Oelker, Eric"),Person("Robinson, John M."),Person("Bromley, Sarah L."),Person("Tew, Weston L."),Person("Ye, Jun"),Person("Kennedy, Colin J.")],}, fields={
+                "title": "{JILA SrI} optical lattice clock with uncertainty of $2.0 \times 10^{-18}$",
+                "year": "2019",
+                "month": "October",
+                "volume": "56",
+                "pages": "065004",
+                "doi": "10.1088/1681-7575/ab4089",
+                "abstract": r"We report on an improved systematic evaluation of the JILA SrI optical lattice clock, achieving a nearly identical uncertainty compared to the previous strontium record set by the JILA SrII optical lattice clock at $2.1{\texttimes}10^{{\ensuremath{-}}18}$. This improves upon the previous evaluation of the JILA SrI optical lattice clock in 2013, and we achieve a more than twenty-fold reduction in systematic uncertainty to . A seven-fold improvement in clock stability, reaching for an averaging time in seconds, allows the clock to average to its systematic uncertainty in under 10 min. We improve the systematic uncertainty budget in several important ways. This includes a novel scheme for taming blackbody radiation-induced frequency shifts through active stabilization and characterization of the thermal environment, inclusion of higher-order terms in the lattice light shift, and updated atomic coefficients. Along with careful control of other systematic effects, we achieve low temporal drift of systematic offsets and high uptime of the clock. We additionally present an improved evaluation of the second order Zeeman coefficient that is applicable to all Sr optical lattice clocks. These improvements in performance have enabled several important studies including frequency ratio measurements through the boulder area clock optical network (BACON), a high precision comparison with the JILA 3D lattice clock, a demonstration of a new all-optical time scale combining SrI and a cryogenic silicon cavity, and a high sensitivity search for ultralight scalar dark matter.",
+                "eprint": "1906.06004",
+                "journal": "Metrologia",
+                "number": "6",
+            })),
             ("TestTestTest3", Entry("article", persons={"author": [Person("H{\\'e}l{\\`a}, Xavier"),
                                                                    Person("Abc, Xyz")],}, fields={
                 "language": "en",

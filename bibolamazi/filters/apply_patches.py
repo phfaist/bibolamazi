@@ -29,7 +29,7 @@ import pybtex.bibtex.utils
 # needed to import bibtex file:
 import pybtex.database.input.bibtex as inputbibtex
 
-from bibolamazi.core.bibfilter import BibFilter # BibFilterError
+from bibolamazi.core.bibfilter import BibFilter, BibFilterError
 #from bibolamazi.core.bibfilter.argtypes import CommaStrList
 #from bibolamazi.core import butils
 from bibolamazi.core.bibolamazifile import BibolamaziBibtexSourceError
@@ -228,12 +228,18 @@ class ApplyPatchesFilter(BibFilter):
     def _read_patches_from_file(self, patch_source_fname):
         # this functionality is in a separate method so that we can test this
         # class more easily by monkey-patching this method
-        parser = inputbibtex.Parser()
-        with open(patch_source_fname) as f:
-            try:
-                return parser.parse_stream(f)
-            except Exception as e:
-                raise BibolamaziBibtexSourceError(str(e), fname=patch_source_fname)
+        try:
+            parser = inputbibtex.Parser()
+            with open(patch_source_fname) as f:
+                try:
+                    return parser.parse_stream(f)
+                except Exception as e:
+                    raise BibolamaziBibtexSourceError(str(e), fname=patch_source_fname)
+        except OSError as e:
+            raise BibFilterError("apply_patches",
+                                 str(e))
+                                 #"Error reading file ‘{}’: {}"
+                                 #.format(patch_source_fname, e))
 
     def filter_bibolamazifile(self, bibolamazifile):
 

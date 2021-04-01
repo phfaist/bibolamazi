@@ -386,20 +386,21 @@ class ArxivNormalizeFilter(BibFilter):
         # present any "summaries":
 
         # -- for published entries
-        logger.warning(
-            "The following arXiv-only bibliographic {entryname} have been published in "
-            "other {venuename}:\n"
-            .format(entryname='entry' if len(self.summary_published) == 1 else 'entries',
-                    venuename='venue' if len(self.summary_published) == 1 else 'venues')
-            + "\n".join(
-                "- {key} ({arxivid})  → {doiurl}".format(
-                    key='‘'+key+'’',
-                    arxivid=arxivinfo['arxivid'],
-                    doiurl='https://doi.org/'+arxivinfo['doi'],
+        if len(self.summary_published):
+            logger.warning(
+                "The following arXiv-only bibliographic {entryname} have been published in "
+                "other {venuename}:\n"
+                .format(entryname='entry' if len(self.summary_published) == 1 else 'entries',
+                        venuename='venue' if len(self.summary_published) == 1 else 'venues')
+                + "\n".join(
+                    "- {key} ({arxivid})  → {doiurl}".format(
+                        key='‘'+key+'’',
+                        arxivid=arxivinfo['arxivid'],
+                        doiurl='https://doi.org/'+arxivinfo['doi'],
+                    )
+                    for key, arxivinfo in self.summary_published
                 )
-                for key, arxivinfo in self.summary_published
             )
-        )
 
     def filter_bibentry(self, entry):
         #
