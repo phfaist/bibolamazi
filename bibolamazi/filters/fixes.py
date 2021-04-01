@@ -21,7 +21,7 @@
 ################################################################################
 
 import re
-#import unicodedata
+import unicodedata
 import logging
 logger = logging.getLogger(__name__)
 
@@ -525,8 +525,6 @@ class FixesFilter(BibFilter):
         # first apply filters that are applied to all fields of the entry
 
         def thefilter(x):
-            if self.fix_space_after_escape:
-                x = do_fix_space_after_escape(x)
             if self.fix_swedish_a:
                 # OBSOLETE, but still accepted for backwards compatibility
                 x = re.sub(r'\\AA\s+', r'\\AA{}', x)
@@ -534,6 +532,8 @@ class FixesFilter(BibFilter):
             if self.encode_utf8_to_latex:
                 # use custom encoder
                 x = custom_uni_to_latex(x)
+            if self.fix_space_after_escape: # after converting to LaTeX
+                x = do_fix_space_after_escape(x)
             if self.encode_latex_to_utf8:
                 x = butils.latex_to_text(x)
             return x
@@ -841,6 +841,10 @@ _our_unicode_to_latex = latexencode.PartialLatexToLatexEncoder(
 )
 
 def custom_uni_to_latex(s):
+    # recompose combining unicode characters whenever possible so that
+    # unicode_to_latex can translate them correctly
+    s = unicodedata.normalize('NFC', s)
+
     return _our_unicode_to_latex.unicode_to_latex(s)
 
 
@@ -862,6 +866,8 @@ def do_fix_space_after_escape(x):
 
     def deal_with_escape(x, m): # helper
 
+        #logger.longdebug("deal_with_escape: x=%r, m=%r", x, m)
+
         # make sure we create a new lw instance each time, because the string
         # changes between calls to deal_with_escape()!
         lw = latexwalker.LatexWalker(x, tolerant_parsing=True)
@@ -881,11 +887,12 @@ def do_fix_space_after_escape(x):
             # re-convert args to strings, making sure we have braces around each
             # mandatory argument
             for n in macronode.nodeargd.argnlist:
-                if n.isNodeType(latexwalker.LatexCharsNode) and n.chars != '*':
-                    # mandatory argument not enclosed in braces, force braces
-                    replacexstr += '{' + n.latex_verbatim() + '}'
-                else:
-                    replacexstr += n.latex_verbatim()
+                if n is not None:
+                    if n.isNodeType(latexwalker.LatexCharsNode) and n.chars != '*':
+                        # mandatory argument not enclosed in braces, force braces
+                        replacexstr += '{' + n.latex_verbatim() + '}'
+                    else:
+                        replacexstr += n.latex_verbatim()
         else:
             # unknown situation. keep macro as it is... might be a custom args
             # parser at work
