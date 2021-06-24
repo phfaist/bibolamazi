@@ -18,7 +18,7 @@ jobs:
     
       - uses: actions/upload-artifact@v2
         with:
-          name: my-exe
+          name: bibolamazi-win
           path: gui/dist/windows
       
       - run: echo "🍏 This job's status is ${{ job.status }}."
