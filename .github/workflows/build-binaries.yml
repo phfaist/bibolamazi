@@ -1,6 +1,7 @@
 name: Build Binaries via PyInstaller
 
-# on: [push]
+on:
+  workflow_dispatch:
 
 jobs:
   PyInstaller_for_windows:
@@ -18,6 +19,6 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: my-exe
-            path: gui/dist/windows
+          path: gui/dist/windows
       
       - run: echo "🍏 This job's status is ${{ job.status }}."
