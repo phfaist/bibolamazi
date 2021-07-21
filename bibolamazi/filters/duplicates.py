@@ -505,9 +505,12 @@ class AliasList:
         self.aliases_by_origkey = {}
         self.extra_aliases = []
 
-    def add_alias(self, alias):
+    def add_alias(self, alias, only_virtual=False):
         # update our database for this alias (eg, resolve dependencies)
-        self.add_virtual_alias(alias)
+        self._add_virtual_alias(alias)
+
+        if only_virtual:
+            return
 
         # and add the alias
         self.aliases.append(alias)
@@ -516,13 +519,38 @@ class AliasList:
         self.aliases_by_aliaskey[alias.aliaskey] = alias
         self._register_alias_in_origkey_dic(alias)
 
-    def add_virtual_alias(self, alias):
+    def _add_virtual_alias(self, alias):
         #
         # update current aliases as if we were going to add this alias to the
         # aliases.
         #
+
+        # first, see if the new alias' `origkey` is itself an alias, and resolve
+        # it.
+        alias_origkey = alias.origkey
+        if alias_origkey in self.aliases_by_aliaskey:
+            alias_origkey = self.aliases_by_aliaskey[alias_origkey].origkey
+
+        # now check for conflicting definitions (define same alias key to target
+        # two different entries)
         if alias.aliaskey in self.aliases_by_aliaskey:
-            raise ValueError("Alias is already defined")
+            conflicting_alias_def = self.aliases_by_aliaskey[alias.aliaskey]
+            if alias_origkey == conflicting_alias_def.origkey:
+                # that's fine, both definitions point to the same entry, so the
+                # second definition is redundant.
+                return
+            logger.error("Conflicting definitions of alias ‘%s’, to point to "
+                         "entries ‘%s’ and ‘%s’",
+                         alias.aliaskey, self.aliases_by_aliaskey[alias.aliaskey].origkey,
+                         alias_origkey)
+            raise BibFilterError(
+                "duplicates",
+                "Alias {} multiply defined from {} and {}"
+                .format(alias.aliaskey,
+                        self.aliases_by_aliaskey[alias.aliaskey].origkey,
+                        alias_origkey)
+            )
+
         if alias.aliaskey in self.aliases_by_origkey:
             # this aliaskey is used as the target origkey for another alias,
             # update that one.
@@ -530,10 +558,10 @@ class AliasList:
             # We have otheralias.origkey == alias.aliaskey
             otheraliases = self.aliases_by_origkey[alias.aliaskey]
             logger.longdebug("due to alias %r->%r, updating other aliases %r that pointed to %r",
-                             alias.aliaskey, alias.origkey, otheraliases, alias.aliaskey)
+                             alias.aliaskey, alias_origkey, otheraliases, alias.aliaskey)
             del self.aliases_by_origkey[alias.aliaskey]
             for otheralias in otheraliases:
-                otheralias.origkey = alias.origkey
+                otheralias.origkey = alias_origkey
                 self._register_alias_in_origkey_dic(alias)
 
             
@@ -1089,6 +1117,7 @@ class DuplicatesFilter(BibFilter):
                 if not same:
                     logger.warning("Entry with conflict key %s is NOT a duplicate of entry %s: %s",
                                    key, origkey, reason)
+                    continue
 
                 # entries are proper duplicates as expected, remove the conflictkey entry
                 logger.debug("Removing conflictkey entry %s as it is really a duplicate of %s",
@@ -1112,7 +1141,7 @@ class DuplicatesFilter(BibFilter):
             # Collect these into the aliases list as extra aliases.
             #
             # Do this now, before we start discarding unused entries which might
-            # have an alias that is used
+            # have an alias that is used.
             #
             if self.create_alias_from_aka_keyword:
                 logger.debug("create_alias_from_aka_keyword=True, scanning keywords")
@@ -1132,7 +1161,6 @@ class DuplicatesFilter(BibFilter):
                             else:
                                 logger.debug("extra alias: %r -> %r", aliaskey, k)
                                 aliases.add_alias( AliasPair(aliaskey, k, is_extra=True) )
-
 
             for (key, entry) in iter_over_bibdata(bibdata):
                 #
@@ -1177,7 +1205,7 @@ class DuplicatesFilter(BibFilter):
                         self.update_entry_with_duplicate(is_duplicate_of,
                                                          unused.entries[is_duplicate_of],
                                                          key, entry)
-                        aliases.add_virtual_alias( AliasPair(key, is_duplicate_of) )
+                        aliases.add_alias( AliasPair(key, is_duplicate_of), only_virtual=True )
                     else:
                         # a duplicate of a key we have used. So update the original ...
                         self.update_entry_with_duplicate(is_duplicate_of,
@@ -1205,6 +1233,7 @@ class DuplicatesFilter(BibFilter):
                     else:
                         # new entry and we want it. So add it to the main newbibdata list.
                         newbibdata.add_entry(key, entry)
+
 
             #
             # now, make sure that all originals corresponding to "extra" aliases
