@@ -1,0 +1,24 @@
+name: Build Binaries via PyInstaller
+
+on:
+  workflow_dispatch:
+
+jobs:
+  PyInstaller_for_windows:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was triggered by a ${{ github.event_name }} event."
+      - uses: actions/checkout@v2
+      - name: PyInstaller Windows
+        uses: JackMcKew/pyinstaller-action-windows@main
+        with:
+          spec: bibolamazi_gui.spec
+          requirements: ../pip_requirements.txt
+          path: gui/
+    
+      - uses: actions/upload-artifact@v2
+        with:
+          name: bibolamazi-win
+          path: gui/dist/windows
+      
+      - run: echo "🍏 This job's status is ${{ job.status }}."
