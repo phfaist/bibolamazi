@@ -406,7 +406,7 @@ def get_github_auth_status():
     return False
 
 def _check_token_valid(token):
-    if re.match(r'^[a-zA-Z0-9]{32,}$', token) is None:
+    if re.match(r'^[a-zA-Z0-9.+_/!@*=-]{32,}$', token) is None:
         raise ValueError("Invalid access token provided")
 
 def save_github_auth_token(github_auth_token):
