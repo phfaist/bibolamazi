@@ -110,4 +110,4 @@ procedure ensures that bibolamazi never sees your github password.</p>
 
     def _is_valid_token(self, token):
         logger.debug("checking token = [...]%s", token[-4:])
-        return (re.match(r'^[a-fA-F0-9]{32,}$', token if token else '') is not None)
+        return (re.match(r'^[a-zA-Z0-9.+_/!@*=-]{32,}$', token if token else '') is not None)
