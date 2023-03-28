@@ -101,12 +101,16 @@ _rx_purearxivid = re.compile(r'(?P<purearxivid>((\d{4}\.\d{4,})|'+
 
 _rx_aid_year = re.compile(r'(?P<year>\d{2})(?P<mon>\d{2})(?:\.\d{4,}|\d{3})')
 
+
+rx_arxiv_own_doi = re.compile(r'^((https?://)?(dx\.)?(doi\.org/))?10\.48550/arXiv\.(?P<arxivid>.*)$', re.IGNORECASE)
+
+
 #
 # A list of fields which are inspected for arXiv information. This is useful for
 # cache invalidation in various instances.
 #
 arxivinfo_from_bibtex_fields = [
-    'journal', 'doi', 'eprint', 'arxivid', 'url',
+    'journal', 'doi', 'eprint', 'arxivid', 'arxiv', 'url',
     'note', 'annote', 'primaryclass',
     'archiveprefix', ]
 
@@ -186,20 +190,41 @@ def detectEntryArXivInfo(entry):
         return m.group('purearxivid')
 
 
-    if ('doi' in fields and fields['doi']):
-        d['doi'] = fields['doi']
+    if 'doi' in fields:
+        dois = re.split(r'[ \t\n,]+', fields['doi'])
+        for doi in dois:
+            if doi.strip() == "":
+                continue
+            m = re.match(rx_arxiv_own_doi, doi)
+            if m is not None:
+                # get arXiv ID
+                d['arxivid'] = m.group('arxivid')
+            else:
+                # this is a journal DOI -- keep only first one
+                if d.get('doi', None) is not None:
+                    d['doi'] = fields['doi']
 
-    if ('eprint' in fields):
-        # this gives the arxiv ID
-        try:
-            d['arxivid'] = extract_pure_id(fields['eprint'], primaryclass=fields.get('primaryclass', None))
-            m = re.match(r'^([-\w.]+)/', d['arxivid'])
-            if (m):
-                d['primaryclass'] = m.group(1)
-        except IndexError as e:
-            logger.longdebug("Indexerror: invalid arXiv ID [%r/]%r: %s",
-                             fields.get('primaryclass',None), fields['eprint'], e)
-            logger.warning("Entry `%s' has invalid arXiv ID %r", entry.key, fields['eprint'])
+    if d['arxivid'] is None:
+        for eprintfield in ('arxivid', 'arxiv', 'eprint'):
+            if not eprintfield in fields:
+                continue
+            # this field might reveal the arxiv ID
+            arxivid = None
+            try:
+                arxivid = extract_pure_id(fields[eprintfield], primaryclass=fields.get('primaryclass', None))
+            except IndexError as e:
+                logger.longdebug("Indexerror: invalid arXiv ID in field ‘%s’ [%r/]%r: %s",
+                                 eprintfield, fields.get('primaryclass',None), fields[eprintfield], e)
+                # could be because, e.g., Zotero exporter used the PubMed ID here.
+                logger.debug("Entry `%s' has invalid arXiv ID %r in eprint field ‘%s’", entry.key, fields[eprintfield],
+                             eprintfield)
+                continue
+            if arxivid is not None:
+                d['arxivid'] = arxivid
+                m = re.match(r'^([-\w.]+)/', arxivid)
+                if (m):
+                    d['primaryclass'] = m.group(1)
+                break
 
     if ('primaryclass' in fields):
         d['primaryclass'] = fields['primaryclass']
@@ -207,7 +232,7 @@ def detectEntryArXivInfo(entry):
     if ('archiveprefix' in fields):
         d['archiveprefix'] = fields['archiveprefix']
 
-    logger.longdebug("processed doi,eprint,primaryclass,archiveprefix fields -> d = %r", d)
+    logger.longdebug("processed doi,eprint,arxiv,arxivid,primaryclass,archiveprefix fields -> d = %r", d)
 
     def processNoteField(notefield, d, isurl=False):
 
@@ -651,12 +676,17 @@ class ArxivInfoCacheAccessor(BibUserCacheAccessor):
                 entrydic[k]['primaryclass'][:len(primaryclass)] !=
                 primaryclass[:len(entrydic[k]['primaryclass'])]):
                 #
-                summary_info_mismatch.append(
-                    (k, aid, 'primaryclass', entrydic[k]['primaryclass'], primaryclass)
-                )
+                # ### Ignore mismatches in primaryclass, e.g. Zotero's exporter
+                # ### exports all archive classes as a comma-separated list
+                # ### which would be terrible for us to parse and check...
+                #
+                # summary_info_mismatch.append(
+                #     (k, aid, 'primaryclass', entrydic[k]['primaryclass'], primaryclass)
+                # )
                 # logger.warning("Conflicting primaryclass values for entry %s (%s): "
                 #                "%s (given in bibtex) != %s (retrieved from the arxiv)",
                 #                k, aid, entrydic[k]['primaryclass'], primaryclass)
+                pass
             else:
                 entrydic[k]['primaryclass'] = primaryclass
 

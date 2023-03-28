@@ -54,7 +54,8 @@ class UrlNormalizeFilter(BibFilter):
     helptext = HELP_TEXT
 
     def __init__(self, Strip=False, StripAllIfDoiOrArxiv=False, StripDoiUrl=True, StripArxivUrl=True,
-                 UrlFromDoi=False, UrlFromArxiv=False, KeepFirstUrlOnly=False, StripForTypes=None,
+                 UrlFromDoi=False, UrlFromArxiv=False, RemoveArxivDoi=True,
+                 KeepFirstUrlOnly=False, StripForTypes=None,
                  AddAsHowPublished=False, HowPublishedText='available at {urlstr}'):
         r"""
         UrlNormalizeFilter constructor.
@@ -80,6 +81,9 @@ class UrlNormalizeFilter(BibFilter):
                          that links to the arXiv page, i.e. `https://arxiv.org/abs/<ARXIV-ID>`
                          [default: False]
 
+          - RemoveArxivDoi(bool): Remove DOIs of the form
+                         `https://doi.org/10.48550/arXiv.<ARXIV-ID>`.
+
           - KeepFirstUrlOnly(bool): If the entry has several URLs, then after applying all
                          the other stripping rules, keep only the first remaining URL, if any.
                          [default: False]
@@ -94,7 +98,6 @@ class UrlNormalizeFilter(BibFilter):
                          list of URLs concatenated with a comma, '{url}' to insert the
                          first url and the key 'urls' is passed the raw Python list as
                          argument.
-
         """
         super().__init__()
 
@@ -104,6 +107,7 @@ class UrlNormalizeFilter(BibFilter):
         self.striparxivurl = getbool(StripArxivUrl)
         self.urlfromdoi = getbool(UrlFromDoi)
         self.urlfromarxiv = getbool(UrlFromArxiv)
+        self.removearxivdoi = getbool(RemoveArxivDoi)
         self.keepfirsturlonly = getbool(KeepFirstUrlOnly)
         self.stripfortypes = None
         if (StripForTypes is not None):
@@ -181,6 +185,22 @@ class UrlNormalizeFilter(BibFilter):
         if (self.urlfromarxiv):
             if (arxivinfo is not None):
                 urls.append("https://arxiv.org/abs/"+arxivinfo['arxivid'])
+
+        #logger.longdebug("%s: urls is now  %r", entry.key, urls)
+
+        if self.removearxivdoi:
+            if 'doi' in entry.fields:
+                dois = re.split(r'[ \t\n,]+', entry.fields['doi'])
+                new_dois = [
+                    doi
+                    for doi in dois
+                    if arxivutil.rx_arxiv_own_doi.match(doi) is None
+                ]
+                newdoifield = " ".join(new_dois)
+                if newdoifield == "":
+                    del entry.fields['doi']
+                else:
+                    entry.fields['doi'] = newdoifield
 
         #logger.longdebug("%s: urls is now  %r", entry.key, urls)
 
