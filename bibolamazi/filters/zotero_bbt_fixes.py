@@ -152,9 +152,13 @@ def zotero_title_protection_cleanup(title):
                 plen = 0
                 for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
                     split_nodelist += [
-                        (latexwalker.LatexCharsNode(parsing_state=n.parsing_state,
-                                                    chars=chunk,
-                                                    pos=n.pos+plen, len=len(chunk)), sep)
+                        (
+                            n.latex_walker.make_node(latexwalker.LatexCharsNode,
+                                                     parsing_state=n.parsing_state,
+                                                     chars=chunk,
+                                                     pos=n.pos+plen, len=len(chunk)),
+                            sep
+                        )
                     ]
                     plen += len(chunk)+len(sep)
             else:
