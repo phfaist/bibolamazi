@@ -1148,8 +1148,12 @@ class DuplicatesFilter(BibFilter):
                 for k, e in iter_over_bibdata(bibdata):
                     if 'keywords' in e.fields:
                         for m in rx_keyword_aka.finditer(e.fields['keywords']):
+
                             aliaskey = m.group('aliaskey')
-                            aliaskey = aliaskey.replace(r'\\(.)', r'\1') # Brandao2012CMP\_local -> Brandao2012CMP_local
+
+                            # Brandao2012CMP\_local -> Brandao2012CMP_local
+                            aliaskey = re.sub(r'\\(.)', r'\1', aliaskey)
+
                             if aliaskey in bibdata.entries:
                                 logger.warning("Can't create alias '%s' to '%s', alias key name "
                                                "already exists in database as another entry",
