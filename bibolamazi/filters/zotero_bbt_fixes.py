@@ -150,13 +150,19 @@ def zotero_title_protection_cleanup(title):
                 # split at whitespace
                 chunks = re.compile(r'(\s+)').split(n.chars)
                 plen = 0
+                try:
+                    latex_walker_make_node = n.latex_walker.make_node
+                except AttributeError:
+                    # pylatexenc 2.10:
+                    latex_walker_make_node = lambda node_type, *args, **kwargs: \
+                        node_type(*args, **kwargs)
                 for chunk, sep in zip(chunks[0::2], chunks[1::2]+['']):
                     split_nodelist += [
                         (
-                            n.latex_walker.make_node(latexwalker.LatexCharsNode,
-                                                     parsing_state=n.parsing_state,
-                                                     chars=chunk,
-                                                     pos=n.pos+plen, len=len(chunk)),
+                            latex_walker_make_node(latexwalker.LatexCharsNode,
+                                                   parsing_state=n.parsing_state,
+                                                   chars=chunk,
+                                                   pos=n.pos+plen, len=len(chunk)),
                             sep
                         )
                     ]
@@ -164,7 +170,7 @@ def zotero_title_protection_cleanup(title):
             else:
                 split_nodelist += [(n, '')]
 
-        # now, combine them smarly into words.
+        # now, combine them smartly into words.
         cur_nodelist = []
         need_protection_hint = False
         for n, sep in split_nodelist:
