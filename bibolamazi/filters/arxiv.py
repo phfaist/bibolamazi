@@ -22,6 +22,8 @@
 
 
 #import re
+import json
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -267,7 +269,10 @@ class ArxivNormalizeFilter(BibFilter):
                  no_primary_class_for_old_ids=False,
                  no_primary_class=True,
                  theses_count_as_published=False,
-                 warn_journal_ref=True):
+                 warn_journal_ref=True,
+                 exist_published_json_file=None,
+                 add_published_doi=False,
+                 ):
         """
         Constructor method for ArxivNormalizeFilter
 
@@ -305,6 +310,8 @@ class ArxivNormalizeFilter(BibFilter):
                    '{arXiv:%(arxivid)s}'. Possible substitutions keys are
                    'arxivid', 'primaryclass', 'published', and 'doi'. You can't specify both options
                    -sNoteString and -sNoteStringFmt.
+          - exist_published_json_file: File name to write JSON file with information about which arXiv entries have published information.
+          - add_published_doi: If a DOI is found, then include it in the entry in a 'doi' field.  Does not actually update the entire entry to the published information; the entry remains as "unpublished".
         """
         
         super().__init__()
@@ -331,6 +338,11 @@ class ArxivNormalizeFilter(BibFilter):
 
         self.summary_info_mismatch = None
         self.summary_published = None
+
+        self.exist_published_data = {}
+        self.exist_published_json_file = exist_published_json_file
+        
+        self.add_published_doi = add_published_doi
 
         if self.unpublished_mode == MODE_EPRINT and 'journal' in self.strip_unpublished_fields:
             if self.arxiv_journal_name and self.arxiv_journal_name != _default_arxiv_journal_name:
@@ -402,6 +414,11 @@ class ArxivNormalizeFilter(BibFilter):
                 )
             )
 
+        # write published info to JSON file, if requested:
+        if self.exist_published_json_file and len(self.exist_published_data):
+            with open(self.exist_published_json_file, 'w', encoding='utf-8') as fw:
+                json.dump(self.exist_published_data, fw, indent=4)
+
     def filter_bibentry(self, entry):
         #
         # entry is a pybtex.database.Entry object
@@ -433,18 +450,35 @@ class ArxivNormalizeFilter(BibFilter):
         else:
             mode = self.unpublished_mode
 
-        if (self.warn_journal_ref and not we_are_published and arxivinfo['doi']):
-            # we think we are not published but we actually are, as reported by arXiv.org API. This
-            # could be because the authors published their paper in the meantime.
-            #logger.warning(
-            #    "arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
-            #    entry.key, arxivinfo['doi']
-            #)
-            self.summary_published.append(
-                (entry.key, arxivinfo,)
-            )
+        if not we_are_published and arxivinfo['doi']:
+            if self.warn_journal_ref:
+                # we think we are not published but we actually are, as reported
+                # by arXiv.org API. This could be because the authors published
+                # their paper in the meantime.
+                #
+                #logger.warning(
+                #    "arxiv: Entry `%s' refers to arXiv version of published entry with DOI %r",
+                #    entry.key, arxivinfo['doi']
+                #)
+                self.summary_published.append(
+                    (entry.key, arxivinfo,)
+                )
 
-        logger.longdebug("arXiv: entry %s: published=%r, mode=%r", entry.key, we_are_published, mode)
+            self.exist_published_data[entry.key] = {
+                'arxivid': arxivinfo['arxivid'],
+                'doi': arxivinfo['doi'],
+            }
+
+            logger.longdebug("arXiv: entry %s: published=%r, mode=%r",
+                             entry.key, we_are_published, mode)
+
+        if arxivinfo['doi'] and self.add_published_doi:
+            dois = [
+                x.strip() for x in entry.fields.get('doi', '').split(' ')
+                if len(x.strip())
+            ]
+            dois.insert(0, arxivinfo['doi'])
+            entry.fields['doi'] = ' '.join( dois )
 
         if (mode == MODE_NONE):
             # don't change the entry, leave it as is.
@@ -464,6 +498,10 @@ class ArxivNormalizeFilter(BibFilter):
             entry.fields['annote'] = arxivutil.stripArXivInfoInNote(entry.fields['annote'])
             if (not len(entry.fields['annote'])):
                 del entry.fields['annote']
+        if ('eid' in entry.fields):
+            entry.fields['eid'] = arxivutil.stripArXivInfoInNote(entry.fields['eid'])
+            if (not len(entry.fields['eid'])):
+                del entry.fields['eid']
         # keep arxiv URL. This should be stripped off in the url filter, if needed.
         #if ('url' in entry.fields):
         #    #entry.fields['url'] = arxivutil.stripArXivInfoInNote(entry.fields['url'])

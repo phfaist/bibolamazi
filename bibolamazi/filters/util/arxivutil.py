@@ -110,9 +110,11 @@ rx_arxiv_own_doi = re.compile(r'^((https?://)?(dx\.)?(doi\.org/))?10\.48550/arXi
 # cache invalidation in various instances.
 #
 arxivinfo_from_bibtex_fields = [
-    'journal', 'doi', 'eprint', 'arxivid', 'arxiv', 'url',
-    'note', 'annote', 'primaryclass',
-    'archiveprefix', ]
+    'journal', 'doi', 'eprint', 'arxivid', 'arxiv',
+    'eid',
+    'url', 'note', 'annote', 'primaryclass',
+    'archiveprefix',
+]
 
 
 # extract arXiv info from an entry
@@ -205,7 +207,7 @@ def detectEntryArXivInfo(entry):
                     d['doi'] = fields['doi']
 
     if d['arxivid'] is None:
-        for eprintfield in ('arxivid', 'arxiv', 'eprint'):
+        for eprintfield in ('arxivid', 'arxiv', 'eprint', 'eid'):
             if not eprintfield in fields:
                 continue
             # this field might reveal the arxiv ID
@@ -277,7 +279,7 @@ def detectEntryArXivInfo(entry):
                 return
 
             #logger.longdebug("d = %r", d)
-                
+
     if ('note' in fields):
         processNoteField(fields['note'], d)
 

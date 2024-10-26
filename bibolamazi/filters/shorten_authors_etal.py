@@ -81,7 +81,9 @@ class ShortenAuthorsEtalFilter(BibFilter):
         self.num_keep_authors = int(num_keep_authors)
         self.apply_to_roles = CommaStrList(apply_to_roles)
 
-        logger.debug('shorten_authors_etal filter constructor done')
+        logger.debug('shorten_authors_etal filter constructor done; '
+                     'max_num_authors=%d, num_keep_authors=%d, apply_to_roles=%r',
+                     self.max_num_authors, self.num_keep_authors, self.apply_to_roles)
         
 
     def action(self):
@@ -95,9 +97,14 @@ class ShortenAuthorsEtalFilter(BibFilter):
         for role in self.apply_to_roles:
             if not role in entry.persons:
                 continue # no author/editor list
+            #logger.debug('Testing %s[%s] for author list truncation: %r ; %d %d',
+            #             entry.key, role, entry.persons[role], len(entry.persons[role]),
+            #             self.max_num_authors)
             if len(entry.persons[role]) > self.max_num_authors:
                 # apply etal-ization
                 entry.persons[role] = entry.persons[role][:self.num_keep_authors] + [Person('others')]
+
+        #logger.debug('entry.persons[role] is now %r', entry.persons[role])
 
         return
 
