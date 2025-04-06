@@ -208,7 +208,7 @@ def normstr(x, lower=True):
 def getlast(pers, lower=True):
     # join last names
     last = normstr(
-        str( butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1] ),
+        str( "".join(butils.latex_to_text(" ".join(pers.prelast_names+pers.last_names)).split()[-1:]) ),
         lower=lower
     )
     initial = re.sub(
